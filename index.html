@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Burn Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="app" id="app">
+
+    <!-- ============ LOGIN SCREEN ============ -->
+    <section class="screen visible" id="screen-login" data-screen>
+      <div class="login-wrap">
+        <img class="login-logo" src="assets/burn-club-logo.png" alt="Burn Club" />
+        <h1 class="login-title">KY FIT <span>BURN CLUB</span></h1>
+        <p class="login-sub">Full Body Circuits</p>
+
+        <form class="login-form" id="login-form">
+          <label class="field">
+            <span>Email</span>
+            <input type="email" placeholder="you@email.com" />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input type="password" placeholder="••••••••" />
+          </label>
+          <button type="submit" class="btn-primary">Log In</button>
+        </form>
+        <button class="btn-ghost" id="guest-btn">Continue as Guest</button>
+        <button class="btn-ghost" id="guest-ff-btn">Preview as Fit &amp; Functional member</button>
+      </div>
+    </section>
+
+    <!-- ============ MAIN APP (tabs) ============ -->
+    <div class="main-app" id="main-app">
+
+      <!-- ---------- HOME ---------- -->
+      <section class="screen tab-screen" id="tab-home" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Welcome back</p>
+            <h1 class="topbar-title">Chris 👋</h1>
+          </div>
+          <div class="topbar-actions">
+            <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+            <img class="avatar" src="assets/burn-club-logo.png" alt="" />
+          </div>
+        </header>
+
+        <div class="live-now-banner" id="live-now-banner" data-action="open-live" style="display:none;">
+          <div class="live-now-dot"></div>
+          <div>
+            <p class="live-now-label">LIVE NOW</p>
+            <p class="live-now-title" id="live-now-title">Live Q&amp;A with Coach Chris</p>
+          </div>
+          <span class="live-now-join">Join →</span>
+        </div>
+
+        <div class="today-stats-row" id="today-stats-row"></div>
+
+        <h2 class="section-title">Daily Habits</h2>
+        <div class="habits-list" id="habits-list"></div>
+
+        <h2 class="section-title">This Week's Workouts</h2>
+        <div class="circuit-list" id="home-circuit-list"></div>
+      </section>
+
+      <!-- ---------- WORKOUTS ---------- -->
+      <section class="screen tab-screen" id="tab-circuits" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">This week</p>
+            <h1 class="topbar-title">Workouts</h1>
+          </div>
+          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+        </header>
+        <h2 class="section-title">This Week's Workouts</h2>
+        <div class="circuit-list" id="circuits-list-full"></div>
+
+        <h2 class="section-title">Stretch &amp; Core Library</h2>
+        <p class="section-subtitle">Two stretching sessions and two ab/core burns, available anytime this month.</p>
+        <div class="circuit-list" id="circuits-list-extras"></div>
+
+        <h2 class="section-title">Last Week's Workouts</h2>
+        <div class="circuit-list-compact" id="last-week-list"></div>
+      </section>
+
+      <!-- ---------- CALENDAR (structured programs) ---------- -->
+      <section class="screen tab-screen" id="tab-calendar" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="calendar-program-label">Your program</p>
+            <h1 class="topbar-title">Calendar</h1>
+          </div>
+          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+        </header>
+        <h2 class="section-title">This Week</h2>
+        <div class="calendar-day-list" id="calendar-day-list"></div>
+      </section>
+
+      <!-- ---------- CIRCUIT DETAIL ---------- -->
+      <section class="screen" id="screen-detail" data-screen>
+        <header class="detail-header">
+          <button class="back-btn" data-back="tab-home">←</button>
+          <span class="detail-tag" id="detail-tag">Circuit</span>
+        </header>
+        <div class="detail-hero" id="detail-hero">
+          <h1 id="detail-title">Circuit Name</h1>
+          <p id="detail-meta">30 min · Full Body · Intermediate</p>
+        </div>
+        <p class="detail-desc" id="detail-desc"></p>
+        <h2 class="section-title">Workout Breakdown</h2>
+        <div class="block-summary-list" id="block-summary-list"></div>
+        <button class="btn-primary sticky-cta" id="start-circuit-btn">Start Workout</button>
+      </section>
+
+      <!-- ---------- WORKOUT PLAYER (active session) ---------- -->
+      <section class="screen player-screen" id="screen-player" data-screen>
+        <header class="player-header">
+          <button class="player-exit" id="player-exit-btn">✕</button>
+          <span class="detail-tag" id="player-block-label">Block</span>
+          <span class="player-progress-text" id="player-progress-text">1 / 1</span>
+        </header>
+        <div class="player-progress-track"><div class="player-progress-fill" id="player-progress-fill"></div></div>
+
+        <p class="player-exercise-name" id="player-exercise-name">Exercise</p>
+        <p class="player-sub-pill" id="player-sub-pill">Round 1 of 1</p>
+
+        <div class="player-format-explainer" id="player-format-explainer">
+          <p class="player-format-explainer-title" id="player-format-explainer-title"></p>
+          <p class="player-format-explainer-body" id="player-format-explainer-body"></p>
+        </div>
+
+        <div class="player-video" id="player-video">
+          <div class="player-video-play">▶</div>
+          <p class="player-video-label" id="player-video-label">Demo Video Placeholder</p>
+        </div>
+
+        <div class="player-center" id="player-center">
+          <p class="player-clock" id="player-clock">00:00</p>
+          <p class="player-clock-label" id="player-clock-label"></p>
+          <p class="player-total-clock" id="player-total-clock"></p>
+        </div>
+
+        <div class="player-amrap-list" id="player-amrap-list"></div>
+
+        <div class="player-round-counter" id="player-round-counter">
+          <button class="round-btn" id="round-minus-btn">−</button>
+          <div><p class="round-count" id="round-count">0</p><p class="round-count-label">Rounds Completed</p></div>
+          <button class="round-btn" id="round-plus-btn">+</button>
+        </div>
+
+        <div class="player-controls" id="player-controls">
+          <button class="btn-ghost-lg" id="player-pause-btn">Pause</button>
+          <button class="btn-primary" id="player-skip-btn">Skip →</button>
+        </div>
+
+        <button class="btn-primary sticky-cta" id="player-start-btn" style="display:none;">Start</button>
+        <button class="btn-primary sticky-cta" id="player-complete-set-btn">Mark Set Complete ✓</button>
+      </section>
+
+      <!-- ---------- EXERCISE VIDEO OVERLAY (pops up over the player without pausing it) ---------- -->
+      <div class="exercise-video-overlay" id="exercise-video-overlay">
+        <div class="exercise-video-card">
+          <button class="player-exit" id="exercise-video-close-btn">✕</button>
+          <div class="player-video">
+            <div class="player-video-play">▶</div>
+            <p class="player-video-label">Demo Video Placeholder</p>
+          </div>
+          <p class="exercise-video-name" id="exercise-video-name">Exercise Name</p>
+        </div>
+      </div>
+
+      <!-- ---------- WORKOUT COMPLETE ---------- -->
+      <section class="screen" id="screen-workout" data-screen>
+        <header class="detail-header">
+          <button class="back-btn" data-back="tab-home">✕</button>
+          <span class="detail-tag">Complete</span>
+        </header>
+        <div class="workout-complete">
+          <div class="complete-badge">✔</div>
+          <h1>Nice work!</h1>
+          <p id="workout-complete-text">You crushed the workout.</p>
+          <div class="today-stats-row" id="workout-complete-stats"></div>
+          <div class="benchmark-score-section" id="benchmark-score-section" style="display:none;">
+            <p class="benchmark-score-label" id="benchmark-score-label">How many rounds did you complete?</p>
+            <div class="benchmark-score-input-row" id="benchmark-score-rounds-row">
+              <input type="number" id="benchmark-score-rounds" min="0" placeholder="Rounds" />
+            </div>
+            <div class="benchmark-score-input-row" id="benchmark-score-time-row" style="display:none;">
+              <input type="number" id="benchmark-score-min" min="0" placeholder="Min" />
+              <span class="benchmark-score-colon">:</span>
+              <input type="number" id="benchmark-score-sec" min="0" max="59.9" step="0.1" placeholder="Sec" />
+            </div>
+            <button class="btn-primary small" id="benchmark-score-save-btn">Save Score</button>
+            <p class="benchmark-score-saved" id="benchmark-score-saved" style="display:none;">✓ Score saved — check Progress to see your history.</p>
+          </div>
+          <div class="rpe-section">
+            <label class="rpe-label" for="rpe-slider">How hard did that feel? <span id="rpe-value">5</span>/10</label>
+            <input type="range" id="rpe-slider" class="rpe-slider" min="1" max="10" step="1" value="5" />
+            <div class="rpe-scale-labels"><span>Easy</span><span>Max Effort</span></div>
+          </div>
+          <button class="btn-primary" data-back="tab-progress">View Progress</button>
+        </div>
+      </section>
+
+      <!-- ---------- LIVE SESSION ---------- -->
+      <section class="screen live-screen" id="screen-live" data-screen>
+        <header class="detail-header">
+          <button class="back-btn" data-back="tab-home">✕</button>
+          <span class="detail-tag live-badge-tag">🔴 LIVE</span>
+        </header>
+        <div class="live-video" id="live-video">
+          <p class="live-video-label" id="live-video-title">Live Q&amp;A with Coach Chris</p>
+          <p class="live-video-host" id="live-video-host">with Chris V.</p>
+        </div>
+        <div class="live-chat-messages" id="live-chat-messages"></div>
+        <form class="thread-composer" id="live-chat-composer">
+          <input type="text" id="live-chat-input" placeholder="Say something…" autocomplete="off" />
+          <button type="submit" class="thread-send-btn">➤</button>
+        </form>
+      </section>
+
+      <!-- ---------- MESSAGES INBOX ---------- -->
+      <section class="screen" id="screen-messages" data-screen>
+        <header class="detail-header">
+          <button class="back-btn" data-back="tab-home">←</button>
+          <span class="detail-tag">Messages</span>
+        </header>
+        <div class="conversation-list" id="conversation-list"></div>
+      </section>
+
+      <!-- ---------- MESSAGE THREAD ---------- -->
+      <section class="screen thread-screen" id="screen-thread" data-screen>
+        <header class="detail-header">
+          <button class="back-btn" id="thread-back-btn">←</button>
+          <span class="detail-tag" id="thread-title">Conversation</span>
+        </header>
+        <div class="thread-messages" id="thread-messages"></div>
+        <form class="thread-composer" id="thread-composer">
+          <input type="text" id="thread-input" placeholder="Message…" autocomplete="off" />
+          <button type="submit" class="thread-send-btn">➤</button>
+        </form>
+      </section>
+
+      <!-- ---------- COMMUNITY ---------- -->
+      <section class="screen tab-screen" id="tab-community" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Burn Club</p>
+            <h1 class="topbar-title">Community</h1>
+          </div>
+          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+        </header>
+
+        <div id="challenge-card"></div>
+
+        <h2 class="section-title">Activity Feed</h2>
+        <div class="mini-feed" id="community-feed"></div>
+      </section>
+
+      <!-- ---------- PROGRESS ---------- -->
+      <section class="screen tab-screen" id="tab-progress" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Your stats</p>
+            <h1 class="topbar-title">Progress</h1>
+          </div>
+          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+        </header>
+
+        <div class="range-toggle" id="progress-range-toggle">
+          <button class="range-btn active" data-range="week">Week</button>
+          <button class="range-btn" data-range="month">Month</button>
+          <button class="range-btn" data-range="year">Year</button>
+        </div>
+
+        <div class="streak-banner">
+          <div class="streak-flame">🔥</div>
+          <div>
+            <p class="streak-num" id="progress-streak-num">0 Day Streak</p>
+            <p class="streak-sub" id="progress-streak-sub">Complete a workout today to start a streak</p>
+          </div>
+        </div>
+
+        <div class="stat-cards stat-cards-grid">
+          <div class="stat-card">
+            <p class="stat-num" id="stat-workouts">0</p>
+            <p class="stat-label">Workouts Done</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-num" id="stat-stretch">0</p>
+            <p class="stat-label">Stretch Sessions</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-num" id="stat-core-burn">0</p>
+            <p class="stat-label">Core-Burn Sessions</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-num" id="stat-minutes">0</p>
+            <p class="stat-label">Burn Minutes</p>
+          </div>
+          <div class="stat-card" id="stat-calories-card" style="display:none;">
+            <p class="stat-num" id="stat-calories">0</p>
+            <p class="stat-label">Calories Burned</p>
+          </div>
+        </div>
+
+        <div id="progress-calendar-section"></div>
+
+        <h2 class="section-title">Benchmarks</h2>
+        <div class="benchmark-list" id="benchmark-list"></div>
+
+        <div class="motivation-card" id="progress-motivation">
+          <p>"Every drop counts." — keep sweating, you're building something real. 🔥</p>
+        </div>
+      </section>
+
+      <!-- ---------- PROFILE ---------- -->
+      <section class="screen tab-screen" id="tab-profile" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Account</p>
+            <h1 class="topbar-title">Profile</h1>
+          </div>
+          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+        </header>
+
+        <div class="profile-card">
+          <img class="avatar-lg" src="assets/burn-club-logo.png" alt="" />
+          <h2 id="profile-name">Chris</h2>
+          <span class="badge" id="profile-badge">Founding Member</span>
+        </div>
+
+        <div class="profile-info-list">
+          <div class="profile-info-row"><span>Email</span><span id="profile-email"></span></div>
+          <div class="profile-info-row"><span>Program</span><span id="profile-program"></span></div>
+          <div class="profile-info-row"><span>Member Since</span><span id="profile-member-since"></span></div>
+        </div>
+
+        <h2 class="section-title">Connected Devices</h2>
+        <div class="wearable-section" id="wearable-section"></div>
+
+        <h2 class="section-title">Daily Habits</h2>
+        <div id="habit-manager"></div>
+
+        <div class="settings-list">
+          <button class="settings-row"><span>Membership &amp; Billing</span><span>›</span></button>
+          <button class="settings-row"><span>Notifications</span><span>›</span></button>
+          <button class="settings-row"><span>My Progress History</span><span>›</span></button>
+          <button class="settings-row"><span>Invite a Friend</span><span>›</span></button>
+          <button class="settings-row"><span>Help &amp; Support</span><span>›</span></button>
+          <button class="settings-row danger" id="logout-btn"><span>Log Out</span><span>›</span></button>
+        </div>
+      </section>
+
+      <!-- ---------- BOTTOM NAV ---------- -->
+      <nav class="bottom-nav" id="bottom-nav">
+        <button class="nav-btn active" data-tab-target="tab-home">
+          <span class="nav-icon">🏠</span><span>Home</span>
+        </button>
+        <button class="nav-btn" data-tab-target="tab-circuits" id="nav-workouts-btn">
+          <span class="nav-icon">💧</span><span>Workouts</span>
+        </button>
+        <button class="nav-btn" data-tab-target="tab-calendar" id="nav-calendar-btn" style="display:none;">
+          <span class="nav-icon">📅</span><span>Calendar</span>
+        </button>
+        <button class="nav-btn" data-tab-target="tab-community">
+          <span class="nav-icon">👥</span><span>Community</span>
+        </button>
+        <button class="nav-btn" data-tab-target="tab-progress">
+          <span class="nav-icon">📈</span><span>Progress</span>
+        </button>
+        <button class="nav-btn" data-tab-target="tab-profile">
+          <span class="nav-icon">🙂</span><span>Profile</span>
+        </button>
+      </nav>
+
+    </div><!-- /main-app -->
+  </div><!-- /app -->
+</div><!-- /phone-frame -->
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

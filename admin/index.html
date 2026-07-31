@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Burn Club — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div class="admin-login" id="admin-login">
+  <div class="admin-login-card">
+    <img src="assets/burn-club-logo.png" alt="Burn Club" />
+    <h1>Burn Club <span>Admin</span></h1>
+    <form id="admin-login-form">
+      <label class="field">
+        <span>Email</span>
+        <input type="email" placeholder="staff@burnclub.com" />
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input type="password" placeholder="••••••••" />
+      </label>
+      <button type="submit" class="btn-primary">Log In</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ SHELL ============ -->
+<div class="shell" id="shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="assets/burn-club-logo.png" alt="" />
+      <span>Burn Club<br /><small>Admin</small></span>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="side-link active" data-view="view-dashboard">📊 Dashboard</button>
+      <button class="side-link" data-view="view-programs">🗂 Programs</button>
+      <button class="side-link" data-view="view-exercises">🏋️ Exercises</button>
+      <button class="side-link" data-view="view-circuits">💧 Workouts</button>
+      <button class="side-link" data-view="view-members">👤 Members</button>
+      <button class="side-link" data-view="view-challenges">🏆 Challenges</button>
+      <button class="side-link" data-view="view-community">👥 Community</button>
+      <button class="side-link" data-view="view-messages">💬 Messages<span class="side-unread-badge" id="side-unread-badge" style="display:none;"></span></button>
+    </nav>
+    <button class="sidebar-logout" id="admin-logout-btn">Log Out</button>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- ---------- DASHBOARD ---------- -->
+    <section class="view" id="view-dashboard" data-view-section>
+      <header class="view-header">
+        <div>
+          <p class="eyebrow">Overview</p>
+          <h1>Dashboard</h1>
+        </div>
+      </header>
+
+      <div class="stat-grid">
+        <div class="admin-stat-card">
+          <p class="admin-stat-num" id="stat-total-members"></p>
+          <p class="admin-stat-label">Total Members</p>
+        </div>
+        <div class="admin-stat-card">
+          <p class="admin-stat-num" id="stat-active-pct"></p>
+          <p class="admin-stat-label">Active This Week</p>
+        </div>
+        <div class="admin-stat-card">
+          <p class="admin-stat-num" id="stat-completion-pct"></p>
+          <p class="admin-stat-label">Avg Completion Rate</p>
+        </div>
+        <div class="admin-stat-card">
+          <p class="admin-stat-num" id="stat-avg-streak"></p>
+          <p class="admin-stat-label">Avg Streak (days)</p>
+        </div>
+      </div>
+
+      <div class="dashboard-row">
+        <div class="panel">
+          <h2>Weekly Completions</h2>
+          <div class="bar-chart" id="bar-chart"></div>
+        </div>
+        <div class="panel">
+          <h2>Top Workouts</h2>
+          <div class="top-circuits-list" id="top-circuits-list"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Recent Activity</h2>
+        <div class="activity-feed-list" id="activity-feed-list"></div>
+      </div>
+    </section>
+
+    <!-- ---------- PROGRAMS ---------- -->
+    <section class="view" id="view-programs" data-view-section>
+      <header class="view-header">
+        <div>
+          <p class="eyebrow">Offerings</p>
+          <h1>Programs</h1>
+        </div>
+        <button class="btn-primary" id="new-program-btn">+ New Program</button>
+      </header>
+      <div class="program-grid" id="program-grid"></div>
+    </section>
+
+    <!-- ---------- SCHEDULE (structured programs) ---------- -->
+    <section class="view" id="view-schedule" data-view-section>
+      <header class="view-header">
+        <div>
+          <button class="folder-back-btn" id="schedule-back-btn">← Programs</button>
+          <h1 id="schedule-title">Schedule</h1>
+          <p class="eyebrow" id="schedule-subtitle"></p>
+        </div>
+      </header>
+      <div class="schedule-weeks" id="schedule-weeks"></div>
+    </section>
+
+    <!-- ---------- NEW PROGRAM MODAL ---------- -->
+    <div class="builder-overlay" id="program-modal-overlay">
+      <div class="builder-panel small">
+        <header class="builder-header">
+          <h2>New Program</h2>
+          <button class="player-exit" id="program-modal-close-btn">✕</button>
+        </header>
+        <div class="builder-body">
+          <label class="modal-field">Program name
+            <input type="text" id="program-modal-name" placeholder="e.g. Mobility Reset" />
+          </label>
+          <label class="modal-field">Description
+            <textarea id="program-modal-desc" rows="3" placeholder="Short description shown on the program card"></textarea>
+          </label>
+          <label class="modal-field">Workouts per week
+            <input type="number" id="program-modal-per-week" min="1" max="14" value="3" />
+          </label>
+          <div class="modal-field">
+            <span class="modal-field-label">Status</span>
+            <div class="tag-checkbox-row" id="program-modal-status"></div>
+          </div>
+          <p class="modal-desc">This will also set up its three live workout folders automatically.</p>
+        </div>
+        <footer class="builder-footer">
+          <span></span>
+          <div>
+            <button class="btn-ghost-lg" id="program-modal-cancel-btn">Cancel</button>
+            <button class="btn-primary" id="program-modal-save-btn">Create Program</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ---------- EXERCISE LIBRARY ---------- -->
+    <section class="view" id="view-exercises" data-view-section>
+      <header class="view-header">
+        <div>
+          <p class="eyebrow">Master List</p>
+          <h1>Exercises</h1>
+        </div>
+        <button class="btn-primary" id="new-exercise-btn">+ Add Exercise</button>
+      </header>
+
+      <div class="filter-row">
+        <input type="text" class="search-input" id="exercise-search" placeholder="Search exercises..." />
+      </div>
+      <div class="filter-row" id="exercise-category-filters"></div>
+
+      <div class="exercise-grid" id="exercise-grid"></div>
+    </section>
+
+    <!-- ---------- EXERCISE EDITOR MODAL ---------- -->
+    <div class="builder-overlay" id="exercise-modal-overlay">
+      <div class="builder-panel">
+        <header class="builder-header">
+          <h2 id="exercise-modal-title">Add Exercise</h2>
+          <button class="player-exit" id="exercise-modal-close-btn">✕</button>
+        </header>
+        <div class="builder-body">
+          <label class="modal-field">Name
+            <input type="text" id="exercise-modal-name" placeholder="e.g. Bulgarian Split Squats" />
+          </label>
+          <label class="modal-field">Video URL <span class="modal-field-hint">(optional — playback coming later)</span>
+            <input type="text" id="exercise-modal-video" placeholder="Paste a video link" />
+          </label>
+          <label class="modal-field">Technique
+            <textarea id="exercise-modal-technique" rows="3" placeholder="How to perform this exercise safely and effectively"></textarea>
+          </label>
+          <div class="modal-field">
+            <span class="modal-field-label">Body Part</span>
+            <div class="tag-checkbox-row" id="exercise-modal-bodyparts"></div>
+          </div>
+          <div class="modal-field">
+            <span class="modal-field-label">Strength or Cardio</span>
+            <div class="tag-checkbox-row" id="exercise-modal-modality"></div>
+          </div>
+          <div class="modal-field">
+            <span class="modal-field-label">Equipment</span>
+            <div class="tag-checkbox-row" id="exercise-modal-equipment"></div>
+          </div>
+        </div>
+        <footer class="builder-footer">
+          <span></span>
+          <div>
+            <button class="btn-ghost-lg" id="exercise-modal-cancel-btn">Cancel</button>
+            <button class="btn-primary" id="exercise-modal-save-btn">Save Exercise</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ---------- EXERCISE PICKER (used inside circuit builder) ---------- -->
+    <!-- ---------- CIRCUITS ---------- -->
+    <section class="view" id="view-circuits" data-view-section>
+      <!-- ---------- FOLDER GRID ---------- -->
+      <div id="folder-grid-view">
+        <header class="view-header">
+          <div>
+            <p class="eyebrow">Content</p>
+            <h1>Workouts</h1>
+          </div>
+          <button class="btn-primary" id="new-folder-btn">+ New Folder</button>
+        </header>
+
+        <div class="circuits-layout">
+          <div class="program-side-list" id="program-side-list"></div>
+          <div class="folder-pane">
+            <h2 class="folder-pane-title" id="folder-pane-title"></h2>
+            <div class="folder-grid" id="folder-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---------- FOLDER DETAIL ---------- -->
+      <div id="folder-detail-view" style="display:none;">
+        <button class="folder-back-btn" id="folder-back-btn">← All Folders</button>
+        <header class="view-header">
+          <div>
+            <p class="eyebrow" id="folder-detail-badge">Program</p>
+            <div class="folder-detail-title-row">
+              <h1 id="folder-detail-title">Folder</h1>
+              <button class="folder-detail-edit-btn" id="folder-detail-edit-btn" title="Rename folder" style="display:none;">✎</button>
+            </div>
+          </div>
+          <button class="btn-primary" id="new-circuit-btn">+ New Workout</button>
+        </header>
+
+        <div class="bulk-bar" id="circuit-bulk-bar">
+          <span id="circuit-bulk-count">0 selected</span>
+          <div class="bulk-bar-actions">
+            <button class="btn-ghost-lg small" id="bulk-copy-btn">Copy to Folder</button>
+            <button class="btn-ghost-lg small" id="bulk-move-btn">Move to Folder</button>
+            <button class="btn-ghost-lg small btn-danger" id="bulk-delete-btn">Delete</button>
+          </div>
+        </div>
+
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="circuit-select-all" /></th>
+              <th>Workout</th>
+              <th>Folder</th>
+              <th>Blocks</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="circuit-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ---------- NEW / RENAME FOLDER (overlay) ---------- -->
+    <div class="builder-overlay" id="folder-modal-overlay">
+      <div class="builder-panel small">
+        <header class="builder-header">
+          <h2 id="folder-modal-title">New Folder</h2>
+          <button class="player-exit" id="folder-modal-close-btn">✕</button>
+        </header>
+        <div class="builder-body">
+          <label class="modal-field">Folder name
+            <input type="text" id="folder-modal-name" placeholder="e.g. Week of Aug 3" />
+          </label>
+          <label class="modal-field">Program
+            <select id="folder-modal-program">
+              <option value="">General (Unassigned)</option>
+            </select>
+          </label>
+        </div>
+        <footer class="builder-footer">
+          <span></span>
+          <div>
+            <button class="btn-ghost-lg" id="folder-modal-cancel-btn">Cancel</button>
+            <button class="btn-primary" id="folder-modal-save-btn">Create Folder</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ---------- COPY/MOVE TO FOLDER (overlay) ---------- -->
+    <div class="builder-overlay" id="target-folder-modal-overlay">
+      <div class="builder-panel small">
+        <header class="builder-header">
+          <h2 id="target-folder-modal-title">Copy to Folder</h2>
+          <button class="player-exit" id="target-folder-modal-close-btn">✕</button>
+        </header>
+        <div class="builder-body">
+          <p id="target-folder-modal-desc" class="modal-desc"></p>
+          <label class="modal-field">Destination folder
+            <select id="target-folder-modal-select"></select>
+          </label>
+        </div>
+        <footer class="builder-footer">
+          <span></span>
+          <div>
+            <button class="btn-ghost-lg" id="target-folder-modal-cancel-btn">Cancel</button>
+            <button class="btn-primary" id="target-folder-modal-confirm-btn">Copy</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ---------- CIRCUIT BUILDER (overlay) ---------- -->
+    <div class="builder-overlay" id="builder-overlay">
+      <div class="builder-panel builder-panel-wide">
+        <header class="builder-header">
+          <h2 id="builder-heading">New Workout</h2>
+          <button class="player-exit" id="builder-close-btn">✕</button>
+        </header>
+
+        <div class="builder-content">
+          <div class="builder-body">
+            <p class="builder-hint" id="builder-folder-label">Adding to: —</p>
+            <div class="builder-meta-grid">
+              <label>Title
+                <input type="text" id="builder-title" placeholder="e.g. Full Body Burn" />
+              </label>
+              <label>Tag
+                <input type="text" id="builder-tag" placeholder="e.g. New, Cardio, Core" />
+              </label>
+              <label>Type
+                <select id="builder-category">
+                  <option value="circuit" selected>Circuit</option>
+                  <option value="stretch">Stretching</option>
+                  <option value="core-burn">Ab & Core Burn</option>
+                </select>
+              </label>
+              <label>Focus
+                <input type="text" id="builder-focus" placeholder="e.g. Full Body" />
+              </label>
+              <label>Difficulty
+                <select id="builder-difficulty">
+                  <option>Beginner</option>
+                  <option selected>Intermediate</option>
+                  <option>Advanced</option>
+                  <option>All Levels</option>
+                </select>
+              </label>
+            </div>
+            <label class="builder-desc-label">Description
+              <textarea id="builder-desc" rows="2" placeholder="Short description shown to members"></textarea>
+            </label>
+
+            <label class="tag-checkbox">
+              <input type="checkbox" id="builder-is-benchmark" />
+              This is a Benchmark (retest workout — scores get tracked over time)
+            </label>
+            <label class="builder-desc-label" id="builder-benchmark-select-wrap" style="display:none;">Which benchmark?
+              <select id="builder-benchmark-select"></select>
+            </label>
+
+            <div class="builder-blocks-header">
+              <h3>Exercises</h3>
+              <button class="btn-ghost-lg small" data-action="add-new-item">+ Add Exercise</button>
+            </div>
+            <p class="builder-hint">Each exercise starts as its own straight set. Check 2 or more to combine them into a superset, timed circuit, AMRAP, or EMOM.</p>
+            <div class="combine-bar" id="combine-bar">
+              <span id="combine-bar-count">2 selected</span>
+              <div class="combine-bar-actions">
+                <button class="btn-ghost-lg small" data-action="combine" data-target-type="superset">→ Superset</button>
+                <button class="btn-ghost-lg small" data-action="combine" data-target-type="interval">→ Timed Circuit</button>
+                <button class="btn-ghost-lg small" data-action="combine" data-target-type="amrap">→ AMRAP</button>
+                <button class="btn-ghost-lg small" data-action="combine" data-target-type="emom">→ EMOM</button>
+              </div>
+            </div>
+            <div class="builder-blocks" id="builder-blocks"></div>
+          </div>
+
+          <aside class="builder-library">
+            <h3 class="builder-library-title">Exercise Library</h3>
+            <input type="text" class="search-input" id="builder-library-search" placeholder="Search exercises..." />
+            <div class="filter-row" id="builder-library-filters"></div>
+            <p class="builder-hint" id="builder-library-hint"></p>
+            <div class="builder-library-list" id="builder-library-list"></div>
+          </aside>
+        </div>
+
+        <footer class="builder-footer">
+          <span class="builder-est" id="builder-est"></span>
+          <div>
+            <button class="btn-ghost-lg" id="builder-cancel-btn">Cancel</button>
+            <button class="btn-primary" id="builder-save-btn">Save Workout</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ---------- COMMUNITY ---------- -->
+    <!-- ---------- MEMBERS ---------- -->
+    <section class="view" id="view-members" data-view-section>
+      <header class="view-header">
+        <div>
+          <p class="eyebrow">Clients</p>
+          <h1>Members</h1>
+        </div>
+        <button class="btn-primary" id="new-member-btn">+ Add Member</button>
+      </header>
+
+      <div class="filter-row">
+        <button class="pill-filter active" data-action="member-status-filter" data-status="all">All</button>
+        <button class="pill-filter" data-action="member-status-filter" data-status="active">Active</button>
+        <button class="pill-filter" data-action="member-status-filter" data-status="inactive">Inactive</button>
+        <select id="member-program-filter">
+          <option value="all">All Programs</option>
+        </select>
+      </div>
+
+      <div class="bulk-bar" id="member-bulk-bar">
+        <span id="member-bulk-count">0 selected</span>
+        <div class="bulk-bar-actions">
+          <button class="btn-ghost-lg small" id="member-bulk-clear-btn">Clear Selection</button>
+        </div>
+      </div>
+
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="member-select-all" /></th>
+            <th>Name</th>
+            <th>Program</th>
+            <th>Status</th>
+            <th>Member Since</th>
+            <th>Streak</th>
+          </tr>
+        </thead>
+        <tbody id="member-table-body"></tbody>
+      </table>
+    </section>
+
+    <!-- ---------- MEMBER DETAIL (overlay) ---------- -->
+    <div class="builder-overlay" id="member-modal-overlay">
+      <div class="builder-panel">
+        <header class="builder-header">
+          <h2 id="member-modal-title">Member Details</h2>
+          <button class="player-exit" id="member-modal-close-btn">✕</button>
+        </header>
+        <div class="builder-body">
+          <div class="field-group visible-group">
+            <p class="field-group-title">👁 Visible to Member</p>
+            <label class="modal-field">Name
+              <input type="text" id="member-modal-name" placeholder="e.g. Jordan P." />
+            </label>
+            <label class="modal-field">Email
+              <input type="text" id="member-modal-email" placeholder="e.g. jordan.p@example.com" />
+            </label>
+            <label class="modal-field">Program
+              <select id="member-modal-program"></select>
+            </label>
+            <label class="modal-field">Member Since
+              <input type="text" id="member-modal-member-since" placeholder="e.g. Jul 2026" />
+            </label>
+            <label class="modal-field">Membership Badge
+              <input type="text" id="member-modal-badge" placeholder="e.g. Founding Member (optional)" />
+            </label>
+            <div class="modal-field">
+              <span class="modal-field-label">Daily Habits <span class="modal-field-hint">(set by the member — view only)</span></span>
+              <p class="modal-readonly-value" id="member-modal-habits"></p>
+            </div>
+          </div>
+
+          <div class="field-group staff-group">
+            <p class="field-group-title">🔒 Staff Only</p>
+            <label class="modal-field" id="member-modal-startdate-wrap" style="display:none;">Program Start Date <span class="modal-field-hint">(required for structured programs — anchors their Day 1)</span>
+              <input type="date" id="member-modal-start-date" />
+            </label>
+            <div class="modal-field">
+              <span class="modal-field-label">Status</span>
+              <div class="tag-checkbox-row" id="member-modal-status"></div>
+            </div>
+            <label class="modal-field">Internal Notes
+              <textarea id="member-modal-notes" rows="3" placeholder="Private notes — never shown to the member"></textarea>
+            </label>
+          </div>
+        </div>
+        <footer class="builder-footer">
+          <span></span>
+          <div>
+            <button class="btn-ghost-lg" id="member-modal-cancel-btn">Cancel</button>
+            <button class="btn-primary" id="member-modal-save-btn">Save Member</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ---------- CHALLENGES ---------- -->
+    <section class="view" id="view-challenges" data-view-section>
+      <div id="challenge-grid-view">
+        <header class="view-header">
+          <div>
+            <p class="eyebrow">Point Challenges</p>
+            <h1>Challenges</h1>
+          </div>
+          <button class="btn-primary" id="new-challenge-btn">+ New Challenge</button>
+        </header>
+        <div class="program-grid" id="challenge-grid"></div>
+      </div>
+
+      <!-- ---------- CHALLENGE DETAIL (standings) ---------- -->
+      <div id="challenge-detail-view" style="display:none;">
+        <button class="folder-back-btn" id="challenge-back-btn">← All Challenges</button>
+        <header class="view-header">
+          <div>
+            <p class="eyebrow" id="challenge-detail-program">Program</p>
+            <h1 id="challenge-detail-title">Challenge</h1>
+            <p class="challenge-detail-meta" id="challenge-detail-meta"></p>
+          </div>
+          <button class="btn-ghost-lg" id="challenge-edit-btn">Edit Challenge</button>
+        </header>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Member</th>
+              <th>Points</th>
+              <th>Status</th>
+              <th>Adjust</th>
+            </tr>
+          </thead>
+          <tbody id="challenge-standings-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ---------- NEW/EDIT CHALLENGE MODAL ---------- -->
+    <div class="builder-overlay" id="challenge-modal-overlay">
+      <div class="builder-panel small">
+        <header class="builder-header">
+          <h2 id="challenge-modal-title">New Challenge</h2>
+          <button class="player-exit" id="challenge-modal-close-btn">✕</button>
+        </header>
+        <div class="builder-body">
+          <label class="modal-field">Challenge name
+            <input type="text" id="challenge-modal-name" placeholder="e.g. Summer Sweat Challenge" />
+          </label>
+          <label class="modal-field">Program
+            <select id="challenge-modal-program">
+              <option value="all">All Programs</option>
+            </select>
+          </label>
+          <label class="modal-field">Start date
+            <input type="date" id="challenge-modal-start" />
+          </label>
+          <label class="modal-field">End date
+            <input type="date" id="challenge-modal-end" />
+          </label>
+          <label class="modal-field">Points per completed workout
+            <input type="number" id="challenge-modal-points" min="1" value="5" />
+          </label>
+          <label class="modal-field">Threshold to win
+            <input type="number" id="challenge-modal-threshold" min="1" value="200" />
+          </label>
+          <label class="modal-field">Reward
+            <input type="text" id="challenge-modal-reward" placeholder="e.g. Entered to win free merch" />
+          </label>
+          <p class="modal-desc">Anyone whose points reach the threshold qualifies — this isn't a first-place-only race.</p>
+        </div>
+        <footer class="builder-footer">
+          <span></span>
+          <div>
+            <button class="btn-ghost-lg" id="challenge-modal-cancel-btn">Cancel</button>
+            <button class="btn-primary" id="challenge-modal-save-btn">Save Challenge</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <section class="view" id="view-community" data-view-section>
+      <header class="view-header">
+        <div>
+          <p class="eyebrow">Moderation</p>
+          <h1>Community</h1>
+        </div>
+      </header>
+
+      <div class="filter-row">
+        <button class="pill-filter active" data-post-filter="all">All Posts</button>
+        <button class="pill-filter" data-post-filter="flagged">Flagged</button>
+        <button class="pill-filter" data-post-filter="featured">Featured</button>
+      </div>
+
+      <div class="post-table" id="post-table"></div>
+    </section>
+
+    <!-- ---------- MESSAGES ---------- -->
+    <section class="view" id="view-messages" data-view-section>
+      <header class="view-header">
+        <div>
+          <p class="eyebrow">Inbox</p>
+          <h1>Messages</h1>
+        </div>
+      </header>
+
+      <div class="messages-layout">
+        <div class="admin-conversation-list" id="admin-conversation-list"></div>
+        <div class="admin-thread-pane" id="admin-thread-pane">
+          <div class="admin-thread-empty" id="admin-thread-empty">Select a conversation to view messages.</div>
+          <div class="admin-thread-active" id="admin-thread-active" style="display:none;">
+            <header class="admin-thread-header">
+              <h2 id="admin-thread-title">Conversation</h2>
+            </header>
+            <div class="admin-thread-messages" id="admin-thread-messages"></div>
+            <form class="thread-composer" id="admin-thread-composer">
+              <input type="text" id="admin-thread-input" placeholder="Reply…" autocomplete="off" />
+              <button type="submit" class="btn-primary small">Send</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
