@@ -91,6 +91,21 @@
         <div class="circuit-list-compact" id="last-week-list"></div>
       </section>
 
+      <!-- ---------- EXERCISE LIBRARY ---------- -->
+      <section class="screen tab-screen" id="tab-library" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Browse &amp; build your own</p>
+            <h1 class="topbar-title">Exercise Library</h1>
+          </div>
+          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+        </header>
+        <input type="text" class="search-input" id="library-search" placeholder="Search exercises…" autocomplete="off" />
+        <div class="pill-filter-row" id="library-bodypart-filters"></div>
+        <div class="pill-filter-row" id="library-equipment-filters"></div>
+        <div class="exercise-library-list" id="library-exercise-list"></div>
+      </section>
+
       <!-- ---------- CALENDAR (structured programs) ---------- -->
       <section class="screen tab-screen" id="tab-calendar" data-tab>
         <header class="topbar">
@@ -370,6 +385,9 @@
         </button>
         <button class="nav-btn" data-tab-target="tab-calendar" id="nav-calendar-btn" style="display:none;">
           <span class="nav-icon">📅</span><span>Calendar</span>
+        </button>
+        <button class="nav-btn" data-tab-target="tab-library">
+          <span class="nav-icon">🏋️</span><span>Exercises</span>
         </button>
         <button class="nav-btn" data-tab-target="tab-community">
           <span class="nav-icon">👥</span><span>Community</span>

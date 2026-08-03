@@ -752,6 +752,7 @@ function showTab(tabId) {
   if (tabId === "tab-community") renderChallengeCard();
   if (tabId === "tab-home" || tabId === "tab-circuits") renderCircuitLists();
   if (tabId === "tab-calendar") renderCalendarTab();
+  if (tabId === "tab-library") renderExerciseLibraryTab();
 
   document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"));
   const navBtn = document.querySelector(`.nav-btn[data-tab-target="${tabId}"]`);
@@ -1472,6 +1473,58 @@ function renderCalendarTab() {
   });
 }
 
+// ---------------- Exercise Library ----------------
+// A standalone browse/search/filter view over EXERCISE_LIBRARY — deliberately
+// not wired into stats, streaks, challenges, or completions. It doesn't
+// represent a "workout" being done, just reference material.
+
+let libraryQuery = "";
+let libraryBodyPart = "All";
+let libraryEquipment = "All";
+
+function renderLibraryFilters() {
+  const bodyPartCats = ["All", ...BODY_PART_TAGS];
+  document.getElementById("library-bodypart-filters").innerHTML = bodyPartCats
+    .map((c) => `<button class="pill-filter ${c === libraryBodyPart ? "active" : ""}" data-filter-group="bodypart" data-filter-value="${c}">${c}</button>`)
+    .join("");
+
+  const equipmentCats = ["All", ...EQUIPMENT_TAGS];
+  document.getElementById("library-equipment-filters").innerHTML = equipmentCats
+    .map((c) => `<button class="pill-filter ${c === libraryEquipment ? "active" : ""}" data-filter-group="equipment" data-filter-value="${c}">${c}</button>`)
+    .join("");
+}
+
+function renderExerciseLibraryTab() {
+  renderLibraryFilters();
+
+  const query = libraryQuery.trim().toLowerCase();
+  const filtered = EXERCISE_LIBRARY.filter((ex) => {
+    if (libraryBodyPart !== "All" && !ex.bodyParts.includes(libraryBodyPart)) return false;
+    if (libraryEquipment !== "All" && !ex.equipment.includes(libraryEquipment)) return false;
+    if (query && !ex.name.toLowerCase().includes(query)) return false;
+    return true;
+  });
+
+  document.getElementById("library-exercise-list").innerHTML = filtered.map((ex) => `
+    <button class="exercise-lib-card" data-toggle-exercise="${ex.id}">
+      <div class="exercise-lib-card-top">
+        <p class="exercise-lib-name">${ex.name}</p>
+        <span class="exercise-lib-caret">⌄</span>
+      </div>
+      <div class="exercise-lib-tags">
+        ${ex.bodyParts.map((bp) => `<span class="status-pill">${bp}</span>`).join("")}
+        <span class="status-pill">${ex.modality}</span>
+      </div>
+      <p class="exercise-lib-equipment">${ex.equipment.join(", ") || "No equipment"}</p>
+      <p class="exercise-lib-technique">${ex.technique}</p>
+    </button>
+  `).join("") || `<p class="section-subtitle">No exercises match your filters.</p>`;
+
+  document.querySelectorAll("#library-exercise-list [data-toggle-exercise]").forEach((card) => {
+    card.addEventListener("click", () => card.classList.toggle("expanded"));
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   init();
 
@@ -1553,6 +1606,23 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("round-minus-btn").addEventListener("click", () => {
     Player.amrapRounds = Math.max(0, Player.amrapRounds - 1);
     document.getElementById("round-count").textContent = Player.amrapRounds;
+  });
+
+  document.getElementById("library-search").addEventListener("input", (e) => {
+    libraryQuery = e.target.value;
+    renderExerciseLibraryTab();
+  });
+  document.getElementById("library-bodypart-filters").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-filter-value]");
+    if (!btn) return;
+    libraryBodyPart = btn.dataset.filterValue;
+    renderExerciseLibraryTab();
+  });
+  document.getElementById("library-equipment-filters").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-filter-value]");
+    if (!btn) return;
+    libraryEquipment = btn.dataset.filterValue;
+    renderExerciseLibraryTab();
   });
 
   document.getElementById("logout-btn").addEventListener("click", () => {

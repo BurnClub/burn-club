@@ -8,6 +8,38 @@
 //   amrap     — as many rounds as possible of an exercise list within a time cap
 //   emom      — every-minute-on-the-minute, rotating through an exercise list
 
+// ---------------- Exercise Library ----------------
+// Mirrors admin's EXERCISE_LIBRARY (same ids/names/tags) so members browsing
+// here see the same exercises admin builds workouts from. Kept as its own
+// duplicated seed, same as CIRCUITS — no shared backend between the apps.
+const BODY_PART_TAGS = ["Full Body", "Upper Body", "Lower Body", "Core"];
+const EQUIPMENT_TAGS = ["Bodyweight", "Dumbbells", "Kettlebell", "Barbell", "Resistance Band", "Bench", "Box/Step", "Battle Ropes", "Pull-up Bar"];
+
+const EXERCISE_LIBRARY = [
+  { id: "jump-squats", name: "Jump Squats", bodyParts: ["Lower Body"], modality: "Strength", equipment: ["Bodyweight"], technique: "Squat down, then explode upward into a jump, landing softly with bent knees to absorb impact.", videoUrl: "" },
+  { id: "push-ups", name: "Push-Ups", bodyParts: ["Upper Body"], modality: "Strength", equipment: ["Bodyweight"], technique: "Hands under shoulders, body in a straight line from head to heels. Lower chest to the floor, then press back up.", videoUrl: "" },
+  { id: "mountain-climbers", name: "Mountain Climbers", bodyParts: ["Full Body"], modality: "Cardio", equipment: ["Bodyweight"], technique: "From a high plank, drive knees toward the chest one at a time at a quick, controlled pace. Keep hips level.", videoUrl: "" },
+  { id: "plank-hold", name: "Plank Hold", bodyParts: ["Core"], modality: "Strength", equipment: ["Bodyweight"], technique: "Forearms and toes on the floor, body in a straight line. Brace the core and avoid letting the hips sag or pike.", videoUrl: "" },
+  { id: "burpees", name: "Burpees", bodyParts: ["Full Body"], modality: "Cardio", equipment: ["Bodyweight"], technique: "Drop into a squat, kick back to a plank, do a push-up, jump the feet back in, then explode up into a jump.", videoUrl: "" },
+  { id: "kettlebell-swings", name: "Kettlebell Swings", bodyParts: ["Full Body"], modality: "Strength", equipment: ["Kettlebell"], technique: "Hinge at the hips (not a squat) and swing the kettlebell to chest height using hip drive, not the arms.", videoUrl: "" },
+  { id: "walking-lunges", name: "Walking Lunges", bodyParts: ["Lower Body"], modality: "Strength", equipment: ["Bodyweight"], technique: "Step forward into a lunge, back knee toward the floor, then drive up and step through into the next lunge.", videoUrl: "" },
+  { id: "weighted-situps", name: "Weighted Sit-Ups", bodyParts: ["Core"], modality: "Strength", equipment: ["Dumbbells"], technique: "Hold a light dumbbell at the chest, feet anchored, and curl the torso all the way up to a seated position.", videoUrl: "" },
+  { id: "russian-twists", name: "Russian Twists", bodyParts: ["Core"], modality: "Strength", equipment: ["Bodyweight"], technique: "Sit with knees bent and torso leaned back slightly. Rotate side to side, tapping the floor by each hip.", videoUrl: "" },
+  { id: "box-jumps", name: "Box Jumps", bodyParts: ["Lower Body"], modality: "Cardio", equipment: ["Box/Step"], technique: "Swing the arms and jump onto the box, landing softly with both feet. Step back down — don't jump down.", videoUrl: "" },
+  { id: "push-press", name: "Push Press", bodyParts: ["Upper Body"], modality: "Strength", equipment: ["Dumbbells"], technique: "Dip slightly at the knees, then drive the dumbbells overhead using leg drive plus a shoulder press.", videoUrl: "" },
+  { id: "goblet-squats", name: "Goblet Squats", bodyParts: ["Lower Body"], modality: "Strength", equipment: ["Kettlebell"], technique: "Hold a kettlebell at chest height and squat down between the knees, keeping the chest tall.", videoUrl: "" },
+  { id: "squat-jumps", name: "Squat Jumps", bodyParts: ["Lower Body"], modality: "Cardio", equipment: ["Bodyweight"], technique: "Squat down then jump straight up as high as comfortable, landing softly back into the squat.", videoUrl: "" },
+  { id: "renegade-rows", name: "Renegade Rows", bodyParts: ["Full Body"], modality: "Strength", equipment: ["Dumbbells"], technique: "From a plank on two dumbbells, row one dumbbell to the hip while bracing the core to resist rotation.", videoUrl: "" },
+  { id: "battle-ropes", name: "Battle Ropes", bodyParts: ["Full Body"], modality: "Cardio", equipment: ["Battle Ropes"], technique: "Alternate slamming the ropes up and down as fast as possible while staying in a low athletic stance.", videoUrl: "" },
+  { id: "high-knees", name: "High Knees", bodyParts: ["Lower Body"], modality: "Cardio", equipment: ["Bodyweight"], technique: "Run in place, driving the knees up toward hip height as quickly as possible.", videoUrl: "" },
+  { id: "dumbbell-rows", name: "Dumbbell Rows", bodyParts: ["Upper Body"], modality: "Strength", equipment: ["Dumbbells", "Bench"], technique: "Hinge forward with a flat back and row the dumbbell to the hip, squeezing the shoulder blade at the top.", videoUrl: "" },
+  { id: "sprint-intervals", name: "Sprint Intervals", bodyParts: ["Full Body"], modality: "Cardio", equipment: ["Bodyweight"], technique: "Sprint at maximum effort for the interval, then walk or rest to recover before the next round.", videoUrl: "" },
+  { id: "bicycle-crunches", name: "Bicycle Crunches", bodyParts: ["Core"], modality: "Strength", equipment: ["Bodyweight"], technique: "Lying on the back, bring opposite elbow to opposite knee in a pedaling motion, keeping the lower back down.", videoUrl: "" },
+  { id: "leg-raises", name: "Leg Raises", bodyParts: ["Core"], modality: "Strength", equipment: ["Bodyweight"], technique: "Lying flat, keep legs straight and lower back pressed down while raising the legs to vertical and back down.", videoUrl: "" },
+  { id: "side-plank", name: "Side Plank", bodyParts: ["Core"], modality: "Strength", equipment: ["Bodyweight"], technique: "Stack the feet and prop up on one forearm, lifting the hips so the body forms a straight line.", videoUrl: "" },
+  { id: "dead-bug", name: "Dead Bug", bodyParts: ["Core"], modality: "Strength", equipment: ["Bodyweight"], technique: "Lying on the back with arms and knees up, slowly extend opposite arm and leg while keeping the low back flat.", videoUrl: "" },
+];
+
 // ---------------- Fit & Functional content generator ----------------
 // Mirrors admin's generator exactly (same ids/titles), adapted to this
 // app's circuit schema (meta/color instead of focus/difficulty). Declared

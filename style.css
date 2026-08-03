@@ -1268,6 +1268,80 @@ h1, h2, h3 {
   flex-shrink: 0;
 }
 
+/* ---------- EXERCISE LIBRARY ---------- */
+.search-input {
+  width: 100%;
+  border: 2px solid var(--periwinkle);
+  border-radius: var(--radius-sm);
+  padding: 13px 14px;
+  font-size: 15px;
+  font-family: 'Nunito', sans-serif;
+  background: white;
+  outline: none;
+  margin-bottom: 12px;
+}
+.search-input:focus { border-color: var(--blue); }
+
+.pill-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.pill-filter {
+  border: 2px solid var(--periwinkle);
+  background: white;
+  color: var(--deepblue);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.pill-filter.active { background: var(--blue); border-color: var(--blue); color: white; }
+
+.status-pill {
+  background: var(--periwinkle);
+  color: var(--blue);
+  font-weight: 800;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.exercise-library-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.exercise-lib-card {
+  text-align: left;
+  width: 100%;
+  border: none;
+  background: white;
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  box-shadow: 0 4px 12px rgba(10,19,64,0.06);
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+}
+.exercise-lib-card-top { display: flex; justify-content: space-between; align-items: center; }
+.exercise-lib-name { margin: 0; font-size: 15px; font-weight: 800; color: var(--ink); }
+.exercise-lib-caret { color: var(--deepblue); font-size: 16px; transition: transform 0.15s; }
+.exercise-lib-card.expanded .exercise-lib-caret { transform: rotate(180deg); }
+.exercise-lib-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
+.exercise-lib-equipment { margin: 6px 0 0; font-size: 12px; font-weight: 700; color: var(--deepblue); }
+.exercise-lib-technique {
+  display: none;
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(10,19,64,0.08);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+  opacity: 0.85;
+}
+.exercise-lib-card.expanded .exercise-lib-technique { display: block; }
+
 @media (max-width: 440px) {
   body { padding: 0; }
   .phone-frame {
