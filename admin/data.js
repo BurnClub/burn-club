@@ -1,8 +1,13 @@
 // Sample data for the Burn Club admin prototype — placeholder content only, in-memory.
 
-// Body part is now its own multi-select tag dimension, separate from strength-vs-cardio.
-const BODY_PART_TAGS = ["Full Body", "Upper Body", "Lower Body", "Core"];
-const MODALITY_TAGS = ["Strength", "Cardio"];
+// Body part is its own multi-select tag dimension, separate from modality —
+// switched from broad zones (Full Body/Upper Body/Lower Body/Core) to specific
+// muscle groups per Chris's request (2026-08-04), so filtering is actually
+// useful for programming ("what hits Biceps") rather than a vague zone.
+// "Full Body" stays as the one non-muscle-specific tag for true compound
+// movers (Burpees, Sprint Intervals) where naming one muscle would be misleading.
+const BODY_PART_TAGS = ["Chest", "Back", "Shoulders", "Biceps", "Triceps", "Abs", "Glutes", "Quads", "Hamstrings", "Calves", "Full Body"];
+const MODALITY_TAGS = ["Strength", "Cardio", "Stretch"];
 const EQUIPMENT_TAGS = ["Bodyweight", "Dumbbells", "Kettlebell", "Barbell", "Resistance Band", "Bench", "Box/Step", "Battle Ropes", "Pull-up Bar"];
 
 // Master exercise list — circuits are built by picking from this list rather than
@@ -10,28 +15,28 @@ const EQUIPMENT_TAGS = ["Bodyweight", "Dumbbells", "Kettlebell", "Barbell", "Res
 // videoUrl is intentionally blank across the board — the field exists but actual
 // video isn't being built out yet.
 const EXERCISE_LIBRARY = [
-  { id: "jump-squats", name: "Jump Squats", bodyParts: ["Lower Body"], modality: "Strength", equipment: ["Bodyweight"], technique: "Squat down, then explode upward into a jump, landing softly with bent knees to absorb impact.", videoUrl: "" },
-  { id: "push-ups", name: "Push-Ups", bodyParts: ["Upper Body"], modality: "Strength", equipment: ["Bodyweight"], technique: "Hands under shoulders, body in a straight line from head to heels. Lower chest to the floor, then press back up.", videoUrl: "" },
-  { id: "mountain-climbers", name: "Mountain Climbers", bodyParts: ["Full Body"], modality: "Cardio", equipment: ["Bodyweight"], technique: "From a high plank, drive knees toward the chest one at a time at a quick, controlled pace. Keep hips level.", videoUrl: "" },
-  { id: "plank-hold", name: "Plank Hold", bodyParts: ["Core"], modality: "Strength", equipment: ["Bodyweight"], technique: "Forearms and toes on the floor, body in a straight line. Brace the core and avoid letting the hips sag or pike.", videoUrl: "" },
-  { id: "burpees", name: "Burpees", bodyParts: ["Full Body"], modality: "Cardio", equipment: ["Bodyweight"], technique: "Drop into a squat, kick back to a plank, do a push-up, jump the feet back in, then explode up into a jump.", videoUrl: "" },
-  { id: "kettlebell-swings", name: "Kettlebell Swings", bodyParts: ["Full Body"], modality: "Strength", equipment: ["Kettlebell"], technique: "Hinge at the hips (not a squat) and swing the kettlebell to chest height using hip drive, not the arms.", videoUrl: "" },
-  { id: "walking-lunges", name: "Walking Lunges", bodyParts: ["Lower Body"], modality: "Strength", equipment: ["Bodyweight"], technique: "Step forward into a lunge, back knee toward the floor, then drive up and step through into the next lunge.", videoUrl: "" },
-  { id: "weighted-situps", name: "Weighted Sit-Ups", bodyParts: ["Core"], modality: "Strength", equipment: ["Dumbbells"], technique: "Hold a light dumbbell at the chest, feet anchored, and curl the torso all the way up to a seated position.", videoUrl: "" },
-  { id: "russian-twists", name: "Russian Twists", bodyParts: ["Core"], modality: "Strength", equipment: ["Bodyweight"], technique: "Sit with knees bent and torso leaned back slightly. Rotate side to side, tapping the floor by each hip.", videoUrl: "" },
-  { id: "box-jumps", name: "Box Jumps", bodyParts: ["Lower Body"], modality: "Cardio", equipment: ["Box/Step"], technique: "Swing the arms and jump onto the box, landing softly with both feet. Step back down — don't jump down.", videoUrl: "" },
-  { id: "push-press", name: "Push Press", bodyParts: ["Upper Body"], modality: "Strength", equipment: ["Dumbbells"], technique: "Dip slightly at the knees, then drive the dumbbells overhead using leg drive plus a shoulder press.", videoUrl: "" },
-  { id: "goblet-squats", name: "Goblet Squats", bodyParts: ["Lower Body"], modality: "Strength", equipment: ["Kettlebell"], technique: "Hold a kettlebell at chest height and squat down between the knees, keeping the chest tall.", videoUrl: "" },
-  { id: "squat-jumps", name: "Squat Jumps", bodyParts: ["Lower Body"], modality: "Cardio", equipment: ["Bodyweight"], technique: "Squat down then jump straight up as high as comfortable, landing softly back into the squat.", videoUrl: "" },
-  { id: "renegade-rows", name: "Renegade Rows", bodyParts: ["Full Body"], modality: "Strength", equipment: ["Dumbbells"], technique: "From a plank on two dumbbells, row one dumbbell to the hip while bracing the core to resist rotation.", videoUrl: "" },
-  { id: "battle-ropes", name: "Battle Ropes", bodyParts: ["Full Body"], modality: "Cardio", equipment: ["Battle Ropes"], technique: "Alternate slamming the ropes up and down as fast as possible while staying in a low athletic stance.", videoUrl: "" },
-  { id: "high-knees", name: "High Knees", bodyParts: ["Lower Body"], modality: "Cardio", equipment: ["Bodyweight"], technique: "Run in place, driving the knees up toward hip height as quickly as possible.", videoUrl: "" },
-  { id: "dumbbell-rows", name: "Dumbbell Rows", bodyParts: ["Upper Body"], modality: "Strength", equipment: ["Dumbbells", "Bench"], technique: "Hinge forward with a flat back and row the dumbbell to the hip, squeezing the shoulder blade at the top.", videoUrl: "" },
-  { id: "sprint-intervals", name: "Sprint Intervals", bodyParts: ["Full Body"], modality: "Cardio", equipment: ["Bodyweight"], technique: "Sprint at maximum effort for the interval, then walk or rest to recover before the next round.", videoUrl: "" },
-  { id: "bicycle-crunches", name: "Bicycle Crunches", bodyParts: ["Core"], modality: "Strength", equipment: ["Bodyweight"], technique: "Lying on the back, bring opposite elbow to opposite knee in a pedaling motion, keeping the lower back down.", videoUrl: "" },
-  { id: "leg-raises", name: "Leg Raises", bodyParts: ["Core"], modality: "Strength", equipment: ["Bodyweight"], technique: "Lying flat, keep legs straight and lower back pressed down while raising the legs to vertical and back down.", videoUrl: "" },
-  { id: "side-plank", name: "Side Plank", bodyParts: ["Core"], modality: "Strength", equipment: ["Bodyweight"], technique: "Stack the feet and prop up on one forearm, lifting the hips so the body forms a straight line.", videoUrl: "" },
-  { id: "dead-bug", name: "Dead Bug", bodyParts: ["Core"], modality: "Strength", equipment: ["Bodyweight"], technique: "Lying on the back with arms and knees up, slowly extend opposite arm and leg while keeping the low back flat.", videoUrl: "" },
+  { id: "jump-squats", name: "Jump Squats", bodyParts: ["Quads", "Glutes"], modality: "Strength", equipment: ["Bodyweight"], technique: "Squat down, then explode upward into a jump, landing softly with bent knees to absorb impact.", trackWeight: false, videoUrl: "" },
+  { id: "push-ups", name: "Push-Ups", bodyParts: ["Chest", "Triceps"], modality: "Strength", equipment: ["Bodyweight"], technique: "Hands under shoulders, body in a straight line from head to heels. Lower chest to the floor, then press back up.", trackWeight: false, videoUrl: "" },
+  { id: "mountain-climbers", name: "Mountain Climbers", bodyParts: ["Abs"], modality: "Cardio", equipment: ["Bodyweight"], technique: "From a high plank, drive knees toward the chest one at a time at a quick, controlled pace. Keep hips level.", trackWeight: false, videoUrl: "" },
+  { id: "plank-hold", name: "Plank Hold", bodyParts: ["Abs"], modality: "Strength", equipment: ["Bodyweight"], technique: "Forearms and toes on the floor, body in a straight line. Brace the core and avoid letting the hips sag or pike.", trackWeight: false, videoUrl: "" },
+  { id: "burpees", name: "Burpees", bodyParts: ["Full Body"], modality: "Cardio", equipment: ["Bodyweight"], technique: "Drop into a squat, kick back to a plank, do a push-up, jump the feet back in, then explode up into a jump.", trackWeight: false, videoUrl: "" },
+  { id: "kettlebell-swings", name: "Kettlebell Swings", bodyParts: ["Glutes", "Hamstrings"], modality: "Strength", equipment: ["Kettlebell"], technique: "Hinge at the hips (not a squat) and swing the kettlebell to chest height using hip drive, not the arms.", trackWeight: true, videoUrl: "" },
+  { id: "walking-lunges", name: "Walking Lunges", bodyParts: ["Quads", "Glutes"], modality: "Strength", equipment: ["Bodyweight"], technique: "Step forward into a lunge, back knee toward the floor, then drive up and step through into the next lunge.", trackWeight: false, videoUrl: "" },
+  { id: "weighted-situps", name: "Weighted Sit-Ups", bodyParts: ["Abs"], modality: "Strength", equipment: ["Dumbbells"], technique: "Hold a light dumbbell at the chest, feet anchored, and curl the torso all the way up to a seated position.", trackWeight: true, videoUrl: "" },
+  { id: "russian-twists", name: "Russian Twists", bodyParts: ["Abs"], modality: "Strength", equipment: ["Bodyweight"], technique: "Sit with knees bent and torso leaned back slightly. Rotate side to side, tapping the floor by each hip.", trackWeight: false, videoUrl: "" },
+  { id: "box-jumps", name: "Box Jumps", bodyParts: ["Quads", "Glutes"], modality: "Cardio", equipment: ["Box/Step"], technique: "Swing the arms and jump onto the box, landing softly with both feet. Step back down — don't jump down.", trackWeight: false, videoUrl: "" },
+  { id: "push-press", name: "Push Press", bodyParts: ["Shoulders", "Triceps"], modality: "Strength", equipment: ["Dumbbells"], technique: "Dip slightly at the knees, then drive the dumbbells overhead using leg drive plus a shoulder press.", trackWeight: true, videoUrl: "" },
+  { id: "goblet-squats", name: "Goblet Squats", bodyParts: ["Quads", "Glutes"], modality: "Strength", equipment: ["Kettlebell"], technique: "Hold a kettlebell at chest height and squat down between the knees, keeping the chest tall.", trackWeight: true, videoUrl: "" },
+  { id: "squat-jumps", name: "Squat Jumps", bodyParts: ["Quads", "Glutes"], modality: "Cardio", equipment: ["Bodyweight"], technique: "Squat down then jump straight up as high as comfortable, landing softly back into the squat.", trackWeight: false, videoUrl: "" },
+  { id: "renegade-rows", name: "Renegade Rows", bodyParts: ["Back", "Abs"], modality: "Strength", equipment: ["Dumbbells"], technique: "From a plank on two dumbbells, row one dumbbell to the hip while bracing the core to resist rotation.", trackWeight: true, videoUrl: "" },
+  { id: "battle-ropes", name: "Battle Ropes", bodyParts: ["Shoulders"], modality: "Cardio", equipment: ["Battle Ropes"], technique: "Alternate slamming the ropes up and down as fast as possible while staying in a low athletic stance.", trackWeight: false, videoUrl: "" },
+  { id: "high-knees", name: "High Knees", bodyParts: ["Quads"], modality: "Cardio", equipment: ["Bodyweight"], technique: "Run in place, driving the knees up toward hip height as quickly as possible.", trackWeight: false, videoUrl: "" },
+  { id: "dumbbell-rows", name: "Dumbbell Rows", bodyParts: ["Back", "Biceps"], modality: "Strength", equipment: ["Dumbbells", "Bench"], technique: "Hinge forward with a flat back and row the dumbbell to the hip, squeezing the shoulder blade at the top.", trackWeight: true, videoUrl: "" },
+  { id: "sprint-intervals", name: "Sprint Intervals", bodyParts: ["Full Body"], modality: "Cardio", equipment: ["Bodyweight"], technique: "Sprint at maximum effort for the interval, then walk or rest to recover before the next round.", trackWeight: false, videoUrl: "" },
+  { id: "bicycle-crunches", name: "Bicycle Crunches", bodyParts: ["Abs"], modality: "Strength", equipment: ["Bodyweight"], technique: "Lying on the back, bring opposite elbow to opposite knee in a pedaling motion, keeping the lower back down.", trackWeight: false, videoUrl: "" },
+  { id: "leg-raises", name: "Leg Raises", bodyParts: ["Abs"], modality: "Strength", equipment: ["Bodyweight"], technique: "Lying flat, keep legs straight and lower back pressed down while raising the legs to vertical and back down.", trackWeight: false, videoUrl: "" },
+  { id: "side-plank", name: "Side Plank", bodyParts: ["Abs"], modality: "Strength", equipment: ["Bodyweight"], technique: "Stack the feet and prop up on one forearm, lifting the hips so the body forms a straight line.", trackWeight: false, videoUrl: "" },
+  { id: "dead-bug", name: "Dead Bug", bodyParts: ["Abs"], modality: "Strength", equipment: ["Bodyweight"], technique: "Lying on the back with arms and knees up, slowly extend opposite arm and leg while keeping the low back flat.", trackWeight: false, videoUrl: "" },
 ];
 
 // scheduleType distinguishes two genuinely different program shapes:
@@ -607,10 +612,9 @@ const CHALLENGES = [
 ];
 
 // ---------------- Messaging ----------------
-// Prototype-only: messages live in this tab's memory, same as the rest of
-// the admin's data — sending one does not deliver anywhere else (including
-// to the separate member-facing app, which has its own seeded copy of the
-// same demo conversation for the "Chris V." member).
+// Messages sent here (or in the member/staff apps) are bridged live via
+// localStorage, same-origin/same-browser only — see broadcastMessage() in
+// app.js and the matching LIVE_CIRCUITS_KEY bridge for workouts.
 
 // A DM per member, plus one group chat per program — membership for a
 // program's group chat is just every MEMBERS entry with that program.
@@ -627,6 +631,15 @@ const MESSAGES = [
   { id: "msg-5", conversationId: "group-burn-club", senderId: "priya-k", senderName: "Priya K.", isStaff: false, text: "Sweat & Sculpt kicked my butt today 😅", time: "Sun 5:30 PM", read: true },
   { id: "msg-6", conversationId: "group-burn-club", senderId: "marcus-t", senderName: "Marcus T.", isStaff: false, text: "Same! Worth it though", time: "Sun 5:41 PM", read: false },
 ];
+
+const LIVE_MESSAGES_KEY = "burnClubLiveMessages";
+try {
+  JSON.parse(localStorage.getItem(LIVE_MESSAGES_KEY) || "[]").forEach((m) => {
+    const idx = MESSAGES.findIndex((x) => x.id === m.id);
+    if (idx === -1) MESSAGES.push(m);
+    else MESSAGES[idx] = m;
+  });
+} catch (e) {}
 
 const COMMUNITY_POSTS = [
   { id: "p1", member: "Jamie R.", program: "burn-club", content: "Completed Core Crusher 🔥", time: "12m ago", likes: 8, flagged: false, featured: false },

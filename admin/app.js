@@ -1081,45 +1081,45 @@ function saveCircuit() {
 }
 
 // ---------------- Exercise Library ----------------
+// List-style master exercise page (2026-08-04, replaced the old card grid) —
+// filterable by Body Part (specific muscle groups, not broad zones), Equipment,
+// and Type (Strength/Cardio/Stretch). No usage-count field — Chris didn't want it.
 
-let libraryCategory = "All";
+let libraryBodyPart = "All";
+let libraryEquipment = "All";
+let libraryModality = "All";
 let editingExerciseId = null;
 
-function exerciseUsageCount(name) {
-  let count = 0;
-  CIRCUITS.forEach((c) => {
-    c.blocks.forEach((b) => {
-      if (b.exercise && b.exercise.name === name) count++;
-      if (b.exercises) count += b.exercises.filter((e) => e.name === name).length;
-    });
-  });
-  return count;
+function renderLibraryFilterRow(containerId, options, selected, action) {
+  document.getElementById(containerId).innerHTML = ["All", ...options]
+    .map((c) => `<button class="pill-filter ${c === selected ? "active" : ""}" data-action="${action}" data-cat="${c}">${c}</button>`)
+    .join("");
 }
 
 function renderLibraryCategoryFilters() {
-  const cats = ["All", ...BODY_PART_TAGS];
-  document.getElementById("exercise-category-filters").innerHTML = cats
-    .map((c) => `<button class="pill-filter ${c === libraryCategory ? "active" : ""}" data-action="library-category" data-cat="${c}">${c}</button>`)
-    .join("");
+  renderLibraryFilterRow("exercise-bodypart-filters", BODY_PART_TAGS, libraryBodyPart, "library-bodypart");
+  renderLibraryFilterRow("exercise-equipment-filters", EQUIPMENT_TAGS, libraryEquipment, "library-equipment");
+  renderLibraryFilterRow("exercise-modality-filters", MODALITY_TAGS, libraryModality, "library-modality");
 }
 
 function renderExerciseLibrary() {
   const query = document.getElementById("exercise-search").value.trim().toLowerCase();
   const filtered = EXERCISE_LIBRARY.filter((ex) => {
-    if (libraryCategory !== "All" && !ex.bodyParts.includes(libraryCategory)) return false;
+    if (libraryBodyPart !== "All" && !ex.bodyParts.includes(libraryBodyPart)) return false;
+    if (libraryEquipment !== "All" && !ex.equipment.includes(libraryEquipment)) return false;
+    if (libraryModality !== "All" && ex.modality !== libraryModality) return false;
     if (query && !ex.name.toLowerCase().includes(query)) return false;
     return true;
   });
 
-  document.getElementById("exercise-grid").innerHTML = filtered.map((ex) => `
-    <div class="exercise-card" data-action="edit-exercise" data-ex-id="${ex.id}">
+  document.getElementById("exercise-list").innerHTML = filtered.map((ex) => `
+    <div class="exercise-list-row" data-action="edit-exercise" data-ex-id="${ex.id}">
       <p class="ex-name">${ex.name}</p>
       <div class="ex-tags">
         ${ex.bodyParts.map((bp) => `<span class="status-pill">${bp}</span>`).join("")}
         <span class="status-pill modality-${ex.modality.toLowerCase()}">${ex.modality}</span>
       </div>
-      <p class="ex-equipment">${ex.equipment.length ? ex.equipment.join(", ") : "No equipment"}</p>
-      <p class="ex-usage">Used ${exerciseUsageCount(ex.name)}×</p>
+      <p class="ex-equipment">${ex.equipment.length ? ex.equipment.join(", ") : "No equipment"}${ex.trackWeight ? " · Tracks weight" : ""}</p>
     </div>
   `).join("") || `<p style="color:var(--deepblue);font-weight:700;">No exercises match.</p>`;
 }
@@ -1152,6 +1152,7 @@ function openExerciseModal() {
   renderTagCheckboxes("exercise-modal-bodyparts", BODY_PART_TAGS, []);
   renderModalityRadios("Strength");
   renderTagCheckboxes("exercise-modal-equipment", EQUIPMENT_TAGS, []);
+  document.getElementById("exercise-modal-track-weight").checked = false;
   document.getElementById("exercise-modal-overlay").classList.add("visible");
 }
 
@@ -1167,6 +1168,7 @@ function openEditExerciseModal(exerciseId) {
   renderTagCheckboxes("exercise-modal-bodyparts", BODY_PART_TAGS, ex.bodyParts);
   renderModalityRadios(ex.modality);
   renderTagCheckboxes("exercise-modal-equipment", EQUIPMENT_TAGS, ex.equipment);
+  document.getElementById("exercise-modal-track-weight").checked = !!ex.trackWeight;
   document.getElementById("exercise-modal-overlay").classList.add("visible");
 }
 
@@ -1187,12 +1189,13 @@ function saveExercise() {
   const modalityInput = document.querySelector("#exercise-modal-modality input:checked");
   const modality = modalityInput ? modalityInput.value : "Strength";
   const equipment = Array.from(document.querySelectorAll("#exercise-modal-equipment input:checked")).map((i) => i.value);
+  const trackWeight = document.getElementById("exercise-modal-track-weight").checked;
 
   if (editingExerciseId) {
     const ex = EXERCISE_LIBRARY.find((x) => x.id === editingExerciseId);
-    Object.assign(ex, { name, videoUrl, technique, bodyParts, modality, equipment });
+    Object.assign(ex, { name, videoUrl, technique, bodyParts, modality, equipment, trackWeight });
   } else {
-    EXERCISE_LIBRARY.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now(), name, videoUrl, technique, bodyParts, modality, equipment });
+    EXERCISE_LIBRARY.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now(), name, videoUrl, technique, bodyParts, modality, equipment, trackWeight });
   }
   closeExerciseModal();
   renderExerciseLibrary();
@@ -1450,8 +1453,18 @@ document.addEventListener("click", (e) => {
     renderBuilderLibraryFilters();
     renderBuilderLibraryList();
   }
-  if (action === "library-category") {
-    libraryCategory = el.dataset.cat;
+  if (action === "library-bodypart") {
+    libraryBodyPart = el.dataset.cat;
+    renderLibraryCategoryFilters();
+    renderExerciseLibrary();
+  }
+  if (action === "library-equipment") {
+    libraryEquipment = el.dataset.cat;
+    renderLibraryCategoryFilters();
+    renderExerciseLibrary();
+  }
+  if (action === "library-modality") {
+    libraryModality = el.dataset.cat;
     renderLibraryCategoryFilters();
     renderExerciseLibrary();
   }
@@ -1549,9 +1562,23 @@ function openAdminThread(conversationId) {
   renderAdminConversationList();
 }
 
+// Pushes locally AND into the shared localStorage bridge so the member/staff
+// apps pick it up live (same-browser only — see LIVE_CIRCUITS_KEY's note).
+function broadcastMessage(msg) {
+  MESSAGES.push(msg);
+  let live;
+  try {
+    live = JSON.parse(localStorage.getItem(LIVE_MESSAGES_KEY) || "[]");
+  } catch (e) {
+    live = [];
+  }
+  live.push(msg);
+  localStorage.setItem(LIVE_MESSAGES_KEY, JSON.stringify(live));
+}
+
 function sendAdminReply(text) {
   if (!selectedConversationId || !text.trim()) return;
-  MESSAGES.push({
+  broadcastMessage({
     id: "msg-" + Date.now(),
     conversationId: selectedConversationId,
     senderId: "staff",
@@ -1564,6 +1591,25 @@ function sendAdminReply(text) {
   renderAdminThreadMessages();
   renderAdminConversationList();
 }
+
+// If the member or staff app sends/replies in the same browser, pick it up
+// live instead of requiring a manual reload.
+window.addEventListener("storage", (e) => {
+  if (e.key !== LIVE_MESSAGES_KEY) return;
+  let liveMessages;
+  try {
+    liveMessages = JSON.parse(e.newValue || "[]");
+  } catch (err) {
+    return;
+  }
+  liveMessages.forEach((m) => {
+    const idx = MESSAGES.findIndex((x) => x.id === m.id);
+    if (idx === -1) MESSAGES.push(m);
+    else MESSAGES[idx] = m;
+  });
+  renderAdminConversationList();
+  if (selectedConversationId) renderAdminThreadMessages();
+});
 
 // ---------------- Members ----------------
 

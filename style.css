@@ -1,21 +1,51 @@
+/* Palette + type pulled from Chris's design-tool mockup (2026-08-04) — flat
+   values only, not the mockup's layout/sizing (which he flagged as outdated)
+   or its light-tabs/dark-overlay split (not adopted, his call). */
 :root {
-  --blue: #0057ff;
+  --blue: #788CE3;
   --periwinkle: #c7d3ff;
-  --deepblue: #607ce0;
-  --ink: #0a1340;
-  --yellow: #f5da8a;
-  --white: #ffffff;
-  --bg: #f4f6ff;
-  --radius-lg: 28px;
-  --radius-md: 18px;
-  --radius-sm: 12px;
+  --deepblue: #5C7A99;
+  --ink: #17243F;
+  --yellow: #E6B400;
+  --white: #F7F3E6;
+  --card-white: #FFFFFF;
+  --bg: #FFFFFF;
+  --danger: #E8746A;
+  --pink: #F2B4F5;
+  --purple: #A78BFA;
+  --green: #B8F2C9;
+  --kawaii-blue: #AEE1F9;
+  --field-bg: #E3ECFF;
+  /* Darker gradient-stop variants — subtle top-to-bottom shade on the Home
+     section cards for dimension (Chris's 2026-08-06 "too flat" feedback). */
+  --green-dark: #A6DAB5;
+  --kawaii-blue-dark: #9DCBE0;
+  --pink-dark: #DAA2DD;
+  --periwinkle-dark: #B3BEE5;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --font-heading: 'Barlow Condensed', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  /* Type system — one weight + color per text tier (Chris's 2026-08-06
+     request, partner flagged inconsistent weights/colors/styles across
+     sections). Sizes still vary by hierarchy; weight/color don't.
+     Rolling out on Home first, same as the other passes this session. */
+  --title-weight: 600;
+  --title-color: var(--deepblue);
+  --subtitle-weight: 700;
+  --subtitle-color: var(--deepblue);
+  --text-weight: 700;
+  --text-color: var(--ink);
+  --subtext-weight: 700;
+  --subtext-color: var(--deepblue);
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: 'Nunito', sans-serif;
+  font-family: var(--font-body);
   background: linear-gradient(180deg, #dfe6ff 0%, #eef1ff 40%);
   color: var(--ink);
   min-height: 100vh;
@@ -26,17 +56,17 @@ body {
 }
 
 h1, h2, h3 {
-  font-family: 'Baloo 2', 'Nunito', sans-serif;
+  font-family: var(--font-heading);
   margin: 0;
 }
 
 .phone-frame {
   width: 402px;
   height: 860px;
-  background: #0a1340;
+  background: var(--ink);
   border-radius: 44px;
   padding: 14px;
-  box-shadow: 0 30px 60px rgba(10, 19, 64, 0.35), 0 0 0 2px rgba(10,19,64,0.4);
+  box-shadow: 0 30px 60px rgba(23, 36, 63, 0.35), 0 0 0 2px rgba(23,36,63,0.4);
 }
 
 .app {
@@ -71,7 +101,7 @@ h1, h2, h3 {
 .login-logo {
   width: 150px;
   height: auto;
-  filter: drop-shadow(0 12px 20px rgba(0,87,255,0.25));
+  filter: drop-shadow(0 12px 20px rgba(120,140,227,0.25));
   margin-bottom: 12px;
 }
 .login-title {
@@ -110,8 +140,8 @@ h1, h2, h3 {
   border-radius: var(--radius-sm);
   padding: 13px 14px;
   font-size: 15px;
-  font-family: 'Nunito', sans-serif;
-  background: white;
+  font-family: var(--font-body);
+  background: var(--field-bg);
   outline: none;
 }
 .field input:focus { border-color: var(--blue); }
@@ -124,11 +154,13 @@ h1, h2, h3 {
   padding: 15px;
   font-size: 16px;
   font-weight: 800;
-  font-family: 'Baloo 2', sans-serif;
+  font-family: var(--font-heading);
   cursor: pointer;
-  box-shadow: 0 10px 20px rgba(0,87,255,0.3);
+  box-shadow: 0 10px 20px rgba(120,140,227,0.3);
 }
 .btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.btn-primary:disabled:active { transform: none; }
 .btn-primary.small { padding: 10px 16px; font-size: 13px; box-shadow: none; }
 
 .btn-ghost {
@@ -150,16 +182,16 @@ h1, h2, h3 {
 }
 .eyebrow {
   margin: 0;
-  color: var(--deepblue);
-  font-weight: 700;
+  color: var(--subtitle-color);
+  font-weight: var(--subtitle-weight);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 .topbar-title {
   font-size: 26px;
-  color: var(--ink);
-  font-weight: 800;
+  color: var(--title-color);
+  font-weight: var(--title-weight);
 }
 .avatar, .avatar-lg {
   border-radius: 50%;
@@ -179,7 +211,7 @@ h1, h2, h3 {
   gap: 14px;
   color: white;
   margin-bottom: 24px;
-  box-shadow: 0 10px 24px rgba(0,87,255,0.28);
+  box-shadow: 0 10px 24px rgba(120,140,227,0.28);
 }
 .live-now-banner {
   background: var(--ink);
@@ -191,7 +223,7 @@ h1, h2, h3 {
   color: white;
   margin-bottom: 16px;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(10,19,64,0.25);
+  box-shadow: 0 10px 24px rgba(23,36,63,0.25);
 }
 .live-now-dot {
   width: 12px;
@@ -206,26 +238,62 @@ h1, h2, h3 {
 .live-now-join { margin-left: auto; font-size: 12px; font-weight: 800; color: var(--periwinkle); white-space: nowrap; }
 
 .streak-flame { font-size: 28px; }
-.streak-num { margin: 0; font-weight: 800; font-family: 'Baloo 2', sans-serif; font-size: 16px; }
+.streak-num { margin: 0; font-weight: 800; font-family: var(--font-heading); font-size: 16px; }
 .streak-sub { margin: 2px 0 0; font-size: 12px; opacity: 0.9; }
+
+/* ---------- HOME TOP ROW (stats block + condensed habits, side by side) ---------- */
+/* Chris's 2026-08-06 layout request: stats become one contrasting color
+   block, stacked vertically, sitting left of a condensed Daily Habits card. */
+.home-top-row {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.home-stats-card {
+  flex: 0 0 108px;
+  background: linear-gradient(180deg, var(--periwinkle) 0%, var(--periwinkle-dark) 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255,255,255,0.5);
+  padding: 14px 12px;
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+  display: flex;
+  align-items: center;
+}
+.home-stats-card .today-stats-row {
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  gap: 14px;
+  margin-bottom: 0;
+}
+.home-stats-card .today-stat {
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  width: 100%;
+}
+.home-stats-card .wearable-prompt-card { background: none; box-shadow: none; padding: 0; }
+.home-top-row .home-section-card { flex: 1; min-width: 0; margin-bottom: 0; }
 
 /* ---------- TODAY STATS (wearable — faked) ---------- */
 .today-stats-row { display: flex; gap: 10px; margin-bottom: 24px; }
 .today-stat {
   flex: 1;
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
   display: flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.05);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
-.today-stat-icon { font-size: 20px; }
-.today-stat-num { font-family: 'Baloo 2', sans-serif; font-size: 18px; font-weight: 800; color: var(--ink); margin: 0; }
-.today-stat-label { font-size: 10px; font-weight: 700; color: var(--deepblue); margin: 2px 0 0; }
+.today-stat-icon { display: flex; color: var(--ink); }
+.today-stat-icon svg { width: 22px; height: 22px; display: block; }
+.today-stat-num { font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--ink); margin: 0; }
+.today-stat-label { font-size: 10px; font-weight: var(--subtext-weight); color: var(--subtext-color); margin: 2px 0 0; }
 .wearable-prompt-card {
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-sm);
   padding: 14px;
   font-size: 12px;
@@ -236,47 +304,49 @@ h1, h2, h3 {
 }
 
 /* ---------- DAILY HABITS ---------- */
-.habits-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+/* Plain text-plus-checkbox rows, divided by a hairline, inside the Home
+   section card — no per-habit card box (Chris's 2026-08-04 request).
+   Condensed per Chris's 2026-08-06 request to sit next to the stats block. */
+.home-habits-compact .home-section-title { font-size: 16px; margin-bottom: 8px; }
+.habits-list { display: flex; flex-direction: column; }
 .habit-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: white;
+  gap: 10px;
+  background: none;
   border: none;
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.05);
+  border-bottom: 1px solid rgba(23,36,63,0.08);
+  padding: 8px 0;
   cursor: pointer;
   text-align: left;
   width: 100%;
   font-family: inherit;
 }
+.habit-row:last-child { border-bottom: none; }
 .habit-checkbox {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
-  border-radius: 7px;
-  border: 2px solid var(--periwinkle);
+  border-radius: 6px;
+  border: 2px solid white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   color: white;
-  font-size: 13px;
+  font-size: 11px;
 }
-.habit-row.checked .habit-checkbox { background: var(--blue); border-color: var(--blue); }
-.habit-label { flex: 1; font-size: 13px; font-weight: 700; color: var(--ink); }
+.habit-row.checked .habit-checkbox { background: white; border-color: white; color: black; }
+.habit-label { flex: 1; font-size: 12px; font-weight: var(--subtext-weight); color: var(--subtext-color); }
 .habit-row.checked .habit-label { color: var(--deepblue); text-decoration: line-through; }
-.habit-auto-tag { font-size: 10px; font-weight: 800; color: var(--deepblue); background: var(--bg); padding: 3px 8px; border-radius: 999px; }
+.habit-auto-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: var(--subtext-weight); color: var(--subtext-color); background: var(--bg); padding: 2px 8px 2px 6px; border-radius: 999px; }
+.habit-auto-icon svg { width: 10px; height: 10px; display: block; }
 .habit-empty-card {
-  background: white;
-  border-radius: var(--radius-sm);
-  padding: 14px;
+  padding: 4px 0;
   font-size: 12px;
   font-weight: 700;
   color: var(--deepblue);
   text-align: center;
-  margin-bottom: 24px;
 }
 
 .section-title {
@@ -286,10 +356,78 @@ h1, h2, h3 {
   color: var(--ink);
 }
 .screen > .section-title:first-of-type { margin-top: 0; }
+
+/* ---------- HOME SECTION CARDS ---------- */
+/* Each Home section (Daily Habits, This Week's Workouts, Community Buzz) is
+   its own card with the title inside — replaces the old bare h2-then-list
+   pattern. Colored per-section per Chris's follow-up correction (2026-08-04):
+   app background is white now, cards carry the color instead of the page. */
+.home-section-card {
+  position: relative;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255,255,255,0.5);
+  padding: 18px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+  overflow: hidden;
+}
+.home-section-card.card-green { background: linear-gradient(180deg, var(--green) 0%, var(--green-dark) 100%); }
+.home-section-card.card-blue { background: linear-gradient(180deg, var(--kawaii-blue) 0%, var(--kawaii-blue-dark) 100%); }
+.home-section-card.card-pink { background: linear-gradient(180deg, var(--pink) 0%, var(--pink-dark) 100%); }
+/* Big diagonal watermark icon behind the workout cards (Chris's 2026-08-06
+   request) — original line-art dumbbell, not the reference photo, kept low
+   opacity so the white cards on top stay the focus. */
+.workouts-bg-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 480px;
+  height: 240px;
+  transform: translate(-50%, -50%) rotate(-25deg);
+  color: var(--pink);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+.workouts-bg-icon svg { width: 100%; height: 100%; display: block; }
+.home-section-card .home-section-title,
+.home-section-card .circuit-list,
+.home-section-card .habits-list,
+.home-section-card .buzz-list {
+  position: relative;
+  z-index: 1;
+}
+.home-section-title {
+  position: relative;
+  margin: 0 0 14px;
+  padding-left: 14px;
+  font-size: 18px;
+  font-weight: var(--title-weight);
+  color: var(--title-color);
+}
+/* Accent bar instead of a box/underline/stroke (Chris's 2026-08-06 ask for
+   more visual weight on section titles without those). Tinted per card so
+   it echoes that section's own color instead of one flat default. */
+.home-section-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--deepblue);
+}
+.card-green .home-section-title::before { background: var(--green-dark); }
+.card-blue .home-section-title::before { background: var(--kawaii-blue-dark); }
+.card-pink .home-section-title::before { background: var(--pink-dark); }
+/* Trying all-caps on Community Buzz specifically per Chris's request, to
+   preview before deciding whether it goes on the other section titles too. */
+.card-pink .home-section-title { text-transform: uppercase; letter-spacing: 0.5px; }
 .section-subtitle {
   font-size: 12px;
-  font-weight: 600;
-  color: var(--deepblue);
+  font-weight: var(--subtitle-weight);
+  color: var(--subtitle-color);
   margin: -8px 0 12px;
 }
 
@@ -303,17 +441,62 @@ h1, h2, h3 {
   text-align: left;
   border: none;
   border-radius: var(--radius-md);
-  padding: 16px 18px;
+  padding: 12px 14px;
   cursor: pointer;
-  color: white;
+  color: var(--ink);
+  /* <button> doesn't inherit the page font by default — without this it was
+     silently falling back to the browser's UI font (e.g. Arial), the one
+     real font mismatch found while confirming type consistency (2026-08-06). */
+  font-family: inherit;
+  /* --card-white (#FFFFFF), not --white (cream) — rule per Chris (2026-08-06):
+     a card nested inside a bigger colorful card defaults to pure white, to
+     stay distinct from --white's other job as the tint for standalone cards
+     sitting directly on the page background (today-stat tiles, feed items). */
+  background: var(--card-white);
+  box-shadow: 0 4px 10px rgba(23,36,63,0.08);
   position: relative;
   overflow: hidden;
 }
-.circuit-card h3 { font-size: 18px; margin: 4px 0 4px; }
-.circuit-card p { margin: 0; font-size: 13px; opacity: 0.9; }
-.circuit-card-top { display: flex; justify-content: space-between; align-items: center; }
+/* Compact by design (2026-08-04): name and tag share one row instead of
+   stacking, tag/checkmark pinned top-right — much shorter card overall. */
+.circuit-card-top { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 3px; }
+.circuit-card h3 {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: var(--title-weight);
+  color: var(--title-color);
+  margin: 0;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.circuit-card p { position: relative; z-index: 1; margin: 0; font-size: 12px; font-weight: var(--subtext-weight); color: var(--subtext-color); }
+
+/* Background category pictogram — enlarged, angled, and bled off the card
+   edge (Chris's 2026-08-06 request). Sits behind the text via z-index; tint
+   matches the same accent already used for that workout's tag pill. */
+.circuit-bg-icon {
+  position: absolute;
+  bottom: -22px;
+  right: -20px;
+  width: 96px;
+  height: 96px;
+  transform: rotate(22deg);
+  opacity: 0.24;
+  pointer-events: none;
+  z-index: 0;
+}
+.circuit-bg-icon svg { width: 100%; height: 100%; display: block; }
+.color-blue .circuit-bg-icon { color: var(--blue); }
+.color-periwinkle .circuit-bg-icon { color: var(--purple); }
+.color-deepblue .circuit-bg-icon { color: var(--pink); }
+.color-yellow .circuit-bg-icon { color: var(--yellow); }
 .circuit-tag {
-  background: rgba(255,255,255,0.25);
+  flex-shrink: 0;
+  background: var(--periwinkle);
+  color: var(--ink);
   padding: 3px 10px;
   border-radius: 999px;
   font-size: 11px;
@@ -321,68 +504,76 @@ h1, h2, h3 {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.color-blue { background: linear-gradient(135deg, #0057ff, #3d7bff); }
-.color-periwinkle { background: linear-gradient(135deg, #607ce0, #7f97ea); }
-.color-deepblue { background: linear-gradient(135deg, #0a1340, #33407a); }
-.color-yellow { background: linear-gradient(135deg, #c99400, #f0b429); }
+/* Card itself always stays white now — these just color the tag pill, using
+   the fuller palette (blue/purple/pink/yellow) for variety between workouts. */
+.color-blue .circuit-tag { background: var(--blue); color: white; }
+.color-periwinkle .circuit-tag { background: var(--purple); color: white; }
+.color-deepblue .circuit-tag { background: var(--pink); color: var(--ink); }
+.color-yellow .circuit-tag { background: var(--yellow); color: var(--ink); }
 
-.circuit-card.completed {
-  background: #b7bcd6;
-  color: #3d4266;
-}
-.circuit-card.completed .circuit-tag {
-  background: rgba(10,19,64,0.12);
-  color: #3d4266;
-}
-.circuit-completed-badge {
+/* Was a heavy grey wash — Chris found it distracting (2026-08-06). Card stays
+   white like any other now; completion reads via strikethrough + muted title
+   plus the small red check/date, matching how Daily Habits marks done. */
+.circuit-card.completed h3 { text-decoration: line-through; color: var(--deepblue); }
+/* Small red check + date, replacing the old oversized "✓ COMPLETED" pill —
+   sits in the same top-right slot the tag would otherwise occupy. */
+.circuit-completed-mark {
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
-  font-size: 14px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #ffffff;
-  background: rgba(10,19,64,0.55);
-  padding: 5px 12px;
-  border-radius: 999px;
+  align-items: center;
+  gap: 1px;
 }
+.circuit-check { color: var(--danger); font-size: 17px; font-weight: 800; line-height: 1; }
 .circuit-completed-date {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: none;
-  letter-spacing: 0;
-  color: #ffffff;
-  opacity: 0.95;
+  font-size: 9px;
+  font-weight: var(--subtext-weight);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--subtext-color);
 }
 
 /* ---------- FEED ---------- */
 .mini-feed { display: flex; flex-direction: column; gap: 10px; }
 .feed-item {
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
   display: flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.06);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.06);
 }
 .feed-emoji { font-size: 20px; }
 .feed-text p { margin: 0; font-size: 13px; }
 .feed-time { color: var(--deepblue); font-size: 11px; margin-top: 2px !important; }
+
+/* ---------- HOME COMMUNITY BUZZ (single card, no per-item cards) ---------- */
+.buzz-list { display: flex; flex-direction: column; }
+.buzz-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(23,36,63,0.08);
+}
+.buzz-row:last-child { border-bottom: none; }
+.buzz-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); flex-shrink: 0; margin-top: 6px; }
+.buzz-text p { margin: 0; font-size: 13px; font-weight: var(--subtext-weight); color: var(--subtext-color); }
+.buzz-text strong { font-weight: 800; color: black; }
+.buzz-text p.buzz-time { color: var(--subtext-color); font-weight: var(--subtext-weight); font-size: 11px; margin-top: 2px !important; }
 
 /* ---------- ARCHIVE ---------- */
 .archive-list { display: flex; flex-direction: column; gap: 8px; }
 .archive-row {
   display: flex;
   justify-content: space-between;
-  background: white;
+  background: var(--white);
   padding: 12px 16px;
   border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: 13px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.05);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
 .archive-count { color: var(--deepblue); font-weight: 700; }
 
@@ -392,12 +583,12 @@ h1, h2, h3 {
 .circuit-row-compact {
   display: flex;
   justify-content: space-between;
-  background: white;
+  background: var(--white);
   padding: 12px 16px;
   border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: 13px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.05);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
   border: none;
   width: 100%;
   text-align: left;
@@ -411,7 +602,7 @@ h1, h2, h3 {
 }
 .completed-note {
   color: #ffffff;
-  background: rgba(10,19,64,0.55);
+  background: rgba(23,36,63,0.55);
   padding: 4px 12px;
   border-radius: 999px;
   font-size: 13px;
@@ -421,10 +612,10 @@ h1, h2, h3 {
 /* ---------- CALENDAR (structured programs) ---------- */
 .calendar-day-list { display: flex; flex-direction: column; gap: 10px; }
 .calendar-day-row {
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-md);
   padding: 12px 16px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.05);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
 .calendar-day-row.today { outline: 2px solid var(--blue); outline-offset: -2px; }
 .calendar-day-date { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; color: var(--deepblue); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
@@ -458,14 +649,14 @@ h1, h2, h3 {
   margin-bottom: 16px;
 }
 .back-btn {
-  background: white;
+  background: var(--white);
   border: none;
   width: 38px;
   height: 38px;
   border-radius: 50%;
   font-size: 18px;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(10,19,64,0.08);
+  box-shadow: 0 4px 10px rgba(23,36,63,0.08);
 }
 .detail-tag {
   background: var(--periwinkle);
@@ -486,10 +677,10 @@ h1, h2, h3 {
   gap: 12px;
 }
 .block-card {
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-md);
   padding: 16px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.05);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
 .block-card-top {
   display: flex;
@@ -505,7 +696,7 @@ h1, h2, h3 {
   background: var(--periwinkle);
   color: var(--blue);
   font-weight: 800;
-  font-family: 'Baloo 2', sans-serif;
+  font-family: var(--font-heading);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -535,6 +726,11 @@ h1, h2, h3 {
 /* ---------- WORKOUT PLAYER ---------- */
 .player-screen { padding-bottom: 24px; }
 .player-screen.visible { display: flex; flex-direction: column; }
+/* A long Straight Sets/Rep Ladder checklist (e.g. a 9-rung ladder) can exceed
+   the screen's height — without this, flexbox shrinks the video and other
+   fixed-size chrome down to fit instead of letting .screen's own scroll take
+   over, so the video collapses to 0 height (caught 2026-08-06). */
+.player-screen.visible > * { flex-shrink: 0; }
 .player-header {
   display: flex;
   align-items: center;
@@ -543,14 +739,14 @@ h1, h2, h3 {
   margin-bottom: 12px;
 }
 .player-exit {
-  background: white;
+  background: var(--white);
   border: none;
   width: 36px;
   height: 36px;
   border-radius: 50%;
   font-size: 16px;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(10,19,64,0.08);
+  box-shadow: 0 4px 10px rgba(23,36,63,0.08);
 }
 .player-progress-text { font-size: 12px; font-weight: 700; color: var(--deepblue); }
 .player-progress-track {
@@ -601,7 +797,7 @@ h1, h2, h3 {
 .player-video-label { margin: 0; font-size: 12px; font-weight: 700; opacity: 0.85; z-index: 1; }
 
 .player-exercise-name {
-  font-family: 'Baloo 2', sans-serif;
+  font-family: var(--font-heading);
   font-size: 26px;
   font-weight: 800;
   color: var(--ink);
@@ -623,7 +819,7 @@ h1, h2, h3 {
   margin-bottom: 18px;
 }
 .player-clock {
-  font-family: 'Baloo 2', sans-serif;
+  font-family: var(--font-heading);
   font-size: 56px;
   font-weight: 800;
   color: var(--blue);
@@ -648,11 +844,11 @@ h1, h2, h3 {
 
 .player-format-explainer {
   display: none;
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-sm);
   padding: 14px 16px;
   margin-bottom: 18px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.05);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
 .player-format-explainer-title {
   margin: 0 0 6px;
@@ -678,12 +874,27 @@ h1, h2, h3 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
+  background: var(--white);
   padding: 12px 16px;
   border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: 13px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.05);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+}
+.amrap-row-left { display: flex; align-items: center; gap: 10px; }
+.amrap-order-num {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border-radius: 50%;
+  background: var(--periwinkle);
+  color: var(--blue);
+  font-weight: 800;
+  font-family: var(--font-heading);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .amrap-row-right { display: flex; align-items: center; gap: 10px; }
 .amrap-play-btn {
@@ -701,11 +912,89 @@ h1, h2, h3 {
   justify-content: center;
 }
 
+/* ---------- STRAIGHT SETS / REP LADDER CHECKLIST (2026-08-06) ---------- */
+.player-sets-list { display: none; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.player-set-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--white);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+}
+.player-set-row.done { opacity: 0.55; }
+.player-set-row.done .set-row-reps { text-decoration: line-through; }
+.set-row-num {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 50%;
+  background: var(--periwinkle);
+  color: var(--blue);
+  font-weight: 800;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.set-row-reps { flex: 1; font-weight: 700; font-size: 13px; color: var(--ink); }
+.set-row-weight {
+  width: 60px;
+  border: 2px solid var(--periwinkle);
+  border-radius: var(--radius-sm);
+  padding: 8px 4px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  text-align: center;
+  outline: none;
+}
+.set-row-check {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 7px;
+  border: 2px solid var(--periwinkle);
+  background: none;
+  color: white;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.player-set-row.done .set-row-check { background: var(--blue); border-color: var(--blue); }
+
+/* Rest timer pops up over the checklist between sets instead of a full
+   screen swap — same visual language as the exercise video overlay below. */
+.rest-timer-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(23,36,63,0.6);
+  align-items: center;
+  justify-content: center;
+  z-index: 25;
+  padding: 20px;
+}
+.rest-timer-overlay.visible { display: flex; }
+.rest-timer-card {
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 300px;
+  text-align: center;
+}
+.rest-timer-card .player-clock { margin: 4px 0 0; }
+.rest-timer-card .player-sub-pill { margin: 8px 0 0; }
+.rest-timer-card .btn-primary { margin-top: 20px; width: 100%; }
+
 .exercise-video-overlay {
   display: none;
   position: absolute;
   inset: 0;
-  background: rgba(10,19,64,0.6);
+  background: rgba(23,36,63,0.6);
   align-items: center;
   justify-content: center;
   z-index: 20;
@@ -732,25 +1021,40 @@ h1, h2, h3 {
 
 .player-round-counter {
   display: none;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 24px;
   margin-bottom: 18px;
 }
-.round-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: none;
-  background: white;
-  color: var(--blue);
-  font-size: 22px;
+.round-count-label {
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
   font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(10,19,64,0.08);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--deepblue);
 }
-.round-count { margin: 0; text-align: center; font-family: 'Baloo 2', sans-serif; font-size: 26px; font-weight: 800; color: var(--ink); }
-.round-count-label { margin: 0; text-align: center; font-size: 11px; color: var(--deepblue); font-weight: 700; }
+.round-count {
+  margin: 2px 0 14px;
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 56px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1;
+}
+.round-add-btn { width: 100%; margin-bottom: 10px; }
+.round-fix-btn {
+  background: var(--deepblue);
+  border: none;
+  color: white;
+  font-size: 13px;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  cursor: pointer;
+  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+}
 
 .player-controls {
   display: none;
@@ -760,14 +1064,14 @@ h1, h2, h3 {
 .player-controls .btn-primary { flex: 1; }
 .btn-ghost-lg {
   flex: 1;
-  background: white;
+  background: var(--white);
   border: 2px solid var(--periwinkle);
   color: var(--blue);
   border-radius: 999px;
   padding: 15px;
   font-size: 15px;
   font-weight: 800;
-  font-family: 'Baloo 2', sans-serif;
+  font-family: var(--font-heading);
   cursor: pointer;
 }
 .btn-ghost-lg.small { flex: 0 0 auto; padding: 8px 16px; font-size: 12px; }
@@ -794,7 +1098,7 @@ h1, h2, h3 {
   align-items: center;
   justify-content: center;
   font-size: 32px;
-  box-shadow: 0 10px 24px rgba(0,87,255,0.3);
+  box-shadow: 0 10px 24px rgba(120,140,227,0.3);
 }
 .workout-complete h1 { font-size: 24px; }
 .workout-complete p { color: var(--deepblue); font-size: 14px; max-width: 260px; line-height: 1.5; }
@@ -802,10 +1106,10 @@ h1, h2, h3 {
 
 .benchmark-score-section {
   width: 260px;
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-md);
   padding: 16px 18px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.06);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.06);
   text-align: left;
 }
 .benchmark-score-label { margin: 0 0 12px; font-size: 13px; font-weight: 700; color: var(--ink); }
@@ -817,7 +1121,7 @@ h1, h2, h3 {
   border-radius: var(--radius-sm);
   padding: 10px 12px;
   font-size: 15px;
-  font-family: 'Nunito', sans-serif;
+  font-family: var(--font-body);
   outline: none;
 }
 .benchmark-score-input-row input:focus { border-color: var(--blue); }
@@ -826,10 +1130,10 @@ h1, h2, h3 {
 
 .rpe-section {
   width: 240px;
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-md);
   padding: 16px 18px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.06);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.06);
 }
 .rpe-label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 10px; }
 .rpe-label span { color: var(--blue); font-size: 16px; font-weight: 800; }
@@ -849,18 +1153,18 @@ h1, h2, h3 {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: white;
+  background: var(--white);
   border: 3px solid var(--blue);
-  box-shadow: 0 2px 6px rgba(10,19,64,0.25);
+  box-shadow: 0 2px 6px rgba(23,36,63,0.25);
   cursor: pointer;
 }
 .rpe-slider::-moz-range-thumb {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: white;
+  background: var(--white);
   border: 3px solid var(--blue);
-  box-shadow: 0 2px 6px rgba(10,19,64,0.25);
+  box-shadow: 0 2px 6px rgba(23,36,63,0.25);
   cursor: pointer;
 }
 .rpe-scale-labels {
@@ -879,10 +1183,10 @@ h1, h2, h3 {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: white;
+  background: var(--white);
   padding: 12px 16px;
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(10,19,64,0.05);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
   font-weight: 700;
   font-size: 14px;
 }
@@ -896,12 +1200,12 @@ h1, h2, h3 {
 /* ---------- PROGRESS ---------- */
 .range-toggle {
   display: flex;
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-sm);
   padding: 4px;
   gap: 4px;
   margin-bottom: 16px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.05);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
 .range-btn {
   flex: 1;
@@ -920,13 +1224,13 @@ h1, h2, h3 {
 .stat-cards-grid { display: grid; grid-template-columns: 1fr 1fr; }
 .stat-card {
   flex: 1;
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-sm);
   padding: 16px 8px;
   text-align: center;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.05);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
-.stat-num { font-family: 'Baloo 2', sans-serif; font-size: 22px; color: var(--blue); margin: 0; font-weight: 800; }
+.stat-num { font-family: var(--font-heading); font-size: 22px; color: var(--blue); margin: 0; font-weight: 800; }
 .stat-label { margin: 4px 0 0; font-size: 11px; color: var(--deepblue); font-weight: 700; }
 
 #progress-calendar-section { margin-bottom: 20px; }
@@ -940,12 +1244,12 @@ h1, h2, h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: white;
+  background: var(--white);
   border-radius: 8px;
   font-size: 11px;
   font-weight: 700;
   color: var(--deepblue);
-  box-shadow: 0 2px 6px rgba(10,19,64,0.05);
+  box-shadow: 0 2px 6px rgba(23,36,63,0.05);
 }
 .cal-day.empty { box-shadow: none; background: transparent; }
 .cal-day.future { color: var(--periwinkle); }
@@ -958,16 +1262,16 @@ h1, h2, h3 {
 
 /* ---------- CHALLENGE CARD (Community tab) ---------- */
 .challenge-card {
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-md);
   padding: 18px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.05);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
 .challenge-eyebrow { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--deepblue); }
-.challenge-name { margin: 4px 0 14px; font-family: 'Baloo 2', sans-serif; font-size: 20px; color: var(--ink); }
+.challenge-name { margin: 4px 0 14px; font-family: var(--font-heading); font-size: 20px; color: var(--ink); }
 .challenge-points-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; }
-.challenge-points-num { font-family: 'Baloo 2', sans-serif; font-size: 26px; font-weight: 800; color: var(--blue); }
+.challenge-points-num { font-family: var(--font-heading); font-size: 26px; font-weight: 800; color: var(--blue); }
 .challenge-points-label { font-size: 12px; font-weight: 700; color: var(--deepblue); }
 .challenge-reward {
   margin: 12px 0 16px;
@@ -984,15 +1288,15 @@ h1, h2, h3 {
 /* ---------- BENCHMARKS ---------- */
 .benchmark-list { display: flex; flex-direction: column; gap: 12px; }
 .benchmark-card {
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-md);
   padding: 16px 18px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.05);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
 .benchmark-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
 .benchmark-name { margin: 0; font-weight: 800; font-size: 15px; color: var(--ink); }
 .benchmark-subtitle { margin: 2px 0 0; font-size: 12px; color: var(--deepblue); font-weight: 600; }
-.benchmark-best { font-family: 'Baloo 2', sans-serif; font-size: 20px; font-weight: 800; color: var(--blue); white-space: nowrap; }
+.benchmark-best { font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--blue); white-space: nowrap; }
 .benchmark-delta {
   display: inline-block;
   font-size: 12px;
@@ -1041,13 +1345,13 @@ h1, h2, h3 {
   padding: 5px 12px;
   border-radius: 999px;
 }
-.profile-info-list { display: flex; flex-direction: column; gap: 1px; background: rgba(10,19,64,0.06); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 20px; }
-.profile-info-row { display: flex; justify-content: space-between; background: white; padding: 13px 16px; font-size: 13px; font-weight: 700; }
+.profile-info-list { display: flex; flex-direction: column; gap: 1px; background: rgba(23,36,63,0.06); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 20px; }
+.profile-info-row { display: flex; justify-content: space-between; background: var(--white); padding: 13px 16px; font-size: 13px; font-weight: 700; }
 .profile-info-row span:first-child { color: var(--deepblue); }
 .profile-info-row span:last-child { color: var(--ink); }
 
-.wearable-section { display: flex; flex-direction: column; gap: 1px; background: rgba(10,19,64,0.06); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 20px; }
-.wearable-row { display: flex; justify-content: space-between; align-items: center; background: white; padding: 13px 16px; }
+.wearable-section { display: flex; flex-direction: column; gap: 1px; background: rgba(23,36,63,0.06); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 20px; }
+.wearable-row { display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 13px 16px; }
 .wearable-name { margin: 0; font-size: 13px; font-weight: 800; color: var(--ink); }
 .wearable-status { margin: 2px 0 0; font-size: 11px; font-weight: 700; color: var(--deepblue); }
 .wearable-status.connected { color: #1a8a44; }
@@ -1065,7 +1369,7 @@ h1, h2, h3 {
 .habit-remove-btn:hover { background: var(--periwinkle); color: var(--blue); }
 .habit-picker { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .habit-picker-option {
-  background: white;
+  background: var(--white);
   border: 2px solid var(--periwinkle);
   color: var(--blue);
   border-radius: var(--radius-sm);
@@ -1092,32 +1396,41 @@ h1, h2, h3 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
+  background: var(--white);
   border: none;
   padding: 15px 16px;
   border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: 14px;
-  font-family: 'Nunito', sans-serif;
+  font-family: var(--font-body);
   cursor: pointer;
   color: var(--ink);
-  box-shadow: 0 4px 12px rgba(10,19,64,0.05);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
 .settings-row span:last-child { color: var(--deepblue); font-size: 16px; }
-.settings-row.danger { color: #e0435f; }
+.settings-row.danger { color: var(--danger); }
 
 /* ---------- BOTTOM NAV ---------- */
+/* Plain white bar, minimalist icons (Chris's 2026-08-06 follow-ups):
+   inactive icons are light grey instead of black, and text labels are
+   dropped entirely — icon-only, trying the look per his request. */
 .bottom-nav {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 10;
+  /* Forces its own compositing layer so it stays fully opaque while the
+     .screen sibling behind it scrolls — without this, some browsers let
+     scrolled content flicker/bleed through during fast scroll (Chris's
+     2026-08-06 report of the bar looking "partially transparent"). */
+  transform: translateZ(0);
   display: none;
-  background: white;
-  border-top: 1px solid rgba(10,19,64,0.06);
-  padding: 10px 6px 16px;
+  background: #FFFFFF;
+  border-top: 1px solid rgba(23,36,63,0.06);
+  padding: 12px 6px 18px;
   justify-content: space-around;
-  box-shadow: 0 -6px 20px rgba(10,19,64,0.06);
+  box-shadow: 0 -6px 20px rgba(23,36,63,0.06);
 }
 .nav-btn {
   background: none;
@@ -1128,27 +1441,34 @@ h1, h2, h3 {
   gap: 3px;
   font-size: 10px;
   font-weight: 700;
-  color: #9aa5c9;
+  color: #B0B0B0;
   cursor: pointer;
-  padding: 4px 6px;
-  font-family: 'Nunito', sans-serif;
+  padding: 4px 10px;
+  font-family: var(--font-body);
 }
-.nav-icon { font-size: 18px; }
+.nav-btn span:not(.nav-icon) { display: none; }
+.nav-icon { display: flex; }
+.nav-icon svg { width: 23px; height: 23px; display: block; }
 .nav-btn.active { color: var(--blue); }
 
 /* ---------- MESSAGING ---------- */
 .topbar-actions { display: flex; align-items: center; gap: 10px; }
 .msg-icon-btn {
   position: relative;
-  background: white;
+  background: var(--white);
   border: none;
   border-radius: 50%;
   width: 40px;
   height: 40px;
-  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  font-family: inherit;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(10,19,64,0.06);
+  box-shadow: 0 2px 8px rgba(23,36,63,0.06);
 }
+.msg-icon svg { width: 19px; height: 19px; display: block; }
 .msg-unread-badge {
   display: none;
   position: absolute;
@@ -1158,7 +1478,7 @@ h1, h2, h3 {
   height: 16px;
   padding: 0 4px;
   border-radius: 999px;
-  background: #e0435f;
+  background: var(--danger);
   color: white;
   font-size: 10px;
   font-weight: 800;
@@ -1171,11 +1491,11 @@ h1, h2, h3 {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-md);
   padding: 14px 16px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(10,19,64,0.05);
+  box-shadow: 0 4px 14px rgba(23,36,63,0.05);
 }
 .conversation-icon {
   width: 40px;
@@ -1237,10 +1557,10 @@ h1, h2, h3 {
 .msg-bubble-row.from-me { justify-content: flex-end; }
 .msg-bubble {
   max-width: 78%;
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-md);
   padding: 10px 14px;
-  box-shadow: 0 2px 8px rgba(10,19,64,0.05);
+  box-shadow: 0 2px 8px rgba(23,36,63,0.05);
 }
 .msg-bubble-row.from-me .msg-bubble { background: var(--blue); color: white; }
 .msg-bubble p { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.4; }
@@ -1253,7 +1573,7 @@ h1, h2, h3 {
   border: 2px solid var(--periwinkle);
   border-radius: 999px;
   padding: 12px 16px;
-  font-family: 'Nunito', sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
 }
 .thread-send-btn {
@@ -1275,8 +1595,8 @@ h1, h2, h3 {
   border-radius: var(--radius-sm);
   padding: 13px 14px;
   font-size: 15px;
-  font-family: 'Nunito', sans-serif;
-  background: white;
+  font-family: var(--font-body);
+  background: var(--field-bg);
   outline: none;
   margin-bottom: 12px;
 }
@@ -1290,9 +1610,9 @@ h1, h2, h3 {
 }
 .pill-filter {
   border: 2px solid var(--periwinkle);
-  background: white;
+  background: var(--white);
   color: var(--deepblue);
-  font-family: 'Nunito', sans-serif;
+  font-family: var(--font-body);
   font-weight: 700;
   font-size: 12px;
   padding: 6px 12px;
@@ -1317,12 +1637,12 @@ h1, h2, h3 {
   text-align: left;
   width: 100%;
   border: none;
-  background: white;
+  background: var(--white);
   border-radius: var(--radius-sm);
   padding: 14px 16px;
-  box-shadow: 0 4px 12px rgba(10,19,64,0.06);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.06);
   cursor: pointer;
-  font-family: 'Nunito', sans-serif;
+  font-family: var(--font-body);
 }
 .exercise-lib-card-top { display: flex; justify-content: space-between; align-items: center; }
 .exercise-lib-name { margin: 0; font-size: 15px; font-weight: 800; color: var(--ink); }
@@ -1334,13 +1654,116 @@ h1, h2, h3 {
   display: none;
   margin: 10px 0 0;
   padding-top: 10px;
-  border-top: 1px solid rgba(10,19,64,0.08);
+  border-top: 1px solid rgba(23,36,63,0.08);
   font-size: 13px;
   line-height: 1.5;
   color: var(--ink);
   opacity: 0.85;
 }
 .exercise-lib-card.expanded .exercise-lib-technique { display: block; }
+
+/* ---------- LIBRARY HOME (Build Your Own product) ---------- */
+.library-home-tile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(23,36,63,0.06);
+  font-family: var(--font-body);
+}
+.library-home-tile-emoji { font-size: 26px; }
+.library-home-tile-text { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.library-home-tile-title { font-size: 16px; font-weight: 800; color: var(--ink); }
+.library-home-tile-desc { font-size: 12px; font-weight: 700; color: var(--deepblue); }
+.library-home-tile-arrow { font-size: 22px; color: var(--periwinkle); }
+
+/* ---------- MY WORKOUTS ---------- */
+#build-workout-btn, #library-home-build-btn { width: 100%; margin-bottom: 16px; margin-top: 8px; }
+
+/* ---------- WORKOUT BUILDER ---------- */
+.builder-step { display: none; }
+.builder-step.active { display: block; }
+
+.builder-step-back {
+  background: none;
+  border: none;
+  color: var(--blue);
+  font-weight: 800;
+  font-size: 13px;
+  padding: 0 0 12px;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+.format-choice-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 2px solid var(--periwinkle);
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+.format-choice-card:active { border-color: var(--blue); }
+.format-choice-emoji { margin: 0 0 4px; font-size: 22px; }
+.format-choice-title { margin: 0 0 4px; font-size: 17px; font-weight: 800; color: var(--ink); }
+.format-choice-desc { margin: 0; font-size: 13px; color: var(--deepblue); font-weight: 600; line-height: 1.4; }
+
+.builder-selected-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.builder-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--blue);
+  color: white;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 6px 6px 12px;
+  border-radius: 999px;
+}
+.builder-chip button {
+  background: rgba(255,255,255,0.25);
+  border: none;
+  color: white;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.builder-pick-card.picked { box-shadow: 0 0 0 2px var(--blue); }
+.builder-pick-check {
+  color: var(--blue);
+  font-size: 16px;
+  font-weight: 800;
+  width: 22px;
+  text-align: center;
+}
+
+.builder-field-label { font-size: 13px; font-weight: 800; color: var(--ink); margin: 16px 0 8px; }
+.builder-field-label:first-child { margin-top: 0; }
+
+.builder-summary-card {
+  background: var(--white);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(23,36,63,0.06);
+}
+.builder-summary-card p { margin: 0 0 6px; font-size: 13px; color: var(--ink); }
+.builder-summary-card p:last-child { margin-bottom: 0; color: var(--deepblue); font-weight: 700; }
 
 @media (max-width: 440px) {
   body { padding: 0; }

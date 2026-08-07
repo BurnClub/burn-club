@@ -6,7 +6,7 @@
 <title>Burn Club</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -34,6 +34,7 @@
         </form>
         <button class="btn-ghost" id="guest-btn">Continue as Guest</button>
         <button class="btn-ghost" id="guest-ff-btn">Preview as Fit &amp; Functional member</button>
+        <button class="btn-ghost" id="guest-library-btn">Preview as Build Your Own member</button>
       </div>
     </section>
 
@@ -45,10 +46,10 @@
         <header class="topbar">
           <div>
             <p class="eyebrow">Welcome back</p>
-            <h1 class="topbar-title">Chris 👋</h1>
+            <h1 class="topbar-title">Chris</h1>
           </div>
           <div class="topbar-actions">
-            <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+            <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
             <img class="avatar" src="assets/burn-club-logo.png" alt="" />
           </div>
         </header>
@@ -62,13 +63,27 @@
           <span class="live-now-join">Join →</span>
         </div>
 
-        <div class="today-stats-row" id="today-stats-row"></div>
+        <div class="home-top-row">
+          <div class="home-stats-card">
+            <div class="today-stats-row" id="today-stats-row"></div>
+          </div>
 
-        <h2 class="section-title">Daily Habits</h2>
-        <div class="habits-list" id="habits-list"></div>
+          <div class="home-section-card card-green home-habits-compact">
+            <h2 class="home-section-title">Daily Habits</h2>
+            <div class="habits-list" id="habits-list"></div>
+          </div>
+        </div>
 
-        <h2 class="section-title">This Week's Workouts</h2>
-        <div class="circuit-list" id="home-circuit-list"></div>
+        <div class="home-section-card card-blue">
+          <span class="workouts-bg-icon"><svg viewBox="0 0 200 100" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="12" width="38" height="76" rx="18"/><rect x="154" y="12" width="38" height="76" rx="18"/><line x1="46" y1="50" x2="154" y2="50"/></svg></span>
+          <h2 class="home-section-title">This Week's Workouts</h2>
+          <div class="circuit-list" id="home-circuit-list"></div>
+        </div>
+
+        <div class="home-section-card card-pink">
+          <h2 class="home-section-title">Community Buzz</h2>
+          <div class="buzz-list" id="home-community-feed"></div>
+        </div>
       </section>
 
       <!-- ---------- WORKOUTS ---------- -->
@@ -91,6 +106,37 @@
         <div class="circuit-list-compact" id="last-week-list"></div>
       </section>
 
+      <!-- ---------- HOME (for "Build Your Own" / "library" profiles only) ---------- -->
+      <section class="screen tab-screen" id="tab-library-home" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Welcome</p>
+            <h1 class="topbar-title" id="library-home-greeting">Hi there 👋</h1>
+          </div>
+          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+        </header>
+        <p class="section-subtitle">Browse exercises or build a workout of your own, saved just for you.</p>
+
+        <button class="library-home-tile" data-tab-target="tab-library">
+          <span class="library-home-tile-emoji">🏋️</span>
+          <span class="library-home-tile-text">
+            <span class="library-home-tile-title">Exercise Library</span>
+            <span class="library-home-tile-desc" id="library-home-exercise-count"></span>
+          </span>
+          <span class="library-home-tile-arrow">›</span>
+        </button>
+        <button class="library-home-tile" data-tab-target="tab-my-workouts">
+          <span class="library-home-tile-emoji">📋</span>
+          <span class="library-home-tile-text">
+            <span class="library-home-tile-title">My Workouts</span>
+            <span class="library-home-tile-desc" id="library-home-workout-count"></span>
+          </span>
+          <span class="library-home-tile-arrow">›</span>
+        </button>
+
+        <button class="btn-primary" id="library-home-build-btn">+ Build a Workout</button>
+      </section>
+
       <!-- ---------- EXERCISE LIBRARY ---------- -->
       <section class="screen tab-screen" id="tab-library" data-tab>
         <header class="topbar">
@@ -104,6 +150,19 @@
         <div class="pill-filter-row" id="library-bodypart-filters"></div>
         <div class="pill-filter-row" id="library-equipment-filters"></div>
         <div class="exercise-library-list" id="library-exercise-list"></div>
+      </section>
+
+      <!-- ---------- MY WORKOUTS (member-built, "library"-only profiles) ---------- -->
+      <section class="screen tab-screen" id="tab-my-workouts" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Built by you</p>
+            <h1 class="topbar-title">My Workouts</h1>
+          </div>
+          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+        </header>
+        <button class="btn-primary" id="build-workout-btn">+ Build a Workout</button>
+        <div class="circuit-list my-workouts-list" id="my-workouts-list"></div>
       </section>
 
       <!-- ---------- CALENDAR (structured programs) ---------- -->
@@ -133,6 +192,55 @@
         <h2 class="section-title">Workout Breakdown</h2>
         <div class="block-summary-list" id="block-summary-list"></div>
         <button class="btn-primary sticky-cta" id="start-circuit-btn">Start Workout</button>
+      </section>
+
+      <!-- ---------- BUILD YOUR OWN WORKOUT ---------- -->
+      <section class="screen" id="screen-builder" data-screen>
+        <header class="detail-header">
+          <button class="back-btn" data-back="tab-my-workouts">✕</button>
+          <span class="detail-tag">Build a Workout</span>
+        </header>
+
+        <button class="builder-step-back" id="builder-back-btn" style="display:none;">‹ Back</button>
+
+        <div class="builder-step" id="builder-step-1">
+          <h2 class="section-title">What kind of workout?</h2>
+          <button class="format-choice-card" data-format="interval">
+            <p class="format-choice-emoji">⏱️</p>
+            <p class="format-choice-title">Timed Circuit</p>
+            <p class="format-choice-desc">Cycle through exercises for a set time each, rest, then repeat for a few rounds.</p>
+          </button>
+          <button class="format-choice-card" data-format="superset">
+            <p class="format-choice-emoji">💪</p>
+            <p class="format-choice-title">Superset</p>
+            <p class="format-choice-desc">Pair exercises back-to-back for reps, rest, then repeat for a few rounds.</p>
+          </button>
+        </div>
+
+        <div class="builder-step" id="builder-step-2">
+          <h2 class="section-title">Add Exercises</h2>
+          <p class="section-subtitle" id="builder-step2-hint"></p>
+          <div class="builder-selected-chips" id="builder-selected-chips"></div>
+          <input type="text" class="search-input" id="builder-search" placeholder="Search exercises…" autocomplete="off" />
+          <div class="pill-filter-row" id="builder-bodypart-filters"></div>
+          <div class="exercise-library-list" id="builder-exercise-list"></div>
+        </div>
+
+        <div class="builder-step" id="builder-step-3">
+          <h2 class="section-title" id="builder-step3-title">Set the Timing</h2>
+          <div id="builder-timing-fields"></div>
+        </div>
+
+        <div class="builder-step" id="builder-step-4">
+          <h2 class="section-title">Name It &amp; Save</h2>
+          <div class="builder-summary-card" id="builder-summary-card"></div>
+          <label class="field">
+            <span>Workout Name</span>
+            <input type="text" id="builder-name-input" placeholder="e.g. My Tuesday Circuit" autocomplete="off" />
+          </label>
+        </div>
+
+        <button class="btn-primary sticky-cta" id="builder-continue-btn">Continue</button>
       </section>
 
       <!-- ---------- WORKOUT PLAYER (active session) ---------- -->
@@ -165,10 +273,16 @@
 
         <div class="player-amrap-list" id="player-amrap-list"></div>
 
+        <!-- Straight Sets / Rep Ladder: every set for the block's one exercise
+             on this one screen (2026-08-06), instead of a separate screen per
+             set. Weight field is UI-only for now, not saved. -->
+        <div class="player-sets-list" id="player-sets-list"></div>
+
         <div class="player-round-counter" id="player-round-counter">
-          <button class="round-btn" id="round-minus-btn">−</button>
-          <div><p class="round-count" id="round-count">0</p><p class="round-count-label">Rounds Completed</p></div>
-          <button class="round-btn" id="round-plus-btn">+</button>
+          <p class="round-count-label">Rounds Completed</p>
+          <p class="round-count" id="round-count">0</p>
+          <button class="btn-primary round-add-btn" id="round-plus-btn">+ Add Round</button>
+          <button class="round-fix-btn" id="round-minus-btn">−1</button>
         </div>
 
         <div class="player-controls" id="player-controls">
@@ -189,6 +303,16 @@
             <p class="player-video-label">Demo Video Placeholder</p>
           </div>
           <p class="exercise-video-name" id="exercise-video-name">Exercise Name</p>
+        </div>
+      </div>
+
+      <!-- ---------- REST TIMER OVERLAY (between sets in the Straight Sets / Rep Ladder checklist) ---------- -->
+      <div class="rest-timer-overlay" id="rest-timer-overlay">
+        <div class="rest-timer-card">
+          <p class="player-clock-label">Rest</p>
+          <p class="player-clock" id="rest-overlay-clock">00:00</p>
+          <p class="player-sub-pill" id="rest-overlay-upnext">Up next</p>
+          <button class="btn-primary" id="rest-overlay-skip-btn">Skip Rest →</button>
         </div>
       </div>
 
@@ -359,11 +483,15 @@
           <div class="profile-info-row"><span>Member Since</span><span id="profile-member-since"></span></div>
         </div>
 
-        <h2 class="section-title">Connected Devices</h2>
-        <div class="wearable-section" id="wearable-section"></div>
+        <div id="profile-wearables-section">
+          <h2 class="section-title">Connected Devices</h2>
+          <div class="wearable-section" id="wearable-section"></div>
+        </div>
 
-        <h2 class="section-title">Daily Habits</h2>
-        <div id="habit-manager"></div>
+        <div id="profile-habits-section">
+          <h2 class="section-title">Daily Habits</h2>
+          <div id="habit-manager"></div>
+        </div>
 
         <div class="settings-list">
           <button class="settings-row"><span>Membership &amp; Billing</span><span>›</span></button>
@@ -377,26 +505,32 @@
 
       <!-- ---------- BOTTOM NAV ---------- -->
       <nav class="bottom-nav" id="bottom-nav">
-        <button class="nav-btn active" data-tab-target="tab-home">
-          <span class="nav-icon">🏠</span><span>Home</span>
+        <button class="nav-btn active" data-tab-target="tab-home" id="nav-home-btn">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span><span>Home</span>
         </button>
         <button class="nav-btn" data-tab-target="tab-circuits" id="nav-workouts-btn">
-          <span class="nav-icon">💧</span><span>Workouts</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s7 8 7 13a7 7 0 1 1-14 0c0-5 7-13 7-13z"/></svg></span><span>Workouts</span>
         </button>
         <button class="nav-btn" data-tab-target="tab-calendar" id="nav-calendar-btn" style="display:none;">
-          <span class="nav-icon">📅</span><span>Calendar</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span><span>Calendar</span>
         </button>
-        <button class="nav-btn" data-tab-target="tab-library">
-          <span class="nav-icon">🏋️</span><span>Exercises</span>
+        <button class="nav-btn" data-tab-target="tab-library-home" id="nav-library-home-btn" style="display:none;">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span><span>Home</span>
         </button>
-        <button class="nav-btn" data-tab-target="tab-community">
-          <span class="nav-icon">👥</span><span>Community</span>
+        <button class="nav-btn" data-tab-target="tab-library" id="nav-library-btn">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7v10M2 9v6M18 7v10M22 9v6M6 12h12"/></svg></span><span>Exercises</span>
         </button>
-        <button class="nav-btn" data-tab-target="tab-progress">
-          <span class="nav-icon">📈</span><span>Progress</span>
+        <button class="nav-btn" data-tab-target="tab-my-workouts" id="nav-my-workouts-btn" style="display:none;">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM8 11h8M8 15h5"/></svg></span><span>My Workouts</span>
+        </button>
+        <button class="nav-btn" data-tab-target="tab-community" id="nav-community-btn">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><path d="M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="7" r="2.3"/><path d="M14 20c.3-2.7 2-4.6 4.3-5"/></svg></span><span>Community</span>
+        </button>
+        <button class="nav-btn" data-tab-target="tab-progress" id="nav-progress-btn">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span><span>Progress</span>
         </button>
         <button class="nav-btn" data-tab-target="tab-profile">
-          <span class="nav-icon">🙂</span><span>Profile</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span><span>Profile</span>
         </button>
       </nav>
 

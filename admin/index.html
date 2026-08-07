@@ -167,9 +167,14 @@
       <div class="filter-row">
         <input type="text" class="search-input" id="exercise-search" placeholder="Search exercises..." />
       </div>
-      <div class="filter-row" id="exercise-category-filters"></div>
+      <p class="exercise-filter-label">Body Part</p>
+      <div class="filter-row" id="exercise-bodypart-filters"></div>
+      <p class="exercise-filter-label">Equipment</p>
+      <div class="filter-row" id="exercise-equipment-filters"></div>
+      <p class="exercise-filter-label">Type</p>
+      <div class="filter-row" id="exercise-modality-filters"></div>
 
-      <div class="exercise-grid" id="exercise-grid"></div>
+      <div class="exercise-list" id="exercise-list"></div>
     </section>
 
     <!-- ---------- EXERCISE EDITOR MODAL ---------- -->
@@ -201,6 +206,10 @@
             <span class="modal-field-label">Equipment</span>
             <div class="tag-checkbox-row" id="exercise-modal-equipment"></div>
           </div>
+          <label class="tag-checkbox">
+            <input type="checkbox" id="exercise-modal-track-weight" />
+            Track Weight Used <span class="modal-field-hint">(shows a weight field for this exercise during a workout — leave off for bodyweight moves)</span>
+          </label>
         </div>
         <footer class="builder-footer">
           <span></span>

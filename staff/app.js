@@ -121,9 +121,23 @@ function renderThreadMessages() {
   list.scrollTop = list.scrollHeight;
 }
 
+// Pushes locally AND into the shared localStorage bridge so the member/admin
+// apps pick it up live (same-browser only — see LIVE_CIRCUITS_KEY's note).
+function broadcastMessage(msg) {
+  MESSAGES.push(msg);
+  let live;
+  try {
+    live = JSON.parse(localStorage.getItem(LIVE_MESSAGES_KEY) || "[]");
+  } catch (e) {
+    live = [];
+  }
+  live.push(msg);
+  localStorage.setItem(LIVE_MESSAGES_KEY, JSON.stringify(live));
+}
+
 function sendThreadMessage(text) {
   if (!openThreadId || !text.trim()) return;
-  MESSAGES.push({
+  broadcastMessage({
     id: "msg-" + Date.now(),
     conversationId: openThreadId,
     senderId: "staff",
@@ -135,6 +149,26 @@ function sendThreadMessage(text) {
   });
   renderThreadMessages();
 }
+
+// If the member or admin app sends/replies in the same browser, pick it up
+// live instead of requiring a manual reload.
+window.addEventListener("storage", (e) => {
+  if (e.key !== LIVE_MESSAGES_KEY) return;
+  let liveMessages;
+  try {
+    liveMessages = JSON.parse(e.newValue || "[]");
+  } catch (err) {
+    return;
+  }
+  liveMessages.forEach((m) => {
+    const idx = MESSAGES.findIndex((x) => x.id === m.id);
+    if (idx === -1) MESSAGES.push(m);
+    else MESSAGES[idx] = m;
+  });
+  updateUnreadBadge();
+  if (document.getElementById("tab-messages").classList.contains("visible")) renderConversationList();
+  if (document.getElementById("screen-thread").classList.contains("visible")) renderThreadMessages();
+});
 
 function backToMessages() {
   showTab("tab-messages");

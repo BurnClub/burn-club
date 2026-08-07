@@ -5,6 +5,7 @@
   --ink: #0a1340;
   --yellow: #f5da8a;
   --white: #ffffff;
+  --field-bg: #E3ECFF;
   --bg: #f4f6ff;
   --radius-lg: 20px;
   --radius-md: 14px;
@@ -36,7 +37,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   padding: 10px 12px;
   font-size: 14px;
   font-family: 'Nunito', sans-serif;
-  background: white;
+  background: var(--field-bg);
   outline: none;
   width: 100%;
 }
@@ -412,6 +413,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   padding: 10px 14px;
   font-family: 'Nunito', sans-serif;
   font-size: 14px;
+  background: var(--field-bg);
   width: 100%;
   max-width: 340px;
   outline: none;
@@ -419,22 +421,27 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .search-input:focus { border-color: var(--blue); }
 
 /* ---------- EXERCISE LIBRARY ---------- */
-.exercise-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-.exercise-card {
+.exercise-filter-label { margin: 0 0 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--deepblue); }
+.exercise-list { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.exercise-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   background: white;
   border-radius: var(--radius-md);
   padding: 14px 16px;
   box-shadow: 0 4px 14px rgba(10,19,64,0.05);
   cursor: pointer;
 }
-.exercise-card:hover { box-shadow: 0 4px 14px rgba(10,19,64,0.12); }
-.exercise-card p.ex-name { margin: 0 0 8px; font-weight: 800; font-size: 14px; color: var(--ink); }
-.exercise-card .ex-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.exercise-card .status-pill { background: var(--periwinkle); color: var(--blue); }
-.exercise-card .status-pill.modality-cardio { background: #ffe3c2; color: #a35b00; }
-.exercise-card .status-pill.modality-strength { background: #d8e9ff; color: var(--blue); }
-.exercise-card .ex-equipment { margin: 8px 0 0; font-size: 11px; color: var(--deepblue); font-weight: 600; }
-.exercise-card .ex-usage { margin: 4px 0 0; font-size: 11px; color: var(--deepblue); font-weight: 700; }
+.exercise-list-row:hover { box-shadow: 0 4px 14px rgba(10,19,64,0.12); }
+.exercise-list-row .ex-name { margin: 0; flex: 1; min-width: 140px; font-weight: 800; font-size: 14px; color: var(--ink); }
+.exercise-list-row .ex-tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.exercise-list-row .status-pill { background: var(--periwinkle); color: var(--blue); }
+.exercise-list-row .status-pill.modality-cardio { background: #ffe3c2; color: #a35b00; }
+.exercise-list-row .status-pill.modality-strength { background: #d8e9ff; color: var(--blue); }
+.exercise-list-row .status-pill.modality-stretch { background: #dff5e3; color: #1a8a44; }
+.exercise-list-row .ex-equipment { margin: 0; width: 150px; flex-shrink: 0; text-align: right; font-size: 11px; color: var(--deepblue); font-weight: 600; }
 
 .modal-field-label { display: block; margin-bottom: 2px; }
 .modal-field-hint { font-weight: 600; text-transform: none; letter-spacing: normal; color: #9aa5c9; font-size: 11px; }
@@ -485,6 +492,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   padding: 10px 12px;
   font-size: 14px;
   font-family: 'Nunito', sans-serif;
+  background: var(--field-bg);
 }
 .modal-field textarea { resize: vertical; }
 

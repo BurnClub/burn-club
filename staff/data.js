@@ -154,9 +154,8 @@ const CIRCUITS = [
 
 // ---------------- Messaging ----------------
 // Same seeded conversations as the desktop admin's Messages section — a DM
-// per member, plus one group chat. Prototype-only: replying here doesn't
-// reach the desktop admin or the member app, same limitation as everywhere
-// else in this project.
+// per member, plus one group chat. Messages sent here (or in the member/admin
+// apps) are bridged live via localStorage — see broadcastMessage() in app.js.
 const CONVERSATIONS = [
   ...MEMBERS.map((m) => ({ id: "dm-" + m.id, type: "dm", memberId: m.id })),
   { id: "group-burn-club", type: "group", name: "Burn Club Group Chat" },
@@ -170,6 +169,15 @@ const MESSAGES = [
   { id: "msg-5", conversationId: "group-burn-club", senderId: "priya-k", senderName: "Priya K.", isStaff: false, text: "Sweat & Sculpt kicked my butt today 😅", time: "Sun 5:30 PM", read: true },
   { id: "msg-6", conversationId: "group-burn-club", senderId: "marcus-t", senderName: "Marcus T.", isStaff: false, text: "Same! Worth it though", time: "Sun 5:41 PM", read: false },
 ];
+
+const LIVE_MESSAGES_KEY = "burnClubLiveMessages";
+try {
+  JSON.parse(localStorage.getItem(LIVE_MESSAGES_KEY) || "[]").forEach((m) => {
+    const idx = MESSAGES.findIndex((x) => x.id === m.id);
+    if (idx === -1) MESSAGES.push(m);
+    else MESSAGES[idx] = m;
+  });
+} catch (e) {}
 
 // ---------------- Live (faked — see member app's data.js for the matching note) ----------------
 // A scripted list of chat lines that "arrive" one at a time once staff goes
