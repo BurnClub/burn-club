@@ -138,6 +138,7 @@ const CIRCUITS = [
         label: "Finisher Superset",
         rounds: 3,
         rest: 30,
+        notes: "Both exercises are on this one screen — finish all the reps for the first exercise, then move straight into the second with no rest in between. Once you've done both, that's one round; rest, then start the next round from the top.",
         exercises: [
           { name: "Kettlebell Swings", reps: 15 },
           { name: "Walking Lunges", reps: 12 },
@@ -515,7 +516,11 @@ try {
 // coordinate with the separate staff app (no real cross-app sync, same
 // limitation as everything else in this prototype).
 const LIVE_SESSION = {
-  isLive: true,
+  // Off by default (2026-08-07) — Chris wants to look at Home without the
+  // banner for now since it'll only actually show up occasionally in real
+  // use. Flip back to true to see it again; nothing else about the feature
+  // changed.
+  isLive: false,
   title: "Live Q&A with Coach Chris",
   hostName: "Chris V.",
 };

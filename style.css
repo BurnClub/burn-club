@@ -22,6 +22,39 @@
   --kawaii-blue-dark: #9DCBE0;
   --pink-dark: #DAA2DD;
   --periwinkle-dark: #B3BEE5;
+
+  /* ---- Official brand palette (Chris, 2026-08-07) ----
+     Lime, White, Floral Blue, Kawaii Blue, Navy. Rolling out section by
+     section starting with Home — not applied everywhere yet.
+     "Kawaii Blue" (#788CE3) and "Navy" (#17243F) turned out to already be
+     --blue and --ink above, so those two keep their existing names instead
+     of a duplicate variable; --lime and --floral are genuinely new. Text
+     rule: Navy text on Lime/White/Floral backgrounds, White text on
+     Kawaii/Navy backgrounds. */
+  --lime: #DFF478;
+  --lime-dark: #C7DC6A;
+  --floral: #92BAD5;
+  --floral-dark: #83A7C0;
+  --blue-dark: #6577CC; /* Kawaii Blue's gradient-dark stop */
+  /* Comm Buzz moved off Floral (2026-08-07) — Chris felt it clashed once
+     Tracker went Navy. Not one of the 5 official palette colors, just a
+     one-off for this card; Navy text, same as Floral used. First try was
+     #848252, corrected to this bright yellow same session. */
+  --lemon: #FDFF32;
+  --lemon-dark: #E3E62D;
+
+  /* ---- New palette pass (2026-08-08): "Wisteria/Space/Spring/Emerald/
+     Alice" — a different site's names for this round, per Chris. Wisteria
+     Blue (#788CE3) is the same value as --blue above, kept as that variable
+     rather than duplicated. Space Indigo is a distinct new dark color, NOT
+     the same as --ink/Navy from the last pass (#27293F vs #17243F) — don't
+     conflate them. Text rule: White text on Wisteria/Space/Emerald, Space
+     (Indigo) text on Alice (white) and Spring backgrounds. */
+  --indigo: #27293F; /* "Space Indigo" */
+  --spring: #37FF8B; /* "Spring Green" */
+  --spring-dark: #2FE47B;
+  --emerald: #13673F; /* "Dark Emerald" */
+  --alice: #F4FAFF; /* "Alice Blue" */
   --radius-lg: 20px;
   --radius-md: 14px;
   --radius-sm: 10px;
@@ -252,7 +285,9 @@ h1, h2, h3 {
 }
 .home-stats-card {
   flex: 0 0 108px;
-  background: linear-gradient(180deg, var(--periwinkle) 0%, var(--periwinkle-dark) 100%);
+  /* Tracker: Space Indigo (2026-08-08 pass — was Navy). Flat, not a
+     gradient — dark enough that a dark-on-dark gradient wouldn't read. */
+  background: var(--indigo);
   border-radius: var(--radius-lg);
   border: 1px solid rgba(255,255,255,0.5);
   padding: 14px 12px;
@@ -260,6 +295,9 @@ h1, h2, h3 {
   display: flex;
   align-items: center;
 }
+.home-stats-card .today-stat-icon,
+.home-stats-card .today-stat-num,
+.home-stats-card .today-stat-label { color: white; }
 .home-stats-card .today-stats-row {
   flex-direction: column;
   align-items: flex-start;
@@ -323,6 +361,15 @@ h1, h2, h3 {
   font-family: inherit;
 }
 .habit-row:last-child { border-bottom: none; }
+/* Habits: Spring Green (2026-08-08 pass — was Lime) — Space Indigo text on
+   the light background, and the checkbox's default white border/checkmark
+   (built for a saturated/dark card) needs to flip to indigo so it doesn't
+   wash out against the light spring green. */
+.card-spring .habit-row { border-bottom-color: rgba(39,41,63,0.12); }
+.card-spring .habit-label { color: var(--indigo); }
+.card-spring .habit-row.checked .habit-label { color: rgba(39,41,63,0.45); }
+.card-spring .habit-auto-tag { color: var(--indigo); }
+.card-spring .habit-checkbox { border-color: var(--indigo); color: var(--indigo); }
 .habit-checkbox {
   width: 18px;
   height: 18px;
@@ -372,19 +419,41 @@ h1, h2, h3 {
   overflow: hidden;
 }
 .home-section-card.card-green { background: linear-gradient(180deg, var(--green) 0%, var(--green-dark) 100%); }
-.home-section-card.card-blue { background: linear-gradient(180deg, var(--kawaii-blue) 0%, var(--kawaii-blue-dark) 100%); }
+/* Workouts: Wisteria Blue (2026-08-08 pass — same value as the "Kawaii
+   Blue" from the prior pass, just renamed). Navy watermark icon below. */
+.home-section-card.card-blue { background: linear-gradient(180deg, var(--blue) 0%, var(--blue-dark) 100%); }
 .home-section-card.card-pink { background: linear-gradient(180deg, var(--pink) 0%, var(--pink-dark) 100%); }
-/* Big diagonal watermark icon behind the workout cards (Chris's 2026-08-06
-   request) — original line-art dumbbell, not the reference photo, kept low
-   opacity so the white cards on top stay the focus. */
+/* Comm Buzz: Dark Emerald (2026-08-08 pass — was bright yellow). Flat, not
+   a gradient, same as the other dark cards; White text (see below). */
+.home-section-card.card-emerald { background: var(--emerald); }
+/* Habits: Spring Green (2026-08-08 pass — was Lime). */
+.home-section-card.card-spring { background: linear-gradient(180deg, var(--spring) 0%, var(--spring-dark) 100%); }
+/* White section card (Last Week's Workouts, 2026-08-07) — same wrapper as
+   the colored sections so the title lines up with the others, but on a
+   white page a plain white card needs its own edge: a faint navy-tinted
+   outline instead of the light-catch border the colored cards use. */
+.home-section-card.card-white {
+  background: white;
+  border: 1px solid rgba(23,36,63,0.08);
+  box-shadow: 0 4px 14px rgba(23,36,63,0.07);
+}
+/* Watermark icon behind the workout cards — was a line-art barbell (Chris's
+   2026-08-06 request), swapped 2026-08-08 for an outline of the
+   melting-smiley logo, traced from his reference PNG's proportions (head
+   width/eye position/smile width/drip depths) rather than the earlier
+   rougher approximation. Straight up and down now (no rotation), sized to
+   run edge to edge vertically with just a few px of margin top and bottom —
+   width follows from that via aspect-ratio, matching the SVG's own
+   viewBox (200 x 264). Navy, 2x-thick lines carried over from the barbell
+   version. */
 .workouts-bg-icon {
   position: absolute;
-  top: 50%;
+  top: 8px;
+  bottom: 8px;
   left: 50%;
-  width: 480px;
-  height: 240px;
-  transform: translate(-50%, -50%) rotate(-25deg);
-  color: var(--pink);
+  transform: translateX(-50%);
+  aspect-ratio: 200 / 264;
+  color: var(--ink);
   opacity: 0.5;
   pointer-events: none;
   z-index: 0;
@@ -419,11 +488,22 @@ h1, h2, h3 {
   background: var(--deepblue);
 }
 .card-green .home-section-title::before { background: var(--green-dark); }
-.card-blue .home-section-title::before { background: var(--kawaii-blue-dark); }
 .card-pink .home-section-title::before { background: var(--pink-dark); }
 /* Trying all-caps on Community Buzz specifically per Chris's request, to
-   preview before deciding whether it goes on the other section titles too. */
-.card-pink .home-section-title { text-transform: uppercase; letter-spacing: 0.5px; }
+   preview before deciding whether it goes on the other section titles too —
+   carried over to card-emerald since Comm Buzz lives there now (2026-08-08). */
+.card-pink .home-section-title,
+.card-emerald .home-section-title { text-transform: uppercase; letter-spacing: 0.5px; }
+/* 2026-08-08 palette text-color rule: White text on Wisteria/Space/Emerald,
+   Space (Indigo) text on Alice (white) and Spring backgrounds.
+   card-green/card-pink/card-white keep the original deepblue title color —
+   not part of this pass. */
+.card-blue .home-section-title,
+.card-emerald .home-section-title { color: white; }
+.card-blue .home-section-title::before,
+.card-emerald .home-section-title::before { background: white; }
+.card-spring .home-section-title { color: var(--indigo); }
+.card-spring .home-section-title::before { background: var(--indigo); }
 .section-subtitle {
   font-size: 12px;
   font-weight: var(--subtitle-weight);
@@ -562,6 +642,13 @@ h1, h2, h3 {
 .buzz-text p { margin: 0; font-size: 13px; font-weight: var(--subtext-weight); color: var(--subtext-color); }
 .buzz-text strong { font-weight: 800; color: black; }
 .buzz-text p.buzz-time { color: var(--subtext-color); font-weight: var(--subtext-weight); font-size: 11px; margin-top: 2px !important; }
+/* Comm Buzz: Dark Emerald (2026-08-08, moved off bright yellow) — White
+   text throughout (Emerald is dark now, opposite of the light yellow/floral
+   backgrounds this card used to have), including the member names that
+   started out pure black several passes ago. */
+.card-emerald .buzz-text p,
+.card-emerald .buzz-text strong,
+.card-emerald .buzz-text p.buzz-time { color: white; }
 
 /* ---------- ARCHIVE ---------- */
 .archive-list { display: flex; flex-direction: column; gap: 8px; }
@@ -578,28 +665,31 @@ h1, h2, h3 {
 .archive-count { color: var(--deepblue); font-weight: 700; }
 
 /* Last Week's Workouts — same compact footprint as .archive-row, but a real
-   tappable workout entry rather than an informational row. */
+   tappable workout entry rather than an informational row. Sits directly on
+   the plain white page (no colored section-card wrapper, unlike This Week's
+   Workouts / Stretch & Core Library above) — the rows themselves carry the
+   color instead, with a deliberately stronger shadow so they still read as
+   raised cards against the white page (Chris's 2026-08-07 request). */
 .circuit-list-compact { display: flex; flex-direction: column; gap: 8px; }
 .circuit-row-compact {
   display: flex;
   justify-content: space-between;
-  background: var(--white);
+  background: var(--purple);
   padding: 12px 16px;
   border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: 13px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+  box-shadow: 0 6px 16px rgba(23,36,63,0.18);
   border: none;
   width: 100%;
   text-align: left;
   font-family: inherit;
-  color: var(--ink);
+  color: white;
   cursor: pointer;
 }
-.circuit-row-compact.completed {
-  background: #e4e6ef;
-  color: #6b7094;
-}
+.circuit-row-compact .archive-count { color: rgba(255,255,255,0.8); }
+.circuit-row-compact.completed { opacity: 0.6; }
+.circuit-row-compact.completed span:first-child { text-decoration: line-through; }
 .completed-note {
   color: #ffffff;
   background: rgba(23,36,63,0.55);
@@ -940,30 +1030,26 @@ h1, h2, h3 {
   justify-content: center;
 }
 .set-row-reps { flex: 1; font-weight: 700; font-size: 13px; color: var(--ink); }
-.set-row-weight {
-  width: 60px;
+/* Done button replaces the old checkbox + inline weight field (2026-08-07) —
+   weight moved into the rest popup, see the note above toggleSetChecked in
+   app.js. */
+.set-row-done-btn {
   border: 2px solid var(--periwinkle);
   border-radius: var(--radius-sm);
-  padding: 8px 4px;
-  font-size: 13px;
-  font-family: var(--font-body);
-  text-align: center;
-  outline: none;
-}
-.set-row-check {
-  width: 26px;
-  height: 26px;
-  min-width: 26px;
-  border-radius: 7px;
-  border: 2px solid var(--periwinkle);
   background: none;
-  color: white;
+  color: var(--blue);
   font-weight: 800;
-  font-size: 14px;
+  font-size: 12px;
+  padding: 8px 14px;
   cursor: pointer;
   flex-shrink: 0;
+  font-family: inherit;
 }
-.player-set-row.done .set-row-check { background: var(--blue); border-color: var(--blue); }
+.player-set-row.done .set-row-done-btn {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: white;
+}
 
 /* Rest timer pops up over the checklist between sets instead of a full
    screen swap — same visual language as the exercise video overlay below. */
@@ -989,6 +1075,48 @@ h1, h2, h3 {
 .rest-timer-card .player-clock { margin: 4px 0 0; }
 .rest-timer-card .player-sub-pill { margin: 8px 0 0; }
 .rest-timer-card .btn-primary { margin-top: 20px; width: 100%; }
+/* Weight-used field inside the rest/last-set popup (2026-08-07) — member has
+   the whole rest period (or, on the last set, no rush at all) to fill it in
+   instead of typing under pressure right as they hit Done. */
+.rest-overlay-weight-field { margin-top: 16px; text-align: left; }
+.rest-overlay-weight-label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--deepblue);
+}
+.rest-overlay-weight-row { display: flex; gap: 8px; }
+.rest-overlay-weight-field input {
+  flex: 1;
+  min-width: 0;
+  border: 2px solid var(--periwinkle);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: var(--font-body);
+  text-align: center;
+  outline: none;
+  box-sizing: border-box;
+}
+/* Save locks the typed weight into the row right away instead of only
+   applying it when rest ends (2026-08-07) — same value either way, this is
+   just visible confirmation it was captured. */
+.rest-overlay-weight-save-btn {
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--blue);
+  color: white;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 10px 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+.rest-overlay-weight-save-btn:disabled { background: var(--green-dark); cursor: default; }
 
 .exercise-video-overlay {
   display: none;
@@ -1200,7 +1328,8 @@ h1, h2, h3 {
 /* ---------- PROGRESS ---------- */
 .range-toggle {
   display: flex;
-  background: var(--white);
+  background: var(--card-white);
+  border: 1px solid rgba(23,36,63,0.08);
   border-radius: var(--radius-sm);
   padding: 4px;
   gap: 4px;
@@ -1217,19 +1346,19 @@ h1, h2, h3 {
   font-weight: 700;
   color: var(--deepblue);
   cursor: pointer;
+  font-family: inherit;
 }
-.range-btn.active { background: var(--blue); color: white; }
+.range-btn.active { background: var(--purple); color: white; }
 
-.stat-cards { display: flex; gap: 10px; margin-bottom: 8px; }
-.stat-cards-grid { display: grid; grid-template-columns: 1fr 1fr; }
-.stat-card {
-  flex: 1;
-  background: var(--white);
-  border-radius: var(--radius-sm);
-  padding: 16px 8px;
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+/* Stats section (2026-08-07): moved off individual cream stat-cards onto one
+   green .home-section-card, matching the Home page's colored-section
+   pattern — just evenly-spaced numbers/labels straight on the card. */
+.stats-plain-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  row-gap: 20px;
 }
+.stat-item { text-align: center; }
 .stat-num { font-family: var(--font-heading); font-size: 22px; color: var(--blue); margin: 0; font-weight: 800; }
 .stat-label { margin: 4px 0 0; font-size: 11px; color: var(--deepblue); font-weight: 700; }
 
@@ -1239,26 +1368,28 @@ h1, h2, h3 {
   grid-template-columns: repeat(7, 1fr);
   gap: 6px;
 }
+/* Day boxes (2026-08-07 redesign): plain white box + dark text by default;
+   a workout completion highlights blue, a stretch/core session highlights
+   green, and a day with both gets a diagonal corner-to-corner split of the
+   two — see .cal-both below. */
 .cal-day {
   aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--white);
+  background: var(--card-white);
   border-radius: 8px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--deepblue);
+  color: var(--ink);
   box-shadow: 0 2px 6px rgba(23,36,63,0.05);
 }
 .cal-day.empty { box-shadow: none; background: transparent; }
 .cal-day.future { color: var(--periwinkle); }
-.cal-day.today { outline: 2px solid var(--blue); outline-offset: -2px; }
-.cal-day.done { color: white; }
-.cal-day.done.cat-circuit { background: var(--blue); }
-.cal-day.done.cat-stretch { background: var(--periwinkle); color: var(--ink); }
-.cal-day.done.cat-core-burn { background: var(--yellow); color: var(--ink); }
-.cal-day.done.today { outline-color: white; }
+.cal-day.today { outline: 2px solid var(--deepblue); outline-offset: -2px; }
+.cal-day.done.cal-workout { background: var(--kawaii-blue); }
+.cal-day.done.cal-stretch { background: var(--green); }
+.cal-day.done.cal-both { background: linear-gradient(135deg, var(--kawaii-blue) 50%, var(--green) 50%); }
 
 /* ---------- CHALLENGE CARD (Community tab) ---------- */
 .challenge-card {
@@ -1286,33 +1417,44 @@ h1, h2, h3 {
 .challenge-empty { margin: 0; font-size: 13px; color: var(--deepblue); text-align: center; }
 
 /* ---------- BENCHMARKS ---------- */
-.benchmark-list { display: flex; flex-direction: column; gap: 12px; }
+/* Column layout tryout (2026-08-07): all 3 benchmarks side by side in one
+   row instead of stacked rows, each stat descending inside its own white
+   card — bounded in a blue .home-section-card like Workouts/Progress. */
+.benchmark-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-items: stretch; }
 .benchmark-card {
-  background: var(--white);
+  background: var(--card-white);
   border-radius: var(--radius-md);
-  padding: 16px 18px;
+  padding: 14px 10px;
   box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
 }
-.benchmark-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
-.benchmark-name { margin: 0; font-weight: 800; font-size: 15px; color: var(--ink); }
-.benchmark-subtitle { margin: 2px 0 0; font-size: 12px; color: var(--deepblue); font-weight: 600; }
-.benchmark-best { font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--blue); white-space: nowrap; }
+.benchmark-name { margin: 0; font-weight: 800; font-size: 13px; color: var(--ink); }
+.benchmark-subtitle { margin: 0; font-size: 10px; color: var(--deepblue); font-weight: 600; line-height: 1.3; }
+/* Push score + delta/tag to the bottom of the card as one group, regardless
+   of subtitle length, so all 3 columns line up on the same baseline
+   (2026-08-07). */
+.benchmark-bottom { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: auto; padding-top: 4px; }
+.benchmark-best { font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--blue); }
 .benchmark-delta {
   display: inline-block;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 800;
   color: white;
   background: var(--blue);
-  padding: 5px 12px;
+  padding: 5px 8px;
   border-radius: 999px;
 }
 .benchmark-baseline-tag {
   display: inline-block;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--ink);
   background: var(--yellow);
-  padding: 5px 12px;
+  padding: 5px 8px;
   border-radius: 999px;
 }
 

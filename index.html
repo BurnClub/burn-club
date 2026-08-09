@@ -68,19 +68,19 @@
             <div class="today-stats-row" id="today-stats-row"></div>
           </div>
 
-          <div class="home-section-card card-green home-habits-compact">
+          <div class="home-section-card card-spring home-habits-compact">
             <h2 class="home-section-title">Daily Habits</h2>
             <div class="habits-list" id="habits-list"></div>
           </div>
         </div>
 
         <div class="home-section-card card-blue">
-          <span class="workouts-bg-icon"><svg viewBox="0 0 200 100" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="12" width="38" height="76" rx="18"/><rect x="154" y="12" width="38" height="76" rx="18"/><line x1="46" y1="50" x2="154" y2="50"/></svg></span>
+          <span class="workouts-bg-icon"><svg viewBox="0 0 200 264" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><path d="M0,160 A100,160 0 1,1 200,160 Q180,188 161,160 Q142,216 124,160 Q112,236 99,160 Q78,261 56,160 Q40,210 25,160 Q13,182 0,160 Z"/><ellipse cx="69" cy="93" rx="8" ry="16" fill="currentColor" stroke="none"/><ellipse cx="132" cy="93" rx="8" ry="16" fill="currentColor" stroke="none"/><path d="M30,117 Q100,158 172,117"/></svg></span>
           <h2 class="home-section-title">This Week's Workouts</h2>
           <div class="circuit-list" id="home-circuit-list"></div>
         </div>
 
-        <div class="home-section-card card-pink">
+        <div class="home-section-card card-emerald">
           <h2 class="home-section-title">Community Buzz</h2>
           <div class="buzz-list" id="home-community-feed"></div>
         </div>
@@ -95,15 +95,22 @@
           </div>
           <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
         </header>
-        <h2 class="section-title">This Week's Workouts</h2>
-        <div class="circuit-list" id="circuits-list-full"></div>
+        <div class="home-section-card card-blue">
+          <span class="workouts-bg-icon"><svg viewBox="0 0 200 264" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><path d="M0,160 A100,160 0 1,1 200,160 Q180,188 161,160 Q142,216 124,160 Q112,236 99,160 Q78,261 56,160 Q40,210 25,160 Q13,182 0,160 Z"/><ellipse cx="69" cy="93" rx="8" ry="16" fill="currentColor" stroke="none"/><ellipse cx="132" cy="93" rx="8" ry="16" fill="currentColor" stroke="none"/><path d="M30,117 Q100,158 172,117"/></svg></span>
+          <h2 class="home-section-title">This Week's Workouts</h2>
+          <div class="circuit-list" id="circuits-list-full"></div>
+        </div>
 
-        <h2 class="section-title">Stretch &amp; Core Library</h2>
-        <p class="section-subtitle">Two stretching sessions and two ab/core burns, available anytime this month.</p>
-        <div class="circuit-list" id="circuits-list-extras"></div>
+        <div class="home-section-card card-green">
+          <h2 class="home-section-title">Stretch &amp; Core Library</h2>
+          <p class="section-subtitle">Two stretching sessions and two ab/core burns, available anytime this month.</p>
+          <div class="circuit-list" id="circuits-list-extras"></div>
+        </div>
 
-        <h2 class="section-title">Last Week's Workouts</h2>
-        <div class="circuit-list-compact" id="last-week-list"></div>
+        <div class="home-section-card card-white">
+          <h2 class="home-section-title">Last Week's Workouts</h2>
+          <div class="circuit-list-compact" id="last-week-list"></div>
+        </div>
       </section>
 
       <!-- ---------- HOME (for "Build Your Own" / "library" profiles only) ---------- -->
@@ -252,17 +259,20 @@
         </header>
         <div class="player-progress-track"><div class="player-progress-fill" id="player-progress-fill"></div></div>
 
+        <!-- Video now leads (2026-08-07): sits above the exercise name so the
+             title and set numbers land right above the set list, instead of
+             the video sitting between them. Applies to every phase kind. -->
+        <div class="player-video" id="player-video">
+          <div class="player-video-play">▶</div>
+          <p class="player-video-label" id="player-video-label">Demo Video Placeholder</p>
+        </div>
+
         <p class="player-exercise-name" id="player-exercise-name">Exercise</p>
         <p class="player-sub-pill" id="player-sub-pill">Round 1 of 1</p>
 
         <div class="player-format-explainer" id="player-format-explainer">
           <p class="player-format-explainer-title" id="player-format-explainer-title"></p>
           <p class="player-format-explainer-body" id="player-format-explainer-body"></p>
-        </div>
-
-        <div class="player-video" id="player-video">
-          <div class="player-video-play">▶</div>
-          <p class="player-video-label" id="player-video-label">Demo Video Placeholder</p>
         </div>
 
         <div class="player-center" id="player-center">
@@ -272,6 +282,11 @@
         </div>
 
         <div class="player-amrap-list" id="player-amrap-list"></div>
+
+        <!-- Superset: both exercises on one screen, video swapped for a
+             per-exercise popup button (2026-08-07). Reuses the AMRAP row
+             styling since the layout is identical. -->
+        <div class="player-amrap-list" id="player-superset-list"></div>
 
         <!-- Straight Sets / Rep Ladder: every set for the block's one exercise
              on this one screen (2026-08-06), instead of a separate screen per
@@ -307,11 +322,22 @@
       </div>
 
       <!-- ---------- REST TIMER OVERLAY (between sets in the Straight Sets / Rep Ladder checklist) ---------- -->
+      <!-- Weight field lives here now, not on the row (2026-08-07) — see the
+           note above Player.toggleSetChecked in app.js for why. -->
       <div class="rest-timer-overlay" id="rest-timer-overlay">
         <div class="rest-timer-card">
-          <p class="player-clock-label">Rest</p>
-          <p class="player-clock" id="rest-overlay-clock">00:00</p>
+          <div class="rest-overlay-clock-wrap" id="rest-overlay-clock-wrap">
+            <p class="player-clock-label">Rest</p>
+            <p class="player-clock" id="rest-overlay-clock">00:00</p>
+          </div>
           <p class="player-sub-pill" id="rest-overlay-upnext">Up next</p>
+          <div class="rest-overlay-weight-field" id="rest-overlay-weight-field" style="display:none;">
+            <label class="rest-overlay-weight-label" for="rest-overlay-weight-input">Weight used</label>
+            <div class="rest-overlay-weight-row">
+              <input type="number" id="rest-overlay-weight-input" placeholder="lbs" inputmode="numeric" />
+              <button class="rest-overlay-weight-save-btn" id="rest-overlay-weight-save-btn" type="button">Save</button>
+            </div>
+          </div>
           <button class="btn-primary" id="rest-overlay-skip-btn">Skip Rest →</button>
         </div>
       </div>
@@ -428,33 +454,37 @@
           </div>
         </div>
 
-        <div class="stat-cards stat-cards-grid">
-          <div class="stat-card">
-            <p class="stat-num" id="stat-workouts">0</p>
-            <p class="stat-label">Workouts Done</p>
-          </div>
-          <div class="stat-card">
-            <p class="stat-num" id="stat-stretch">0</p>
-            <p class="stat-label">Stretch Sessions</p>
-          </div>
-          <div class="stat-card">
-            <p class="stat-num" id="stat-core-burn">0</p>
-            <p class="stat-label">Core-Burn Sessions</p>
-          </div>
-          <div class="stat-card">
-            <p class="stat-num" id="stat-minutes">0</p>
-            <p class="stat-label">Burn Minutes</p>
-          </div>
-          <div class="stat-card" id="stat-calories-card" style="display:none;">
-            <p class="stat-num" id="stat-calories">0</p>
-            <p class="stat-label">Calories Burned</p>
+        <div class="home-section-card card-green">
+          <div class="stats-plain-grid">
+            <div class="stat-item">
+              <p class="stat-num" id="stat-workouts">0</p>
+              <p class="stat-label">Workouts Done</p>
+            </div>
+            <div class="stat-item">
+              <p class="stat-num" id="stat-stretch">0</p>
+              <p class="stat-label">Stretch Sessions</p>
+            </div>
+            <div class="stat-item">
+              <p class="stat-num" id="stat-core-burn">0</p>
+              <p class="stat-label">Core-Burn Sessions</p>
+            </div>
+            <div class="stat-item">
+              <p class="stat-num" id="stat-minutes">0</p>
+              <p class="stat-label">Burn Minutes</p>
+            </div>
+            <div class="stat-item" id="stat-calories-card" style="display:none;">
+              <p class="stat-num" id="stat-calories">0</p>
+              <p class="stat-label">Calories Burned</p>
+            </div>
           </div>
         </div>
 
-        <div id="progress-calendar-section"></div>
+        <div class="home-section-card card-pink" id="progress-calendar-section"></div>
 
-        <h2 class="section-title">Benchmarks</h2>
-        <div class="benchmark-list" id="benchmark-list"></div>
+        <div class="home-section-card card-blue">
+          <h2 class="home-section-title">Benchmarks</h2>
+          <div class="benchmark-list" id="benchmark-list"></div>
+        </div>
 
         <div class="motivation-card" id="progress-motivation">
           <p>"Every drop counts." — keep sweating, you're building something real. 🔥</p>

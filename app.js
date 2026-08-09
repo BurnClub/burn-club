@@ -108,7 +108,12 @@ function renderCompactCircuitRow(c) {
 const COMPLETIONS_STORAGE_KEY = "burnclub-completions";
 // "previous-week" counts as a regular workout everywhere stats-wise — it's
 // the same kind of content, just left live an extra week.
-const CATEGORY_COLOR_CLASS = { circuit: "cat-circuit", stretch: "cat-stretch", "core-burn": "cat-core-burn", "previous-week": "cat-circuit", structured: "cat-circuit" };
+// Two buckets for the "This Week" calendar boxes (2026-08-07 redesign): a
+// workout (any circuit-type completion) highlights blue, a stretch/core
+// session highlights green, and a day with both gets a diagonal split —
+// see .cal-day.cal-both in style.css.
+const WORKOUT_CATEGORIES = ["circuit", "previous-week", "structured"];
+const STRETCH_CORE_CATEGORIES = ["stretch", "core-burn"];
 let COMPLETIONS = [];
 let progressRange = "week"; // "week" | "month" | "year"
 let currentCompletionEntry = null; // the just-logged completion, for the RPE slider to update
@@ -195,19 +200,25 @@ function currentStreak() {
 function completionsByDate() {
   const map = {};
   COMPLETIONS.forEach((c) => {
-    if (!map[c.date]) map[c.date] = c;
+    if (!map[c.date]) map[c.date] = [];
+    map[c.date].push(c);
   });
   return map;
 }
 
 function renderDayCell(date, byDate, today) {
   const key = dateKey(date);
-  const entry = byDate[key];
+  const entries = byDate[key] || [];
+  const hasWorkout = entries.some((c) => WORKOUT_CATEGORIES.includes(c.category));
+  const hasStretchCore = entries.some((c) => STRETCH_CORE_CATEGORIES.includes(c.category));
   const classes = ["cal-day"];
-  if (entry) classes.push("done", CATEGORY_COLOR_CLASS[entry.category] || "");
+  if (hasWorkout && hasStretchCore) classes.push("done", "cal-both");
+  else if (hasWorkout) classes.push("done", "cal-workout");
+  else if (hasStretchCore) classes.push("done", "cal-stretch");
   if (date > today) classes.push("future");
   if (key === dateKey(today)) classes.push("today");
-  return `<div class="${classes.join(" ")}" title="${entry ? entry.title : ""}">${date.getDate()}</div>`;
+  const title = entries.map((e) => e.title).join(", ");
+  return `<div class="${classes.join(" ")}" title="${title}">${date.getDate()}</div>`;
 }
 
 function renderWeekGrid() {
@@ -285,11 +296,11 @@ function renderProgressTab() {
 
   const section = document.getElementById("progress-calendar-section");
   if (progressRange === "week") {
-    section.innerHTML = `<h2 class="section-title">This Week</h2><div class="calendar-grid">${renderWeekGrid()}</div>`;
+    section.innerHTML = `<h2 class="home-section-title">This Week</h2><div class="calendar-grid">${renderWeekGrid()}</div>`;
   } else if (progressRange === "month") {
-    section.innerHTML = `<h2 class="section-title">This Month</h2><div class="calendar-grid">${renderMonthGrid()}</div>`;
+    section.innerHTML = `<h2 class="home-section-title">This Month</h2><div class="calendar-grid">${renderMonthGrid()}</div>`;
   } else {
-    section.innerHTML = `<h2 class="section-title">This Year</h2><div class="archive-list">${renderYearBreakdown()}</div>`;
+    section.innerHTML = `<h2 class="home-section-title">This Year</h2><div class="archive-list">${renderYearBreakdown()}</div>`;
   }
 
   renderBenchmarkList();
@@ -326,17 +337,17 @@ function formatBenchmarkDelta(benchmark, beginning, best) {
 function renderBenchmarkCard(benchmark) {
   const results = benchmarkResults(benchmark.id);
   const nameBlock = `
-    <div>
-      <p class="benchmark-name">${benchmark.name}</p>
-      <p class="benchmark-subtitle">${benchmark.subtitle}</p>
-    </div>
+    <p class="benchmark-name">${benchmark.name}</p>
+    <p class="benchmark-subtitle">${benchmark.subtitle}</p>
   `;
 
   if (results.length === 0) {
     return `
       <div class="benchmark-card">
-        <div class="benchmark-card-top">${nameBlock}</div>
-        <span class="benchmark-baseline-tag">Not yet tested</span>
+        ${nameBlock}
+        <div class="benchmark-bottom">
+          <span class="benchmark-baseline-tag">Not yet tested</span>
+        </div>
       </div>
     `;
   }
@@ -354,11 +365,11 @@ function renderBenchmarkCard(benchmark) {
 
   return `
     <div class="benchmark-card">
-      <div class="benchmark-card-top">
-        ${nameBlock}
+      ${nameBlock}
+      <div class="benchmark-bottom">
         <span class="benchmark-best">${formatBenchmarkScore(benchmark, best)}</span>
+        ${footer}
       </div>
-      ${footer}
     </div>
   `;
 }
@@ -873,16 +884,17 @@ function buildPhaseQueue(circuit) {
       }
     }
 
+    // Supersets: both (or all) exercises on one screen instead of a separate
+    // screen per exercise (2026-08-07) — Chris wants everything right in
+    // front of them, video swapped for a per-exercise popup button like the
+    // AMRAP list already does. One "superset" phase per round.
     if (block.type === "superset") {
       for (let round = 1; round <= block.rounds; round++) {
-        block.exercises.forEach((ex) => {
-          phases.push({
-            ...blockMeta,
-            kind: "set",
-            exerciseName: ex.name,
-            reps: ex.reps,
-            progressLabel: `Round ${round} of ${block.rounds}`,
-          });
+        phases.push({
+          ...blockMeta,
+          kind: "superset",
+          exercises: block.exercises,
+          progressLabel: `Round ${round} of ${block.rounds}`,
         });
         if (round !== block.rounds) {
           phases.push({
@@ -982,6 +994,8 @@ const Player = {
   setsChecked: [],
   restIntervalId: null,
   restRemaining: 0,
+  restSetIndex: null,
+  restIsLastSet: false,
 
   start(circuit) {
     this.circuit = circuit;
@@ -1016,48 +1030,112 @@ const Player = {
   },
 
   // ---- Straight Sets / Rep Ladder single-screen checklist (2026-08-06) ----
-  // All sets for the block's one exercise sit on one screen; checking a set
-  // pops a rest-timer overlay on top rather than moving to a new screen, and
-  // the last set skips the rest and just advances. Weight is UI-only for now
-  // (not saved anywhere) — the plan is per-exercise/rep-range weight history
-  // and suggestions, saved for a future session per Chris.
+  // All sets for the block's one exercise sit on one screen; tapping Done on
+  // a set pops a rest overlay on top rather than moving to a new screen.
+  // Weight moved from the row into that popup (2026-08-07) — Chris didn't
+  // want members rushing to type a number and hit Done at the same moment,
+  // and didn't want a slow entry inflating real rest time, so Done starts
+  // rest immediately and the weight field lives in the popup where they have
+  // the whole rest period to fill it in. The last set has no rest to attach
+  // it to, so it gets the same popup minus the countdown — a "nice work"
+  // message and a Continue button instead of Skip Rest. Weight is still
+  // UI-only for now (not saved anywhere) — the plan is per-exercise/rep-range
+  // weight history and suggestions, saved for a future session per Chris.
   toggleSetChecked(setIndex) {
     if (this.setsChecked[setIndex]) return;
     this.setsChecked[setIndex] = true;
     const row = document.querySelector(`.player-set-row[data-set-index="${setIndex}"]`);
     if (row) {
       row.classList.add("done");
-      const checkBtn = row.querySelector(".set-row-check");
-      if (checkBtn) checkBtn.textContent = "✓";
+      const doneBtn = row.querySelector(".set-row-done-btn");
+      if (doneBtn) {
+        doneBtn.textContent = "✓ Done";
+        doneBtn.disabled = true;
+      }
     }
     const phase = this.currentPhase();
-    if (this.setsChecked.every(Boolean)) {
-      this.advance();
+    const isLastSet = this.setsChecked.every(Boolean);
+    this.showSetPopup(setIndex, phase, isLastSet);
+  },
+
+  showSetPopup(setIndex, phase, isLastSet) {
+    this.restSetIndex = setIndex;
+    this.restIsLastSet = isLastSet;
+
+    const weightField = document.getElementById("rest-overlay-weight-field");
+    const weightInput = document.getElementById("rest-overlay-weight-input");
+    const weightSaveBtn = document.getElementById("rest-overlay-weight-save-btn");
+    weightInput.value = "";
+    weightSaveBtn.textContent = "Save";
+    weightSaveBtn.disabled = false;
+    weightField.style.display = exerciseTracksWeight(phase.exerciseName) ? "block" : "none";
+
+    const clockWrap = document.getElementById("rest-overlay-clock-wrap");
+    const clockEl = document.getElementById("rest-overlay-clock");
+    const upNextEl = document.getElementById("rest-overlay-upnext");
+    const skipBtn = document.getElementById("rest-overlay-skip-btn");
+
+    if (this.restIntervalId) clearInterval(this.restIntervalId);
+    this.restIntervalId = null;
+
+    if (isLastSet) {
+      clockWrap.style.display = "none";
+      upNextEl.textContent = "Nice work — that's the last set of this exercise.";
+      skipBtn.textContent = "Continue →";
     } else {
-      this.startRestOverlay(phase.restDuration, phase.exerciseName);
+      clockWrap.style.display = "";
+      upNextEl.textContent = `Up next: ${phase.exerciseName}`;
+      skipBtn.textContent = "Skip Rest →";
+      this.restRemaining = phase.restDuration;
+      clockEl.textContent = formatClock(this.restRemaining);
+      this.restIntervalId = setInterval(() => {
+        this.restRemaining--;
+        if (this.restRemaining <= 0) {
+          this.dismissRestOverlay();
+          return;
+        }
+        clockEl.textContent = formatClock(this.restRemaining);
+      }, 1000);
+    }
+
+    document.getElementById("rest-timer-overlay").classList.add("visible");
+  },
+
+  // Reflects the popup's weight input onto the set row that's resting (still
+  // just a DOM update, not persisted anywhere). Called both by the Save
+  // button (2026-08-07, for an explicit "locked in" confirmation while
+  // resting) and as a fallback when the popup closes on its own, so leaving
+  // without tapping Save doesn't lose whatever was typed.
+  applyWeightToRow() {
+    if (this.restSetIndex === null) return;
+    const weightInput = document.getElementById("rest-overlay-weight-input");
+    const weightVal = weightInput.value.trim();
+    if (!weightVal) return;
+    const row = document.querySelector(`.player-set-row[data-set-index="${this.restSetIndex}"]`);
+    const repsEl = row && row.querySelector(".set-row-reps");
+    if (repsEl) {
+      if (!repsEl.dataset.baseText) repsEl.dataset.baseText = repsEl.textContent;
+      repsEl.textContent = `${repsEl.dataset.baseText} · ${weightVal} lbs`;
     }
   },
 
-  startRestOverlay(duration, upNextName) {
-    this.restRemaining = duration;
-    document.getElementById("rest-overlay-clock").textContent = formatClock(this.restRemaining);
-    document.getElementById("rest-overlay-upnext").textContent = `Up next: ${upNextName}`;
-    document.getElementById("rest-timer-overlay").classList.add("visible");
-    if (this.restIntervalId) clearInterval(this.restIntervalId);
-    this.restIntervalId = setInterval(() => {
-      this.restRemaining--;
-      if (this.restRemaining <= 0) {
-        this.dismissRestOverlay();
-        return;
-      }
-      document.getElementById("rest-overlay-clock").textContent = formatClock(this.restRemaining);
-    }, 1000);
+  saveRestWeight() {
+    this.applyWeightToRow();
+    const saveBtn = document.getElementById("rest-overlay-weight-save-btn");
+    saveBtn.textContent = "✓ Saved";
+    saveBtn.disabled = true;
   },
 
+  // Hides the popup. Doesn't advance the phase itself — the last-set
+  // "Continue" click handles that separately, so exiting mid-popup
+  // (Player.stop()) can't accidentally skip ahead a phase.
   dismissRestOverlay() {
     if (this.restIntervalId) clearInterval(this.restIntervalId);
     this.restIntervalId = null;
     document.getElementById("rest-timer-overlay").classList.remove("visible");
+    this.applyWeightToRow();
+    this.restSetIndex = null;
+    this.restIsLastSet = false;
   },
 
   finish() {
@@ -1186,6 +1264,7 @@ const Player = {
     document.getElementById("player-format-explainer").style.display = "none";
     document.getElementById("player-total-clock").style.display = "none";
     document.getElementById("player-sets-list").style.display = "none";
+    document.getElementById("player-superset-list").style.display = "none";
     document.getElementById("player-video-label").textContent = "Demo Video Placeholder";
     document.getElementById("player-pause-btn").textContent = "Pause";
 
@@ -1220,6 +1299,36 @@ const Player = {
       document.getElementById("player-complete-set-btn").style.display = "block";
     }
 
+    // Superset: both exercises on one screen (2026-08-07) — no persistent
+    // video panel, each exercise row gets its own popup play button instead
+    // (same pattern as the AMRAP list). Mark Set Complete advances to the
+    // rest phase between rounds, same as every other kind.
+    if (phase.kind === "superset") {
+      document.getElementById("player-exercise-name").textContent = `${phase.exercises.length}-Exercise Superset`;
+      document.getElementById("player-sub-pill").textContent = phase.progressLabel;
+      document.getElementById("player-video").style.display = "none";
+      const supersetListEl = document.getElementById("player-superset-list");
+      supersetListEl.style.display = "flex";
+      supersetListEl.innerHTML = phase.exercises
+        .map((e, i) => `
+          <div class="amrap-row">
+            <div class="amrap-row-left">
+              <span class="amrap-order-num">${i + 1}</span>
+              <span>${e.name}</span>
+            </div>
+            <div class="amrap-row-right">
+              ${e.reps ? `<span>${e.reps} reps</span>` : ""}
+              <button class="amrap-play-btn" data-ex-name="${e.name}" title="Watch demo">▶</button>
+            </div>
+          </div>
+        `)
+        .join("");
+      supersetListEl.querySelectorAll(".amrap-play-btn").forEach((btn) => {
+        btn.addEventListener("click", () => openExerciseVideo(btn.dataset.exName));
+      });
+      document.getElementById("player-complete-set-btn").style.display = "block";
+    }
+
     if (phase.kind === "sets") {
       document.getElementById("player-exercise-name").textContent = phase.exerciseName;
       document.getElementById("player-sub-pill").textContent =
@@ -1227,20 +1336,22 @@ const Player = {
       document.getElementById("player-video").style.display = "flex";
       document.getElementById("player-video-label").textContent = `Demo Video — ${phase.exerciseName}`;
       this.setsChecked = phase.sets.map(() => false);
-      // Bodyweight moves don't get a weight field — set per-exercise in the
-      // Exercise Library's "Track Weight Used" checkbox (2026-08-07).
-      const tracksWeight = exerciseTracksWeight(phase.exerciseName);
       const listEl = document.getElementById("player-sets-list");
       listEl.style.display = "flex";
+      // Weight now lives in the rest popup, not on the row (2026-08-07) —
+      // Chris didn't want members rushing to type a number and hit the
+      // checkbox at the same moment, and didn't want a slow entry inflating
+      // real rest time. Tapping Done starts rest immediately; the weight
+      // field shows up inside that popup where they have the whole rest
+      // period to fill it in. See toggleSetChecked/showSetPopup.
       listEl.innerHTML = phase.sets.map((s, i) => `
         <div class="player-set-row" data-set-index="${i}">
           <span class="set-row-num">${s.num}</span>
           <span class="set-row-reps">${s.reps} reps</span>
-          ${tracksWeight ? `<input type="number" class="set-row-weight" placeholder="lbs" inputmode="numeric" />` : ""}
-          <button class="set-row-check" data-set-index="${i}" aria-label="Mark set ${s.num} complete"></button>
+          <button class="set-row-done-btn" data-set-index="${i}">Done</button>
         </div>
       `).join("");
-      listEl.querySelectorAll(".set-row-check").forEach((btn) => {
+      listEl.querySelectorAll(".set-row-done-btn").forEach((btn) => {
         btn.addEventListener("click", () => this.toggleSetChecked(Number(btn.dataset.setIndex)));
       });
     }
@@ -2086,7 +2197,19 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("benchmark-score-save-btn").addEventListener("click", saveBenchmarkScore);
   document.getElementById("player-complete-set-btn").addEventListener("click", () => Player.advance());
-  document.getElementById("rest-overlay-skip-btn").addEventListener("click", () => Player.dismissRestOverlay());
+  document.getElementById("rest-overlay-skip-btn").addEventListener("click", () => {
+    const wasLastSet = Player.restIsLastSet;
+    Player.dismissRestOverlay();
+    if (wasLastSet) Player.advance();
+  });
+  document.getElementById("rest-overlay-weight-save-btn").addEventListener("click", () => Player.saveRestWeight());
+  // Editing after a Save resets the button so it's clear the locked-in value
+  // is stale until they save again.
+  document.getElementById("rest-overlay-weight-input").addEventListener("input", () => {
+    const saveBtn = document.getElementById("rest-overlay-weight-save-btn");
+    saveBtn.textContent = "Save";
+    saveBtn.disabled = false;
+  });
   document.getElementById("round-plus-btn").addEventListener("click", () => {
     Player.amrapRounds++;
     document.getElementById("round-count").textContent = Player.amrapRounds;
