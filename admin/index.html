@@ -161,7 +161,12 @@
           <p class="eyebrow">Master List</p>
           <h1>Exercises</h1>
         </div>
-        <button class="btn-primary" id="new-exercise-btn">+ Add Exercise</button>
+        <div class="view-header-actions">
+          <button class="btn-ghost-lg small" id="exercise-template-btn">⬇ Download Template</button>
+          <button class="btn-ghost-lg small" id="exercise-upload-btn">⬆ Upload Spreadsheet</button>
+          <input type="file" id="exercise-upload-input" accept=".csv,text/csv" style="display:none;" />
+          <button class="btn-primary" id="new-exercise-btn">+ Add Exercise</button>
+        </div>
       </header>
 
       <div class="filter-row">
@@ -216,6 +221,34 @@
           <div>
             <button class="btn-ghost-lg" id="exercise-modal-cancel-btn">Cancel</button>
             <button class="btn-primary" id="exercise-modal-save-btn">Save Exercise</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ---------- EXERCISE UPLOAD PREVIEW MODAL ---------- -->
+    <div class="builder-overlay" id="exercise-upload-overlay">
+      <div class="builder-panel builder-panel-wide">
+        <header class="builder-header">
+          <h2>Upload Exercises</h2>
+          <button class="player-exit" id="exercise-upload-close-btn">✕</button>
+        </header>
+        <div class="builder-body">
+          <p class="exercise-upload-summary" id="exercise-upload-summary"></p>
+          <div class="exercise-upload-table-wrap">
+            <table class="exercise-upload-table">
+              <thead>
+                <tr><th>Row</th><th>Name</th><th>Body Part(s)</th><th>Equipment</th><th>Type</th><th>Track Weight</th><th>Status</th></tr>
+              </thead>
+              <tbody id="exercise-upload-rows"></tbody>
+            </table>
+          </div>
+        </div>
+        <footer class="builder-footer">
+          <span></span>
+          <div>
+            <button class="btn-ghost-lg" id="exercise-upload-cancel-btn">Cancel</button>
+            <button class="btn-primary" id="exercise-upload-confirm-btn">Confirm Upload</button>
           </div>
         </footer>
       </div>

@@ -55,6 +55,20 @@
   --spring-dark: #2FE47B;
   --emerald: #13673F; /* "Dark Emerald" */
   --alice: #F4FAFF; /* "Alice Blue" */
+
+  /* ---- 2026-08-08, second pass same day — Chris found a combo he wants to
+     sit with "for a little while". No names given this round, just hex
+     codes, so these are descriptive placeholders, not official brand names.
+     --slate is the one shared dark text/icon color used across every
+     section this round (Workouts watermark, Habits text, Community
+     title/name/message, Tracker text/icons) — it's close to but NOT the
+     same as --ink (#17243F) or --indigo (#27293F) from earlier passes.
+     Three similar-looking navy darks now exist; don't conflate them. */
+  --slate: #172A3A;
+  --chartreuse: #B8F2C9; /* Daily Habits card (2026-08-09 pass #4c) — same as --green, used by Stretch & Core Library */
+  --chartreuse-dark: #A6DAB5;
+  --turquoise: #F0A6CA; /* Community Buzz card (2026-08-09 pass #4) */
+  --turquoise-dark: #D895B6;
   --radius-lg: 20px;
   --radius-md: 14px;
   --radius-sm: 10px;
@@ -274,45 +288,39 @@ h1, h2, h3 {
 .streak-num { margin: 0; font-weight: 800; font-family: var(--font-heading); font-size: 16px; }
 .streak-sub { margin: 2px 0 0; font-size: 12px; opacity: 0.9; }
 
-/* ---------- HOME TOP ROW (stats block + condensed habits, side by side) ---------- */
-/* Chris's 2026-08-06 layout request: stats become one contrasting color
-   block, stacked vertically, sitting left of a condensed Daily Habits card. */
-.home-top-row {
-  display: flex;
-  align-items: stretch;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-.home-stats-card {
-  flex: 0 0 108px;
-  /* Tracker: Space Indigo (2026-08-08 pass — was Navy). Flat, not a
-     gradient — dark enough that a dark-on-dark gradient wouldn't read. */
-  background: var(--indigo);
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(255,255,255,0.5);
-  padding: 14px 12px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+/* ---------- HOME LAYOUT (2026-08-09, Chris's layout mockup) ----------
+   Stats now run full-width below Workouts with no card (icons/text in
+   --slate, same "no card at all" look as before, just no longer squeezed
+   into a narrow column) — Habits and Community sit side by side below
+   that. Replaces the old top-row pairing of stats+Habits. */
+.home-stats-plain .today-stat { background: none; box-shadow: none; padding: 0; }
+.home-stats-plain .today-stat-icon,
+.home-stats-plain .today-stat-num,
+.home-stats-plain .today-stat-label { color: var(--slate); }
+.home-split-row { display: flex; align-items: stretch; gap: 12px; margin-bottom: 10px; }
+.home-split-row .home-section-card { flex: 1; min-width: 0; margin-bottom: 0; }
+/* Habits stretches to match Community Buzz's height in the split row, which
+   left dead space below the 3 short checklist rows — the streak footer
+   fills it by getting pushed to the bottom via margin-top:auto, which needs
+   the card itself to be a column flex container. */
+.home-split-row .card-habits { display: flex; flex-direction: column; }
+/* Daily Habits / Community Buzz sit in a narrower split card than the other
+   sections, so the shared 24px title wraps to 2 lines — sized down here
+   (scoped to this row only) to fit on one line (2026-08-09 Chris ask). */
+.home-split-row .home-section-title { font-size: 16px; white-space: nowrap; }
+.habit-streak-footer {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(23,42,58,0.12);
   display: flex;
   align-items: center;
+  gap: 8px;
 }
-.home-stats-card .today-stat-icon,
-.home-stats-card .today-stat-num,
-.home-stats-card .today-stat-label { color: white; }
-.home-stats-card .today-stats-row {
-  flex-direction: column;
-  align-items: flex-start;
-  width: 100%;
-  gap: 14px;
-  margin-bottom: 0;
-}
-.home-stats-card .today-stat {
-  background: none;
-  box-shadow: none;
-  padding: 0;
-  width: 100%;
-}
-.home-stats-card .wearable-prompt-card { background: none; box-shadow: none; padding: 0; }
-.home-top-row .home-section-card { flex: 1; min-width: 0; margin-bottom: 0; }
+.habit-streak-icon { font-size: 18px; line-height: 1; }
+.habit-streak-text { margin: 0; font-size: 12px; font-weight: 800; color: var(--slate); }
+.habit-streak-text span { font-family: var(--font-heading); font-size: 16px; }
 
 /* ---------- TODAY STATS (wearable — faked) ---------- */
 .today-stats-row { display: flex; gap: 10px; margin-bottom: 24px; }
@@ -345,7 +353,7 @@ h1, h2, h3 {
 /* Plain text-plus-checkbox rows, divided by a hairline, inside the Home
    section card — no per-habit card box (Chris's 2026-08-04 request).
    Condensed per Chris's 2026-08-06 request to sit next to the stats block. */
-.home-habits-compact .home-section-title { font-size: 16px; margin-bottom: 8px; }
+.home-habits-compact .home-section-title { margin-bottom: 8px; }
 .habits-list { display: flex; flex-direction: column; }
 .habit-row {
   display: flex;
@@ -361,15 +369,15 @@ h1, h2, h3 {
   font-family: inherit;
 }
 .habit-row:last-child { border-bottom: none; }
-/* Habits: Spring Green (2026-08-08 pass — was Lime) — Space Indigo text on
-   the light background, and the checkbox's default white border/checkmark
-   (built for a saturated/dark card) needs to flip to indigo so it doesn't
-   wash out against the light spring green. */
-.card-spring .habit-row { border-bottom-color: rgba(39,41,63,0.12); }
-.card-spring .habit-label { color: var(--indigo); }
-.card-spring .habit-row.checked .habit-label { color: rgba(39,41,63,0.45); }
-.card-spring .habit-auto-tag { color: var(--indigo); }
-.card-spring .habit-checkbox { border-color: var(--indigo); color: var(--indigo); }
+/* Habits: pale yellow-green #E8FE93 (2026-08-08 pass #2 — was Spring
+   Green). --slate text, and the checkbox's default white border/checkmark
+   (built for a saturated/dark card) needs to flip to slate so it doesn't
+   wash out against the light background. */
+.card-habits .habit-row { border-bottom-color: rgba(23,42,58,0.12); }
+.card-habits .habit-label { color: var(--slate); }
+.card-habits .habit-row.checked .habit-label { color: rgba(23,42,58,0.45); }
+.card-habits .habit-auto-tag { color: var(--slate); }
+.card-habits .habit-checkbox { border-color: var(--slate); color: var(--slate); }
 .habit-checkbox {
   width: 18px;
   height: 18px;
@@ -384,7 +392,8 @@ h1, h2, h3 {
   font-size: 11px;
 }
 .habit-row.checked .habit-checkbox { background: white; border-color: white; color: black; }
-.habit-label { flex: 1; font-size: 12px; font-weight: var(--subtext-weight); color: var(--subtext-color); }
+/* Lighter weight to match the workout-card subtext style (2026-08-09 ask). */
+.habit-label { flex: 1; font-size: 12px; font-weight: 400; color: var(--subtext-color); }
 .habit-row.checked .habit-label { color: var(--deepblue); text-decoration: line-through; }
 .habit-auto-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: var(--subtext-weight); color: var(--subtext-color); background: var(--bg); padding: 2px 8px 2px 6px; border-radius: 999px; }
 .habit-auto-icon svg { width: 10px; height: 10px; display: block; }
@@ -418,16 +427,22 @@ h1, h2, h3 {
   box-shadow: 0 4px 12px rgba(23,36,63,0.05);
   overflow: hidden;
 }
-.home-section-card.card-green { background: linear-gradient(180deg, var(--green) 0%, var(--green-dark) 100%); }
-/* Workouts: Wisteria Blue (2026-08-08 pass — same value as the "Kawaii
-   Blue" from the prior pass, just renamed). Navy watermark icon below. */
-.home-section-card.card-blue { background: linear-gradient(180deg, var(--blue) 0%, var(--blue-dark) 100%); }
-.home-section-card.card-pink { background: linear-gradient(180deg, var(--pink) 0%, var(--pink-dark) 100%); }
-/* Comm Buzz: Dark Emerald (2026-08-08 pass — was bright yellow). Flat, not
-   a gradient, same as the other dark cards; White text (see below). */
-.home-section-card.card-emerald { background: var(--emerald); }
-/* Habits: Spring Green (2026-08-08 pass — was Lime). */
-.home-section-card.card-spring { background: linear-gradient(180deg, var(--spring) 0%, var(--spring-dark) 100%); }
+/* Flat colors instead of gradients across all card variants (2026-08-10,
+   Chris: "not as worried about adding depth anymore"). The *-dark vars stay
+   defined (still used elsewhere, e.g. accent bars) — just no longer mixed
+   into these backgrounds. */
+.home-section-card.card-green { background: var(--green); }
+/* Workouts: unchanged this round (Chris said keep it) — still Wisteria
+   Blue, still the same watermark shape, just the watermark's own color
+   moved to --slate below. */
+.home-section-card.card-blue { background: var(--blue); }
+.home-section-card.card-pink { background: var(--pink); }
+/* Community: turquoise #41D3BD (2026-08-08 pass #2 — was Dark Emerald).
+   Title/name/message in --slate, but the time and dot stay White — see the
+   buzz-text rules further down for the split. */
+.home-section-card.card-community { background: var(--turquoise); }
+/* Habits: same green as Stretch & Core Library (2026-08-09 pass #4c). */
+.home-section-card.card-habits { background: var(--chartreuse); }
 /* White section card (Last Week's Workouts, 2026-08-07) — same wrapper as
    the colored sections so the title lines up with the others, but on a
    white page a plain white card needs its own edge: a faint navy-tinted
@@ -438,27 +453,30 @@ h1, h2, h3 {
   box-shadow: 0 4px 14px rgba(23,36,63,0.07);
 }
 /* Watermark icon behind the workout cards — was a line-art barbell (Chris's
-   2026-08-06 request), swapped 2026-08-08 for an outline of the
-   melting-smiley logo, traced from his reference PNG's proportions (head
-   width/eye position/smile width/drip depths) rather than the earlier
-   rougher approximation. Straight up and down now (no rotation), sized to
-   run edge to edge vertically with just a few px of margin top and bottom —
-   width follows from that via aspect-ratio, matching the SVG's own
-   viewBox (200 x 264). Navy, 2x-thick lines carried over from the barbell
-   version. */
+   2026-08-06 request), then a hand-traced SVG outline of the melting-smiley
+   logo (2026-08-08), now the actual logo artwork itself (2026-08-08, later
+   same day) — Chris supplied a solid-fill PNG (transparent background,
+   #172A3A baked in, 2819x4096) made specifically for this. aspect-ratio
+   matches that file's real pixel dimensions. Base size still runs edge to
+   edge vertically with a few px of margin top/bottom; the 1.1 scale on top
+   of that is Chris's "10% bigger, don't care if it clips" ask — the card's
+   own overflow:hidden trims whatever spills past top/bottom/sides. Opacity
+   dialed back down to 50% (was 75%). */
 .workouts-bg-icon {
   position: absolute;
   top: 8px;
   bottom: 8px;
   left: 50%;
-  transform: translateX(-50%);
-  aspect-ratio: 200 / 264;
-  color: var(--ink);
-  opacity: 0.5;
+  transform: translateX(-50%) scale(1.1);
+  aspect-ratio: 2819 / 4096;
+  background-image: url('assets/melting-smiley-icon.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.25;
   pointer-events: none;
   z-index: 0;
 }
-.workouts-bg-icon svg { width: 100%; height: 100%; display: block; }
 .home-section-card .home-section-title,
 .home-section-card .circuit-list,
 .home-section-card .habits-list,
@@ -466,12 +484,17 @@ h1, h2, h3 {
   position: relative;
   z-index: 1;
 }
+/* Unified 24px/semibold/all-caps across every section title (2026-08-09,
+   Chris's "get them all on the same page" ask) — was 18px, mixed casing,
+   with all-caps previously a Community-only preview. */
 .home-section-title {
   position: relative;
   margin: 0 0 14px;
   padding-left: 14px;
-  font-size: 18px;
+  font-size: 24px;
   font-weight: var(--title-weight);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   color: var(--title-color);
 }
 /* Accent bar instead of a box/underline/stroke (Chris's 2026-08-06 ask for
@@ -489,21 +512,20 @@ h1, h2, h3 {
 }
 .card-green .home-section-title::before { background: var(--green-dark); }
 .card-pink .home-section-title::before { background: var(--pink-dark); }
-/* Trying all-caps on Community Buzz specifically per Chris's request, to
-   preview before deciding whether it goes on the other section titles too —
-   carried over to card-emerald since Comm Buzz lives there now (2026-08-08). */
-.card-pink .home-section-title,
-.card-emerald .home-section-title { text-transform: uppercase; letter-spacing: 0.5px; }
-/* 2026-08-08 palette text-color rule: White text on Wisteria/Space/Emerald,
-   Space (Indigo) text on Alice (white) and Spring backgrounds.
-   card-green/card-pink/card-white keep the original deepblue title color —
-   not part of this pass. */
-.card-blue .home-section-title,
-.card-emerald .home-section-title { color: white; }
-.card-blue .home-section-title::before,
-.card-emerald .home-section-title::before { background: white; }
-.card-spring .home-section-title { color: var(--indigo); }
-.card-spring .home-section-title::before { background: var(--indigo); }
+/* All-caps used to be a Community-only preview; it's the default for every
+   section title now (see the base .home-section-title rule above), so this
+   per-card override is gone. */
+/* 2026-08-08 pass #2 text colors: Workouts keeps its White title (card
+   background unchanged). Habits and Community both use --slate now — see
+   the buzz-text rules further down for Community's title/name/message vs.
+   time/dot split. card-green/card-pink/card-white keep the original
+   deepblue title color — not part of this pass. */
+.card-blue .home-section-title { color: white; }
+.card-blue .home-section-title::before { background: white; }
+.card-habits .home-section-title,
+.card-community .home-section-title { color: var(--slate); }
+.card-habits .home-section-title::before,
+.card-community .home-section-title::before { background: var(--slate); }
 .section-subtitle {
   font-size: 12px;
   font-weight: var(--subtitle-weight);
@@ -540,10 +562,12 @@ h1, h2, h3 {
 /* Compact by design (2026-08-04): name and tag share one row instead of
    stacking, tag/checkmark pinned top-right — much shorter card overall. */
 .circuit-card-top { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 3px; }
+/* Workout name 20px/semibold, subtext 14px/normal weight (2026-08-09, Chris)
+   — was 16px/12px, with the subtext at the shared --subtext-weight (700). */
 .circuit-card h3 {
   flex: 1;
   min-width: 0;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: var(--title-weight);
   color: var(--title-color);
   margin: 0;
@@ -552,21 +576,15 @@ h1, h2, h3 {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.circuit-card p { position: relative; z-index: 1; margin: 0; font-size: 12px; font-weight: var(--subtext-weight); color: var(--subtext-color); }
+.circuit-card p { position: relative; z-index: 1; margin: 0; font-size: 10px; font-weight: 400; color: var(--subtext-color); }
 
 /* Background category pictogram — enlarged, angled, and bled off the card
    edge (Chris's 2026-08-06 request). Sits behind the text via z-index; tint
    matches the same accent already used for that workout's tag pill. */
 .circuit-bg-icon {
-  position: absolute;
-  bottom: -22px;
-  right: -20px;
-  width: 96px;
-  height: 96px;
-  transform: rotate(22deg);
-  opacity: 0.24;
-  pointer-events: none;
-  z-index: 0;
+  /* Removed per-card decorative icon (2026-08-09) — now redundant with the
+     full-card watermark behind the whole Workouts section. */
+  display: none;
 }
 .circuit-bg-icon svg { width: 100%; height: 100%; display: block; }
 .color-blue .circuit-bg-icon { color: var(--blue); }
@@ -629,7 +647,14 @@ h1, h2, h3 {
 .feed-time { color: var(--deepblue); font-size: 11px; margin-top: 2px !important; }
 
 /* ---------- HOME COMMUNITY BUZZ (single card, no per-item cards) ---------- */
-.buzz-list { display: flex; flex-direction: column; }
+/* Capped + internally scrollable (2026-08-09) — Chris's fix for Habits
+   getting stretched tall with dead space to match this card's full content
+   height. Now Community stays roughly Habits' natural height instead, and
+   a post that doesn't fully fit just scrolls into view rather than forcing
+   the whole card taller. Height picked to land right around Habits'
+   natural size (measured ~262px total) while still peeking a partial next
+   row as a scroll cue. */
+.buzz-list { display: flex; flex-direction: column; max-height: 150px; overflow-y: auto; }
 .buzz-row {
   display: flex;
   align-items: flex-start;
@@ -639,16 +664,17 @@ h1, h2, h3 {
 }
 .buzz-row:last-child { border-bottom: none; }
 .buzz-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); flex-shrink: 0; margin-top: 6px; }
-.buzz-text p { margin: 0; font-size: 13px; font-weight: var(--subtext-weight); color: var(--subtext-color); }
+/* Lighter weight to match the workout-card subtext style (2026-08-09 ask). */
+.buzz-text p { margin: 0; font-size: 12px; font-weight: 400; color: var(--subtext-color); }
 .buzz-text strong { font-weight: 800; color: black; }
 .buzz-text p.buzz-time { color: var(--subtext-color); font-weight: var(--subtext-weight); font-size: 11px; margin-top: 2px !important; }
-/* Comm Buzz: Dark Emerald (2026-08-08, moved off bright yellow) — White
-   text throughout (Emerald is dark now, opposite of the light yellow/floral
-   backgrounds this card used to have), including the member names that
-   started out pure black several passes ago. */
-.card-emerald .buzz-text p,
-.card-emerald .buzz-text strong,
-.card-emerald .buzz-text p.buzz-time { color: white; }
+/* Community: turquoise (2026-08-08 pass #2) — title/name/message in
+   --slate, but the dot and the time stay White (a split, not the usual
+   one-color-per-card rule the last few passes used). */
+.card-community .buzz-dot { background: white; }
+.card-community .buzz-text p,
+.card-community .buzz-text strong { color: var(--slate); }
+.card-community .buzz-text p.buzz-time { color: white; }
 
 /* ---------- ARCHIVE ---------- */
 .archive-list { display: flex; flex-direction: column; gap: 8px; }
@@ -1146,6 +1172,72 @@ h1, h2, h3 {
   font-size: 15px;
   color: var(--ink);
 }
+
+/* ---------- CARDIO LOG (2026-08-09) ---------- */
+/* Manual entry or a fake "sync" from a connected wearable — see the note
+   above the HTML for how this feeds into COMPLETIONS/challenge points. */
+.cardio-log-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.cardio-log-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--white);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+}
+.cardio-log-row-left { display: flex; flex-direction: column; }
+.cardio-log-activity { font-weight: 800; font-size: 13px; color: var(--ink); }
+.cardio-log-meta { font-size: 11px; font-weight: 600; color: var(--subtext-color); margin: 2px 0 0; }
+.cardio-log-source {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--blue);
+  background: var(--periwinkle);
+  padding: 3px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.cardio-log-empty { font-size: 12px; font-weight: 700; color: var(--deepblue); text-align: center; padding: 6px 0; }
+.cardio-log-actions { display: flex; gap: 8px; }
+.cardio-log-actions .btn-primary,
+.cardio-log-actions .btn-outline { flex: 1; }
+.btn-outline {
+  background: none;
+  border: 2px solid var(--blue);
+  color: var(--blue);
+  border-radius: 999px;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  cursor: pointer;
+}
+.btn-outline.small { padding: 8px 16px; font-size: 13px; }
+
+.cardio-log-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(23,36,63,0.6);
+  align-items: center;
+  justify-content: center;
+  z-index: 25;
+  padding: 20px;
+}
+.cardio-log-overlay.visible { display: flex; }
+.cardio-log-card {
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 320px;
+  position: relative;
+}
+.cardio-log-card .player-exit { position: absolute; top: -10px; right: -10px; }
+.cardio-log-title { margin: 0 0 16px; font-size: 18px; font-weight: 800; color: var(--ink); text-align: center; }
+.cardio-log-card .field { margin-bottom: 14px; }
+.cardio-log-saved { margin: 10px 0 0; font-size: 12px; font-weight: 700; color: var(--blue); text-align: center; }
 
 .player-round-counter {
   display: none;

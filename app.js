@@ -8,6 +8,7 @@
 const ICON_MSG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg>`;
 const ICON_STEPS = `<svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="8" cy="15" rx="3" ry="5" transform="rotate(-15 8 15)"/><circle cx="10.8" cy="8.2" r="1.4"/><ellipse cx="16" cy="9" rx="3" ry="5" transform="rotate(15 16 9)"/><circle cx="13.2" cy="15.8" r="1.4"/></svg>`;
 const ICON_FLAME = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1.2 3-2.6 4.3-2.6 7.8a2.6 2.6 0 0 0 5.2 0c0-.9-.5-1.6-.9-2.4 2 1.3 3.8 4 3.8 6.9a5.5 5.5 0 0 1-11 0C6.5 9 9.5 6.5 12 2z"/></svg>`;
+const ICON_HEART = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12,21.35L10.55,20.03C5.4,15.36 2,12.28 2,8.5 2,5.42 4.42,3 7.5,3c1.74,0 3.41,0.81 4.5,2.09C13.09,3.81 14.76,3 16.5,3 19.58,3 22,5.42 22,8.5c0,3.78 -3.4,6.86 -8.55,11.54L12,21.35z"/></svg>`;
 const ICON_LINK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l6-6"/><path d="M13 6l1-1a3 3 0 1 1 4 4l-1 1"/><path d="M11 18l-1 1a3 3 0 1 1-4-4l1-1"/></svg>`;
 
 // ---------------- Home / Circuits / Community / Progress rendering ----------------
@@ -112,7 +113,9 @@ const COMPLETIONS_STORAGE_KEY = "burnclub-completions";
 // workout (any circuit-type completion) highlights blue, a stretch/core
 // session highlights green, and a day with both gets a diagonal split —
 // see .cal-day.cal-both in style.css.
-const WORKOUT_CATEGORIES = ["circuit", "previous-week", "structured"];
+// "cardio-activity" (2026-08-09, walk/run/bike/stairs logged from the
+// Workouts tab) counts as a workout here too — same blue calendar highlight.
+const WORKOUT_CATEGORIES = ["circuit", "previous-week", "structured", "cardio-activity"];
 const STRETCH_CORE_CATEGORIES = ["stretch", "core-burn"];
 let COMPLETIONS = [];
 let progressRange = "week"; // "week" | "month" | "year"
@@ -166,6 +169,110 @@ function logCompletion(circuit) {
   COMPLETIONS.push(entry);
   saveCompletions();
   return entry;
+}
+
+// ---------------- Cardio Log (2026-08-09) ----------------
+// Manual entry (Workouts tab, "+ Log Activity") or a fake "Sync from
+// Wearable" button — either way it becomes a COMPLETIONS entry with
+// category "cardio-activity", so it automatically counts toward challenge
+// points (challengePointsForMember just counts COMPLETIONS in range),
+// the workout streak (currentStreak checks COMPLETIONS dates generically),
+// and the This-Week calendar highlight (see WORKOUT_CATEGORIES above).
+const CARDIO_ACTIVITY_TYPES = [
+  { id: "Walk", unit: "mi", unitLabel: "Distance (mi)", step: "0.1" },
+  { id: "Run", unit: "mi", unitLabel: "Distance (mi)", step: "0.1" },
+  { id: "Bike", unit: "mi", unitLabel: "Distance (mi)", step: "0.1" },
+  { id: "Stair Stepper", unit: "flights", unitLabel: "Flights Climbed", step: "1" },
+];
+let cardioSelectedActivity = "Walk";
+
+function logCardioActivity({ activityType, distanceValue, minutes, source }) {
+  const meta = CARDIO_ACTIVITY_TYPES.find((t) => t.id === activityType) || CARDIO_ACTIVITY_TYPES[0];
+  const entry = {
+    id: `cardio-${Date.now()}`,
+    workoutId: null,
+    title: `${activityType}${distanceValue ? ` — ${distanceValue} ${meta.unit}` : ""}`,
+    category: "cardio-activity",
+    date: dateKey(new Date()),
+    minutes,
+    caloriesBurned: estimateCalories(minutes),
+    avgHeartRate: estimateHeartRate(),
+    rpe: 5,
+    activityType,
+    distanceValue,
+    distanceUnit: meta.unit,
+    source, // "manual" | "wearable"
+  };
+  COMPLETIONS.push(entry);
+  saveCompletions();
+  return entry;
+}
+
+function renderCardioLog() {
+  const container = document.getElementById("cardio-log-list");
+  if (!container) return;
+  const entries = COMPLETIONS
+    .filter((c) => c.category === "cardio-activity")
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .slice(0, 5);
+  container.innerHTML = entries.length === 0
+    ? `<p class="cardio-log-empty">No cardio activities logged yet.</p>`
+    : entries.map((e) => `
+        <div class="cardio-log-row">
+          <div class="cardio-log-row-left">
+            <span class="cardio-log-activity">${e.activityType}${e.distanceValue ? ` · ${e.distanceValue} ${e.distanceUnit}` : ""}</span>
+            <span class="cardio-log-meta">${e.minutes} min · ${formatShortDate(e.date)}</span>
+          </div>
+          ${e.source === "wearable" ? `<span class="cardio-log-source">Synced</span>` : ""}
+        </div>
+      `).join("");
+  const syncBtn = document.getElementById("cardio-sync-btn");
+  if (syncBtn) syncBtn.style.display = WEARABLE.provider ? "inline-block" : "none";
+}
+
+function updateCardioActivityPicker() {
+  document.querySelectorAll("#cardio-activity-picker .pill-filter").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.activity === cardioSelectedActivity);
+  });
+  const meta = CARDIO_ACTIVITY_TYPES.find((t) => t.id === cardioSelectedActivity);
+  document.getElementById("cardio-distance-label").textContent = meta.unitLabel;
+  document.getElementById("cardio-distance-input").step = meta.step;
+}
+
+function openCardioLogModal() {
+  cardioSelectedActivity = "Walk";
+  updateCardioActivityPicker();
+  document.getElementById("cardio-distance-input").value = "";
+  document.getElementById("cardio-minutes-input").value = "";
+  document.getElementById("cardio-log-saved").style.display = "none";
+  document.getElementById("cardio-log-overlay").classList.add("visible");
+}
+
+function closeCardioLogModal() {
+  document.getElementById("cardio-log-overlay").classList.remove("visible");
+}
+
+function saveCardioLogForm() {
+  const minutes = parseInt(document.getElementById("cardio-minutes-input").value, 10) || 0;
+  const distanceValue = parseFloat(document.getElementById("cardio-distance-input").value) || 0;
+  if (minutes <= 0) return;
+  logCardioActivity({ activityType: cardioSelectedActivity, distanceValue, minutes, source: "manual" });
+  renderCardioLog();
+  document.getElementById("cardio-log-saved").style.display = "block";
+  setTimeout(closeCardioLogModal, 900);
+}
+
+// Fake sync — no real wearable data feed exists, so this just fabricates one
+// plausible walk/run for today, same as the rest of the wearable stats.
+function syncCardioFromWearable() {
+  if (!WEARABLE.provider) return;
+  const options = [
+    { activityType: "Walk", distanceValue: +(1.5 + Math.random() * 2).toFixed(1), minutes: 20 + Math.floor(Math.random() * 25) },
+    { activityType: "Run", distanceValue: +(1.5 + Math.random() * 3).toFixed(1), minutes: 15 + Math.floor(Math.random() * 20) },
+  ];
+  const pick = options[Math.floor(Math.random() * options.length)];
+  logCardioActivity({ ...pick, source: "wearable" });
+  renderCardioLog();
 }
 
 function startOfWeek(date) {
@@ -268,10 +375,12 @@ function renderYearBreakdown() {
 
 function renderProgressTab() {
   const items = completionsInRange(progressRange);
-  const counts = { circuit: 0, stretch: 0, "core-burn": 0 };
+  const counts = { circuit: 0, stretch: 0, "core-burn": 0, "cardio-activity": 0 };
   let minutes = 0;
   let calories = 0;
   items.forEach((c) => {
+    // Cardio-log entries get their own "Cardio Sessions" bucket (2026-08-09)
+    // instead of folding into "Workouts Done".
     const bucket = c.category === "previous-week" ? "circuit" : c.category;
     counts[bucket] = (counts[bucket] || 0) + 1;
     minutes += c.minutes || 0;
@@ -280,6 +389,7 @@ function renderProgressTab() {
   document.getElementById("stat-workouts").textContent = counts.circuit;
   document.getElementById("stat-stretch").textContent = counts.stretch;
   document.getElementById("stat-core-burn").textContent = counts["core-burn"];
+  document.getElementById("stat-cardio").textContent = counts["cardio-activity"];
   document.getElementById("stat-minutes").textContent = minutes;
   const caloriesCard = document.getElementById("stat-calories-card");
   if (caloriesCard) {
@@ -507,7 +617,14 @@ function loadDailyStats() {
   const stored = localStorage.getItem(DAILY_STATS_STORAGE_KEY);
   if (stored) {
     try {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      // Backfill restingHR for stats saved before it existed (2026-08-09) —
+      // otherwise anyone with an existing local session just sees blank/0.
+      if (parsed.length && parsed[0].restingHR === undefined) {
+        parsed.forEach((d) => { d.restingHR = 54 + Math.floor(Math.random() * 16); });
+        localStorage.setItem(DAILY_STATS_STORAGE_KEY, JSON.stringify(parsed));
+      }
+      return parsed;
     } catch (e) {
       // fall through and reseed
     }
@@ -540,10 +657,11 @@ function renderTodayStats() {
     container.innerHTML = `<div class="wearable-prompt-card">Connect a wearable in Profile to see today's steps &amp; calories.</div>`;
     return;
   }
-  const today = DAILY_STATS.find((d) => d.date === dateKey(new Date())) || { steps: 0, calories: 0 };
+  const today = DAILY_STATS.find((d) => d.date === dateKey(new Date())) || { steps: 0, calories: 0, restingHR: 0 };
   container.innerHTML = `
     <div class="today-stat"><span class="today-stat-icon">${ICON_STEPS}</span><div><p class="today-stat-num">${today.steps.toLocaleString()}</p><p class="today-stat-label">Steps Today</p></div></div>
     <div class="today-stat"><span class="today-stat-icon">${ICON_FLAME}</span><div><p class="today-stat-num">${today.calories.toLocaleString()}</p><p class="today-stat-label">Calories Today</p></div></div>
+    <div class="today-stat"><span class="today-stat-icon">${ICON_HEART}</span><div><p class="today-stat-num">${today.restingHR}</p><p class="today-stat-label">Resting HR</p></div></div>
   `;
 }
 
@@ -614,14 +732,38 @@ function saveHabitChecks() {
 
 // Auto habits (steps) derive from real wearable data unless the member has
 // explicitly tapped the checkbox today, in which case that override wins.
-function isHabitChecked(habit) {
-  const todayLog = HABIT_CHECKS[dateKey(new Date())] || {};
-  if (habit.id in todayLog) return todayLog[habit.id];
+// Date-parameterized so currentHabitStreak() (below) can reuse the same
+// check logic for past days, not just today.
+function isHabitCheckedOnDate(habit, dateStr) {
+  const log = HABIT_CHECKS[dateStr] || {};
+  if (habit.id in log) return log[habit.id];
   if (habit.auto === "steps") {
-    const today = DAILY_STATS.find((d) => d.date === dateKey(new Date()));
-    return !!(WEARABLE.provider && today && today.steps >= habit.target);
+    const day = DAILY_STATS.find((d) => d.date === dateStr);
+    return !!(WEARABLE.provider && day && day.steps >= habit.target);
   }
   return false;
+}
+
+function isHabitChecked(habit) {
+  return isHabitCheckedOnDate(habit, dateKey(new Date()));
+}
+
+// Consecutive days every current habit was checked off (2026-08-09, fills
+// the empty space at the bottom of the Habits card) — same walk-backward
+// pattern as currentStreak() above, but habit-based instead of workout-
+// based. Today doesn't break the streak if it isn't done yet (still in
+// progress), same reasoning as the workout streak.
+function currentHabitStreak() {
+  if (MY_HABITS.length === 0) return 0;
+  const allDoneOn = (dateStr) => MY_HABITS.every((h) => isHabitCheckedOnDate(h, dateStr));
+  const cursor = new Date();
+  if (!allDoneOn(dateKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  let streak = 0;
+  while (allDoneOn(dateKey(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
 }
 
 function toggleHabit(habitId) {
@@ -639,21 +781,23 @@ function renderHabitsSection() {
   if (!container) return;
   if (MY_HABITS.length === 0) {
     container.innerHTML = `<div class="habit-empty-card">Set up to 3 daily habits in Profile.</div>`;
-    return;
+  } else {
+    container.innerHTML = MY_HABITS.map((h) => {
+      const checked = isHabitChecked(h);
+      return `
+        <button class="habit-row ${checked ? "checked" : ""}" data-toggle-habit="${h.id}">
+          <span class="habit-checkbox">${checked ? "✓" : ""}</span>
+          <span class="habit-label">${h.label}</span>
+          ${h.auto ? `<span class="habit-auto-tag"><span class="habit-auto-icon">${ICON_LINK}</span>Auto</span>` : ""}
+        </button>
+      `;
+    }).join("");
+    document.querySelectorAll("[data-toggle-habit]").forEach((btn) => {
+      btn.addEventListener("click", () => toggleHabit(btn.dataset.toggleHabit));
+    });
   }
-  container.innerHTML = MY_HABITS.map((h) => {
-    const checked = isHabitChecked(h);
-    return `
-      <button class="habit-row ${checked ? "checked" : ""}" data-toggle-habit="${h.id}">
-        <span class="habit-checkbox">${checked ? "✓" : ""}</span>
-        <span class="habit-label">${h.label}</span>
-        ${h.auto ? `<span class="habit-auto-tag"><span class="habit-auto-icon">${ICON_LINK}</span>Auto</span>` : ""}
-      </button>
-    `;
-  }).join("");
-  document.querySelectorAll("[data-toggle-habit]").forEach((btn) => {
-    btn.addEventListener("click", () => toggleHabit(btn.dataset.toggleHabit));
-  });
+  const streakNumEl = document.getElementById("habit-streak-num");
+  if (streakNumEl) streakNumEl.textContent = currentHabitStreak();
 }
 
 function addHabit(habit) {
@@ -813,6 +957,7 @@ function showTab(tabId) {
   if (tabId === "tab-progress") renderProgressTab();
   if (tabId === "tab-community") renderChallengeCard();
   if (tabId === "tab-home" || tabId === "tab-circuits") renderCircuitLists();
+  if (tabId === "tab-circuits") renderCardioLog();
   if (tabId === "tab-calendar") renderCalendarTab();
   if (tabId === "tab-library-home") renderLibraryHomeTab();
   if (tabId === "tab-library") renderExerciseLibraryTab();
@@ -2183,6 +2328,17 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("player-exit-btn").addEventListener("click", () => Player.exit());
   document.getElementById("player-start-btn").addEventListener("click", () => Player.beginPhaseTimer());
   document.getElementById("exercise-video-close-btn").addEventListener("click", closeExerciseVideo);
+
+  document.getElementById("cardio-log-btn").addEventListener("click", openCardioLogModal);
+  document.getElementById("cardio-log-close-btn").addEventListener("click", closeCardioLogModal);
+  document.getElementById("cardio-log-save-btn").addEventListener("click", saveCardioLogForm);
+  document.getElementById("cardio-sync-btn").addEventListener("click", syncCardioFromWearable);
+  document.querySelectorAll("#cardio-activity-picker .pill-filter").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      cardioSelectedActivity = btn.dataset.activity;
+      updateCardioActivityPicker();
+    });
+  });
   document.getElementById("player-pause-btn").addEventListener("click", () => Player.togglePause());
   document.getElementById("player-skip-btn").addEventListener("click", () => Player.advance());
 

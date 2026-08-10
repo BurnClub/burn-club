@@ -1197,8 +1197,204 @@ function saveExercise() {
   } else {
     EXERCISE_LIBRARY.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now(), name, videoUrl, technique, bodyParts, modality, equipment, trackWeight });
   }
+  saveExerciseLibrary();
   closeExerciseModal();
   renderExerciseLibrary();
+}
+
+// ---------------- Exercise library persistence (2026-08-10) ----------------
+// Admin doesn't persist most edits (see project memory), but a bulk spreadsheet
+// upload is real content work — losing it on refresh would be a bad experience.
+// So EXERCISE_LIBRARY specifically is saved/restored via localStorage; every
+// add/edit/upload path below calls saveExerciseLibrary() after mutating it.
+const EXERCISE_LIBRARY_STORAGE_KEY = "burnclub-admin-exercises";
+
+function saveExerciseLibrary() {
+  localStorage.setItem(EXERCISE_LIBRARY_STORAGE_KEY, JSON.stringify(EXERCISE_LIBRARY));
+}
+
+function loadExerciseLibrary() {
+  const raw = localStorage.getItem(EXERCISE_LIBRARY_STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const saved = JSON.parse(raw);
+    if (Array.isArray(saved) && saved.length) {
+      EXERCISE_LIBRARY.length = 0;
+      EXERCISE_LIBRARY.push(...saved);
+    }
+  } catch (e) {
+    // Corrupt localStorage value — fall back to the seeded data.js library silently.
+  }
+}
+
+// ---------------- Exercise spreadsheet upload (2026-08-10) ----------------
+// CSV only (no build tooling to pull in an .xlsx parsing library) — Chris can
+// export any spreadsheet tool's sheet as CSV. Columns: Name, Body Parts,
+// Equipment, Type, Technique, Track Weight, Video URL. Body Parts/Equipment
+// are semicolon-separated within their cell since commas are the delimiter.
+const EXERCISE_UPLOAD_HEADERS = ["Name", "Body Parts", "Equipment", "Type", "Technique", "Track Weight", "Video URL"];
+let exerciseUploadRows = []; // parsed + validated rows, held until Confirm Upload
+
+function downloadExerciseTemplate() {
+  const sampleRow = ["Bulgarian Split Squats", "Quads;Glutes", "Dumbbells", "Strength", "Rear foot elevated behind you, lower straight down until the front thigh is parallel to the floor.", "Yes", ""];
+  const csv = [EXERCISE_UPLOAD_HEADERS, sampleRow].map(csvEscapeRow).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "burn-club-exercise-template.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function csvEscapeRow(cells) {
+  return cells.map((c) => {
+    const s = String(c ?? "");
+    return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }).join(",");
+}
+
+// Minimal RFC-4180-ish CSV parser: handles quoted fields, escaped "" quotes,
+// and commas/newlines inside quotes. Good enough for spreadsheet-exported CSV
+// without pulling in an external library.
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else { inQuotes = false; }
+      } else {
+        field += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ",") {
+      row.push(field); field = "";
+    } else if (c === "\n") {
+      row.push(field); rows.push(row); row = []; field = "";
+    } else if (c === "\r") {
+      // skip — the following \n (if any) closes the row
+    } else {
+      field += c;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows.filter((r) => r.some((cell) => cell.trim() !== ""));
+}
+
+function matchTag(value, knownTags) {
+  const found = knownTags.find((t) => t.toLowerCase() === value.trim().toLowerCase());
+  return found || null;
+}
+
+function parseBoolish(value) {
+  return ["yes", "true", "1", "y"].includes(String(value).trim().toLowerCase());
+}
+
+function handleExerciseUploadFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const rows = parseCSV(String(reader.result));
+    if (!rows.length) {
+      alert("That file has no rows to read.");
+      return;
+    }
+    // Header row is matched loosely by name/position — first row is always treated as headers.
+    const dataRows = rows.slice(1);
+    exerciseUploadRows = dataRows.map((cells, i) => {
+      const [rawName, rawBodyParts, rawEquipment, rawType, rawTechnique, rawTrackWeight, rawVideo] = cells;
+      const name = (rawName || "").trim();
+      const warnings = [];
+
+      const bodyPartsIn = (rawBodyParts || "").split(";").map((s) => s.trim()).filter(Boolean);
+      const bodyParts = bodyPartsIn.map((v) => matchTag(v, BODY_PART_TAGS)).filter(Boolean);
+      if (bodyPartsIn.length && bodyParts.length < bodyPartsIn.length) warnings.push("Unrecognized body part(s) dropped");
+
+      const equipmentIn = (rawEquipment || "").split(";").map((s) => s.trim()).filter(Boolean);
+      const equipment = equipmentIn.map((v) => matchTag(v, EQUIPMENT_TAGS)).filter(Boolean);
+      if (equipmentIn.length && equipment.length < equipmentIn.length) warnings.push("Unrecognized equipment dropped");
+
+      const typeRaw = (rawType || "").trim();
+      const modality = matchTag(typeRaw, MODALITY_TAGS) || "Strength";
+      if (typeRaw && !matchTag(typeRaw, MODALITY_TAGS)) warnings.push(`Unrecognized type "${typeRaw}" — defaulted to Strength`);
+
+      const technique = (rawTechnique || "").trim();
+      const trackWeight = parseBoolish(rawTrackWeight);
+      const videoUrl = (rawVideo || "").trim();
+
+      const existing = name ? EXERCISE_LIBRARY.find((x) => x.name.toLowerCase() === name.toLowerCase()) : null;
+
+      return {
+        rowNum: i + 2, // +2: 1-indexed, plus the header row
+        name, bodyParts, equipment, modality, technique, trackWeight, videoUrl,
+        warnings,
+        status: !name ? "error" : existing ? "update" : "new",
+        existingId: existing ? existing.id : null,
+      };
+    });
+    openExerciseUploadPreview();
+  };
+  reader.readAsText(file);
+}
+
+function openExerciseUploadPreview() {
+  const newCount = exerciseUploadRows.filter((r) => r.status === "new").length;
+  const updateCount = exerciseUploadRows.filter((r) => r.status === "update").length;
+  const errorCount = exerciseUploadRows.filter((r) => r.status === "error").length;
+  document.getElementById("exercise-upload-summary").textContent =
+    `${exerciseUploadRows.length} row(s): ${newCount} new, ${updateCount} will update an existing exercise` +
+    (errorCount ? `, ${errorCount} skipped (missing name)` : "") + ". Review below, then confirm.";
+
+  document.getElementById("exercise-upload-rows").innerHTML = exerciseUploadRows.map((r) => `
+    <tr class="${r.status === "error" ? "upload-row-error" : ""}">
+      <td>${r.rowNum}</td>
+      <td>${r.name || "<em>(missing)</em>"}</td>
+      <td>${r.bodyParts.join(", ") || "—"}</td>
+      <td>${r.equipment.join(", ") || "—"}</td>
+      <td>${r.modality}</td>
+      <td>${r.trackWeight ? "Yes" : "No"}</td>
+      <td>
+        <span class="status-pill upload-${r.status}">${r.status === "new" ? "New" : r.status === "update" ? "Update" : "Skipped"}</span>
+        ${r.warnings.map((w) => `<span class="exercise-upload-row-warning">${w}</span>`).join("")}
+      </td>
+    </tr>
+  `).join("");
+
+  document.getElementById("exercise-upload-overlay").classList.add("visible");
+}
+
+function closeExerciseUploadPreview() {
+  document.getElementById("exercise-upload-overlay").classList.remove("visible");
+  exerciseUploadRows = [];
+  document.getElementById("exercise-upload-input").value = "";
+}
+
+function confirmExerciseUpload() {
+  let added = 0, updated = 0;
+  exerciseUploadRows.forEach((r) => {
+    if (r.status === "error") return;
+    if (r.status === "update") {
+      const ex = EXERCISE_LIBRARY.find((x) => x.id === r.existingId);
+      Object.assign(ex, { name: r.name, bodyParts: r.bodyParts, equipment: r.equipment, modality: r.modality, technique: r.technique, trackWeight: r.trackWeight, videoUrl: r.videoUrl });
+      updated++;
+    } else {
+      EXERCISE_LIBRARY.push({
+        id: r.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now() + "-" + added,
+        name: r.name, bodyParts: r.bodyParts, equipment: r.equipment, modality: r.modality, technique: r.technique, trackWeight: r.trackWeight, videoUrl: r.videoUrl,
+      });
+      added++;
+    }
+  });
+  saveExerciseLibrary();
+  closeExerciseUploadPreview();
+  renderExerciseLibrary();
+  alert(`Upload complete: ${added} exercise(s) added, ${updated} updated.`);
 }
 
 // ---------------- Exercise Library sidebar (embedded in the circuit builder) ----------------
@@ -1930,6 +2126,8 @@ function renderPosts() {
 // ---------------- Init ----------------
 
 document.addEventListener("DOMContentLoaded", () => {
+  loadExerciseLibrary();
+
   populateProgramFilters();
   renderDashboard();
   renderPrograms();
@@ -2025,6 +2223,14 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("exercise-modal-close-btn").addEventListener("click", closeExerciseModal);
   document.getElementById("exercise-modal-cancel-btn").addEventListener("click", closeExerciseModal);
   document.getElementById("exercise-modal-save-btn").addEventListener("click", saveExercise);
+  document.getElementById("exercise-template-btn").addEventListener("click", downloadExerciseTemplate);
+  document.getElementById("exercise-upload-btn").addEventListener("click", () => document.getElementById("exercise-upload-input").click());
+  document.getElementById("exercise-upload-input").addEventListener("change", (e) => {
+    if (e.target.files[0]) handleExerciseUploadFile(e.target.files[0]);
+  });
+  document.getElementById("exercise-upload-close-btn").addEventListener("click", closeExerciseUploadPreview);
+  document.getElementById("exercise-upload-cancel-btn").addEventListener("click", closeExerciseUploadPreview);
+  document.getElementById("exercise-upload-confirm-btn").addEventListener("click", confirmExerciseUpload);
 
   document.getElementById("new-member-btn").addEventListener("click", openMemberModal);
   document.getElementById("member-modal-close-btn").addEventListener("click", closeMemberModal);

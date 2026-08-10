@@ -166,6 +166,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .eyebrow { margin: 0; color: var(--deepblue); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
 .view-header h1 { font-size: 28px; }
+.view-header-actions { display: flex; align-items: center; gap: 10px; }
 
 /* ---------- DASHBOARD ---------- */
 .stat-grid {
@@ -442,6 +443,28 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .exercise-list-row .status-pill.modality-strength { background: #d8e9ff; color: var(--blue); }
 .exercise-list-row .status-pill.modality-stretch { background: #dff5e3; color: #1a8a44; }
 .exercise-list-row .ex-equipment { margin: 0; width: 150px; flex-shrink: 0; text-align: right; font-size: 11px; color: var(--deepblue); font-weight: 600; }
+
+/* ---------- EXERCISE SPREADSHEET UPLOAD ---------- */
+.exercise-upload-summary { margin: 0 0 14px; font-weight: 700; color: var(--deepblue); font-size: 14px; }
+.exercise-upload-table-wrap { max-height: 420px; overflow-y: auto; border: 1px solid var(--bg); border-radius: var(--radius-md); }
+.exercise-upload-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.exercise-upload-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--deepblue);
+}
+.exercise-upload-table td { padding: 8px 10px; border-top: 1px solid var(--bg); vertical-align: top; color: var(--ink); }
+.exercise-upload-table tr.upload-row-error td { color: #b23; }
+.exercise-upload-table .status-pill.upload-new { background: #dff5e3; color: #1a8a44; }
+.exercise-upload-table .status-pill.upload-update { background: var(--periwinkle); color: var(--blue); }
+.exercise-upload-table .status-pill.upload-error { background: #ffe0e0; color: #b23; }
+.exercise-upload-row-warning { display: block; font-size: 10px; color: #a35b00; font-weight: 600; margin-top: 2px; }
 
 .modal-field-label { display: block; margin-bottom: 2px; }
 .modal-field-hint { font-weight: 600; text-transform: none; letter-spacing: normal; color: #9aa5c9; font-size: 11px; }

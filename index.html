@@ -63,26 +63,33 @@
           <span class="live-now-join">Join →</span>
         </div>
 
-        <div class="home-top-row">
-          <div class="home-stats-card">
-            <div class="today-stats-row" id="today-stats-row"></div>
-          </div>
-
-          <div class="home-section-card card-spring home-habits-compact">
-            <h2 class="home-section-title">Daily Habits</h2>
-            <div class="habits-list" id="habits-list"></div>
-          </div>
-        </div>
-
         <div class="home-section-card card-blue">
-          <span class="workouts-bg-icon"><svg viewBox="0 0 200 264" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><path d="M0,160 A100,160 0 1,1 200,160 Q180,188 161,160 Q142,216 124,160 Q112,236 99,160 Q78,261 56,160 Q40,210 25,160 Q13,182 0,160 Z"/><ellipse cx="69" cy="93" rx="8" ry="16" fill="currentColor" stroke="none"/><ellipse cx="132" cy="93" rx="8" ry="16" fill="currentColor" stroke="none"/><path d="M30,117 Q100,158 172,117"/></svg></span>
+          <span class="workouts-bg-icon"></span>
           <h2 class="home-section-title">This Week's Workouts</h2>
           <div class="circuit-list" id="home-circuit-list"></div>
         </div>
 
-        <div class="home-section-card card-emerald">
-          <h2 class="home-section-title">Community Buzz</h2>
-          <div class="buzz-list" id="home-community-feed"></div>
+        <!-- Stats: no card, one full-width row, evenly split (2026-08-09
+             layout pass) — was paired narrow-column next to Habits. -->
+        <div class="today-stats-row home-stats-plain" id="today-stats-row"></div>
+
+        <!-- Habits + Community side by side, split screen (2026-08-09). -->
+        <div class="home-split-row">
+          <div class="home-section-card card-habits home-habits-compact">
+            <h2 class="home-section-title">Daily Habits</h2>
+            <div class="habits-list" id="habits-list"></div>
+            <!-- Fills the leftover space at the bottom now that this card
+                 stretches to match Community Buzz's height (2026-08-09). -->
+            <div class="habit-streak-footer">
+              <span class="habit-streak-icon">🔥</span>
+              <p class="habit-streak-text"><span id="habit-streak-num">0</span> Day Streak</p>
+            </div>
+          </div>
+
+          <div class="home-section-card card-community">
+            <h2 class="home-section-title">Community Buzz</h2>
+            <div class="buzz-list" id="home-community-feed"></div>
+          </div>
         </div>
       </section>
 
@@ -96,7 +103,7 @@
           <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
         </header>
         <div class="home-section-card card-blue">
-          <span class="workouts-bg-icon"><svg viewBox="0 0 200 264" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><path d="M0,160 A100,160 0 1,1 200,160 Q180,188 161,160 Q142,216 124,160 Q112,236 99,160 Q78,261 56,160 Q40,210 25,160 Q13,182 0,160 Z"/><ellipse cx="69" cy="93" rx="8" ry="16" fill="currentColor" stroke="none"/><ellipse cx="132" cy="93" rx="8" ry="16" fill="currentColor" stroke="none"/><path d="M30,117 Q100,158 172,117"/></svg></span>
+          <span class="workouts-bg-icon"></span>
           <h2 class="home-section-title">This Week's Workouts</h2>
           <div class="circuit-list" id="circuits-list-full"></div>
         </div>
@@ -110,6 +117,21 @@
         <div class="home-section-card card-white">
           <h2 class="home-section-title">Last Week's Workouts</h2>
           <div class="circuit-list-compact" id="last-week-list"></div>
+        </div>
+
+        <!-- ---------- CARDIO LOG (2026-08-09) ---------- -->
+        <!-- Manual entry (walk/run/bike/stair stepper + distance + time) or a
+             fake "sync" from a connected wearable — either way it lands in
+             COMPLETIONS, so it counts toward challenge points, the streak,
+             and the calendar the same as any workout completion. -->
+        <div class="home-section-card card-white">
+          <h2 class="home-section-title">Cardio Log</h2>
+          <p class="section-subtitle">Log a walk, run, or other cardio session — counts toward your streak and challenge points.</p>
+          <div class="cardio-log-list" id="cardio-log-list"></div>
+          <div class="cardio-log-actions">
+            <button class="btn-primary small" id="cardio-log-btn">+ Log Activity</button>
+            <button class="btn-outline small" id="cardio-sync-btn" style="display:none;">Sync from Wearable</button>
+          </div>
         </div>
       </section>
 
@@ -321,6 +343,34 @@
         </div>
       </div>
 
+      <!-- ---------- CARDIO LOG OVERLAY (2026-08-09) ---------- -->
+      <div class="cardio-log-overlay" id="cardio-log-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="cardio-log-close-btn">✕</button>
+          <h2 class="cardio-log-title">Log Cardio Activity</h2>
+
+          <div class="pill-filter-row" id="cardio-activity-picker">
+            <button class="pill-filter" type="button" data-activity="Walk">Walk</button>
+            <button class="pill-filter" type="button" data-activity="Run">Run</button>
+            <button class="pill-filter" type="button" data-activity="Bike">Bike</button>
+            <button class="pill-filter" type="button" data-activity="Stair Stepper">Stair Stepper</button>
+          </div>
+
+          <label class="field">
+            <span id="cardio-distance-label">Distance (mi)</span>
+            <input type="number" id="cardio-distance-input" min="0" step="0.1" placeholder="0" inputmode="decimal" />
+          </label>
+
+          <label class="field">
+            <span>Time (minutes)</span>
+            <input type="number" id="cardio-minutes-input" min="0" step="1" placeholder="0" inputmode="numeric" />
+          </label>
+
+          <button class="btn-primary" id="cardio-log-save-btn">Save Activity</button>
+          <p class="cardio-log-saved" id="cardio-log-saved" style="display:none;">✓ Activity logged!</p>
+        </div>
+      </div>
+
       <!-- ---------- REST TIMER OVERLAY (between sets in the Straight Sets / Rep Ladder checklist) ---------- -->
       <!-- Weight field lives here now, not on the row (2026-08-07) — see the
            note above Player.toggleSetChecked in app.js for why. -->
@@ -467,6 +517,10 @@
             <div class="stat-item">
               <p class="stat-num" id="stat-core-burn">0</p>
               <p class="stat-label">Core-Burn Sessions</p>
+            </div>
+            <div class="stat-item">
+              <p class="stat-num" id="stat-cardio">0</p>
+              <p class="stat-label">Cardio Sessions</p>
             </div>
             <div class="stat-item">
               <p class="stat-num" id="stat-minutes">0</p>

@@ -656,8 +656,9 @@ const BENCHMARK_RESULTS = buildSeedBenchmarkResults();
 // can be validated first. Only one provider can be "connected" at a time.
 const WEARABLE_DEFAULT = { provider: "apple" }; // "apple" | "garmin" | null
 
-// Whole-day steps/calories, independent of workout completions (a rest day
-// still has steps). Generated relative to today, like buildSeedCompletions.
+// Whole-day steps/calories/resting HR, independent of workout completions (a
+// rest day still has steps). Generated relative to today, like
+// buildSeedCompletions. Resting HR added 2026-08-09 as a third Home stat.
 function buildSeedDailyStats() {
   const stats = [];
   const today = new Date();
@@ -668,6 +669,7 @@ function buildSeedDailyStats() {
       date: dateKey(date),
       steps: 4000 + Math.floor(Math.random() * 7000),
       calories: 1800 + Math.floor(Math.random() * 700),
+      restingHR: 54 + Math.floor(Math.random() * 16),
     });
   }
   return stats;
