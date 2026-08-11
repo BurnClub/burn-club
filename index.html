@@ -54,6 +54,29 @@
           </div>
         </header>
 
+        <!-- ---------- THIS WEEK SNAPSHOT (2026-08-10) ---------- -->
+        <!-- Copied from the Progress tab's Week calendar per Chris's request —
+             week-only (no Month/Year toggle), and deliberately NOT wrapped in
+             a .home-section-card: sits straight on the white page backdrop. -->
+        <div class="home-week-snapshot" id="home-week-snapshot">
+          <h2 class="home-section-title">This Week</h2>
+          <div class="calendar-grid" id="home-week-grid"></div>
+          <div class="stats-plain-grid home-week-stats-row">
+            <div class="stat-item">
+              <p class="stat-num" id="home-week-circuits">0/3</p>
+              <p class="stat-label">Circuits Done</p>
+            </div>
+            <div class="stat-item">
+              <p class="stat-num" id="home-week-stretch-core">0</p>
+              <p class="stat-label">Stretch &amp; Core</p>
+            </div>
+            <div class="stat-item">
+              <p class="stat-num" id="home-week-cardio">0</p>
+              <p class="stat-label">Cardio Sessions</p>
+            </div>
+          </div>
+        </div>
+
         <div class="live-now-banner" id="live-now-banner" data-action="open-live" style="display:none;">
           <div class="live-now-dot"></div>
           <div>
@@ -65,7 +88,11 @@
 
         <div class="home-section-card card-blue">
           <span class="workouts-bg-icon"></span>
-          <h2 class="home-section-title">This Week's Workouts</h2>
+          <!-- "This Week" now lives in the snapshot section above (2026-08-10)
+               — shortened from "This Week's Workouts" here to avoid repeating
+               it right underneath. Workouts tab's own card (below) keeps the
+               full title since it doesn't have that snapshot above it. -->
+          <h2 class="home-section-title">Workouts</h2>
           <div class="circuit-list" id="home-circuit-list"></div>
         </div>
 
@@ -108,30 +135,34 @@
           <div class="circuit-list" id="circuits-list-full"></div>
         </div>
 
+        <!-- ---------- CARDIO LOG (2026-08-09) ---------- -->
+        <!-- Manual entry (walk/run/bike/stair stepper + distance + time) or a
+             fake "sync" from a connected wearable — either way it lands in
+             COMPLETIONS, so it counts toward challenge points, the streak,
+             and the calendar the same as any workout completion. No card
+             (2026-08-10 revert); swapped above Stretch & Core Library per
+             Chris's order request same day. -->
+        <div class="home-plain-section">
+          <h2 class="home-section-title">Cardio Log</h2>
+          <div class="cardio-log-list" id="cardio-log-list"></div>
+          <div class="cardio-log-actions">
+            <button class="btn-primary small" id="cardio-log-btn">+ Log Activity</button>
+            <button class="btn-outline small" id="cardio-sync-btn" style="display:none;">Sync from Wearable</button>
+          </div>
+        </div>
+
         <div class="home-section-card card-green">
           <h2 class="home-section-title">Stretch &amp; Core Library</h2>
           <p class="section-subtitle">Two stretching sessions and two ab/core burns, available anytime this month.</p>
           <div class="circuit-list" id="circuits-list-extras"></div>
         </div>
 
-        <div class="home-section-card card-white">
+        <!-- Last Week's Workouts moved to the bottom, own full-width card,
+             pink to match Community Buzz (2026-08-10 revert — was a
+             no-background split-row column). -->
+        <div class="home-section-card card-last-week">
           <h2 class="home-section-title">Last Week's Workouts</h2>
           <div class="circuit-list-compact" id="last-week-list"></div>
-        </div>
-
-        <!-- ---------- CARDIO LOG (2026-08-09) ---------- -->
-        <!-- Manual entry (walk/run/bike/stair stepper + distance + time) or a
-             fake "sync" from a connected wearable — either way it lands in
-             COMPLETIONS, so it counts toward challenge points, the streak,
-             and the calendar the same as any workout completion. -->
-        <div class="home-section-card card-white">
-          <h2 class="home-section-title">Cardio Log</h2>
-          <p class="section-subtitle">Log a walk, run, or other cardio session — counts toward your streak and challenge points.</p>
-          <div class="cardio-log-list" id="cardio-log-list"></div>
-          <div class="cardio-log-actions">
-            <button class="btn-primary small" id="cardio-log-btn">+ Log Activity</button>
-            <button class="btn-outline small" id="cardio-sync-btn" style="display:none;">Sync from Wearable</button>
-          </div>
         </div>
       </section>
 
@@ -175,10 +206,17 @@
           </div>
           <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
         </header>
-        <input type="text" class="search-input" id="library-search" placeholder="Search exercises…" autocomplete="off" />
-        <div class="pill-filter-row" id="library-bodypart-filters"></div>
-        <div class="pill-filter-row" id="library-equipment-filters"></div>
-        <div class="exercise-library-list" id="library-exercise-list"></div>
+        <div class="filter-row">
+          <input type="text" class="search-input" id="library-search" placeholder="Search exercises…" autocomplete="off" />
+          <button class="btn-outline small" id="library-filter-btn">
+            Filters <span class="filter-count-badge" id="library-filter-count" style="display:none;"></span>
+          </button>
+        </div>
+        <!-- Card grid, name + video only (2026-08-10) — same redesign as
+             admin's Exercise Library: body part/equipment/technique moved
+             into the Filters popup + a tap-to-view detail popup below,
+             instead of always-visible pill rows + expand-in-place cards. -->
+        <div class="exercise-grid" id="library-exercise-list"></div>
       </section>
 
       <!-- ---------- MY WORKOUTS (member-built, "library"-only profiles) ---------- -->
@@ -368,6 +406,36 @@
 
           <button class="btn-primary" id="cardio-log-save-btn">Save Activity</button>
           <p class="cardio-log-saved" id="cardio-log-saved" style="display:none;">✓ Activity logged!</p>
+        </div>
+      </div>
+
+      <!-- ---------- EXERCISE LIBRARY FILTER POPUP (2026-08-10) ---------- -->
+      <div class="cardio-log-overlay" id="library-filter-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="library-filter-close-btn">✕</button>
+          <h2 class="cardio-log-title">Filter Exercises</h2>
+          <p class="library-filter-label">Body Part</p>
+          <div class="pill-filter-row" id="library-filter-bodyparts"></div>
+          <p class="library-filter-label">Equipment</p>
+          <div class="pill-filter-row" id="library-filter-equipment"></div>
+          <div class="library-filter-actions">
+            <button class="btn-outline small" id="library-filter-clear-btn">Clear All</button>
+            <button class="btn-primary small" id="library-filter-save-btn">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---------- EXERCISE LIBRARY DETAIL POPUP (2026-08-10) ---------- -->
+      <!-- Replaces the old expand-in-place technique text now that cards only
+           show name + video — tapping a card (not the video play button)
+           opens this instead. -->
+      <div class="cardio-log-overlay" id="library-detail-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="library-detail-close-btn">✕</button>
+          <h2 class="cardio-log-title" id="library-detail-name">Exercise Name</h2>
+          <div class="exercise-lib-tags" id="library-detail-tags"></div>
+          <p class="exercise-lib-equipment" id="library-detail-equipment"></p>
+          <p class="library-detail-technique" id="library-detail-technique"></p>
         </div>
       </div>
 

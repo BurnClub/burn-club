@@ -138,6 +138,13 @@ function renderPrograms() {
     const circuitCount = isStructured
       ? CIRCUITS.filter((c) => { const f = folderById(c.folderId); return f && f.program === p.id; }).length
       : CIRCUITS.filter((c) => circuitProgramId(c) === p.id).length;
+    // Structured programs don't collect a "workouts per week" number up front
+    // (there's no fixed cadence — it's whatever the day-by-day schedule ends
+    // up holding), so compute it live from the actual schedule instead of a
+    // static field that a newly-created structured program would never set.
+    const perWeek = isStructured
+      ? Math.round(((SCHEDULE_TEMPLATES[p.id] || []).filter((d) => d.type === "workout").length / (p.durationWeeks || 1)) * 10) / 10
+      : p.circuitsPerWeek;
     return `
       <div class="program-card color-${p.color}">
         <div class="program-card-top">
@@ -148,7 +155,7 @@ function renderPrograms() {
         <div class="program-card-stats">
           <div><p>${p.memberCount}</p><p>Members</p></div>
           <div><p>${circuitCount}</p><p>Workouts</p></div>
-          <div><p>${p.circuitsPerWeek}</p><p>Per Week</p></div>
+          <div><p>${perWeek}</p><p>Per Week</p></div>
         </div>
         ${
           isStructured
@@ -177,6 +184,20 @@ function openProgramModal() {
   document.getElementById("program-modal-name").value = "";
   document.getElementById("program-modal-desc").value = "";
   document.getElementById("program-modal-per-week").value = 3;
+  document.getElementById("program-modal-duration").value = 8;
+  document.getElementById("program-modal-type").innerHTML = [
+    { value: "rolling", label: "On Demand" },
+    { value: "structured", label: "Structured" },
+  ].map((opt) => `
+    <label class="tag-checkbox">
+      <input type="radio" name="program-modal-type-radio" value="${opt.value}" ${opt.value === "rolling" ? "checked" : ""} />
+      ${opt.label}
+    </label>
+  `).join("");
+  document.querySelectorAll('#program-modal-type input').forEach((input) => {
+    input.addEventListener("change", updateProgramTypeFieldVisibility);
+  });
+  updateProgramTypeFieldVisibility();
   document.getElementById("program-modal-status").innerHTML = ["Draft", "Active"].map((opt) => `
     <label class="tag-checkbox">
       <input type="radio" name="program-modal-status-radio" value="${opt.toLowerCase()}" ${opt === "Draft" ? "checked" : ""} />
@@ -184,6 +205,21 @@ function openProgramModal() {
     </label>
   `).join("");
   document.getElementById("program-modal-overlay").classList.add("visible");
+}
+
+// On Demand ("rolling") programs use workouts-per-week + the 3-live-folder
+// publish model; Structured programs use a day-by-day schedule instead, so
+// "Workouts per week" doesn't apply to them — swap it for a Program Length
+// field and update the footnote to match (2026-08-10, closing the gap Chris
+// found: there was previously no way to create a Structured program at all).
+function updateProgramTypeFieldVisibility() {
+  const typeInput = document.querySelector("#program-modal-type input:checked");
+  const isStructured = typeInput && typeInput.value === "structured";
+  document.getElementById("program-modal-per-week-field").style.display = isStructured ? "none" : "";
+  document.getElementById("program-modal-duration-field").style.display = isStructured ? "" : "none";
+  document.getElementById("program-modal-type-note").textContent = isStructured
+    ? "You'll land on its Schedule after creating it — every day starts as a Rest Day until you assign workouts."
+    : "This will also set up its three live workout folders automatically.";
 }
 
 function closeProgramModal() {
@@ -197,22 +233,30 @@ function saveProgram() {
     return;
   }
   const description = document.getElementById("program-modal-desc").value.trim();
-  const circuitsPerWeek = Number(document.getElementById("program-modal-per-week").value) || 1;
+  const typeInput = document.querySelector("#program-modal-type input:checked");
+  const scheduleType = typeInput ? typeInput.value : "rolling";
   const statusInput = document.querySelector("#program-modal-status input:checked");
   const status = statusInput ? statusInput.value : "draft";
   const id = name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now();
   const color = PROGRAM_CARD_COLORS[PROGRAMS.length % PROGRAM_CARD_COLORS.length];
 
-  // New programs created here are always "rolling" — there's no UI yet to
-  // author a "structured" program's day-by-day schedule from scratch (Fit &
-  // Functional's was hand-seeded in data.js); that's a future addition.
-  PROGRAMS.push({ id, name, color, status, scheduleType: "rolling", memberCount: 0, circuitsPerWeek, description });
-
-  // Every program needs its three permanent live folders to actually receive
-  // published workouts — same structure as the seeded programs.
-  FOLDERS.push({ id: id + "-this-week", name: "This Week's Workouts", program: id, live: true });
-  FOLDERS.push({ id: id + "-stretch-core", name: "Stretch & Core Library", program: id, live: true });
-  FOLDERS.push({ id: id + "-previous-week", name: "Previous Week", program: id, live: true });
+  if (scheduleType === "structured") {
+    const durationWeeks = Number(document.getElementById("program-modal-duration").value) || 8;
+    PROGRAMS.push({ id, name, color, status, scheduleType, memberCount: 0, durationWeeks, description });
+    // Every day defaults to Rest — staff fills it in via Manage Schedule (this
+    // is the same shape buildFitFunctionalSchedule() produces, just blank).
+    const days = [];
+    for (let day = 1; day <= durationWeeks * 7; day++) days.push({ day, type: "rest" });
+    SCHEDULE_TEMPLATES[id] = days;
+  } else {
+    const circuitsPerWeek = Number(document.getElementById("program-modal-per-week").value) || 1;
+    PROGRAMS.push({ id, name, color, status, scheduleType, memberCount: 0, circuitsPerWeek, description });
+    // Every rolling program needs its three permanent live folders to actually
+    // receive published workouts — same structure as the seeded programs.
+    FOLDERS.push({ id: id + "-this-week", name: "This Week's Workouts", program: id, live: true });
+    FOLDERS.push({ id: id + "-stretch-core", name: "Stretch & Core Library", program: id, live: true });
+    FOLDERS.push({ id: id + "-previous-week", name: "Previous Week", program: id, live: true });
+  }
 
   // The program dropdowns elsewhere (New Folder modal, Member editor, Member
   // filter) are only populated once at load, so append the new option to each.
@@ -225,6 +269,11 @@ function saveProgram() {
   closeProgramModal();
   renderPrograms();
   renderFolderGrid();
+
+  // Structured programs have nothing useful to show on the folder grid (no
+  // live folders) — drop staff straight into filling in the schedule instead
+  // of a program card that looks empty/broken.
+  if (scheduleType === "structured") openScheduleView(id);
 }
 
 // ---------------- Circuit Folders ----------------
@@ -1085,43 +1134,91 @@ function saveCircuit() {
 // filterable by Body Part (specific muscle groups, not broad zones), Equipment,
 // and Type (Strength/Cardio/Stretch). No usage-count field — Chris didn't want it.
 
-let libraryBodyPart = "All";
-let libraryEquipment = "All";
-let libraryModality = "All";
 let editingExerciseId = null;
 
-function renderLibraryFilterRow(containerId, options, selected, action) {
-  document.getElementById(containerId).innerHTML = ["All", ...options]
-    .map((c) => `<button class="pill-filter ${c === selected ? "active" : ""}" data-action="${action}" data-cat="${c}">${c}</button>`)
-    .join("");
+// ---------------- Exercise filters — popup + multi-select (2026-08-10) ----------------
+// Replaced the old always-visible ~20-pill filter rows with one "Filters" button
+// that opens a popup; checkboxes are multi-select per group now (was single-select
+// "All"-or-one), and nothing applies until Save is clicked. Body Part/Equipment/Type
+// stay in EXERCISE_LIBRARY and drive filtering the same as before — they just moved
+// off the card face per Chris's "the rest lives behind the scenes" ask.
+let libraryFilterBodyParts = new Set();
+let libraryFilterEquipment = new Set();
+let libraryFilterModality = new Set();
+
+function openExerciseFilterPopup() {
+  renderTagCheckboxes("exercise-filter-bodyparts", BODY_PART_TAGS, [...libraryFilterBodyParts]);
+  renderTagCheckboxes("exercise-filter-equipment", EQUIPMENT_TAGS, [...libraryFilterEquipment]);
+  renderTagCheckboxes("exercise-filter-modality", MODALITY_TAGS, [...libraryFilterModality]);
+  document.getElementById("exercise-filter-overlay").classList.add("visible");
 }
 
-function renderLibraryCategoryFilters() {
-  renderLibraryFilterRow("exercise-bodypart-filters", BODY_PART_TAGS, libraryBodyPart, "library-bodypart");
-  renderLibraryFilterRow("exercise-equipment-filters", EQUIPMENT_TAGS, libraryEquipment, "library-equipment");
-  renderLibraryFilterRow("exercise-modality-filters", MODALITY_TAGS, libraryModality, "library-modality");
+function closeExerciseFilterPopup() {
+  document.getElementById("exercise-filter-overlay").classList.remove("visible");
+}
+
+function clearExerciseFilterCheckboxes() {
+  document.querySelectorAll("#exercise-filter-overlay input[type=checkbox]").forEach((cb) => { cb.checked = false; });
+}
+
+function saveExerciseFilters() {
+  libraryFilterBodyParts = new Set(Array.from(document.querySelectorAll("#exercise-filter-bodyparts input:checked")).map((i) => i.value));
+  libraryFilterEquipment = new Set(Array.from(document.querySelectorAll("#exercise-filter-equipment input:checked")).map((i) => i.value));
+  libraryFilterModality = new Set(Array.from(document.querySelectorAll("#exercise-filter-modality input:checked")).map((i) => i.value));
+  closeExerciseFilterPopup();
+  updateExerciseFilterBadge();
+  renderExerciseLibrary();
+}
+
+function updateExerciseFilterBadge() {
+  const count = libraryFilterBodyParts.size + libraryFilterEquipment.size + libraryFilterModality.size;
+  const badge = document.getElementById("exercise-filter-count");
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = "";
+  } else {
+    badge.style.display = "none";
+  }
 }
 
 function renderExerciseLibrary() {
   const query = document.getElementById("exercise-search").value.trim().toLowerCase();
   const filtered = EXERCISE_LIBRARY.filter((ex) => {
-    if (libraryBodyPart !== "All" && !ex.bodyParts.includes(libraryBodyPart)) return false;
-    if (libraryEquipment !== "All" && !ex.equipment.includes(libraryEquipment)) return false;
-    if (libraryModality !== "All" && ex.modality !== libraryModality) return false;
+    if (libraryFilterBodyParts.size && !ex.bodyParts.some((bp) => libraryFilterBodyParts.has(bp))) return false;
+    if (libraryFilterEquipment.size && !ex.equipment.some((eq) => libraryFilterEquipment.has(eq))) return false;
+    if (libraryFilterModality.size && !libraryFilterModality.has(ex.modality)) return false;
     if (query && !ex.name.toLowerCase().includes(query)) return false;
     return true;
   });
 
+  // Card shows only name + a video play button — body part/equipment/type/technique
+  // still live on the exercise record, just surfaced via the edit form (click the
+  // card) or the Filters popup, not printed on the card face.
   document.getElementById("exercise-list").innerHTML = filtered.map((ex) => `
-    <div class="exercise-list-row" data-action="edit-exercise" data-ex-id="${ex.id}">
-      <p class="ex-name">${ex.name}</p>
-      <div class="ex-tags">
-        ${ex.bodyParts.map((bp) => `<span class="status-pill">${bp}</span>`).join("")}
-        <span class="status-pill modality-${ex.modality.toLowerCase()}">${ex.modality}</span>
+    <div class="exercise-card" data-action="edit-exercise" data-ex-id="${ex.id}">
+      <div class="exercise-card-video">
+        <button class="exercise-card-play" data-action="view-exercise-video" data-ex-id="${ex.id}" title="View video">▶</button>
       </div>
-      <p class="ex-equipment">${ex.equipment.length ? ex.equipment.join(", ") : "No equipment"}${ex.trackWeight ? " · Tracks weight" : ""}</p>
+      <p class="exercise-card-name">${ex.name}</p>
     </div>
   `).join("") || `<p style="color:var(--deepblue);font-weight:700;">No exercises match.</p>`;
+}
+
+// Mirrors the member app's exercise-video-popup pattern: a placeholder box since
+// there's still no real video file anywhere in the app (same disclosed gap as
+// everywhere else) — shows the exercise name, and the raw Video URL field as a
+// clickable link if one was entered.
+function openAdminExerciseVideo(exId) {
+  const ex = EXERCISE_LIBRARY.find((x) => x.id === exId);
+  if (!ex) return;
+  document.getElementById("exercise-video-admin-label").textContent = `Demo Video — ${ex.name}`;
+  const urlEl = document.getElementById("exercise-video-admin-url");
+  urlEl.innerHTML = ex.videoUrl ? `<a href="${ex.videoUrl}" target="_blank" rel="noopener">${ex.videoUrl}</a>` : "No video URL set for this exercise yet.";
+  document.getElementById("exercise-video-overlay-admin").classList.add("visible");
+}
+
+function closeAdminExerciseVideo() {
+  document.getElementById("exercise-video-overlay-admin").classList.remove("visible");
 }
 
 function renderTagCheckboxes(containerId, options, selected) {
@@ -1649,20 +1746,8 @@ document.addEventListener("click", (e) => {
     renderBuilderLibraryFilters();
     renderBuilderLibraryList();
   }
-  if (action === "library-bodypart") {
-    libraryBodyPart = el.dataset.cat;
-    renderLibraryCategoryFilters();
-    renderExerciseLibrary();
-  }
-  if (action === "library-equipment") {
-    libraryEquipment = el.dataset.cat;
-    renderLibraryCategoryFilters();
-    renderExerciseLibrary();
-  }
-  if (action === "library-modality") {
-    libraryModality = el.dataset.cat;
-    renderLibraryCategoryFilters();
-    renderExerciseLibrary();
+  if (action === "view-exercise-video") {
+    openAdminExerciseVideo(el.dataset.exId);
   }
 });
 
@@ -2135,7 +2220,6 @@ document.addEventListener("DOMContentLoaded", () => {
   renderPosts();
   renderAdminConversationList();
 
-  renderLibraryCategoryFilters();
   renderExerciseLibrary();
   renderMemberTable();
   renderChallenges();
@@ -2231,6 +2315,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("exercise-upload-close-btn").addEventListener("click", closeExerciseUploadPreview);
   document.getElementById("exercise-upload-cancel-btn").addEventListener("click", closeExerciseUploadPreview);
   document.getElementById("exercise-upload-confirm-btn").addEventListener("click", confirmExerciseUpload);
+
+  document.getElementById("exercise-filter-btn").addEventListener("click", openExerciseFilterPopup);
+  document.getElementById("exercise-filter-close-btn").addEventListener("click", closeExerciseFilterPopup);
+  document.getElementById("exercise-filter-clear-btn").addEventListener("click", clearExerciseFilterCheckboxes);
+  document.getElementById("exercise-filter-save-btn").addEventListener("click", saveExerciseFilters);
+  document.getElementById("exercise-video-admin-close-btn").addEventListener("click", closeAdminExerciseVideo);
 
   document.getElementById("new-member-btn").addEventListener("click", openMemberModal);
   document.getElementById("member-modal-close-btn").addEventListener("click", closeMemberModal);

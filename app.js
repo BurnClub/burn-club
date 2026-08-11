@@ -91,15 +91,15 @@ function renderLeaderRow(l) {
 }
 
 // Compact, tappable row — same small footprint as the old static "Past
-// Weeks" list, but for real workouts (Last Week's Workouts).
+// Weeks" list, but for real workouts (Last Week's Workouts). Title only, no
+// meta/completed-date line (2026-08-10, Chris: "necessary info only" — the
+// completed dim/strikethrough treatment still applies via the .completed
+// class, that's just a style, not extra text).
 function renderCompactCircuitRow(c) {
   const completion = mostRecentCompletion(c.id);
   return `
     <button class="circuit-row-compact${completion ? " completed" : ""}" data-open-circuit="${c.id}">
       <span>${c.title}</span>
-      ${completion
-        ? `<span class="archive-count completed-note">✓ Completed &nbsp; ${formatShortDate(completion.date)}</span>`
-        : `<span class="archive-count">${c.meta}</span>`}
     </button>
   `;
 }
@@ -371,6 +371,33 @@ function renderYearBreakdown() {
       </div>
     `)
     .join("");
+}
+
+// Home's "This Week" snapshot (2026-08-10) — a copy of the Progress tab's
+// Week calendar, week-only (no Month/Year toggle), plus a 3-stat row Chris
+// asked to add underneath: circuits done (against a fixed weekly target of
+// 3 — Burn Club's actual cadence; hardcoded since there's no per-member
+// weekly-target field in this app yet), stretch & core sessions, and cardio
+// sessions. Same category buckets renderProgressTab() uses, just always
+// scoped to this week regardless of the Progress tab's own range toggle.
+const HOME_WEEKLY_CIRCUIT_TARGET = 3;
+
+function renderHomeWeekSnapshot() {
+  const grid = document.getElementById("home-week-grid");
+  if (!grid) return;
+  grid.innerHTML = renderWeekGrid();
+
+  const items = completionsInRange("week");
+  let circuits = 0, stretchCore = 0, cardio = 0;
+  items.forEach((c) => {
+    const bucket = c.category === "previous-week" ? "circuit" : c.category;
+    if (bucket === "circuit") circuits++;
+    else if (bucket === "stretch" || bucket === "core-burn") stretchCore++;
+    else if (bucket === "cardio-activity") cardio++;
+  });
+  document.getElementById("home-week-circuits").textContent = `${circuits}/${HOME_WEEKLY_CIRCUIT_TARGET}`;
+  document.getElementById("home-week-stretch-core").textContent = stretchCore;
+  document.getElementById("home-week-cardio").textContent = cardio;
 }
 
 function renderProgressTab() {
@@ -957,6 +984,7 @@ function showTab(tabId) {
   if (tabId === "tab-progress") renderProgressTab();
   if (tabId === "tab-community") renderChallengeCard();
   if (tabId === "tab-home" || tabId === "tab-circuits") renderCircuitLists();
+  if (tabId === "tab-home") renderHomeWeekSnapshot();
   if (tabId === "tab-circuits") renderCardioLog();
   if (tabId === "tab-calendar") renderCalendarTab();
   if (tabId === "tab-library-home") renderLibraryHomeTab();
@@ -1576,11 +1604,21 @@ function conversationPreview(conv) {
   };
 }
 
+// Real SVG icons instead of emoji (2026-08-11) — needed once the icon
+// bubbles got their own colors (blue for staff, pink for group): an emoji
+// glyph can't be recolored via CSS, a stroke="currentColor" SVG can. Same
+// paths already used elsewhere in the app (msg-icon-btn's bubble, the
+// bottom nav's Community icon), just reused here for visual consistency.
+const CONVERSATION_ICON_SVG = {
+  dm: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg>`,
+  group: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><path d="M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="7" r="2.3"/><path d="M14 20c.3-2.7 2-4.6 4.3-5"/></svg>`,
+};
+
 function renderConversationRow(conv) {
   const preview = conversationPreview(conv);
   return `
-    <div class="conversation-row" data-open-thread="${conv.id}">
-      <div class="conversation-icon">${conv.type === "group" ? "👥" : "💬"}</div>
+    <div class="conversation-row conversation-row-${conv.type}" data-open-thread="${conv.id}">
+      <div class="conversation-icon">${CONVERSATION_ICON_SVG[conv.type] || CONVERSATION_ICON_SVG.dm}</div>
       <div class="conversation-text">
         <p class="conversation-name">${conv.name}</p>
         <p class="conversation-preview">${preview.lastText}</p>
@@ -1754,6 +1792,7 @@ function renderCircuitLists() {
 function init() {
   COMPLETIONS = loadCompletions();
   renderCircuitLists();
+  renderHomeWeekSnapshot();
 
   document.getElementById("community-feed").innerHTML = FEED.map(renderFeedItem).join("");
   document.getElementById("home-community-feed").innerHTML = FEED.map(renderHomeBuzzRow).join("");
@@ -1950,49 +1989,88 @@ function renderCalendarTab() {
 // represent a "workout" being done, just reference material.
 
 let libraryQuery = "";
-let libraryBodyPart = "All";
-let libraryEquipment = "All";
+// Multi-select via a Filters popup (2026-08-10 redesign, same pattern as
+// admin's Exercise Library) — was single-select "All"-or-one pill rows.
+let libraryFilterBodyParts = new Set();
+let libraryFilterEquipment = new Set();
 
-function renderLibraryFilters() {
-  const bodyPartCats = ["All", ...BODY_PART_TAGS];
-  document.getElementById("library-bodypart-filters").innerHTML = bodyPartCats
-    .map((c) => `<button class="pill-filter ${c === libraryBodyPart ? "active" : ""}" data-filter-group="bodypart" data-filter-value="${c}">${c}</button>`)
+function renderLibraryFilterCheckboxes() {
+  document.getElementById("library-filter-bodyparts").innerHTML = BODY_PART_TAGS
+    .map((c) => `<button type="button" class="pill-filter ${libraryFilterBodyParts.has(c) ? "active" : ""}" data-filter-group="bodypart" data-filter-value="${c}">${c}</button>`)
     .join("");
-
-  const equipmentCats = ["All", ...EQUIPMENT_TAGS];
-  document.getElementById("library-equipment-filters").innerHTML = equipmentCats
-    .map((c) => `<button class="pill-filter ${c === libraryEquipment ? "active" : ""}" data-filter-group="equipment" data-filter-value="${c}">${c}</button>`)
+  document.getElementById("library-filter-equipment").innerHTML = EQUIPMENT_TAGS
+    .map((c) => `<button type="button" class="pill-filter ${libraryFilterEquipment.has(c) ? "active" : ""}" data-filter-group="equipment" data-filter-value="${c}">${c}</button>`)
     .join("");
 }
 
-function renderExerciseLibraryTab() {
-  renderLibraryFilters();
+function openLibraryFilterPopup() {
+  renderLibraryFilterCheckboxes();
+  document.getElementById("library-filter-overlay").classList.add("visible");
+}
 
+function closeLibraryFilterPopup() {
+  document.getElementById("library-filter-overlay").classList.remove("visible");
+}
+
+function updateLibraryFilterBadge() {
+  const count = libraryFilterBodyParts.size + libraryFilterEquipment.size;
+  const badge = document.getElementById("library-filter-count");
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = "";
+  } else {
+    badge.style.display = "none";
+  }
+}
+
+// Replaces the old expand-in-place technique text (2026-08-10) now that
+// cards only show name + video — this is where body part/equipment/type/
+// technique actually live for a member to read.
+function openLibraryExerciseDetail(exId) {
+  const ex = EXERCISE_LIBRARY.find((x) => x.id === exId);
+  if (!ex) return;
+  document.getElementById("library-detail-name").textContent = ex.name;
+  document.getElementById("library-detail-tags").innerHTML = [...ex.bodyParts, ex.modality]
+    .map((tag) => `<span class="status-pill">${tag}</span>`).join("");
+  document.getElementById("library-detail-equipment").textContent = ex.equipment.join(", ") || "No equipment";
+  document.getElementById("library-detail-technique").textContent = ex.technique;
+  document.getElementById("library-detail-overlay").classList.add("visible");
+}
+
+function closeLibraryExerciseDetail() {
+  document.getElementById("library-detail-overlay").classList.remove("visible");
+}
+
+function renderExerciseLibraryTab() {
   const query = libraryQuery.trim().toLowerCase();
   const filtered = EXERCISE_LIBRARY.filter((ex) => {
-    if (libraryBodyPart !== "All" && !ex.bodyParts.includes(libraryBodyPart)) return false;
-    if (libraryEquipment !== "All" && !ex.equipment.includes(libraryEquipment)) return false;
+    if (libraryFilterBodyParts.size && !ex.bodyParts.some((bp) => libraryFilterBodyParts.has(bp))) return false;
+    if (libraryFilterEquipment.size && !ex.equipment.some((eq) => libraryFilterEquipment.has(eq))) return false;
     if (query && !ex.name.toLowerCase().includes(query)) return false;
     return true;
   });
 
+  // Card shows only name + a video play button — body part/equipment/type/
+  // technique moved into the tap-to-view detail popup instead of printed on
+  // the card face or expanded in place.
   document.getElementById("library-exercise-list").innerHTML = filtered.map((ex) => `
-    <button class="exercise-lib-card" data-toggle-exercise="${ex.id}">
-      <div class="exercise-lib-card-top">
-        <p class="exercise-lib-name">${ex.name}</p>
-        <span class="exercise-lib-caret">⌄</span>
+    <div class="exercise-card" data-open-exercise-detail="${ex.id}">
+      <div class="exercise-card-video">
+        <button class="exercise-card-play" data-view-library-video="${ex.id}" title="View video">▶</button>
       </div>
-      <div class="exercise-lib-tags">
-        ${ex.bodyParts.map((bp) => `<span class="status-pill">${bp}</span>`).join("")}
-        <span class="status-pill">${ex.modality}</span>
-      </div>
-      <p class="exercise-lib-equipment">${ex.equipment.join(", ") || "No equipment"}</p>
-      <p class="exercise-lib-technique">${ex.technique}</p>
-    </button>
+      <p class="exercise-card-name">${ex.name}</p>
+    </div>
   `).join("") || `<p class="section-subtitle">No exercises match your filters.</p>`;
 
-  document.querySelectorAll("#library-exercise-list [data-toggle-exercise]").forEach((card) => {
-    card.addEventListener("click", () => card.classList.toggle("expanded"));
+  document.querySelectorAll("#library-exercise-list [data-open-exercise-detail]").forEach((card) => {
+    card.addEventListener("click", () => openLibraryExerciseDetail(card.dataset.openExerciseDetail));
+  });
+  document.querySelectorAll("#library-exercise-list [data-view-library-video]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const ex = EXERCISE_LIBRARY.find((x) => x.id === btn.dataset.viewLibraryVideo);
+      if (ex) openExerciseVideo(ex.name);
+    });
   });
 }
 
@@ -2379,18 +2457,35 @@ document.addEventListener("DOMContentLoaded", () => {
     libraryQuery = e.target.value;
     renderExerciseLibraryTab();
   });
-  document.getElementById("library-bodypart-filters").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-filter-value]");
-    if (!btn) return;
-    libraryBodyPart = btn.dataset.filterValue;
+  document.getElementById("library-filter-btn").addEventListener("click", openLibraryFilterPopup);
+  document.getElementById("library-filter-close-btn").addEventListener("click", closeLibraryFilterPopup);
+  document.getElementById("library-filter-clear-btn").addEventListener("click", () => {
+    libraryFilterBodyParts.clear();
+    libraryFilterEquipment.clear();
+    renderLibraryFilterCheckboxes();
+  });
+  document.getElementById("library-filter-save-btn").addEventListener("click", () => {
+    closeLibraryFilterPopup();
+    updateLibraryFilterBadge();
     renderExerciseLibraryTab();
   });
-  document.getElementById("library-equipment-filters").addEventListener("click", (e) => {
+  document.getElementById("library-filter-bodyparts").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-filter-value]");
     if (!btn) return;
-    libraryEquipment = btn.dataset.filterValue;
-    renderExerciseLibraryTab();
+    const v = btn.dataset.filterValue;
+    if (libraryFilterBodyParts.has(v)) libraryFilterBodyParts.delete(v);
+    else libraryFilterBodyParts.add(v);
+    renderLibraryFilterCheckboxes();
   });
+  document.getElementById("library-filter-equipment").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-filter-value]");
+    if (!btn) return;
+    const v = btn.dataset.filterValue;
+    if (libraryFilterEquipment.has(v)) libraryFilterEquipment.delete(v);
+    else libraryFilterEquipment.add(v);
+    renderLibraryFilterCheckboxes();
+  });
+  document.getElementById("library-detail-close-btn").addEventListener("click", closeLibraryExerciseDetail);
 
   document.getElementById("build-workout-btn").addEventListener("click", () => {
     resetBuilder();

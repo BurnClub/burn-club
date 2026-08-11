@@ -299,6 +299,17 @@ h1, h2, h3 {
 .home-stats-plain .today-stat-label { color: var(--slate); }
 .home-split-row { display: flex; align-items: stretch; gap: 12px; margin-bottom: 10px; }
 .home-split-row .home-section-card { flex: 1; min-width: 0; margin-bottom: 0; }
+/* No-background split-row section (2026-08-10: Last Week / Cardio Log) —
+   same flex sizing as .home-section-card in a split row, just no card
+   padding/border/shadow since there's no background to contain. */
+.home-split-row .home-plain-section { flex: 1; min-width: 0; }
+/* Standalone (Cardio Log, 2026-08-10): extra breathing room above/below since
+   it has no card background of its own to create visual separation — Chris
+   wanted more space between it and the sections on either side. */
+/* Horizontal padding matches .home-section-card's 18px (2026-08-10, Chris:
+   keep the same side margins a card would have) even though there's no card
+   background here — just aligns the content edges with everything else. */
+.home-plain-section { margin: 24px 0; padding: 0 18px; }
 /* Habits stretches to match Community Buzz's height in the split row, which
    left dead space below the 3 short checklist rows — the streak footer
    fills it by getting pushed to the bottom via margin-top:auto, which needs
@@ -441,6 +452,15 @@ h1, h2, h3 {
    Title/name/message in --slate, but the time and dot stay White — see the
    buzz-text rules further down for the split. */
 .home-section-card.card-community { background: var(--turquoise); }
+/* Last Week's Workouts (2026-08-10 revert): same pink as Community Buzz
+   (--turquoise, #F0A6CA — the var name is legacy, the value is the pink).
+   Title in --slate to match how Community Buzz treats that same pink. */
+.home-section-card.card-last-week { background: var(--turquoise); }
+/* Title uses the default --deepblue (no color override) to match how
+   Stretch & Core Library's title reads on its own colored card, instead of
+   the darker --slate Community Buzz uses (2026-08-10: Chris wanted this
+   title/text to match the rest of the section, not stand apart). */
+.card-last-week .home-section-title::before { background: var(--deepblue); }
 /* Habits: same green as Stretch & Core Library (2026-08-09 pass #4c). */
 .home-section-card.card-habits { background: var(--chartreuse); }
 /* White section card (Last Week's Workouts, 2026-08-07) — same wrapper as
@@ -691,29 +711,29 @@ h1, h2, h3 {
 .archive-count { color: var(--deepblue); font-weight: 700; }
 
 /* Last Week's Workouts — same compact footprint as .archive-row, but a real
-   tappable workout entry rather than an informational row. Sits directly on
-   the plain white page (no colored section-card wrapper, unlike This Week's
-   Workouts / Stretch & Core Library above) — the rows themselves carry the
-   color instead, with a deliberately stronger shadow so they still read as
-   raised cards against the white page (Chris's 2026-08-07 request). */
+   tappable workout entry rather than an informational row. Nested inside the
+   pink .card-last-week wrapper (2026-08-10 revert) — white rows on the
+   colored card, same nested-white-card convention as .circuit-card on the
+   blue Workouts section. Title-only text (see renderCompactCircuitRow in
+   app.js): "necessary info only" per Chris, no meta/date line. */
 .circuit-list-compact { display: flex; flex-direction: column; gap: 8px; }
 .circuit-row-compact {
   display: flex;
   justify-content: space-between;
-  background: var(--purple);
-  padding: 12px 16px;
+  background: var(--card-white);
+  padding: 10px 14px;
   border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: 13px;
-  box-shadow: 0 6px 16px rgba(23,36,63,0.18);
+  box-shadow: 0 4px 10px rgba(23,36,63,0.08);
   border: none;
   width: 100%;
   text-align: left;
   font-family: inherit;
-  color: white;
+  color: var(--ink);
   cursor: pointer;
 }
-.circuit-row-compact .archive-count { color: rgba(255,255,255,0.8); }
+.circuit-row-compact .archive-count { color: var(--deepblue); }
 .circuit-row-compact.completed { opacity: 0.6; }
 .circuit-row-compact.completed span:first-child { text-decoration: line-through; }
 .completed-note {
@@ -764,8 +784,12 @@ h1, h2, h3 {
   justify-content: space-between;
   margin-bottom: 16px;
 }
+/* Blue bg / white arrow is now the app-wide default for this button
+   (2026-08-11) — was white bg / dark glyph. Applies everywhere .back-btn is
+   used (Player exit, thread back, folder back, etc.), not just Messages. */
 .back-btn {
-  background: var(--white);
+  background: var(--blue);
+  color: white;
   border: none;
   width: 38px;
   height: 38px;
@@ -1204,6 +1228,10 @@ h1, h2, h3 {
 .cardio-log-actions { display: flex; gap: 8px; }
 .cardio-log-actions .btn-primary,
 .cardio-log-actions .btn-outline { flex: 1; }
+/* Narrow split-row column (2026-08-10): side-by-side pill buttons with
+   999px radius squeeze into a blob once the label wraps — stack them
+   full-width instead. */
+.home-split-row .cardio-log-actions { flex-direction: column; }
 .btn-outline {
   background: none;
   border: 2px solid var(--blue);
@@ -1455,6 +1483,12 @@ h1, h2, h3 {
 .stat-label { margin: 4px 0 0; font-size: 11px; color: var(--deepblue); font-weight: 700; }
 
 #progress-calendar-section { margin-bottom: 20px; }
+/* Home's "This Week" snapshot (2026-08-10) — same calendar-grid/stat-item
+   pieces as Progress, just laid straight on the white page (no card) and
+   the 3-stat row given its own top gap since it's not nested in a card
+   with its own padding. */
+.home-week-snapshot { margin-bottom: 10px; }
+.home-week-stats-row { margin-top: 14px; }
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -1702,6 +1736,11 @@ h1, h2, h3 {
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(23,36,63,0.06);
 }
+/* Home's messages icon: blue background, white icon (2026-08-11, Chris).
+   Scoped to Home only — every other tab's version of this button uses a
+   plain 💬 emoji glyph instead of the real SVG icon Home has, so a white
+   "icon" wouldn't actually show up the same way there. */
+#tab-home .msg-icon-btn { background: var(--blue); color: white; }
 .msg-icon svg { width: 19px; height: 19px; display: block; }
 .msg-unread-badge {
   display: none;
@@ -1731,6 +1770,21 @@ h1, h2, h3 {
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(23,36,63,0.05);
 }
+/* Staff = solid blue bubble, white icon circle with a blue chat-bubble icon.
+   Group = white (#FFFFFF, not the cream --white) bubble with a 2px pink
+   border, pink icon circle with a white people icon (2026-08-11, 4th
+   revision — both icons are now real SVGs, not emoji, specifically so
+   these per-type icon colors are possible; see CONVERSATION_ICON_SVG in
+   app.js). White text/icon on the staff row for contrast against solid
+   blue — not literally requested but load-bearing for readability. */
+.conversation-row-dm { background: var(--blue); }
+.conversation-row-dm .conversation-name,
+.conversation-row-dm .conversation-preview { color: white; }
+.conversation-row-dm .conversation-time { color: rgba(255,255,255,0.75); }
+.conversation-row-dm .conversation-icon { background: white; color: var(--blue); }
+.conversation-row-group { background: #FFFFFF; border: 2px solid var(--blue); }
+.conversation-row-group .conversation-icon { background: var(--pink); color: white; }
+.conversation-icon svg { width: 20px; height: 20px; }
 .conversation-icon {
   width: 40px;
   height: 40px;
@@ -1866,35 +1920,80 @@ h1, h2, h3 {
   border-radius: 999px;
 }
 
-.exercise-library-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
-.exercise-lib-card {
-  text-align: left;
-  width: 100%;
-  border: none;
-  background: var(--white);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
+/* Card grid, name + video only (2026-08-10 redesign — same as admin's
+   Exercise Library). Body part/equipment/type/technique moved into the
+   Filters popup + the tap-to-view detail popup below; .exercise-lib-tags/
+   .exercise-lib-equipment are reused there, just no longer printed on the
+   card face. */
+.filter-row { display: flex; gap: 10px; align-items: flex-start; }
+.filter-row .search-input { flex: 1; }
+.filter-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--blue);
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  margin-left: 4px;
+}
+.exercise-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 16px;
+}
+.exercise-card {
+  background: var(--card-white);
+  border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(23,36,63,0.06);
   cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  /* Very faint outline (2026-08-11, Chris's literal 0.25pt ask) — reads
+     mostly on the white name strip at the bottom since the video gradient
+     up top already has its own contrast against the page. */
+  border: 0.25px solid var(--blue);
+  padding: 0;
   font-family: var(--font-body);
 }
-.exercise-lib-card-top { display: flex; justify-content: space-between; align-items: center; }
-.exercise-lib-name { margin: 0; font-size: 15px; font-weight: 800; color: var(--ink); }
-.exercise-lib-caret { color: var(--deepblue); font-size: 16px; transition: transform 0.15s; }
-.exercise-lib-card.expanded .exercise-lib-caret { transform: rotate(180deg); }
-.exercise-lib-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
-.exercise-lib-equipment { margin: 6px 0 0; font-size: 12px; font-weight: 700; color: var(--deepblue); }
-.exercise-lib-technique {
-  display: none;
-  margin: 10px 0 0;
-  padding-top: 10px;
-  border-top: 1px solid rgba(23,36,63,0.08);
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--ink);
-  opacity: 0.85;
+.exercise-card-video {
+  aspect-ratio: 3 / 2;
+  background: linear-gradient(135deg, var(--deepblue), var(--blue));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
-.exercise-lib-card.expanded .exercise-lib-technique { display: block; }
+.exercise-card-play {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  border: none;
+  color: white;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.exercise-card-play:hover { background: rgba(255,255,255,0.4); }
+.exercise-card-name { margin: 0; padding: 10px 10px; font-weight: 800; font-size: 12px; color: var(--ink); text-align: center; }
+
+.library-filter-label { margin: 0 0 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--deepblue); }
+.library-filter-actions { display: flex; gap: 10px; margin-top: 16px; }
+.library-filter-actions .btn-outline,
+.library-filter-actions .btn-primary { flex: 1; }
+
+.exercise-lib-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; justify-content: center; }
+.exercise-lib-equipment { margin: 0 0 12px; font-size: 12px; font-weight: 700; color: var(--deepblue); text-align: center; }
+.library-detail-technique { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink); opacity: 0.85; }
 
 /* ---------- LIBRARY HOME (Build Your Own product) ---------- */
 .library-home-tile {

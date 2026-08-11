@@ -135,14 +135,21 @@
           <label class="modal-field">Description
             <textarea id="program-modal-desc" rows="3" placeholder="Short description shown on the program card"></textarea>
           </label>
-          <label class="modal-field">Workouts per week
+          <div class="modal-field">
+            <span class="modal-field-label">Program Type</span>
+            <div class="tag-checkbox-row" id="program-modal-type"></div>
+          </div>
+          <label class="modal-field" id="program-modal-per-week-field">Workouts per week
             <input type="number" id="program-modal-per-week" min="1" max="14" value="3" />
+          </label>
+          <label class="modal-field" id="program-modal-duration-field" style="display:none;">Program Length (weeks)
+            <input type="number" id="program-modal-duration" min="1" max="52" value="8" />
           </label>
           <div class="modal-field">
             <span class="modal-field-label">Status</span>
             <div class="tag-checkbox-row" id="program-modal-status"></div>
           </div>
-          <p class="modal-desc">This will also set up its three live workout folders automatically.</p>
+          <p class="modal-desc" id="program-modal-type-note">This will also set up its three live workout folders automatically.</p>
         </div>
         <footer class="builder-footer">
           <span></span>
@@ -171,16 +178,53 @@
 
       <div class="filter-row">
         <input type="text" class="search-input" id="exercise-search" placeholder="Search exercises..." />
+        <button class="btn-ghost-lg small exercise-filter-btn" id="exercise-filter-btn">
+          Filters <span class="filter-count-badge" id="exercise-filter-count" style="display:none;"></span>
+        </button>
       </div>
-      <p class="exercise-filter-label">Body Part</p>
-      <div class="filter-row" id="exercise-bodypart-filters"></div>
-      <p class="exercise-filter-label">Equipment</p>
-      <div class="filter-row" id="exercise-equipment-filters"></div>
-      <p class="exercise-filter-label">Type</p>
-      <div class="filter-row" id="exercise-modality-filters"></div>
 
-      <div class="exercise-list" id="exercise-list"></div>
+      <div class="exercise-grid" id="exercise-list"></div>
     </section>
+
+    <!-- ---------- EXERCISE FILTER POPUP ---------- -->
+    <div class="builder-overlay" id="exercise-filter-overlay">
+      <div class="builder-panel small">
+        <header class="builder-header">
+          <h2>Filter Exercises</h2>
+          <button class="player-exit" id="exercise-filter-close-btn">✕</button>
+        </header>
+        <div class="builder-body">
+          <div class="modal-field">
+            <span class="modal-field-label">Body Part</span>
+            <div class="tag-checkbox-row" id="exercise-filter-bodyparts"></div>
+          </div>
+          <div class="modal-field">
+            <span class="modal-field-label">Equipment</span>
+            <div class="tag-checkbox-row" id="exercise-filter-equipment"></div>
+          </div>
+          <div class="modal-field">
+            <span class="modal-field-label">Type</span>
+            <div class="tag-checkbox-row" id="exercise-filter-modality"></div>
+          </div>
+        </div>
+        <footer class="builder-footer">
+          <button class="btn-ghost-lg" id="exercise-filter-clear-btn">Clear All</button>
+          <button class="btn-primary" id="exercise-filter-save-btn">Save</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ---------- EXERCISE VIDEO POPUP ---------- -->
+    <div class="exercise-video-overlay-admin" id="exercise-video-overlay-admin">
+      <div class="exercise-video-card-admin">
+        <button class="player-exit" id="exercise-video-admin-close-btn">✕</button>
+        <div class="admin-player-video">
+          <div class="admin-player-video-play">▶</div>
+          <p class="admin-player-video-label" id="exercise-video-admin-label">Demo Video Placeholder</p>
+        </div>
+        <p class="exercise-video-admin-url" id="exercise-video-admin-url"></p>
+      </div>
+    </div>
 
     <!-- ---------- EXERCISE EDITOR MODAL ---------- -->
     <div class="builder-overlay" id="exercise-modal-overlay">
