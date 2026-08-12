@@ -2005,14 +2005,16 @@ h1, h2, h3 {
 .habit-limit-note { font-size: 12px; color: var(--deepblue); font-weight: 700; text-align: center; margin-top: 8px; }
 
 .settings-list { display: flex; flex-direction: column; gap: 8px; }
-/* Blue-border/white-bg card (2026-08-12, Chris: "the original blue color
-   with a white background") — same treatment as .block-card elsewhere,
-   swapped in for the old shadow-only white card. */
+/* Solid blue/white-text card (2026-08-12 pass #2, Chris: "all of the cards
+   had blue backgrounds with white text") — replaces the blue-border/white-
+   bg version from earlier the same day. Log Out is uniform with the rest
+   now too (tried a red border to set it apart, then a red-text variant —
+   Chris didn't like either, "take the red away"). */
 .settings-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #FFFFFF;
+  background: var(--blue);
   border: 2px solid var(--blue);
   padding: 15px 16px;
   border-radius: var(--radius-sm);
@@ -2020,10 +2022,9 @@ h1, h2, h3 {
   font-size: 14px;
   font-family: var(--font-body);
   cursor: pointer;
-  color: var(--ink);
+  color: white;
 }
-.settings-row span:last-child { color: var(--blue); font-size: 16px; }
-.settings-row.danger { color: var(--danger); }
+.settings-row span:last-child { color: white; font-size: 16px; }
 
 /* ---------- BOTTOM NAV ---------- */
 /* Plain white bar, minimalist icons (Chris's 2026-08-06 follow-ups):
