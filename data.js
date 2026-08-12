@@ -512,6 +512,12 @@ try {
   });
 } catch (e) {}
 
+// Member-submitted Health Profile (height/weight/activity level/etc, see
+// the Profile tab's "My Health Profile" screen) — bridged to admin the same
+// way, keyed by member id so admin's member modal can read it read-only
+// (2026-08-12, Chris: "make these all tie back to the back end system").
+const LIVE_HEALTH_PROFILES_KEY = "burnClubHealthProfiles";
+
 // ---------------- Live Session (faked — no real video streaming yet) ----------------
 // See project notes: real one-way live video needs a third-party streaming
 // provider (Mux/IVS/Agora/etc.) plus a real backend; this fakes what the

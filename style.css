@@ -182,7 +182,9 @@ h1, h2, h3 {
   font-weight: 700;
   color: var(--deepblue);
 }
-.field input {
+.field input,
+.field select,
+.field textarea {
   border: 2px solid var(--periwinkle);
   border-radius: var(--radius-sm);
   padding: 13px 14px;
@@ -190,8 +192,12 @@ h1, h2, h3 {
   font-family: var(--font-body);
   background: var(--field-bg);
   outline: none;
+  color: var(--ink);
 }
-.field input:focus { border-color: var(--blue); }
+.field textarea { resize: none; }
+.field input:focus,
+.field select:focus,
+.field textarea:focus { border-color: var(--blue); }
 
 .btn-primary {
   background: var(--blue);
@@ -1426,6 +1432,61 @@ h1, h2, h3 {
 }
 .cardio-log-card .player-exit { position: absolute; top: -10px; right: -10px; }
 .cardio-log-title { margin: 0 0 16px; font-size: 18px; font-weight: 800; color: var(--ink); text-align: center; }
+
+/* Settings popups (2026-08-12): Notifications / My Health Profile / Invite
+   a Friend / Help & Support all reuse .cardio-log-overlay/.cardio-log-card
+   rather than introducing a new popup shell. */
+.health-profile-card { max-height: 85vh; overflow-y: auto; }
+.health-profile-card .field { margin-bottom: 14px; }
+
+.notif-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(23,36,63,0.08);
+  padding: 10px 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+.notif-row:last-child { border-bottom: none; }
+.notif-checkbox {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  border: 2px solid var(--periwinkle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 12px;
+  color: white;
+}
+.notif-row.checked .notif-checkbox { background: var(--blue); border-color: var(--blue); }
+.notif-label { font-size: 13px; font-weight: 700; color: var(--ink); }
+
+.invite-blurb { margin: 0 0 18px; font-size: 13px; font-weight: 600; color: var(--deepblue); text-align: center; line-height: 1.4; }
+.invite-code {
+  margin: 0 0 18px;
+  padding: 14px;
+  border: 2px dashed var(--periwinkle);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--blue);
+}
+
+.support-faq { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; }
+.support-faq-q { margin: 0 0 4px; font-size: 13px; font-weight: 800; color: var(--ink); }
+.support-faq-a { margin: 0; font-size: 12px; font-weight: 500; color: var(--deepblue); line-height: 1.4; }
+.support-email-link { display: block; text-align: center; text-decoration: none; }
 .cardio-log-card .field { margin-bottom: 14px; }
 .cardio-log-saved { margin: 10px 0 0; font-size: 12px; font-weight: 700; color: var(--blue); text-align: center; }
 
@@ -1849,16 +1910,64 @@ h1, h2, h3 {
   padding: 5px 12px;
   border-radius: 999px;
 }
-.profile-info-list { display: flex; flex-direction: column; gap: 1px; background: rgba(23,36,63,0.06); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 20px; }
-.profile-info-row { display: flex; justify-content: space-between; background: var(--white); padding: 13px 16px; font-size: 13px; font-weight: 700; }
+/* No-card, plain-text rows straight on the page background (2026-08-12,
+   Chris: "take away all of the cards at the top") — a hairline divider
+   between rows instead of a white card pill. .wearable-section/.wearable-row
+   are also reused by renderHabitManager() below for the Daily Habits
+   manager, so that list inherits this same flat look, ready to sit inside
+   its own colored card (see .card-habits overrides further down). */
+.profile-info-list { display: flex; flex-direction: column; margin-bottom: 20px; }
+.profile-info-row { display: flex; justify-content: space-between; background: none; padding: 10px 0; font-size: 13px; font-weight: 700; border-bottom: 1px solid rgba(23,36,63,0.08); }
+.profile-info-row:last-child { border-bottom: none; }
 .profile-info-row span:first-child { color: var(--deepblue); }
 .profile-info-row span:last-child { color: var(--ink); }
 
-.wearable-section { display: flex; flex-direction: column; gap: 1px; background: rgba(23,36,63,0.06); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 20px; }
-.wearable-row { display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 13px 16px; }
+.wearable-section { display: flex; flex-direction: column; margin-bottom: 20px; }
+.wearable-row { display: flex; justify-content: space-between; align-items: center; background: none; padding: 10px 0; border-bottom: 1px solid rgba(23,36,63,0.08); }
+.wearable-row:last-child { border-bottom: none; }
 .wearable-name { margin: 0; font-size: 13px; font-weight: 800; color: var(--ink); }
 .wearable-status { margin: 2px 0 0; font-size: 11px; font-weight: 700; color: var(--deepblue); }
 .wearable-status.connected { color: #1a8a44; }
+/* Connect/Disconnect only (2026-08-12, Chris) — scoped to the Connected
+   Devices container so the shared .btn-ghost-lg default (white/periwinkle,
+   used elsewhere for Pause and + Add Habit) is untouched. */
+#wearable-section .btn-ghost-lg { background: var(--blue); border-color: var(--blue); color: white; }
+
+/* Daily Habits manager (Profile tab): wrapped in the same green card as the
+   Home page's Habits section (2026-08-12, Chris: "put a green card around
+   them to match the home page"), rows compacted down from the Connected
+   Devices default above. */
+#profile-habits-section .wearable-section { margin-bottom: 12px; }
+#profile-habits-section .wearable-row { padding: 7px 0; border-bottom-color: rgba(23,42,58,0.12); }
+#profile-habits-section .wearable-name { font-size: 12px; color: var(--slate); }
+#profile-habits-section .wearable-status { color: var(--slate); }
+#profile-habits-section .habit-remove-btn { background: white; color: var(--deepblue); }
+#profile-habits-section .habit-remove-btn:hover { background: rgba(255,255,255,0.7); }
+/* Title reworded to "Manage your daily habits" and sized down 25% from the
+   24px .home-section-title default (2026-08-12, Chris). */
+#profile-habits-section .home-section-title { font-size: 18px; }
+
+/* Pencil edit button next to Email (2026-08-12, Chris: "an edit button ...
+   if they want to change their email"). Circular ghost button matching the
+   size/weight of other small icon buttons in the app (msg-icon-btn, etc.)
+   but transparent/outlined since it sits on the plain page background now. */
+.profile-info-row .edit-field-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  color: var(--blue);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 8px;
+}
+.profile-info-row .edit-field-btn:hover { background: rgba(120,140,227,0.12); }
+.profile-info-row .edit-field-btn svg { width: 14px; height: 14px; }
+.profile-info-row .profile-info-value-group { display: flex; align-items: center; }
 
 .habit-remove-btn {
   width: 26px;
@@ -1896,12 +2005,15 @@ h1, h2, h3 {
 .habit-limit-note { font-size: 12px; color: var(--deepblue); font-weight: 700; text-align: center; margin-top: 8px; }
 
 .settings-list { display: flex; flex-direction: column; gap: 8px; }
+/* Blue-border/white-bg card (2026-08-12, Chris: "the original blue color
+   with a white background") — same treatment as .block-card elsewhere,
+   swapped in for the old shadow-only white card. */
 .settings-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--white);
-  border: none;
+  background: #FFFFFF;
+  border: 2px solid var(--blue);
   padding: 15px 16px;
   border-radius: var(--radius-sm);
   font-weight: 700;
@@ -1909,9 +2021,8 @@ h1, h2, h3 {
   font-family: var(--font-body);
   cursor: pointer;
   color: var(--ink);
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
-.settings-row span:last-child { color: var(--deepblue); font-size: 16px; }
+.settings-row span:last-child { color: var(--blue); font-size: 16px; }
 .settings-row.danger { color: var(--danger); }
 
 /* ---------- BOTTOM NAV ---------- */

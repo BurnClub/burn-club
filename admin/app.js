@@ -1056,6 +1056,44 @@ function builderBlocksToSchema() {
 const LIVE_CIRCUITS_KEY = "burnClubLiveCircuits";
 const LIVE_CARD_COLORS = ["blue", "periwinkle", "deepblue", "yellow"];
 
+// Member-submitted Health Profiles (Profile tab → My Health Profile), same
+// bridge pattern, admin-side is read-only (2026-08-12, Chris: "make these
+// all tie back to the back end system after they are saved, so we can see
+// this info they have inputted").
+const LIVE_HEALTH_PROFILES_KEY = "burnClubHealthProfiles";
+
+function loadHealthProfiles() {
+  try {
+    return JSON.parse(localStorage.getItem(LIVE_HEALTH_PROFILES_KEY) || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+
+const HEALTH_PROFILE_SEX_LABELS = { female: "Female", male: "Male", "prefer-not-to-say": "Prefer not to say" };
+const HEALTH_PROFILE_ACTIVITY_LABELS = { sedentary: "Sedentary", "lightly-active": "Lightly Active", active: "Active", "very-active": "Very Active" };
+const HEALTH_PROFILE_GOAL_LABELS = { "lose-weight": "Lose Weight", "build-muscle": "Build Muscle", "improve-endurance": "Improve Endurance", "general-fitness": "General Fitness", other: "Other" };
+
+function renderHealthProfileReadout(memberId) {
+  const profile = loadHealthProfiles()[memberId];
+  if (!profile) return "No health profile submitted yet.";
+  const lines = [];
+  if (profile.height) lines.push(`Height: ${profile.height}`);
+  if (profile.weight) lines.push(`Weight: ${profile.weight} lbs`);
+  if (profile.dob) lines.push(`DOB: ${profile.dob}`);
+  if (profile.sex) lines.push(`Sex: ${HEALTH_PROFILE_SEX_LABELS[profile.sex] || profile.sex}`);
+  if (profile.activityLevel) lines.push(`Activity Level: ${HEALTH_PROFILE_ACTIVITY_LABELS[profile.activityLevel] || profile.activityLevel}`);
+  if (profile.goal) lines.push(`Primary Goal: ${HEALTH_PROFILE_GOAL_LABELS[profile.goal] || profile.goal}`);
+  if (profile.targetWeight) lines.push(`Target Weight: ${profile.targetWeight} lbs`);
+  if (profile.injuries) lines.push(`Injuries/Limitations: ${profile.injuries}`);
+  if (lines.length === 0) return "No health profile submitted yet.";
+  if (profile.updatedAt) {
+    const d = new Date(profile.updatedAt);
+    lines.push(`Updated ${d.toLocaleDateString()}`);
+  }
+  return lines.join("<br>");
+}
+
 function syncCircuitToMemberApp(circuit) {
   const folder = folderById(circuit.folderId);
   if (!folder || !folder.live) return; // only workouts published to a live folder go out to members
@@ -1951,6 +1989,7 @@ function openMemberModal() {
   document.getElementById("member-modal-badge").value = "";
   document.getElementById("member-modal-notes").value = "";
   document.getElementById("member-modal-habits").textContent = "None set";
+  document.getElementById("member-modal-health-profile").innerHTML = "No health profile submitted yet.";
   document.getElementById("member-modal-start-date").value = "";
   updateMemberStartDateField();
   document.getElementById("member-modal-status").innerHTML = ["Active", "Inactive"].map((opt) => `
@@ -1975,6 +2014,7 @@ function openEditMemberModal(memberId) {
   document.getElementById("member-modal-badge").value = m.badge;
   document.getElementById("member-modal-notes").value = m.notes;
   document.getElementById("member-modal-habits").textContent = m.habits && m.habits.length ? m.habits.join(", ") : "None set";
+  document.getElementById("member-modal-health-profile").innerHTML = renderHealthProfileReadout(m.id);
   document.getElementById("member-modal-start-date").value = m.startDate || "";
   updateMemberStartDateField();
   document.getElementById("member-modal-status").innerHTML = ["Active", "Inactive"].map((opt) => `

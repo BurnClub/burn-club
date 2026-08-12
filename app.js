@@ -1143,6 +1143,153 @@ function renderHabitManager() {
   }
 }
 
+// ---------------- Profile settings popups (2026-08-12) ----------------
+// Notifications / My Health Profile / Invite a Friend / Help & Support —
+// making the Profile tab's settings rows actually do something. Health
+// Profile is the one with real data to save; the other three are lighter
+// (device-local prefs, or purely static content) so they don't need a
+// backend bridge the way Health Profile does.
+
+// My Health Profile — bridged to Admin via LIVE_HEALTH_PROFILES_KEY, the
+// same same-browser-only localStorage bridge pattern already used for
+// circuits and messages (see data.js). A real product would POST this to
+// an account API; this is the closest a static prototype can get to
+// "ties back to the back end" without one.
+function loadHealthProfiles() {
+  try {
+    return JSON.parse(localStorage.getItem(LIVE_HEALTH_PROFILES_KEY) || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveHealthProfile(memberId, data) {
+  const all = loadHealthProfiles();
+  all[memberId] = { ...data, updatedAt: new Date().toISOString() };
+  localStorage.setItem(LIVE_HEALTH_PROFILES_KEY, JSON.stringify(all));
+}
+
+function openHealthProfileScreen() {
+  const saved = loadHealthProfiles()[CURRENT_MEMBER.id] || {};
+  document.getElementById("hp-height").value = saved.height || "";
+  document.getElementById("hp-weight").value = saved.weight || "";
+  document.getElementById("hp-dob").value = saved.dob || "";
+  document.getElementById("hp-sex").value = saved.sex || "";
+  document.getElementById("hp-activity").value = saved.activityLevel || "";
+  document.getElementById("hp-goal").value = saved.goal || "";
+  document.getElementById("hp-target-weight").value = saved.targetWeight || "";
+  document.getElementById("hp-injuries").value = saved.injuries || "";
+  document.getElementById("hp-saved-note").style.display = "none";
+  document.getElementById("health-profile-overlay").classList.add("visible");
+}
+
+function closeHealthProfileScreen() {
+  document.getElementById("health-profile-overlay").classList.remove("visible");
+}
+
+function saveHealthProfileForm() {
+  const data = {
+    height: document.getElementById("hp-height").value.trim(),
+    weight: document.getElementById("hp-weight").value.trim(),
+    dob: document.getElementById("hp-dob").value,
+    sex: document.getElementById("hp-sex").value,
+    activityLevel: document.getElementById("hp-activity").value,
+    goal: document.getElementById("hp-goal").value,
+    targetWeight: document.getElementById("hp-target-weight").value.trim(),
+    injuries: document.getElementById("hp-injuries").value.trim(),
+  };
+  saveHealthProfile(CURRENT_MEMBER.id, data);
+  document.getElementById("hp-saved-note").style.display = "block";
+}
+
+// Notifications — device-local prefs only (no member-facing product would
+// bridge these to staff/admin), so plain localStorage, not the shared key.
+const NOTIF_PREFS_KEY = "burnclub-notif-prefs";
+const NOTIF_TYPES = [
+  { id: "workouts", label: "Workout Reminders" },
+  { id: "messages", label: "New Messages" },
+  { id: "community", label: "Community Activity" },
+  { id: "challenges", label: "Challenge Updates" },
+  { id: "weekly-summary", label: "Weekly Progress Summary" },
+];
+let NOTIF_PREFS = {};
+
+function loadNotifPrefs() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(NOTIF_PREFS_KEY) || "null");
+    if (stored) return stored;
+  } catch (e) {}
+  const defaults = {};
+  NOTIF_TYPES.forEach((t) => { defaults[t.id] = true; });
+  return defaults;
+}
+
+function saveNotifPrefs() {
+  localStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify(NOTIF_PREFS));
+}
+
+function renderNotifPrefs() {
+  document.getElementById("notif-prefs-list").innerHTML = NOTIF_TYPES.map((t) => `
+    <button class="notif-row ${NOTIF_PREFS[t.id] ? "checked" : ""}" data-toggle-notif="${t.id}" type="button">
+      <span class="notif-checkbox">${NOTIF_PREFS[t.id] ? "✓" : ""}</span>
+      <span class="notif-label">${t.label}</span>
+    </button>
+  `).join("");
+  document.querySelectorAll("[data-toggle-notif]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.toggleNotif;
+      NOTIF_PREFS[id] = !NOTIF_PREFS[id];
+      saveNotifPrefs();
+      renderNotifPrefs();
+    });
+  });
+}
+
+function openNotificationsScreen() {
+  NOTIF_PREFS = loadNotifPrefs();
+  renderNotifPrefs();
+  document.getElementById("notifications-overlay").classList.add("visible");
+}
+
+function closeNotificationsScreen() {
+  document.getElementById("notifications-overlay").classList.remove("visible");
+}
+
+// Invite a Friend — code generated client-side from the member's name, no
+// real referral backend behind it yet.
+function referralCodeFor(member) {
+  const base = (member.name || "MEMBER").toUpperCase().replace(/[^A-Z]/g, "");
+  return `${base}-BURN`;
+}
+
+function openInviteScreen() {
+  document.getElementById("invite-code").textContent = referralCodeFor(CURRENT_MEMBER);
+  document.getElementById("invite-copied-note").style.display = "none";
+  document.getElementById("invite-overlay").classList.add("visible");
+}
+
+function closeInviteScreen() {
+  document.getElementById("invite-overlay").classList.remove("visible");
+}
+
+function copyInviteLink() {
+  const code = document.getElementById("invite-code").textContent;
+  const link = `https://burnclub.app/join?ref=${code}`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).catch(() => {});
+  }
+  document.getElementById("invite-copied-note").style.display = "block";
+}
+
+// Help & Support — static FAQ + mailto, no ticketing system behind it.
+function openSupportScreen() {
+  document.getElementById("support-overlay").classList.add("visible");
+}
+
+function closeSupportScreen() {
+  document.getElementById("support-overlay").classList.remove("visible");
+}
+
 // ---------------- Block summary rendering (circuit detail screen) ----------------
 
 // Collapsible per-exercise technique cue (2026-08-11) — pulls from the same
@@ -2099,9 +2246,33 @@ function init() {
   document.getElementById("profile-email").textContent = CURRENT_MEMBER.email;
   document.getElementById("profile-program").textContent = CURRENT_MEMBER.program;
   document.getElementById("profile-member-since").textContent = CURRENT_MEMBER.memberSince;
+  document.getElementById("edit-email-btn").addEventListener("click", editEmail);
+
+  document.getElementById("open-notifications-btn").addEventListener("click", openNotificationsScreen);
+  document.getElementById("notifications-close-btn").addEventListener("click", closeNotificationsScreen);
+  document.getElementById("open-health-profile-btn").addEventListener("click", openHealthProfileScreen);
+  document.getElementById("health-profile-close-btn").addEventListener("click", closeHealthProfileScreen);
+  document.getElementById("health-profile-save-btn").addEventListener("click", saveHealthProfileForm);
+  document.getElementById("open-invite-btn").addEventListener("click", openInviteScreen);
+  document.getElementById("invite-close-btn").addEventListener("click", closeInviteScreen);
+  document.getElementById("invite-copy-btn").addEventListener("click", copyInviteLink);
+  document.getElementById("open-support-btn").addEventListener("click", openSupportScreen);
+  document.getElementById("support-close-btn").addEventListener("click", closeSupportScreen);
 
   renderLiveBanner();
   applyMemberProgramMode();
+}
+
+// Prototype-level edit: prompt + in-memory update, no backend to save to yet
+// (2026-08-12, Chris: "an edit button ... if they want to change their
+// email"). Real path would be a proper edit form + account API call.
+function editEmail() {
+  const next = window.prompt("Update your email", CURRENT_MEMBER.email);
+  if (next === null) return;
+  const trimmed = next.trim();
+  if (!trimmed) return;
+  CURRENT_MEMBER.email = trimmed;
+  document.getElementById("profile-email").textContent = trimmed;
 }
 
 // ---------------- Program mode (rolling vs. structured) ----------------

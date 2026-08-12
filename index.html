@@ -641,7 +641,7 @@
         </div>
 
         <div class="profile-info-list">
-          <div class="profile-info-row"><span>Email</span><span id="profile-email"></span></div>
+          <div class="profile-info-row"><span>Email</span><span class="profile-info-value-group"><span id="profile-email"></span><button class="edit-field-btn" id="edit-email-btn" type="button" aria-label="Edit email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button></span></div>
           <div class="profile-info-row"><span>Program</span><span id="profile-program"></span></div>
           <div class="profile-info-row"><span>Member Since</span><span id="profile-member-since"></span></div>
         </div>
@@ -651,20 +651,128 @@
           <div class="wearable-section" id="wearable-section"></div>
         </div>
 
-        <div id="profile-habits-section">
-          <h2 class="section-title">Daily Habits</h2>
+        <div class="home-section-card card-habits" id="profile-habits-section">
+          <h2 class="home-section-title">Manage your daily habits</h2>
           <div id="habit-manager"></div>
         </div>
 
         <div class="settings-list">
-          <button class="settings-row"><span>Membership &amp; Billing</span><span>›</span></button>
-          <button class="settings-row"><span>Notifications</span><span>›</span></button>
-          <button class="settings-row"><span>My Progress History</span><span>›</span></button>
-          <button class="settings-row"><span>Invite a Friend</span><span>›</span></button>
-          <button class="settings-row"><span>Help &amp; Support</span><span>›</span></button>
+          <button class="settings-row" id="open-notifications-btn"><span>Notifications</span><span>›</span></button>
+          <button class="settings-row" id="open-health-profile-btn"><span>My Health Profile</span><span>›</span></button>
+          <button class="settings-row" id="open-invite-btn"><span>Invite a Friend</span><span>›</span></button>
+          <button class="settings-row" id="open-support-btn"><span>Help &amp; Support</span><span>›</span></button>
           <button class="settings-row danger" id="logout-btn"><span>Log Out</span><span>›</span></button>
         </div>
       </section>
+
+      <!-- ---------- NOTIFICATIONS POPUP (2026-08-12) ---------- -->
+      <div class="cardio-log-overlay" id="notifications-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="notifications-close-btn">✕</button>
+          <h2 class="cardio-log-title">Notifications</h2>
+          <div id="notif-prefs-list"></div>
+        </div>
+      </div>
+
+      <!-- ---------- MY HEALTH PROFILE POPUP (2026-08-12) ---------- -->
+      <!-- Saves into LIVE_HEALTH_PROFILES_KEY (see data.js) — the same
+           same-browser localStorage bridge pattern as circuits/messages —
+           so Admin's member modal can read it back read-only. -->
+      <div class="cardio-log-overlay" id="health-profile-overlay">
+        <div class="cardio-log-card health-profile-card">
+          <button class="player-exit" id="health-profile-close-btn">✕</button>
+          <h2 class="cardio-log-title">My Health Profile</h2>
+
+          <label class="field">
+            <span>Height</span>
+            <input type="text" id="hp-height" placeholder="e.g. 5&#39;9&quot;" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Weight (lbs)</span>
+            <input type="number" id="hp-weight" min="0" step="1" placeholder="e.g. 165" inputmode="numeric" />
+          </label>
+          <label class="field">
+            <span>Date of Birth</span>
+            <input type="date" id="hp-dob" />
+          </label>
+          <label class="field">
+            <span>Sex</span>
+            <select id="hp-sex">
+              <option value="">Select…</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="prefer-not-to-say">Prefer not to say</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Activity Level</span>
+            <select id="hp-activity">
+              <option value="">Select…</option>
+              <option value="sedentary">Sedentary</option>
+              <option value="lightly-active">Lightly Active</option>
+              <option value="active">Active</option>
+              <option value="very-active">Very Active</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Primary Goal</span>
+            <select id="hp-goal">
+              <option value="">Select…</option>
+              <option value="lose-weight">Lose Weight</option>
+              <option value="build-muscle">Build Muscle</option>
+              <option value="improve-endurance">Improve Endurance</option>
+              <option value="general-fitness">General Fitness</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Target Weight (lbs, optional)</span>
+            <input type="number" id="hp-target-weight" min="0" step="1" placeholder="e.g. 155" inputmode="numeric" />
+          </label>
+          <label class="field">
+            <span>Injuries / Limitations (optional)</span>
+            <textarea id="hp-injuries" rows="3" placeholder="e.g. Left knee — avoid deep lunges"></textarea>
+          </label>
+
+          <button class="btn-primary" id="health-profile-save-btn">Save Health Profile</button>
+          <p class="cardio-log-saved" id="hp-saved-note" style="display:none;">✓ Saved!</p>
+        </div>
+      </div>
+
+      <!-- ---------- INVITE A FRIEND POPUP (2026-08-12) ---------- -->
+      <div class="cardio-log-overlay" id="invite-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="invite-close-btn">✕</button>
+          <h2 class="cardio-log-title">Invite a Friend</h2>
+          <p class="invite-blurb">Share your code — when a friend joins Burn Club with it, you both get a free week.</p>
+          <p class="invite-code" id="invite-code">CHRIS-BURN</p>
+          <button class="btn-primary" id="invite-copy-btn">Copy Invite Link</button>
+          <p class="cardio-log-saved" id="invite-copied-note" style="display:none;">✓ Link copied!</p>
+        </div>
+      </div>
+
+      <!-- ---------- HELP & SUPPORT POPUP (2026-08-12) ---------- -->
+      <div class="cardio-log-overlay" id="support-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="support-close-btn">✕</button>
+          <h2 class="cardio-log-title">Help &amp; Support</h2>
+          <div class="support-faq">
+            <div class="support-faq-item">
+              <p class="support-faq-q">How do I change my workout schedule?</p>
+              <p class="support-faq-a">Head to Workouts — you can start any circuit any day, or build your own from the Exercise Library.</p>
+            </div>
+            <div class="support-faq-item">
+              <p class="support-faq-q">Can I pause my membership?</p>
+              <p class="support-faq-a">Yes — message your coach and they'll take care of it for you.</p>
+            </div>
+            <div class="support-faq-item">
+              <p class="support-faq-q">How do I connect a wearable?</p>
+              <p class="support-faq-a">Go to Profile → Connected Devices and tap Connect next to your device.</p>
+            </div>
+          </div>
+          <a class="btn-primary support-email-link" href="mailto:support@burnclub.com">Email Support</a>
+        </div>
+      </div>
 
       <!-- ---------- BOTTOM NAV ---------- -->
       <nav class="bottom-nav" id="bottom-nav">
