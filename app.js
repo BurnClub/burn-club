@@ -292,6 +292,32 @@ function completionsInRange(range) {
   return COMPLETIONS.filter((c) => c.date >= startKey && c.date <= todayKey);
 }
 
+// The full prior period (2026-08-11) — previous calendar week/month/year, used
+// for the stat bubbles' %-change badges. Deliberately the *whole* prior
+// period (e.g. all 7 days of last week), not "the same number of days
+// elapsed so far" — simpler to reason about and matches how "vs last week"
+// reads colloquially, at the cost of being a slightly unfair comparison
+// mid-week (comparing 3 days-in so far vs a full 7-day prior week).
+function completionsInPreviousRange(range) {
+  const today = new Date();
+  let start, end;
+  if (range === "week") {
+    end = startOfWeek(today);
+    end.setDate(end.getDate() - 1);
+    start = new Date(end);
+    start.setDate(start.getDate() - 6);
+  } else if (range === "month") {
+    end = new Date(today.getFullYear(), today.getMonth(), 0);
+    start = new Date(end.getFullYear(), end.getMonth(), 1);
+  } else {
+    start = new Date(today.getFullYear() - 1, 0, 1);
+    end = new Date(today.getFullYear() - 1, 11, 31);
+  }
+  const startKey = dateKey(start);
+  const endKey = dateKey(end);
+  return COMPLETIONS.filter((c) => c.date >= startKey && c.date <= endKey);
+}
+
 function currentStreak() {
   const done = new Set(COMPLETIONS.map((c) => c.date));
   const cursor = new Date();
@@ -355,22 +381,42 @@ function renderMonthGrid() {
 }
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-function renderYearBreakdown() {
+// Bar chart (2026-08-11) — was a plain text list ("January — 3 workouts").
+// Same monthly counts, just plotted instead of printed. Single series (one
+// hue, no legend needed per the dataviz skill's rules), current month
+// picked out in --ink so "where am I now" is legible at a glance, direct
+// value labels above each bar instead of a hover tooltip (this is a
+// touch-only mobile surface — hover doesn't apply here).
+function renderYearChart() {
   const today = new Date();
   const counts = new Array(12).fill(0);
   COMPLETIONS.forEach((c) => {
-    const d = new Date(c.date);
+    // parseDateKey, not new Date(c.date) — the latter parses "YYYY-MM-DD" as
+    // UTC midnight and can roll the date (and so the month) back a day in
+    // timezones behind UTC. Same bug class fixed elsewhere via dateKey().
+    const d = parseDateKey(c.date);
     if (d.getFullYear() === today.getFullYear()) counts[d.getMonth()]++;
   });
-  return counts
-    .map((count, i) => `
-      <div class="archive-row">
-        <span>${MONTH_NAMES[i]}</span>
-        <span class="archive-count">${count} workout${count === 1 ? "" : "s"}</span>
-      </div>
-    `)
-    .join("");
+
+  const max = Math.max(1, ...counts);
+  const barW = 18, gap = 8, chartH = 90, labelH = 16, valueH = 14;
+  const width = 12 * (barW + gap) - gap;
+
+  const bars = counts.map((count, i) => {
+    const barH = count === 0 ? 0 : Math.max(6, Math.round((count / max) * chartH));
+    const x = i * (barW + gap);
+    const y = valueH + (chartH - barH);
+    const isCurrentMonth = i === today.getMonth();
+    return `
+      <rect class="year-chart-bar${isCurrentMonth ? " current" : ""}" x="${x}" y="${y}" width="${barW}" height="${barH}" rx="3" />
+      ${count > 0 ? `<text class="year-chart-value" x="${x + barW / 2}" y="${valueH + (chartH - barH) - 4}" text-anchor="middle">${count}</text>` : ""}
+      <text class="year-chart-label${isCurrentMonth ? " current" : ""}" x="${x + barW / 2}" y="${valueH + chartH + 12}" text-anchor="middle">${MONTH_ABBR[i]}</text>
+    `;
+  }).join("");
+
+  return `<svg class="year-chart" viewBox="0 0 ${width} ${valueH + chartH + labelH}" role="img" aria-label="Workouts completed per month this year">${bars}</svg>`;
 }
 
 // Home's "This Week" snapshot (2026-08-10) — a copy of the Progress tab's
@@ -400,6 +446,109 @@ function renderHomeWeekSnapshot() {
   document.getElementById("home-week-cardio").textContent = cardio;
 }
 
+// Donut, 4 categorical series in a fixed hue order (2026-08-11) — Workouts/
+// Stretch/Core-Burn/Cardio, same counts the stat tiles above already show,
+// just as a shape instead of 4 separate numbers. Always has a legend (the
+// dataviz skill's rule for 2+ series) with direct counts since 4 series is
+// within the "≤4 also direct-labeled" allowance. Empty state (no data yet
+// this range) shows a flat grey ring rather than a broken/invisible chart.
+const WORKOUT_MIX_SEGMENTS = [
+  { key: "workouts", label: "Workouts", countKey: "circuit" },
+  { key: "stretch", label: "Stretch", countKey: "stretch" },
+  { key: "core-burn", label: "Core-Burn", countKey: "core-burn" },
+  { key: "cardio", label: "Cardio", countKey: "cardio-activity" },
+];
+
+function renderWorkoutMixDonut(counts) {
+  const segments = WORKOUT_MIX_SEGMENTS.map((s) => ({ ...s, value: counts[s.countKey] || 0 }));
+  const total = segments.reduce((sum, s) => sum + s.value, 0);
+  const r = 40, cx = 50, cy = 50, strokeWidth = 16;
+  const circumference = 2 * Math.PI * r;
+  const gap = 3;
+
+  let ringHtml;
+  if (total === 0) {
+    ringHtml = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" class="donut-empty-ring" stroke-width="${strokeWidth}" />`;
+  } else {
+    let offset = 0;
+    ringHtml = segments.filter((s) => s.value > 0).map((s) => {
+      const frac = s.value / total;
+      const segLen = Math.max(frac * circumference - gap, 0);
+      const dash = `${segLen} ${circumference - segLen}`;
+      const el = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" class="donut-seg donut-seg-${s.key}" stroke-width="${strokeWidth}" stroke-dasharray="${dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" />`;
+      offset += frac * circumference;
+      return el;
+    }).join("");
+  }
+
+  const legend = segments.map((s) => `
+    <div class="donut-legend-row">
+      <span class="donut-legend-dot donut-seg-${s.key}"></span>
+      <span class="donut-legend-label">${s.label}</span>
+      <span class="donut-legend-count">${s.value}</span>
+    </div>
+  `).join("");
+
+  return `
+    <div class="workout-mix-donut-wrap">
+      <svg class="workout-mix-donut" viewBox="0 0 100 100" role="img" aria-label="Breakdown of workout types this period">
+        ${ringHtml}
+        <text x="50" y="46" text-anchor="middle" class="donut-center-num">${total}</text>
+        <text x="50" y="60" text-anchor="middle" class="donut-center-label">Total</text>
+      </svg>
+      <div class="donut-legend">${legend}</div>
+    </div>
+  `;
+}
+
+// Circle "bubble" stat treatment (2026-08-11) — replaces the 6-tile stats
+// card. The donut above now covers the 4 session-count stats (Workouts/
+// Stretch/Core-Burn/Cardio); these two bubbles cover the remaining two
+// (Burn Minutes, Calories Burned), each now also showing %-change vs the
+// full prior period. Calories bubble keeps the existing wearable-gated
+// visibility the old stat-calories-card tile had.
+function statPercentChange(current, previous) {
+  if (previous === 0) return current === 0 ? null : Infinity; // Infinity = "new" (no prior baseline to compare)
+  return Math.round(((current - previous) / previous) * 100);
+}
+
+function renderStatDelta(pct) {
+  if (pct === null) return `<span class="stat-bubble-delta neutral">No prior data</span>`;
+  if (pct === Infinity) return `<span class="stat-bubble-delta up">▲ New</span>`;
+  if (pct === 0) return `<span class="stat-bubble-delta neutral">No change</span>`;
+  const up = pct > 0;
+  return `<span class="stat-bubble-delta ${up ? "up" : "down"}">${up ? "▲" : "▼"} ${Math.abs(pct)}%</span>`;
+}
+
+function renderStatBubbles(minutes, calories) {
+  const prevItems = completionsInPreviousRange(progressRange);
+  let prevMinutes = 0, prevCalories = 0;
+  prevItems.forEach((c) => {
+    prevMinutes += c.minutes || 0;
+    prevCalories += c.caloriesBurned || 0;
+  });
+  const showCalories = !!WEARABLE.provider;
+  const periodLabel = progressRange === "week" ? "last week" : progressRange === "month" ? "last month" : "last year";
+
+  return `
+    <div class="stat-bubbles-row">
+      <div class="stat-bubble stat-bubble-minutes">
+        <p class="stat-bubble-num">${minutes}</p>
+        <p class="stat-bubble-unit">min</p>
+        ${renderStatDelta(statPercentChange(minutes, prevMinutes))}
+      </div>
+      ${showCalories ? `
+        <div class="stat-bubble stat-bubble-calories">
+          <p class="stat-bubble-num">${calories.toLocaleString()}</p>
+          <p class="stat-bubble-unit">kcal</p>
+          ${renderStatDelta(statPercentChange(calories, prevCalories))}
+        </div>
+      ` : ""}
+    </div>
+    <p class="stat-bubbles-caption">vs ${periodLabel}</p>
+  `;
+}
+
 function renderProgressTab() {
   const items = completionsInRange(progressRange);
   const counts = { circuit: 0, stretch: 0, "core-burn": 0, "cardio-activity": 0 };
@@ -413,16 +562,8 @@ function renderProgressTab() {
     minutes += c.minutes || 0;
     calories += c.caloriesBurned || 0;
   });
-  document.getElementById("stat-workouts").textContent = counts.circuit;
-  document.getElementById("stat-stretch").textContent = counts.stretch;
-  document.getElementById("stat-core-burn").textContent = counts["core-burn"];
-  document.getElementById("stat-cardio").textContent = counts["cardio-activity"];
-  document.getElementById("stat-minutes").textContent = minutes;
-  const caloriesCard = document.getElementById("stat-calories-card");
-  if (caloriesCard) {
-    caloriesCard.style.display = WEARABLE.provider ? "" : "none";
-    document.getElementById("stat-calories").textContent = calories;
-  }
+  document.getElementById("workout-mix-donut").innerHTML = renderWorkoutMixDonut(counts);
+  document.getElementById("stat-bubbles").innerHTML = renderStatBubbles(minutes, calories);
 
   const streak = currentStreak();
   document.getElementById("progress-streak-num").textContent = `${streak} Day Streak`;
@@ -437,7 +578,7 @@ function renderProgressTab() {
   } else if (progressRange === "month") {
     section.innerHTML = `<h2 class="home-section-title">This Month</h2><div class="calendar-grid">${renderMonthGrid()}</div>`;
   } else {
-    section.innerHTML = `<h2 class="home-section-title">This Year</h2><div class="archive-list">${renderYearBreakdown()}</div>`;
+    section.innerHTML = `<h2 class="home-section-title">This Year</h2>${renderYearChart()}`;
   }
 
   renderBenchmarkList();

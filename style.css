@@ -697,6 +697,12 @@ h1, h2, h3 {
 .card-community .buzz-text p.buzz-time { color: white; }
 
 /* ---------- ARCHIVE ---------- */
+/* Dead CSS as of 2026-08-11 — .archive-list/.archive-row/.archive-count no
+   longer appear in any markup (Year view became a bar chart, see
+   .year-chart below; Last Week's Workouts dropped its meta line in an
+   earlier pass). Left in place rather than deleted, matching how retired
+   styles are handled elsewhere in this file — safe to remove if this area
+   ever gets a real cleanup pass. */
 .archive-list { display: flex; flex-direction: column; gap: 8px; }
 .archive-row {
   display: flex;
@@ -709,6 +715,79 @@ h1, h2, h3 {
   box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
 .archive-count { color: var(--deepblue); font-weight: 700; }
+
+/* ---------- STAT BUBBLES (2026-08-11) ---------- */
+/* Replaces the 6-tile stats card — proportional-circle stat treatment per
+   Chris's reference image. Each bubble is its own independent metric
+   (minutes vs. calories, different units), so size isn't magnitude-encoded
+   between them the way the reference's 3 same-unit circles were — this is a
+   "hero number in a circle" style choice, not a comparative chart. */
+/* Caption moved below the circles (2026-08-11) — was above the row. Tight
+   gap to the row above (6px) so it visually belongs to the circles, and its
+   own bottom margin (was on the row) keeps the *next* section from crowding
+   it — otherwise the caption reads like it's floating between two sections
+   instead of captioning the one above it. */
+.stat-bubbles-caption { margin: 6px 0 24px; text-align: center; font-size: 11px; font-weight: 700; color: var(--deepblue); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-bubbles-row { display: flex; justify-content: center; gap: 16px; margin-bottom: 0; }
+.stat-bubble {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+/* Minutes: purple bg, white text (was --ink). Calories: green bg, text
+   matches the same --deepblue used in the Workouts tab's green Stretch &
+   Core Library card (was --ink) (2026-08-11). */
+.stat-bubble-minutes { background: var(--purple); color: white; }
+.stat-bubble-calories { background: var(--green); color: var(--deepblue); }
+/* +25% (2026-08-11) — was 30px. */
+.stat-bubble-num { margin: 0; font-family: var(--font-heading); font-size: 38px; font-weight: 800; line-height: 1; }
+.stat-bubble-unit { margin: 2px 0 0; font-size: 11px; font-weight: 700; opacity: 0.75; }
+.stat-bubble-delta { margin-top: 6px; font-size: 11px; font-weight: 800; }
+.stat-bubble-minutes .stat-bubble-delta.up { color: var(--chartreuse); }
+.stat-bubble-minutes .stat-bubble-delta.down { color: rgba(255,255,255,0.75); }
+.stat-bubble-minutes .stat-bubble-delta.neutral { color: rgba(255,255,255,0.6); }
+.stat-bubble-calories .stat-bubble-delta.up { color: var(--green-dark); }
+.stat-bubble-calories .stat-bubble-delta.down { color: var(--deepblue); }
+.stat-bubble-calories .stat-bubble-delta.neutral { color: var(--deepblue); opacity: 0.7; }
+
+/* ---------- WORKOUT MIX DONUT (2026-08-11) ---------- */
+/* Fixed hue order, one color per category, never reassigned by rank/filter. */
+.donut-seg-workouts { stroke: var(--blue); }
+.donut-seg-stretch { stroke: var(--green-dark); }
+.donut-seg-core-burn { stroke: var(--yellow); }
+.donut-seg-cardio { stroke: var(--pink-dark); }
+.donut-legend-dot.donut-seg-workouts { background: var(--blue); }
+.donut-legend-dot.donut-seg-stretch { background: var(--green-dark); }
+.donut-legend-dot.donut-seg-core-burn { background: var(--yellow); }
+.donut-legend-dot.donut-seg-cardio { background: var(--pink-dark); }
+.donut-empty-ring { stroke: var(--periwinkle); }
+.workout-mix-donut-wrap { display: flex; align-items: center; gap: 18px; }
+.workout-mix-donut { width: 110px; height: 110px; flex-shrink: 0; }
+.donut-center-num { font-family: var(--font-heading); font-size: 20px; font-weight: 800; fill: var(--ink); }
+.donut-center-label { font-size: 8px; font-weight: 700; fill: var(--deepblue); font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.5px; }
+.donut-legend { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
+.donut-legend-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.donut-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.donut-legend-label { flex: 1; color: var(--ink); font-weight: 600; }
+.donut-legend-count { font-weight: 800; color: var(--ink); }
+
+/* ---------- YEAR CHART (2026-08-11) ---------- */
+/* Single-series bar chart, one hue (--blue) per the dataviz skill's "no
+   legend for one series" rule — the section title already names it. Current
+   month picked out in --ink. viewBox units land close to 1:1 with typical
+   rendered width so the in-chart font-sizes (7–8px) read at roughly their
+   literal size rather than scaling oddly. */
+.year-chart { display: block; width: 100%; height: auto; margin-top: 8px; }
+.year-chart-bar { fill: var(--blue); }
+.year-chart-bar.current { fill: var(--ink); }
+.year-chart-value { font-size: 8px; font-weight: 700; fill: var(--deepblue); font-family: var(--font-body); }
+.year-chart-label { font-size: 7px; font-weight: 700; fill: var(--deepblue); font-family: var(--font-body); opacity: 0.7; }
+.year-chart-label.current { fill: var(--ink); opacity: 1; }
 
 /* Last Week's Workouts — same compact footprint as .archive-row, but a real
    tappable workout entry rather than an informational row. Nested inside the

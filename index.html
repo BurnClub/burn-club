@@ -593,36 +593,26 @@
           </div>
         </div>
 
-        <div class="home-section-card card-green">
-          <div class="stats-plain-grid">
-            <div class="stat-item">
-              <p class="stat-num" id="stat-workouts">0</p>
-              <p class="stat-label">Workouts Done</p>
-            </div>
-            <div class="stat-item">
-              <p class="stat-num" id="stat-stretch">0</p>
-              <p class="stat-label">Stretch Sessions</p>
-            </div>
-            <div class="stat-item">
-              <p class="stat-num" id="stat-core-burn">0</p>
-              <p class="stat-label">Core-Burn Sessions</p>
-            </div>
-            <div class="stat-item">
-              <p class="stat-num" id="stat-cardio">0</p>
-              <p class="stat-label">Cardio Sessions</p>
-            </div>
-            <div class="stat-item">
-              <p class="stat-num" id="stat-minutes">0</p>
-              <p class="stat-label">Burn Minutes</p>
-            </div>
-            <div class="stat-item" id="stat-calories-card" style="display:none;">
-              <p class="stat-num" id="stat-calories">0</p>
-              <p class="stat-label">Calories Burned</p>
-            </div>
-          </div>
+        <!-- Calendar now leads, standardized to match Home's "This Week"
+             snapshot: no card, plain on the white page (2026-08-11). Was a
+             pink .home-section-card sitting below the stats grid. -->
+        <div class="home-week-snapshot" id="progress-calendar-section"></div>
+
+        <!-- Donut, replacing the benchmark-sparkline try (2026-08-11) —
+             workout-type mix for the same range as the stats grid above,
+             4 categorical series (fixed hue order) with a legend, per the
+             dataviz skill's rules for a ≥2-series chart. -->
+        <div class="home-section-card card-white">
+          <h2 class="home-section-title">Workout Mix</h2>
+          <div id="workout-mix-donut"></div>
         </div>
 
-        <div class="home-section-card card-pink" id="progress-calendar-section"></div>
+        <!-- Circle "bubble" stats (2026-08-11) — replaces the 6-tile stats
+             card. Burn Minutes + Calories Burned only; the other 4 (session
+             counts) are in the Workout Mix donut above. Each bubble also
+             shows %-change vs the full prior week/month/year. Moved below
+             the donut per Chris's follow-up. -->
+        <div id="stat-bubbles"></div>
 
         <div class="home-section-card card-blue">
           <h2 class="home-section-title">Benchmarks</h2>
