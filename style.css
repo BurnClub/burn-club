@@ -807,6 +807,10 @@ h1, h2, h3 {
   padding: 5px 12px;
   border-radius: 999px;
 }
+/* Player screen's block-type pill only (2026-08-11) — much darker text to
+   match the exit X's dark blue, not the workout-detail screen's tag which
+   keeps the lighter --blue. */
+#player-block-label { color: var(--deepblue); }
 .detail-hero h1 { font-size: 24px; color: var(--ink); }
 .detail-hero p { color: var(--deepblue); font-weight: 700; font-size: 13px; margin: 6px 0 0; }
 .detail-desc { color: var(--ink); opacity: 0.75; font-size: 14px; line-height: 1.5; margin: 16px 0 4px; }
@@ -816,8 +820,11 @@ h1, h2, h3 {
   flex-direction: column;
   gap: 12px;
 }
+/* White background + blue outline (2026-08-11) — was the cream --white
+   tint, no border. */
 .block-card {
-  background: var(--white);
+  background: #FFFFFF;
+  border: 1px solid var(--blue);
   border-radius: var(--radius-md);
   padding: 16px;
   box-shadow: 0 4px 12px rgba(23,36,63,0.05);
@@ -828,13 +835,14 @@ h1, h2, h3 {
   gap: 12px;
   margin-bottom: 8px;
 }
+/* Darker number (2026-08-11) — was --blue. */
 .block-num {
   width: 30px;
   height: 30px;
   min-width: 30px;
   border-radius: 50%;
   background: var(--periwinkle);
-  color: var(--blue);
+  color: var(--deepblue);
   font-weight: 800;
   font-family: var(--font-heading);
   display: flex;
@@ -888,6 +896,10 @@ h1, h2, h3 {
   cursor: pointer;
   box-shadow: 0 4px 10px rgba(23,36,63,0.08);
 }
+/* Every .player-exit X, everywhere it's used (2026-08-11, widened from
+   player-screen-only) — normal blue at 40% opacity background, black X
+   (was dark blue --deepblue). */
+.player-exit { background: rgba(120, 140, 227, 0.4); color: black; }
 .player-progress-text { font-size: 12px; font-weight: 700; color: var(--deepblue); }
 .player-progress-track {
   height: 6px;
@@ -936,21 +948,64 @@ h1, h2, h3 {
 }
 .player-video-label { margin: 0; font-size: 12px; font-weight: 700; opacity: 0.85; z-index: 1; }
 
+/* +50% font-size (2026-08-11) — was 26px. Bottom margin also bumped (was
+   4px, sized for the sub-pill that used to sit directly under it) now that
+   the sub-pill moved above the video instead — .player-format-explainer
+   sits right underneath this now and needs its own breathing room. */
 .player-exercise-name {
   font-family: var(--font-heading);
-  font-size: 26px;
+  font-size: 39px;
   font-weight: 800;
   color: var(--ink);
   text-align: center;
-  margin: 0 0 4px;
+  margin: 0 0 14px;
 }
+/* Margin adjusted for its new spot right under the progress bar, above the
+   video (2026-08-11) — minimal top gap so it reads as attached to the
+   progress bar, not floating independently. Bottom gap halved same session
+   (was 14px) per Chris's "50% of what it is now" ask. */
 .player-sub-pill {
   text-align: center;
   color: var(--deepblue);
   font-weight: 700;
   font-size: 13px;
-  margin: 0 0 18px;
+  margin: 4px 0 7px;
 }
+
+/* Collapsible per-exercise technique cue (2026-08-11) — sits right under the
+   exercise title, only shown for single-exercise phases (see
+   setPlayerExerciseTechnique() in app.js). Caret rotates open; body is
+   collapsed via max-height so it animates instead of just popping in. */
+.player-technique-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0 auto 14px;
+  background: none;
+  border: none;
+  color: var(--blue);
+  font-weight: 800;
+  font-size: 12px;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+.player-technique-caret { display: inline-block; transition: transform 0.15s; }
+.player-technique-toggle.expanded .player-technique-caret { transform: rotate(180deg); }
+.player-technique-body {
+  max-height: 0;
+  overflow: hidden;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+  opacity: 0.85;
+  text-align: center;
+  transition: max-height 0.2s ease;
+}
+.player-technique-body.expanded { max-height: 300px; margin-bottom: 14px; }
 
 .player-center {
   display: none;
@@ -982,13 +1037,13 @@ h1, h2, h3 {
   color: var(--deepblue);
 }
 
+/* "Before You Start" — no card at all now (2026-08-11, 2nd pass): tried the
+   message-bubble grey, Chris wasn't a fan — just plain text straight on the
+   player screen's white background, no box/shadow. */
 .player-format-explainer {
   display: none;
-  background: var(--white);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
+  padding: 0;
   margin-bottom: 18px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
 .player-format-explainer-title {
   margin: 0 0 6px;
@@ -1010,16 +1065,32 @@ h1, h2, h3 {
   gap: 8px;
   margin-bottom: 18px;
 }
+/* No cards at all now (2026-08-11, 3rd pass) — Chris tried the 50%-opacity
+   blue boxes and asked to separate them instead: plain rows with a thin
+   light-blue divider line between them (not under the last row). The line
+   is inset to start exactly under the exercise name's first letter (22px
+   circle + 10px gap = 32px from the row's own left edge, which is also the
+   screen's own edge since .amrap-row carries no horizontal padding of its
+   own) and mirrored the same 32px from the right, per Chris's "same
+   distance from the edge of the screen, whatever that ends up being." */
 .amrap-row {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--white);
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
+  background: none;
+  padding: 12px 0;
   font-weight: 700;
   font-size: 13px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+}
+.amrap-row:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  bottom: 0;
+  height: 1px;
+  background: var(--periwinkle);
 }
 .amrap-row-left { display: flex; align-items: center; gap: 10px; }
 .amrap-order-num {
@@ -1027,7 +1098,7 @@ h1, h2, h3 {
   height: 22px;
   min-width: 22px;
   border-radius: 50%;
-  background: var(--periwinkle);
+  background: white;
   color: var(--blue);
   font-weight: 800;
   font-family: var(--font-heading);
@@ -1042,7 +1113,7 @@ h1, h2, h3 {
   height: 28px;
   border-radius: 50%;
   border: none;
-  background: var(--periwinkle);
+  background: white;
   color: var(--blue);
   font-size: 11px;
   cursor: pointer;
@@ -1196,6 +1267,18 @@ h1, h2, h3 {
   font-size: 15px;
   color: var(--ink);
 }
+/* Technique cue, below the video (2026-08-11) — same source as the
+   collapsible one on the player screen (EXERCISE_LIBRARY.technique), just
+   always shown here since the popup itself is already an explicit
+   "show me more" action, no toggle needed. */
+.exercise-video-technique {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+  opacity: 0.85;
+}
 
 /* ---------- CARDIO LOG (2026-08-09) ---------- */
 /* Manual entry or a fake "sync" from a connected wearable — see the note
@@ -1323,6 +1406,9 @@ h1, h2, h3 {
   cursor: pointer;
 }
 .btn-ghost-lg.small { flex: 0 0 auto; padding: 8px 16px; font-size: 12px; }
+/* Pause button only (2026-08-11) — pure white #FFFFFF instead of the cream
+   --white every other .btn-ghost-lg still uses. */
+#player-pause-btn { background: #FFFFFF; }
 
 #player-complete-set-btn { margin-top: auto; }
 
@@ -1351,6 +1437,17 @@ h1, h2, h3 {
 .workout-complete h1 { font-size: 24px; }
 .workout-complete p { color: var(--deepblue); font-size: 14px; max-width: 260px; line-height: 1.5; }
 .workout-complete .btn-primary { margin-top: 8px; padding: 14px 32px; }
+/* Total Time stat, 2026-08-11 pass: no card (was the cream --white tile),
+   number 200% bigger and black (was 18px --ink), and the row widened to
+   260px — same max-width as the "You crushed the workout" text right above
+   it — so it lines up with that box instead of shrinking to its own
+   content width. */
+#workout-complete-stats {
+  width: 260px;
+  margin: 0 auto;
+}
+#workout-complete-stats .today-stat { background: none; box-shadow: none; padding: 0; justify-content: center; }
+#workout-complete-stats .today-stat-num { font-size: 54px; color: black; }
 
 .benchmark-score-section {
   width: 260px;
@@ -1376,12 +1473,12 @@ h1, h2, h3 {
 .benchmark-score-colon { font-weight: 800; color: var(--deepblue); }
 .benchmark-score-saved { margin: 10px 0 0; font-size: 12px; font-weight: 700; color: var(--blue); }
 
+/* No card (2026-08-11) — was the cream --white tile. */
 .rpe-section {
   width: 240px;
-  background: var(--white);
-  border-radius: var(--radius-md);
-  padding: 16px 18px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.06);
+  background: none;
+  box-shadow: none;
+  padding: 0;
 }
 .rpe-label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 10px; }
 .rpe-label span { color: var(--blue); font-size: 16px; font-weight: 800; }
@@ -1487,7 +1584,13 @@ h1, h2, h3 {
    pieces as Progress, just laid straight on the white page (no card) and
    the 3-stat row given its own top gap since it's not nested in a card
    with its own padding. */
-.home-week-snapshot { margin-bottom: 10px; }
+/* Horizontal padding matches .home-section-card's 18px (2026-08-11) — title/
+   stats now align with every other section's left edge instead of sitting
+   flush against the page edge. The day boxes deliberately break back out of
+   this padding (see .calendar-grid override below) — Chris wanted those
+   specifically to line up with the cards' outer edge, not the inset title. */
+.home-week-snapshot { margin-bottom: 10px; padding: 0 18px; }
+.home-week-snapshot .calendar-grid { margin: 0 -18px; }
 .home-week-stats-row { margin-top: 14px; }
 .calendar-grid {
   display: grid;
@@ -1511,36 +1614,90 @@ h1, h2, h3 {
   box-shadow: 0 2px 6px rgba(23,36,63,0.05);
 }
 .cal-day.empty { box-shadow: none; background: transparent; }
-.cal-day.future { color: var(--periwinkle); }
+/* Future days get a faint outline too now (2026-08-11) — half the width of
+   today's (1px vs 2px), same color, so today still reads as the strongest
+   emphasis but future days aren't bare/undifferentiated boxes. */
+.cal-day.future { color: var(--periwinkle); outline: 1px solid var(--deepblue); outline-offset: -1px; }
 .cal-day.today { outline: 2px solid var(--deepblue); outline-offset: -2px; }
 .cal-day.done.cal-workout { background: var(--kawaii-blue); }
 .cal-day.done.cal-stretch { background: var(--green); }
 .cal-day.done.cal-both { background: linear-gradient(135deg, var(--kawaii-blue) 50%, var(--green) 50%); }
 
 /* ---------- CHALLENGE CARD (Community tab) ---------- */
+/* Green (2026-08-11) — same --green as Stretch & Core Library/Daily Habits
+   on Home, was the cream --white tile. */
 .challenge-card {
-  background: var(--white);
+  background: var(--green);
   border-radius: var(--radius-md);
   padding: 18px;
   margin-bottom: 24px;
   box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
 .challenge-eyebrow { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--deepblue); }
-.challenge-name { margin: 4px 0 14px; font-family: var(--font-heading); font-size: 20px; color: var(--ink); }
+/* +50% (2026-08-11) — was 20px. */
+.challenge-name { margin: 4px 0 14px; font-family: var(--font-heading); font-size: 30px; color: var(--ink); }
 .challenge-points-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; }
 .challenge-points-num { font-family: var(--font-heading); font-size: 26px; font-weight: 800; color: var(--blue); }
 .challenge-points-label { font-size: 12px; font-weight: 700; color: var(--deepblue); }
+/* White (2026-08-11) — was --yellow (gold). Only the not-yet-reached state;
+   .reached below still goes blue once the threshold is hit. */
 .challenge-reward {
   margin: 12px 0 16px;
   font-size: 12px;
   font-weight: 700;
   color: var(--ink);
-  background: var(--yellow);
+  background: #FFFFFF;
   border-radius: 10px;
   padding: 10px 12px;
 }
 .challenge-reward.reached { background: var(--blue); color: white; }
 .challenge-empty { margin: 0; font-size: 13px; color: var(--deepblue); text-align: center; }
+
+/* ---------- CHALLENGE: points breakdown + levels + collapsible leaderboard
+   (2026-08-11) — Chris's members said a ranked leaderboard wasn't
+   motivating for many of them, so it's now tucked behind a toggle and the
+   default view is your own progress: where your points came from, and a
+   level ladder showing how many people are at each 50-point bracket. ---------- */
+.challenge-breakdown {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 14px 0;
+  font-size: 12px;
+  color: var(--deepblue);
+  font-weight: 600;
+}
+.challenge-breakdown strong { color: var(--ink); font-weight: 800; }
+.challenge-levels-title { margin: 4px 0 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--deepblue); }
+.challenge-levels { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.challenge-level-row { display: flex; align-items: center; gap: 10px; }
+.challenge-level-row.mine .challenge-level-range,
+.challenge-level-row.mine .challenge-level-count { color: var(--blue); font-weight: 800; }
+.challenge-level-range { width: 64px; flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--deepblue); }
+.challenge-level-bar-track { flex: 1; height: 8px; background: var(--periwinkle); border-radius: 999px; overflow: hidden; }
+.challenge-level-bar-fill { height: 100%; background: var(--blue); border-radius: 999px; }
+.challenge-level-row.mine .challenge-level-bar-fill { background: var(--ink); }
+.challenge-level-count { width: 20px; flex-shrink: 0; text-align: right; font-size: 12px; font-weight: 800; color: var(--ink); }
+
+.challenge-leaderboard-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: none;
+  border: 2px solid var(--periwinkle);
+  border-radius: 999px;
+  padding: 10px;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--blue);
+  cursor: pointer;
+}
+.challenge-leaderboard-caret { display: inline-block; transition: transform 0.15s; }
+.challenge-leaderboard-caret.expanded { transform: rotate(180deg); }
+#challenge-leaderboard.leaderboard { margin-top: 12px; }
 
 /* ---------- BENCHMARKS ---------- */
 /* Column layout tryout (2026-08-07): all 3 benchmarks side by side in one
@@ -1721,9 +1878,12 @@ h1, h2, h3 {
 
 /* ---------- MESSAGING ---------- */
 .topbar-actions { display: flex; align-items: center; gap: 10px; }
+/* Blue background / white icon is the app-wide default (2026-08-11) — every
+   page's messages button now uses the same real SVG icon (was a plain 💬
+   emoji everywhere except Home, which couldn't be recolored to match). */
 .msg-icon-btn {
   position: relative;
-  background: var(--white);
+  background: var(--blue);
   border: none;
   border-radius: 50%;
   width: 40px;
@@ -1731,16 +1891,11 @@ h1, h2, h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--ink);
+  color: white;
   font-family: inherit;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(23,36,63,0.06);
 }
-/* Home's messages icon: blue background, white icon (2026-08-11, Chris).
-   Scoped to Home only — every other tab's version of this button uses a
-   plain 💬 emoji glyph instead of the real SVG icon Home has, so a white
-   "icon" wouldn't actually show up the same way there. */
-#tab-home .msg-icon-btn { background: var(--blue); color: white; }
 .msg-icon svg { width: 19px; height: 19px; display: block; }
 .msg-unread-badge {
   display: none;
@@ -1843,18 +1998,60 @@ h1, h2, h3 {
 }
 .msg-bubble-row { display: flex; }
 .msg-bubble-row.from-me { justify-content: flex-end; }
+/* iMessage-style two-tone (2026-08-11) — blue for you (unchanged), light
+   grey for the other person (was the cream --white card tint, then a first
+   grey pass at #C0C0C1 that read "too dark" — landed on #E9E9EB, the
+   actual iMessage grey). Text weight dropped 600->400 (was semi-bold, now
+   normal) per the same request. */
 .msg-bubble {
+  position: relative;
   max-width: 78%;
-  background: var(--white);
+  background: #E9E9EB;
   border-radius: var(--radius-md);
   padding: 10px 14px;
   box-shadow: 0 2px 8px rgba(23,36,63,0.05);
 }
 .msg-bubble-row.from-me .msg-bubble { background: var(--blue); color: white; }
-.msg-bubble p { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.4; }
+.msg-bubble p { margin: 0; font-size: 14px; font-weight: 400; line-height: 1.4; }
 .msg-sender { font-size: 11px; font-weight: 800; color: var(--blue); margin: 0 0 3px !important; }
 .msg-bubble-row.from-me .msg-sender { color: rgba(255,255,255,0.85); }
 .msg-time { display: block; margin-top: 4px; font-size: 10px; font-weight: 700; opacity: 0.6; }
+
+/* iMessage-style tail (2026-08-11) — classic two-pseudo-element trick: one
+   draws a rounded corner in the bubble's own color, the other "cuts" a bite
+   out of it in the page's background color so it reads as a tapered point
+   instead of a plain corner. The mask color (var(--bg), #FFFFFF) only works
+   because the thread screen sits directly on the plain white app
+   background with nothing else behind it — if that ever changes, this tail
+   needs a matching color update. */
+.msg-bubble::before,
+.msg-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  height: 24px;
+  width: 18px;
+}
+.msg-bubble::before { z-index: 0; }
+.msg-bubble::after { z-index: 1; background: var(--bg); }
+.msg-bubble-row.from-me .msg-bubble::before {
+  right: -8px;
+  background: var(--blue);
+  border-bottom-left-radius: 18px;
+}
+.msg-bubble-row.from-me .msg-bubble::after {
+  right: -18px;
+  border-bottom-left-radius: 12px;
+}
+.msg-bubble-row:not(.from-me) .msg-bubble::before {
+  left: -8px;
+  background: #E9E9EB;
+  border-bottom-right-radius: 18px;
+}
+.msg-bubble-row:not(.from-me) .msg-bubble::after {
+  left: -18px;
+  border-bottom-right-radius: 12px;
+}
 .thread-composer { display: flex; gap: 8px; }
 .thread-input {
   flex: 1;

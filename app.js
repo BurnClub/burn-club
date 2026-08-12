@@ -580,10 +580,74 @@ function currentChallenge() {
   return CHALLENGES.find((c) => today >= c.startDate && today <= c.endDate) || null;
 }
 
-function challengePointsForMember(challenge) {
-  const earned = COMPLETIONS.filter((c) => c.date >= challenge.startDate && c.date <= challenge.endDate).length * challenge.pointsPerWorkout;
-  return earned + (CURRENT_MEMBER.pointAdjustment || 0);
+// "YYYY-MM-DD" parsed as local-time components, not new Date(str) — that
+// parses as UTC midnight and can roll the day back a date in timezones
+// behind UTC (same class of bug fixed elsewhere via dateKey()).
+function parseDateKey(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d);
 }
+
+// Habits count toward the challenge as a "perfect day" — all of the member's
+// habits checked that date — worth the same points as one workout, rather
+// than a smaller per-checkbox amount (2026-08-11, Chris's call via
+// AskUserQuestion). Mirrors currentHabitStreak()'s all-habits-done check,
+// just counted across a date range instead of a consecutive streak.
+function perfectHabitDaysInRange(startDate, endDate) {
+  if (MY_HABITS.length === 0) return 0;
+  const cursor = parseDateKey(startDate);
+  const end = parseDateKey(endDate);
+  const today = new Date();
+  let count = 0;
+  while (cursor <= end && cursor <= today) {
+    const key = dateKey(cursor);
+    if (MY_HABITS.every((h) => isHabitCheckedOnDate(h, key))) count++;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+}
+
+// Real breakdown by source (2026-08-11) — was one flat count × pointsPerWorkout
+// with no category split. Cardio-log entries and habit "perfect days" both
+// score at the same per-workout rate; everything else in COMPLETIONS
+// (circuit/previous-week/structured/stretch/core-burn) buckets as "workouts".
+function challengePointsBreakdown(challenge) {
+  const inRange = COMPLETIONS.filter((c) => c.date >= challenge.startDate && c.date <= challenge.endDate);
+  const cardioCount = inRange.filter((c) => c.category === "cardio-activity").length;
+  const workoutCount = inRange.length - cardioCount;
+  const habitDays = perfectHabitDaysInRange(challenge.startDate, challenge.endDate);
+  const workouts = workoutCount * challenge.pointsPerWorkout;
+  const cardio = cardioCount * challenge.pointsPerWorkout;
+  const habits = habitDays * challenge.pointsPerWorkout;
+  const adjustment = CURRENT_MEMBER.pointAdjustment || 0;
+  return { workouts, cardio, habits, adjustment, total: workouts + cardio + habits + adjustment };
+}
+
+function challengePointsForMember(challenge) {
+  return challengePointsBreakdown(challenge).total;
+}
+
+// Every 50 points is a "level" — shows how many members (seeded leaderboard
+// + You) currently sit in each bracket (2026-08-11, replaces the
+// always-visible leaderboard as the main at-a-glance view — Chris's members
+// said a ranked leaderboard wasn't motivating for many of them). Level count
+// scales with the highest score on the board, so it's never fewer levels
+// than there are people to place.
+function challengeLevels(standings) {
+  const maxPoints = Math.max(50, ...standings.map((s) => s.points));
+  const levelCount = Math.ceil(maxPoints / 50);
+  const levels = [];
+  for (let i = 1; i <= levelCount; i++) {
+    const min = (i - 1) * 50 + 1;
+    const max = i * 50;
+    const count = standings.filter((s) => Math.max(1, Math.ceil(s.points / 50)) === i).length;
+    const mine = standings.some((s) => s.me && Math.max(1, Math.ceil(s.points / 50)) === i);
+    levels.push({ level: i, min, max, count, mine });
+  }
+  return levels.reverse(); // highest level first, reads top-down like a ladder
+}
+
+let challengeLeaderboardExpanded = false;
 
 function renderChallengeCard() {
   const container = document.getElementById("challenge-card");
@@ -593,12 +657,20 @@ function renderChallengeCard() {
     return;
   }
 
-  const myPoints = challengePointsForMember(challenge);
+  const breakdown = challengePointsBreakdown(challenge);
+  const myPoints = breakdown.total;
   const reached = myPoints >= challenge.thresholdPoints;
   const pct = Math.min(100, Math.round((myPoints / challenge.thresholdPoints) * 100));
 
   const standings = [...CHALLENGE_LEADERBOARD, { name: "You", points: myPoints, me: true }].sort((a, b) => b.points - a.points);
-  const rowsHtml = standings.map((s, i) => renderLeaderRow({ rank: i + 1, name: s.name, stat: `${s.points} pts`, me: s.me })).join("");
+  // Top 10 only for now (2026-08-11) — full ranked list felt like too much.
+  // Chris's stated next step (not built yet): once there are enough members
+  // that "You" might fall outside the top 10, show your own position "and
+  // up" instead of always starting from #1 — deliberately deferred since it
+  // doesn't matter with today's ~5-person seeded leaderboard.
+  const topStandings = standings.slice(0, 10);
+  const rowsHtml = topStandings.map((s, i) => renderLeaderRow({ rank: i + 1, name: s.name, stat: `${s.points} pts`, me: s.me })).join("");
+  const levels = challengeLevels(standings);
 
   container.innerHTML = `
     <div class="challenge-card">
@@ -609,10 +681,38 @@ function renderChallengeCard() {
         <span class="challenge-points-label">/ ${challenge.thresholdPoints} pts</span>
       </div>
       <div class="player-progress-track"><div class="player-progress-fill" style="width:${pct}%"></div></div>
+
+      <div class="challenge-breakdown">
+        <span><strong>${breakdown.workouts}</strong> from Workouts</span>
+        <span><strong>${breakdown.habits}</strong> from Habits</span>
+        <span><strong>${breakdown.cardio}</strong> from Cardio</span>
+      </div>
+
       <p class="challenge-reward ${reached ? "reached" : ""}">${reached ? "🎉 You've hit the threshold — " + challenge.reward : `Reach ${challenge.thresholdPoints} points — ${challenge.reward}`}</p>
-      <div class="leaderboard">${rowsHtml}</div>
+
+      <p class="challenge-levels-title">Levels (every 50 pts)</p>
+      <div class="challenge-levels">
+        ${levels.map((l) => `
+          <div class="challenge-level-row ${l.mine ? "mine" : ""}">
+            <span class="challenge-level-range">${l.min}–${l.max}</span>
+            <div class="challenge-level-bar-track"><div class="challenge-level-bar-fill" style="width:${standings.length ? Math.round((l.count / standings.length) * 100) : 0}%"></div></div>
+            <span class="challenge-level-count">${l.count}</span>
+          </div>
+        `).join("")}
+      </div>
+
+      <button class="challenge-leaderboard-toggle" id="challenge-leaderboard-toggle" type="button">
+        <span>${challengeLeaderboardExpanded ? "Hide" : "See"} Top 10</span>
+        <span class="challenge-leaderboard-caret ${challengeLeaderboardExpanded ? "expanded" : ""}">⌄</span>
+      </button>
+      <div class="leaderboard" id="challenge-leaderboard" style="display:${challengeLeaderboardExpanded ? "flex" : "none"};">${rowsHtml}</div>
     </div>
   `;
+
+  document.getElementById("challenge-leaderboard-toggle").addEventListener("click", () => {
+    challengeLeaderboardExpanded = !challengeLeaderboardExpanded;
+    renderChallengeCard();
+  });
 }
 
 // ---------------- Wearable (faked) ----------------
@@ -904,6 +1004,27 @@ function renderHabitManager() {
 
 // ---------------- Block summary rendering (circuit detail screen) ----------------
 
+// Collapsible per-exercise technique cue (2026-08-11) — pulls from the same
+// EXERCISE_LIBRARY.technique field the Exercise Library tab's detail popup
+// uses. Pass null/omit to hide it (AMRAP/superset phases show a list of
+// exercises, not a single one under the title, so there's no one technique
+// to show there yet). Always collapses back down on a new exercise so it
+// never shows stale text left open from the previous one.
+function setPlayerExerciseTechnique(exerciseName) {
+  const toggle = document.getElementById("player-technique-toggle");
+  const body = document.getElementById("player-technique-body");
+  toggle.classList.remove("expanded");
+  body.classList.remove("expanded");
+  const ex = exerciseName ? EXERCISE_LIBRARY.find((x) => x.name === exerciseName) : null;
+  if (ex && ex.technique) {
+    toggle.style.display = "flex";
+    body.textContent = ex.technique;
+  } else {
+    toggle.style.display = "none";
+    body.textContent = "";
+  }
+}
+
 function formatClock(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
   const s = Math.floor(totalSeconds % 60);
@@ -1139,6 +1260,8 @@ function buildPhaseQueue(circuit) {
 // the workout keeps running underneath, same as glancing at a demo mid-round would.
 function openExerciseVideo(name) {
   document.getElementById("exercise-video-name").textContent = name;
+  const ex = EXERCISE_LIBRARY.find((x) => x.name === name);
+  document.getElementById("exercise-video-technique").textContent = ex ? ex.technique : "";
   document.getElementById("exercise-video-overlay").classList.add("visible");
 }
 
@@ -1327,7 +1450,7 @@ const Player = {
       // post-workout and feeling like the session "didn't count" if a number came up
       // short. Calories/HR still exist and are tracked (Progress tab, Home, entry.*
       // fields) — this is a completion-screen-only change, not a data change.
-      statsEl.innerHTML = `<div class="today-stat"><span class="today-stat-icon">⏱️</span><div><p class="today-stat-num">${formatClock(elapsedSec)}</p><p class="today-stat-label">Total Time</p></div></div>`;
+      statsEl.innerHTML = `<div class="today-stat"><div><p class="today-stat-num">${formatClock(elapsedSec)}</p><p class="today-stat-label">Total Time</p></div></div>`;
     }
     setupBenchmarkScoreSection(this.circuit);
     const rpeSlider = document.getElementById("rpe-slider");
@@ -1376,6 +1499,16 @@ const Player = {
   beginPhaseTimer() {
     document.getElementById("player-start-btn").style.display = "none";
     document.getElementById("player-controls").style.display = "flex";
+    // "Before You Start" notes are meant to be read once, before committing —
+    // for most kinds they naturally disappear on their own (a new phase
+    // object renders for the next station/round, and isNewBlockStart() is
+    // false by then). EMOM is the exception: it's a single continuous phase
+    // for the whole block, so renderPhase() never runs again until the block
+    // ends, and the notes were sitting there the entire 10 minutes with
+    // nothing to hide them (2026-08-11 fix, Chris). Hiding it here — the
+    // moment the timer actually starts — covers EMOM without needing
+    // kind-specific logic, and is a no-op for kinds where it's already gone.
+    document.getElementById("player-format-explainer").style.display = "none";
     if (this.currentPhase().kind === "amrap") {
       document.getElementById("player-round-counter").style.display = "flex";
     }
@@ -1412,6 +1545,7 @@ const Player = {
       document.getElementById("player-video-label").textContent = `Demo Video — ${ex.name}`;
       document.getElementById("player-sub-pill").textContent =
         `Minute ${Math.min(minute + 1, totalMinutes)} of ${totalMinutes} · ${ex.reps ? ex.reps + " reps" : ""}`;
+      setPlayerExerciseTechnique(ex.name);
     } else {
       document.getElementById("player-clock").textContent = formatClock(this.remaining);
     }
@@ -1459,6 +1593,7 @@ const Player = {
       document.getElementById("player-center").style.display = "flex";
       document.getElementById("player-clock-label").textContent = phase.kind === "work" ? "Work" : "Rest";
       document.getElementById("player-video").style.display = phase.kind === "work" ? "flex" : "none";
+      setPlayerExerciseTechnique(phase.kind === "work" ? phase.exerciseName : null);
       this.remaining = phase.duration;
       this.updateClock();
       if (this.isNewBlockStart()) this.awaitStart(); else this.beginPhaseTimer();
@@ -1470,6 +1605,7 @@ const Player = {
         phase.progressLabel + (phase.reps ? ` · ${phase.reps} reps` : "");
       document.getElementById("player-video").style.display = "flex";
       document.getElementById("player-complete-set-btn").style.display = "block";
+      setPlayerExerciseTechnique(phase.exerciseName);
     }
 
     // Superset: both exercises on one screen (2026-08-07) — no persistent
@@ -1480,6 +1616,7 @@ const Player = {
       document.getElementById("player-exercise-name").textContent = `${phase.exercises.length}-Exercise Superset`;
       document.getElementById("player-sub-pill").textContent = phase.progressLabel;
       document.getElementById("player-video").style.display = "none";
+      setPlayerExerciseTechnique(null);
       const supersetListEl = document.getElementById("player-superset-list");
       supersetListEl.style.display = "flex";
       supersetListEl.innerHTML = phase.exercises
@@ -1508,6 +1645,7 @@ const Player = {
         `${phase.sets.length} set${phase.sets.length === 1 ? "" : "s"}`;
       document.getElementById("player-video").style.display = "flex";
       document.getElementById("player-video-label").textContent = `Demo Video — ${phase.exerciseName}`;
+      setPlayerExerciseTechnique(phase.exerciseName);
       this.setsChecked = phase.sets.map(() => false);
       const listEl = document.getElementById("player-sets-list");
       listEl.style.display = "flex";
@@ -1533,6 +1671,7 @@ const Player = {
       document.getElementById("player-exercise-name").textContent = phase.blockLabel;
       document.getElementById("player-sub-pill").textContent = phase.progressLabel;
       document.getElementById("player-video").style.display = "none";
+      setPlayerExerciseTechnique(null);
       document.getElementById("player-center").style.display = "flex";
       document.getElementById("player-clock-label").textContent = "Time Remaining";
       document.getElementById("player-amrap-list").style.display = "block";
@@ -1794,7 +1933,12 @@ function init() {
   renderCircuitLists();
   renderHomeWeekSnapshot();
 
-  document.getElementById("community-feed").innerHTML = FEED.map(renderFeedItem).join("");
+  // Community tab's Activity Feed now uses the same .buzz-row markup as
+  // Home's Community Buzz (2026-08-11) — renderFeedItem/.feed-item/.mini-feed
+  // are dead code now unless something else still needs the old card-per-item
+  // look; left in place rather than deleted in case that's still wanted
+  // elsewhere later.
+  document.getElementById("community-feed").innerHTML = FEED.map(renderHomeBuzzRow).join("");
   document.getElementById("home-community-feed").innerHTML = FEED.map(renderHomeBuzzRow).join("");
   updateUnreadBadges();
 
@@ -2418,6 +2562,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
   document.getElementById("player-pause-btn").addEventListener("click", () => Player.togglePause());
+  document.getElementById("player-technique-toggle").addEventListener("click", () => {
+    document.getElementById("player-technique-toggle").classList.toggle("expanded");
+    document.getElementById("player-technique-body").classList.toggle("expanded");
+  });
   document.getElementById("player-skip-btn").addEventListener("click", () => Player.advance());
 
   const rpeSlider = document.getElementById("rpe-slider");

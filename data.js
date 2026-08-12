@@ -467,8 +467,13 @@ const CHALLENGES = [
   {
     id: "summer-sweat-2026",
     name: "Summer Sweat Challenge",
-    startDate: "2026-07-01",
-    endDate: "2026-07-31",
+    // Bumped to bracket today (2026-08-11) so it shows as active for this
+    // demo pass — was 07-01/07-31, which had already lapsed. Same
+    // pinned-date limitation as the rest of this seed data (see project
+    // memory: DAILY_STATS/CHALLENGES aren't relative-to-today generators
+    // like COMPLETIONS is) — will need bumping again later.
+    startDate: "2026-08-01",
+    endDate: "2026-08-31",
     pointsPerWorkout: 5,
     thresholdPoints: 200,
     reward: "Entered to win free Burn Club merch",

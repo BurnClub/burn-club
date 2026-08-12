@@ -127,7 +127,7 @@
             <p class="eyebrow">This week</p>
             <h1 class="topbar-title">Workouts</h1>
           </div>
-          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+          <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
         </header>
         <div class="home-section-card card-blue">
           <span class="workouts-bg-icon"></span>
@@ -173,7 +173,7 @@
             <p class="eyebrow">Welcome</p>
             <h1 class="topbar-title" id="library-home-greeting">Hi there 👋</h1>
           </div>
-          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+          <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
         </header>
         <p class="section-subtitle">Browse exercises or build a workout of your own, saved just for you.</p>
 
@@ -204,7 +204,7 @@
             <p class="eyebrow">Browse &amp; build your own</p>
             <h1 class="topbar-title">Exercise Library</h1>
           </div>
-          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+          <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
         </header>
         <div class="filter-row">
           <input type="text" class="search-input" id="library-search" placeholder="Search exercises…" autocomplete="off" />
@@ -226,7 +226,7 @@
             <p class="eyebrow">Built by you</p>
             <h1 class="topbar-title">My Workouts</h1>
           </div>
-          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+          <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
         </header>
         <button class="btn-primary" id="build-workout-btn">+ Build a Workout</button>
         <div class="circuit-list my-workouts-list" id="my-workouts-list"></div>
@@ -239,7 +239,7 @@
             <p class="eyebrow" id="calendar-program-label">Your program</p>
             <h1 class="topbar-title">Calendar</h1>
           </div>
-          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+          <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
         </header>
         <h2 class="section-title">This Week</h2>
         <div class="calendar-day-list" id="calendar-day-list"></div>
@@ -319,6 +319,12 @@
         </header>
         <div class="player-progress-track"><div class="player-progress-fill" id="player-progress-fill"></div></div>
 
+        <!-- Round/station location moved here, right under the progress bar
+             (2026-08-11 try) — was under the exercise name below. Chris
+             wanted it out of the way, not competing for attention with the
+             name. -->
+        <p class="player-sub-pill" id="player-sub-pill">Round 1 of 1</p>
+
         <!-- Video now leads (2026-08-07): sits above the exercise name so the
              title and set numbers land right above the set list, instead of
              the video sitting between them. Applies to every phase kind. -->
@@ -328,7 +334,16 @@
         </div>
 
         <p class="player-exercise-name" id="player-exercise-name">Exercise</p>
-        <p class="player-sub-pill" id="player-sub-pill">Round 1 of 1</p>
+
+        <!-- Collapsible technique cue (2026-08-11) — pulls from the same
+             EXERCISE_LIBRARY.technique field the Exercise Library tab's
+             detail popup uses. Only shown for single-exercise phases (work/
+             rest/emom/sets) since AMRAP/superset show a list of exercises,
+             not one under the title — see setPlayerExerciseTechnique(). -->
+        <button class="player-technique-toggle" id="player-technique-toggle" type="button" style="display:none;">
+          <span>Technique</span><span class="player-technique-caret">⌄</span>
+        </button>
+        <p class="player-technique-body" id="player-technique-body"></p>
 
         <div class="player-format-explainer" id="player-format-explainer">
           <p class="player-format-explainer-title" id="player-format-explainer-title"></p>
@@ -378,6 +393,7 @@
             <p class="player-video-label">Demo Video Placeholder</p>
           </div>
           <p class="exercise-video-name" id="exercise-video-name">Exercise Name</p>
+          <p class="exercise-video-technique" id="exercise-video-technique"></p>
         </div>
       </div>
 
@@ -539,13 +555,18 @@
             <p class="eyebrow">Burn Club</p>
             <h1 class="topbar-title">Community</h1>
           </div>
-          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+          <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
         </header>
 
         <div id="challenge-card"></div>
 
-        <h2 class="section-title">Activity Feed</h2>
-        <div class="mini-feed" id="community-feed"></div>
+        <!-- Same look as Home's Community Buzz card (2026-08-11) — pink
+             section card + .buzz-list rows, was a plain section-title +
+             one-card-per-item .mini-feed. -->
+        <div class="home-section-card card-community">
+          <h2 class="home-section-title">Activity Feed</h2>
+          <div class="buzz-list" id="community-feed"></div>
+        </div>
       </section>
 
       <!-- ---------- PROGRESS ---------- -->
@@ -555,7 +576,7 @@
             <p class="eyebrow">Your stats</p>
             <h1 class="topbar-title">Progress</h1>
           </div>
-          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+          <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
         </header>
 
         <div class="range-toggle" id="progress-range-toggle">
@@ -620,7 +641,7 @@
             <p class="eyebrow">Account</p>
             <h1 class="topbar-title">Profile</h1>
           </div>
-          <button class="msg-icon-btn" data-action="open-messages">💬<span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+          <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
         </header>
 
         <div class="profile-card">
