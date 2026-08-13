@@ -445,26 +445,16 @@ function renderYearChart() {
 
 // Home's "This Week" snapshot (2026-08-10) — a copy of the Progress tab's
 // Week calendar, week-only (no Month/Year toggle), plus a 3-stat row Chris
-// asked to add underneath: workouts done against a weekly target, stretch &
-// core sessions, and cardio sessions. Same category buckets
-// renderProgressTab() uses, just always scoped to this week regardless of
-// the Progress tab's own range toggle.
-const HOME_WEEKLY_CIRCUIT_TARGET = 3;
-
-// The target used to be a flat 3 for everyone — Burn Club's cadence, which
-// made Jordan read "4/3 done" while actually behind on a 6-a-week program
-// (2026-08-13). Structured programs derive it from their own schedule
-// instead of needing a hand-maintained field.
-function weeklyWorkoutTarget() {
-  if (CURRENT_MEMBER.scheduleType === "structured") {
-    const template = SCHEDULE_TEMPLATES[CURRENT_MEMBER.programId] || [];
-    if (template.length) {
-      const workoutDays = template.filter((d) => d.type === "workout").length;
-      return Math.max(1, Math.round(workoutDays / (template.length / 7)));
-    }
-  }
-  return HOME_WEEKLY_CIRCUIT_TARGET;
-}
+// asked to add underneath: workouts done, stretch & core sessions, and
+// cardio sessions. Same category buckets renderProgressTab() uses, just
+// always scoped to this week regardless of the Progress tab's own range
+// toggle.
+//
+// All three are plain counts. This one used to read "4/3" against a weekly
+// target, which was Burn Club's cadence hardcoded for everyone and read as
+// nonsense for a member on a different program — dropped entirely rather
+// than made per-program, since Chris wanted the number to be unambiguous
+// (2026-08-13).
 
 function renderHomeWeekSnapshot() {
   const grid = document.getElementById("home-week-grid");
@@ -479,7 +469,7 @@ function renderHomeWeekSnapshot() {
     else if (bucket === "stretch" || bucket === "core-burn") stretchCore++;
     else if (bucket === "cardio-activity") cardio++;
   });
-  document.getElementById("home-week-circuits").textContent = `${circuits}/${weeklyWorkoutTarget()}`;
+  document.getElementById("home-week-circuits").textContent = circuits;
   // "Circuits" is Burn Club's own vocabulary — structured programs just call
   // them workouts (2026-08-13).
   document.getElementById("home-week-circuits-label").textContent =
