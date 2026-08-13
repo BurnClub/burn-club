@@ -831,12 +831,29 @@ h1, h2, h3 {
 }
 
 /* ---------- CALENDAR (structured programs) ---------- */
+/* Title + "＋ Add" button on one row (2026-08-12). The title used to be a
+   direct child of .screen, which zeroed its top margin via
+   `.screen > .section-title:first-of-type`; nesting it here breaks that
+   selector, so the margin is zeroed on the header instead. */
+.calendar-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.calendar-list-header .section-title { margin: 0; }
 .calendar-day-list { display: flex; flex-direction: column; gap: 10px; }
+/* White day card with a blue workout card inside (2026-08-12, Chris) — was
+   a cream day card holding a plain white workout card. A pure-white card on
+   the white page needs its own edge, so it takes the same faint navy
+   outline .home-section-card.card-white uses. */
 .calendar-day-row {
-  background: var(--white);
+  background: var(--card-white);
+  border: 1px solid rgba(23,36,63,0.08);
   border-radius: var(--radius-md);
   padding: 12px 16px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+  box-shadow: 0 4px 20px 2px rgba(23,36,63,0.3);
 }
 .calendar-day-row.today { outline: 2px solid var(--blue); outline-offset: -2px; }
 .calendar-day-date { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; color: var(--deepblue); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
@@ -848,7 +865,7 @@ h1, h2, h3 {
   gap: 2px;
   width: 100%;
   text-align: left;
-  background: var(--bg);
+  background: var(--blue);
   border: none;
   border-radius: var(--radius-sm);
   padding: 10px 12px;
@@ -856,11 +873,48 @@ h1, h2, h3 {
   font-family: inherit;
   position: relative;
 }
-.calendar-item-btn.done { background: #e4e6ef; }
-.calendar-item-label { font-weight: 800; font-size: 14px; color: var(--ink); }
-.calendar-item-meta { font-size: 12px; color: var(--deepblue); font-weight: 600; }
+/* Completed workouts recede to the muted blue rather than the old light
+   grey — white text still needs to read against it. */
+.calendar-item-btn.done { background: var(--deepblue); }
+.calendar-item-label { font-weight: 800; font-size: 14px; color: white; }
+/* Same white-on-blue secondary-text value the blue DM conversation row uses. */
+.calendar-item-meta { font-size: 12px; color: rgba(255,255,255,0.75); font-weight: 600; }
 .calendar-item-muted { font-size: 13px; font-weight: 700; color: var(--deepblue); opacity: 0.7; padding: 10px 12px; display: block; }
-.calendar-item-check { position: absolute; top: 10px; right: 12px; font-size: 11px; font-weight: 800; color: var(--blue); }
+.calendar-item-check { position: absolute; top: 10px; right: 12px; font-size: 11px; font-weight: 800; color: white; }
+
+/* Member-scheduled cardio (2026-08-12, Chris) — green so a session the
+   member added themselves reads as distinct from the blue program
+   workouts the coach assigned. --slate text is the same treatment every
+   other green card in the app uses. */
+.calendar-item-scheduled {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: var(--green);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  position: relative;
+}
+.calendar-day-row .calendar-item-scheduled { margin-top: 8px; }
+.calendar-day-row .calendar-item-btn + .calendar-item-scheduled,
+.calendar-day-row .calendar-item-muted + .calendar-item-scheduled { margin-top: 8px; }
+.calendar-scheduled-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.calendar-scheduled-label { font-weight: 800; font-size: 14px; color: var(--slate); }
+.calendar-scheduled-meta { font-size: 12px; font-weight: 600; color: var(--slate); opacity: 0.7; }
+.calendar-scheduled-remove {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,0.65);
+  color: var(--slate);
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+}
+.calendar-scheduled-remove:hover { background: white; }
 
 /* ---------- DETAIL ---------- */
 .detail-header {

@@ -241,9 +241,42 @@
           </div>
           <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
         </header>
-        <h2 class="section-title">This Week</h2>
+        <div class="calendar-list-header">
+          <h2 class="section-title">This Week</h2>
+          <button class="btn-primary small" id="calendar-add-btn">+ Add</button>
+        </div>
         <div class="calendar-day-list" id="calendar-day-list"></div>
       </section>
+
+      <!-- ---------- ADD TO CALENDAR POPUP (2026-08-12) ---------- -->
+      <!-- Schedules a *planned* cardio session onto the calendar. Distinct
+           from the Cardio Log popup below, which records an activity the
+           member already finished — that one writes to COMPLETIONS and
+           counts toward stats/streaks/points; this one deliberately does
+           not, since the session hasn't happened yet. -->
+      <div class="cardio-log-overlay" id="calendar-add-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="calendar-add-close-btn">✕</button>
+          <h2 class="cardio-log-title">Add to Calendar</h2>
+
+          <label class="field">
+            <span>Activity</span>
+          </label>
+          <div class="pill-filter-row" id="calendar-add-activity-picker">
+            <button class="pill-filter" type="button" data-sched-activity="Run">Run</button>
+            <button class="pill-filter" type="button" data-sched-activity="Walk">Walk</button>
+            <button class="pill-filter" type="button" data-sched-activity="Stairs">Stairs</button>
+          </div>
+
+          <label class="field">
+            <span>Date</span>
+            <input type="date" id="calendar-add-date" />
+          </label>
+
+          <button class="btn-primary" id="calendar-add-save-btn">Add to Calendar</button>
+          <p class="cardio-log-saved" id="calendar-add-saved" style="display:none;"></p>
+        </div>
+      </div>
 
       <!-- ---------- CIRCUIT DETAIL ---------- -->
       <section class="screen" id="screen-detail" data-screen>

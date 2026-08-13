@@ -2246,7 +2246,28 @@ function init() {
   document.getElementById("profile-email").textContent = CURRENT_MEMBER.email;
   document.getElementById("profile-program").textContent = CURRENT_MEMBER.program;
   document.getElementById("profile-member-since").textContent = CURRENT_MEMBER.memberSince;
+
+  renderLiveBanner();
+  applyMemberProgramMode();
+}
+
+// One-time wiring for static elements that exist from page load and are
+// never re-created. Kept out of init() on purpose: switchMemberProfile()
+// calls init() again, so binding here would stack a duplicate handler per
+// profile switch — harmless for a popup open, but it made "Add to
+// Calendar" save the same session twice (2026-08-12).
+function wireStaticControls() {
   document.getElementById("edit-email-btn").addEventListener("click", editEmail);
+
+  document.getElementById("calendar-add-btn").addEventListener("click", openCalendarAddPopup);
+  document.getElementById("calendar-add-close-btn").addEventListener("click", closeCalendarAddPopup);
+  document.getElementById("calendar-add-save-btn").addEventListener("click", saveScheduledCardio);
+  document.querySelectorAll("#calendar-add-activity-picker .pill-filter").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      schedSelectedActivity = btn.dataset.schedActivity;
+      renderCalendarAddActivityPicker();
+    });
+  });
 
   document.getElementById("open-notifications-btn").addEventListener("click", openNotificationsScreen);
   document.getElementById("notifications-close-btn").addEventListener("click", closeNotificationsScreen);
@@ -2258,9 +2279,6 @@ function init() {
   document.getElementById("invite-copy-btn").addEventListener("click", copyInviteLink);
   document.getElementById("open-support-btn").addEventListener("click", openSupportScreen);
   document.getElementById("support-close-btn").addEventListener("click", closeSupportScreen);
-
-  renderLiveBanner();
-  applyMemberProgramMode();
 }
 
 // Prototype-level edit: prompt + in-memory update, no backend to save to yet
@@ -2382,6 +2400,94 @@ function formatWeekdayDate(date) {
   return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
+// ---------------- Member-scheduled calendar items (2026-08-12) ----------------
+// Cardio sessions the member plans onto their own calendar via "+ Add".
+// Deliberately NOT written into COMPLETIONS: these are planned, not done,
+// so they must not inflate stats, streaks, or challenge points. When the
+// member actually finishes one, they log it through the existing Cardio
+// Log on the Workouts tab, which is what feeds COMPLETIONS.
+const SCHEDULED_ITEMS_STORAGE_PREFIX = "burnclub-scheduled-";
+const SCHEDULE_ACTIVITY_TYPES = ["Run", "Walk", "Stairs"];
+let schedSelectedActivity = SCHEDULE_ACTIVITY_TYPES[0];
+
+function loadScheduledItems(memberId) {
+  const stored = localStorage.getItem(SCHEDULED_ITEMS_STORAGE_PREFIX + memberId);
+  if (!stored) return [];
+  try {
+    return JSON.parse(stored);
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveScheduledItems(memberId, list) {
+  localStorage.setItem(SCHEDULED_ITEMS_STORAGE_PREFIX + memberId, JSON.stringify(list));
+}
+
+function scheduledItemsOnDate(dateStr) {
+  return loadScheduledItems(CURRENT_MEMBER.id).filter((i) => i.date === dateStr);
+}
+
+function addScheduledCardio(activity, dateStr) {
+  const list = loadScheduledItems(CURRENT_MEMBER.id);
+  list.push({ id: `sched-${Date.now()}`, type: "cardio", activity, date: dateStr });
+  saveScheduledItems(CURRENT_MEMBER.id, list);
+}
+
+function removeScheduledItem(id) {
+  saveScheduledItems(CURRENT_MEMBER.id, loadScheduledItems(CURRENT_MEMBER.id).filter((i) => i.id !== id));
+  renderCalendarTab();
+}
+
+function renderScheduledItems(dateStr) {
+  return scheduledItemsOnDate(dateStr).map((item) => `
+    <div class="calendar-item-scheduled">
+      <span class="calendar-scheduled-text">
+        <span class="calendar-scheduled-label">${item.activity}</span>
+        <span class="calendar-scheduled-meta">Cardio · Added by you</span>
+      </span>
+      <button class="calendar-scheduled-remove" data-remove-scheduled="${item.id}" aria-label="Remove ${item.activity}">✕</button>
+    </div>
+  `).join("");
+}
+
+function openCalendarAddPopup() {
+  schedSelectedActivity = SCHEDULE_ACTIVITY_TYPES[0];
+  renderCalendarAddActivityPicker();
+  const dateInput = document.getElementById("calendar-add-date");
+  dateInput.value = dateKey(new Date());
+  dateInput.min = dateKey(new Date());
+  document.getElementById("calendar-add-saved").style.display = "none";
+  document.getElementById("calendar-add-overlay").classList.add("visible");
+}
+
+function closeCalendarAddPopup() {
+  document.getElementById("calendar-add-overlay").classList.remove("visible");
+}
+
+function renderCalendarAddActivityPicker() {
+  document.querySelectorAll("#calendar-add-activity-picker .pill-filter").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.schedActivity === schedSelectedActivity);
+  });
+}
+
+function saveScheduledCardio() {
+  const dateStr = document.getElementById("calendar-add-date").value;
+  if (!dateStr) return;
+  addScheduledCardio(schedSelectedActivity, dateStr);
+  renderCalendarTab();
+
+  // The calendar only renders the next 7 days, so something scheduled
+  // further out saves correctly but won't be visible yet — say so rather
+  // than letting it look like the save failed.
+  const note = document.getElementById("calendar-add-saved");
+  const withinView = daysBetween(dateKey(new Date()), dateStr) < 7;
+  note.textContent = withinView
+    ? `✓ ${schedSelectedActivity} added for ${formatWeekdayDate(parseDateKey(dateStr))}`
+    : `✓ ${schedSelectedActivity} added for ${formatWeekdayDate(parseDateKey(dateStr))} — shows up here closer to the date`;
+  note.style.display = "block";
+}
+
 function renderCalendarDayRow(date, member, template) {
   const today = new Date();
   const isToday = dateKey(date) === dateKey(today);
@@ -2417,6 +2523,7 @@ function renderCalendarDayRow(date, member, template) {
         ${isToday ? `<span class="calendar-today-tag">Today</span>` : ""}
       </div>
       ${bodyHtml}
+      ${renderScheduledItems(dateKey(date))}
     </div>
   `;
 }
@@ -2436,6 +2543,9 @@ function renderCalendarTab() {
   document.getElementById("calendar-day-list").innerHTML = rows.join("");
   document.querySelectorAll("#calendar-day-list [data-open-circuit]").forEach((btn) => {
     btn.addEventListener("click", () => openCircuit(btn.dataset.openCircuit));
+  });
+  document.querySelectorAll("#calendar-day-list [data-remove-scheduled]").forEach((btn) => {
+    btn.addEventListener("click", () => removeScheduledItem(btn.dataset.removeScheduled));
   });
 }
 
@@ -2800,6 +2910,7 @@ function saveBuiltWorkout() {
 
 document.addEventListener("DOMContentLoaded", () => {
   init();
+  wireStaticControls();
 
   document.getElementById("login-form").addEventListener("submit", (e) => {
     e.preventDefault();
