@@ -1677,6 +1677,12 @@ document.addEventListener("click", (e) => {
   if (action === "open-folder") {
     openFolder(el.dataset.folderId);
   }
+  if (action === "open-setting" && el.dataset.setting === "before-you-start") {
+    openBlockNotesSettings();
+  }
+  if (action === "reset-block-note") {
+    resetBlockNote(el.dataset.noteType);
+  }
   if (action === "select-program-scope") {
     selectedProgramScope = el.dataset.scopeId;
     renderFolderGrid();
@@ -1925,6 +1931,78 @@ window.addEventListener("storage", (e) => {
   renderAdminConversationList();
   if (selectedConversationId) renderAdminThreadMessages();
 });
+
+// ---------------- Settings ----------------
+// Config that isn't tied to one piece of content. Only Workout Settings so
+// far (2026-08-12): the per-format "Before You Start" copy, which used to be
+// hardcoded in data.js with no way for staff to reword it.
+
+const SETTINGS_BLOCK_TYPE_ORDER = ["interval", "superset", "straight", "ladder", "amrap", "emom"];
+
+function showSettingsIndex() {
+  document.getElementById("settings-index-view").style.display = "";
+  document.getElementById("settings-before-you-start-view").style.display = "none";
+}
+
+function openBlockNotesSettings() {
+  document.getElementById("settings-index-view").style.display = "none";
+  document.getElementById("settings-before-you-start-view").style.display = "";
+  document.getElementById("settings-notes-saved").style.display = "none";
+  renderBlockNotesSettings();
+}
+
+function renderBlockNotesSettings() {
+  document.getElementById("settings-notes-list").innerHTML = SETTINGS_BLOCK_TYPE_ORDER.map((type) => {
+    const isDefault = BLOCK_FORMAT_NOTES[type] === BLOCK_FORMAT_NOTES_DEFAULTS[type];
+    return `
+      <div class="settings-note-card">
+        <div class="settings-note-head">
+          <span class="settings-note-type">${blockTypeLabel(type)}</span>
+          ${isDefault
+            ? `<span class="settings-note-flag">Default wording</span>`
+            : `<button class="btn-ghost-lg small" data-action="reset-block-note" data-note-type="${type}">Restore default</button>`}
+        </div>
+        <textarea data-note-type="${type}" rows="5">${BLOCK_FORMAT_NOTES[type] || ""}</textarea>
+      </div>
+    `;
+  }).join("");
+}
+
+function saveBlockNotesSettings() {
+  const overrides = {};
+  let blanks = 0;
+  document.querySelectorAll("#settings-notes-list textarea[data-note-type]").forEach((ta) => {
+    const type = ta.dataset.noteType;
+    const text = ta.value.trim();
+    // A blank note would mean members get no explainer for that format at
+    // all — the very thing these are meant to guarantee. Fall back to the
+    // built-in wording instead of saving nothing, and say so.
+    if (!text) {
+      blanks++;
+      BLOCK_FORMAT_NOTES[type] = BLOCK_FORMAT_NOTES_DEFAULTS[type];
+      return;
+    }
+    BLOCK_FORMAT_NOTES[type] = text;
+    if (text !== BLOCK_FORMAT_NOTES_DEFAULTS[type]) overrides[type] = text;
+  });
+
+  localStorage.setItem(LIVE_BLOCK_NOTES_KEY, JSON.stringify(overrides));
+  renderBlockNotesSettings();
+
+  const note = document.getElementById("settings-notes-saved");
+  note.textContent = blanks
+    ? `✓ Saved — ${blanks} left blank, so ${blanks === 1 ? "it was" : "they were"} restored to the default wording rather than showing members nothing.`
+    : "✓ Saved — members will see the updated wording.";
+  note.style.display = "block";
+}
+
+function resetBlockNote(type) {
+  BLOCK_FORMAT_NOTES[type] = BLOCK_FORMAT_NOTES_DEFAULTS[type];
+  const stored = JSON.parse(localStorage.getItem(LIVE_BLOCK_NOTES_KEY) || "{}");
+  delete stored[type];
+  localStorage.setItem(LIVE_BLOCK_NOTES_KEY, JSON.stringify(stored));
+  renderBlockNotesSettings();
+}
 
 // ---------------- Members ----------------
 
@@ -2278,8 +2356,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (btn.dataset.view === "view-circuits") backToFolders();
       if (btn.dataset.view === "view-messages") renderAdminConversationList();
       if (btn.dataset.view === "view-challenges") closeChallengeDetail();
+      if (btn.dataset.view === "view-settings") showSettingsIndex();
     });
   });
+
+  document.getElementById("settings-back-btn").addEventListener("click", showSettingsIndex);
+  document.getElementById("settings-notes-save-btn").addEventListener("click", saveBlockNotesSettings);
 
   document.getElementById("admin-thread-composer").addEventListener("submit", (e) => {
     e.preventDefault();

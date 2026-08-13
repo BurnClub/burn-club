@@ -198,6 +198,24 @@ const BLOCK_FORMAT_NOTES = {
   ladder: "A ladder works through a changing rep count each set instead of the same number every time. Complete the reps shown for the set you're on, rest, then move to the next number in the sequence. Let the weight stay honest to the rep count rather than forcing the same load the whole way through.",
 };
 
+// The built-in wording, kept aside before any saved overrides are applied —
+// Settings needs it to offer "Restore default" per note.
+const BLOCK_FORMAT_NOTES_DEFAULTS = { ...BLOCK_FORMAT_NOTES };
+
+// Staff edits from Settings → Workout Settings ride the same localStorage
+// bridge as circuits and messages. A blank override is ignored rather than
+// saved as empty — an empty explainer would mean no popup at all, which is
+// the exact gap deriving these from block type was meant to close.
+const LIVE_BLOCK_NOTES_KEY = "burnClubBlockFormatNotes";
+try {
+  const overrides = JSON.parse(localStorage.getItem(LIVE_BLOCK_NOTES_KEY) || "{}");
+  Object.keys(overrides).forEach((type) => {
+    if (type in BLOCK_FORMAT_NOTES && String(overrides[type]).trim()) {
+      BLOCK_FORMAT_NOTES[type] = overrides[type];
+    }
+  });
+} catch (e) {}
+
 // Circuits use the same block schema as the member app:
 //   interval, superset, straight, ladder, amrap, emom
 const CIRCUITS = [

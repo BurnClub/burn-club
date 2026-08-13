@@ -126,6 +126,21 @@ const BLOCK_FORMAT_NOTES = {
   ladder: "A ladder works through a changing rep count each set instead of the same number every time. Complete the reps shown for the set you're on, rest, then move to the next number in the sequence. Let the weight stay honest to the rep count rather than forcing the same load the whole way through.",
 };
 
+// Staff can reword these in Admin → Settings → Workout Settings; overrides
+// ride the same localStorage bridge as circuits and messages. A blank
+// override is ignored on purpose rather than saved as empty — an empty
+// explainer would mean no popup at all, which is the exact gap deriving
+// these from block type was meant to close.
+const LIVE_BLOCK_NOTES_KEY = "burnClubBlockFormatNotes";
+try {
+  const overrides = JSON.parse(localStorage.getItem(LIVE_BLOCK_NOTES_KEY) || "{}");
+  Object.keys(overrides).forEach((type) => {
+    if (type in BLOCK_FORMAT_NOTES && String(overrides[type]).trim()) {
+      BLOCK_FORMAT_NOTES[type] = overrides[type];
+    }
+  });
+} catch (e) {}
+
 const CIRCUITS = [
   {
     id: "full-body-burn",

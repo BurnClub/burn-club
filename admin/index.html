@@ -47,7 +47,10 @@
       <button class="side-link" data-view="view-community">👥 Community</button>
       <button class="side-link" data-view="view-messages">💬 Messages<span class="side-unread-badge" id="side-unread-badge" style="display:none;"></span></button>
     </nav>
-    <button class="sidebar-logout" id="admin-logout-btn">Log Out</button>
+    <div class="sidebar-footer">
+      <button class="side-link sidebar-settings" data-view="view-settings">⚙️ Settings</button>
+      <button class="sidebar-logout" id="admin-logout-btn">Log Out</button>
+    </div>
   </aside>
 
   <main class="main-content">
@@ -717,6 +720,46 @@
             </form>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- ---------- SETTINGS (2026-08-12) ---------- -->
+    <section class="view" id="view-settings" data-view-section>
+      <!-- Settings index: groups of configurable things. Only Workout
+           Settings for now; clicking a row opens its own panel below. -->
+      <div id="settings-index-view">
+        <header class="view-header">
+          <div>
+            <p class="eyebrow">Configuration</p>
+            <h1>Settings</h1>
+          </div>
+        </header>
+
+        <h2 class="settings-group-title">Workout Settings</h2>
+        <div class="settings-row-list">
+          <button class="settings-nav-row" data-action="open-setting" data-setting="before-you-start">
+            <span>
+              <span class="settings-nav-name">Before You Start Notes</span>
+              <span class="settings-nav-desc">The explainer members read when each block begins, set per workout format</span>
+            </span>
+            <span class="settings-nav-caret">›</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Before You Start Notes editor -->
+      <div id="settings-before-you-start-view" style="display:none;">
+        <button class="folder-back-btn" id="settings-back-btn">← All Settings</button>
+        <header class="view-header">
+          <div>
+            <p class="eyebrow">Workout Settings</p>
+            <h1>Before You Start Notes</h1>
+            <p class="challenge-detail-meta">One per workout format. Every block of that format shows this to members before they can start it, so none can be left blank.</p>
+          </div>
+          <button class="btn-primary" id="settings-notes-save-btn">Save Changes</button>
+        </header>
+        <div id="settings-notes-list"></div>
+        <p class="settings-saved-note" id="settings-notes-saved" style="display:none;">✓ Saved — members will see the updated wording.</p>
       </div>
     </section>
 
