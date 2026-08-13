@@ -186,14 +186,17 @@ const CARDIO_ACTIVITY_TYPES = [
 ];
 let cardioSelectedActivity = "Walk";
 
-function logCardioActivity({ activityType, distanceValue, minutes, source }) {
+// `date` defaults to today (the manual-log and wearable-sync callers), but
+// completing a planned calendar session passes the day it was scheduled for
+// so it lands on the right calendar day (2026-08-12).
+function logCardioActivity({ activityType, distanceValue, minutes, source, date }) {
   const meta = CARDIO_ACTIVITY_TYPES.find((t) => t.id === activityType) || CARDIO_ACTIVITY_TYPES[0];
   const entry = {
     id: `cardio-${Date.now()}`,
     workoutId: null,
     title: `${activityType}${distanceValue ? ` — ${distanceValue} ${meta.unit}` : ""}`,
     category: "cardio-activity",
-    date: dateKey(new Date()),
+    date: date || dateKey(new Date()),
     minutes,
     caloriesBurned: estimateCalories(minutes),
     avgHeartRate: estimateHeartRate(),
@@ -2269,6 +2272,9 @@ function wireStaticControls() {
     });
   });
 
+  document.getElementById("complete-sched-close-btn").addEventListener("click", closeCompleteScheduledPopup);
+  document.getElementById("complete-sched-save-btn").addEventListener("click", confirmCompleteScheduled);
+
   document.getElementById("open-notifications-btn").addEventListener("click", openNotificationsScreen);
   document.getElementById("notifications-close-btn").addEventListener("click", closeNotificationsScreen);
   document.getElementById("open-health-profile-btn").addEventListener("click", openHealthProfileScreen);
@@ -2408,6 +2414,10 @@ function formatWeekdayDate(date) {
 // Log on the Workouts tab, which is what feeds COMPLETIONS.
 const SCHEDULED_ITEMS_STORAGE_PREFIX = "burnclub-scheduled-";
 const SCHEDULE_ACTIVITY_TYPES = ["Run", "Walk", "Stairs"];
+// The calendar picker's short labels map onto the canonical
+// CARDIO_ACTIVITY_TYPES ids the Cardio Log uses, so a completed session
+// gets the right units instead of silently falling back to Walk's "mi".
+const SCHEDULED_TO_CARDIO_TYPE = { Run: "Run", Walk: "Walk", Stairs: "Stair Stepper" };
 let schedSelectedActivity = SCHEDULE_ACTIVITY_TYPES[0];
 
 function loadScheduledItems(memberId) {
@@ -2435,20 +2445,104 @@ function addScheduledCardio(activity, dateStr) {
 }
 
 function removeScheduledItem(id) {
-  saveScheduledItems(CURRENT_MEMBER.id, loadScheduledItems(CURRENT_MEMBER.id).filter((i) => i.id !== id));
+  const list = loadScheduledItems(CURRENT_MEMBER.id);
+  const item = list.find((i) => i.id === id);
+  // If it had already been marked complete, drop the completion it created
+  // too — otherwise it would keep counting toward points and stats with no
+  // card left on the calendar to explain where those points came from.
+  if (item && item.completedId) {
+    const idx = COMPLETIONS.findIndex((c) => c.id === item.completedId);
+    if (idx !== -1) {
+      COMPLETIONS.splice(idx, 1);
+      saveCompletions();
+    }
+  }
+  saveScheduledItems(CURRENT_MEMBER.id, list.filter((i) => i.id !== id));
   renderCalendarTab();
+  renderCardioLog();
+  renderHomeWeekSnapshot();
 }
 
 function renderScheduledItems(dateStr) {
-  return scheduledItemsOnDate(dateStr).map((item) => `
-    <div class="calendar-item-scheduled">
-      <span class="calendar-scheduled-text">
-        <span class="calendar-scheduled-label">${item.activity}</span>
-        <span class="calendar-scheduled-meta">Cardio · Added by you</span>
-      </span>
-      <button class="calendar-scheduled-remove" data-remove-scheduled="${item.id}" aria-label="Remove ${item.activity}">✕</button>
-    </div>
-  `).join("");
+  return scheduledItemsOnDate(dateStr).map((item) => {
+    const done = !!item.completedId;
+    return `
+      <div class="calendar-item-scheduled ${done ? "completed" : ""}">
+        <button class="calendar-scheduled-main" data-complete-scheduled="${item.id}">
+          <span class="calendar-scheduled-label">${item.activity}</span>
+          <span class="calendar-scheduled-meta">${done ? `Cardio · ${item.completedMinutes} min logged` : "Cardio · Tap to complete"}</span>
+        </button>
+        ${done ? `<span class="calendar-scheduled-check">✓</span>` : ""}
+        <button class="calendar-scheduled-remove" data-remove-scheduled="${item.id}" aria-label="Remove ${item.activity}">✕</button>
+      </div>
+    `;
+  }).join("");
+}
+
+// ---------------- Completing a planned session (2026-08-12) ----------------
+// Tapping a green calendar card logs it as a real cardio completion, which
+// is what makes it count toward challenge points — challengePointsBreakdown
+// simply counts COMPLETIONS with category "cardio-activity" inside the
+// challenge's date range, so no challenge-specific wiring is needed here.
+let completingScheduledId = null;
+
+function openCompleteScheduledPopup(itemId) {
+  const item = loadScheduledItems(CURRENT_MEMBER.id).find((i) => i.id === itemId);
+  if (!item) return;
+  completingScheduledId = itemId;
+
+  const isFuture = daysBetween(dateKey(new Date()), item.date) > 0;
+  document.getElementById("complete-sched-title").textContent = `Complete ${item.activity}`;
+  document.getElementById("complete-sched-date").textContent = formatWeekdayDate(parseDateKey(item.date));
+  document.getElementById("complete-sched-minutes").value = 30;
+  document.getElementById("complete-sched-saved").style.display = "none";
+
+  // A session planned for a future day can't be finished yet — say so
+  // rather than letting the button quietly create a future-dated
+  // completion that would skew this week's stats.
+  const saveBtn = document.getElementById("complete-sched-save-btn");
+  const note = document.getElementById("complete-sched-future-note");
+  saveBtn.style.display = isFuture ? "none" : "";
+  document.getElementById("complete-sched-minutes-field").style.display = isFuture ? "none" : "";
+  note.style.display = isFuture ? "block" : "none";
+  note.textContent = `You can log this on ${formatWeekdayDate(parseDateKey(item.date))}.`;
+
+  document.getElementById("complete-sched-overlay").classList.add("visible");
+}
+
+function closeCompleteScheduledPopup() {
+  document.getElementById("complete-sched-overlay").classList.remove("visible");
+  completingScheduledId = null;
+}
+
+function confirmCompleteScheduled() {
+  const list = loadScheduledItems(CURRENT_MEMBER.id);
+  const item = list.find((i) => i.id === completingScheduledId);
+  if (!item || item.completedId) return;
+
+  const minutes = parseInt(document.getElementById("complete-sched-minutes").value, 10) || 0;
+  const entry = logCardioActivity({
+    activityType: SCHEDULED_TO_CARDIO_TYPE[item.activity] || item.activity,
+    distanceValue: 0,
+    minutes,
+    source: "manual",
+    date: item.date,
+  });
+
+  item.completedId = entry.id;
+  item.completedMinutes = minutes;
+  saveScheduledItems(CURRENT_MEMBER.id, list);
+
+  renderCalendarTab();
+  renderCardioLog();
+  renderHomeWeekSnapshot();
+
+  const challenge = currentChallenge();
+  const note = document.getElementById("complete-sched-saved");
+  note.textContent = challenge
+    ? `✓ Logged — you're at ${challengePointsForMember(challenge)} points`
+    : "✓ Logged";
+  note.style.display = "block";
 }
 
 function openCalendarAddPopup() {
@@ -2546,6 +2640,9 @@ function renderCalendarTab() {
   });
   document.querySelectorAll("#calendar-day-list [data-remove-scheduled]").forEach((btn) => {
     btn.addEventListener("click", () => removeScheduledItem(btn.dataset.removeScheduled));
+  });
+  document.querySelectorAll("#calendar-day-list [data-complete-scheduled]").forEach((btn) => {
+    btn.addEventListener("click", () => openCompleteScheduledPopup(btn.dataset.completeScheduled));
   });
 }
 

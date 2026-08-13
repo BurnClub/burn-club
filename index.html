@@ -278,6 +278,26 @@
         </div>
       </div>
 
+      <!-- ---------- COMPLETE A PLANNED SESSION (2026-08-12) ---------- -->
+      <!-- Turns a planned green calendar card into a real cardio completion,
+           which is what makes it count toward challenge points. -->
+      <div class="cardio-log-overlay" id="complete-sched-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="complete-sched-close-btn">✕</button>
+          <h2 class="cardio-log-title" id="complete-sched-title">Complete Session</h2>
+          <p class="complete-sched-date" id="complete-sched-date"></p>
+
+          <label class="field" id="complete-sched-minutes-field">
+            <span>Time (minutes)</span>
+            <input type="number" id="complete-sched-minutes" min="0" step="1" inputmode="numeric" />
+          </label>
+
+          <p class="complete-sched-future" id="complete-sched-future-note" style="display:none;"></p>
+          <button class="btn-primary" id="complete-sched-save-btn">Mark Complete</button>
+          <p class="cardio-log-saved" id="complete-sched-saved" style="display:none;"></p>
+        </div>
+      </div>
+
       <!-- ---------- CIRCUIT DETAIL ---------- -->
       <section class="screen" id="screen-detail" data-screen>
         <header class="detail-header">

@@ -899,9 +899,29 @@ h1, h2, h3 {
 .calendar-day-row .calendar-item-scheduled { margin-top: 8px; }
 .calendar-day-row .calendar-item-btn + .calendar-item-scheduled,
 .calendar-day-row .calendar-item-muted + .calendar-item-scheduled { margin-top: 8px; }
-.calendar-scheduled-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+/* The card body is its own button (tap to complete the session), so the
+   remove ✕ stays a separate sibling rather than an invalid nested button. */
+.calendar-scheduled-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
 .calendar-scheduled-label { font-weight: 800; font-size: 14px; color: var(--slate); }
 .calendar-scheduled-meta { font-size: 12px; font-weight: 600; color: var(--slate); opacity: 0.7; }
+/* Completed sessions recede to the darker green, same idea as blue program
+   workouts dropping to --deepblue once they're done. */
+.calendar-item-scheduled.completed { background: var(--green-dark); }
+.calendar-item-scheduled.completed .calendar-scheduled-label { text-decoration: line-through; opacity: 0.75; }
+.calendar-scheduled-check { flex-shrink: 0; font-size: 13px; font-weight: 800; color: var(--slate); }
 .calendar-scheduled-remove {
   width: 26px;
   height: 26px;
@@ -915,6 +935,9 @@ h1, h2, h3 {
   font-family: inherit;
 }
 .calendar-scheduled-remove:hover { background: white; }
+
+.complete-sched-date { margin: -8px 0 16px; text-align: center; font-size: 12px; font-weight: 700; color: var(--deepblue); text-transform: uppercase; letter-spacing: 0.3px; }
+.complete-sched-future { margin: 0 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: var(--deepblue); line-height: 1.4; }
 
 /* ---------- DETAIL ---------- */
 .detail-header {
