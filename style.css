@@ -1111,8 +1111,7 @@ h1, h2, h3 {
 
 /* +50% font-size (2026-08-11) — was 26px. Bottom margin also bumped (was
    4px, sized for the sub-pill that used to sit directly under it) now that
-   the sub-pill moved above the video instead — .player-format-explainer
-   sits right underneath this now and needs its own breathing room. */
+   the sub-pill moved above the video instead. */
 .player-exercise-name {
   font-family: var(--font-heading);
   font-size: 39px;
@@ -1198,26 +1197,27 @@ h1, h2, h3 {
   color: var(--deepblue);
 }
 
-/* "Before You Start" — no card at all now (2026-08-11, 2nd pass): tried the
-   message-bubble grey, Chris wasn't a fan — just plain text straight on the
-   player screen's white background, no box/shadow. */
-.player-format-explainer {
-  display: none;
-  padding: 0;
-  margin-bottom: 18px;
-}
-.player-format-explainer-title {
-  margin: 0 0 6px;
-  font-size: 13px;
+/* "Before You Start" block notes. Were an inline panel on the player's
+   ready screen through 2026-08-11 (grey card, then no card at all); moved
+   into a modal on 2026-08-12 — Chris found the inline section distracting
+   at the top of a workout. Reuses the .cardio-log-overlay/.cardio-log-card
+   popup shell; only the two text elements are bespoke. */
+.block-notes-eyebrow {
+  margin: 0 0 4px;
+  text-align: center;
+  font-size: 11px;
   font-weight: 800;
-  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--deepblue);
 }
-.player-format-explainer-body {
-  margin: 0;
-  font-size: 12px;
+.block-notes-body {
+  margin: 0 0 20px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--deepblue);
-  line-height: 1.5;
+  line-height: 1.55;
+  text-align: center;
 }
 
 .player-amrap-list {

@@ -396,11 +396,6 @@
         </button>
         <p class="player-technique-body" id="player-technique-body"></p>
 
-        <div class="player-format-explainer" id="player-format-explainer">
-          <p class="player-format-explainer-title" id="player-format-explainer-title"></p>
-          <p class="player-format-explainer-body" id="player-format-explainer-body"></p>
-        </div>
-
         <div class="player-center" id="player-center">
           <p class="player-clock" id="player-clock">00:00</p>
           <p class="player-clock-label" id="player-clock-label"></p>
@@ -434,6 +429,21 @@
         <button class="btn-primary sticky-cta" id="player-start-btn" style="display:none;">Start</button>
         <button class="btn-primary sticky-cta" id="player-complete-set-btn">Mark Set Complete ✓</button>
       </section>
+
+      <!-- ---------- BLOCK NOTES POPUP (2026-08-12) ---------- -->
+      <!-- Staff-authored notes for a block. Was an inline "Before You Start"
+           panel on the ready screen; now a modal that opens by itself when a
+           block loads and must be dismissed before Start can be reached —
+           the overlay physically covers the sticky Start button. -->
+      <div class="cardio-log-overlay" id="block-notes-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="block-notes-close-btn">✕</button>
+          <p class="block-notes-eyebrow" id="block-notes-eyebrow"></p>
+          <h2 class="cardio-log-title">Before You Start</h2>
+          <p class="block-notes-body" id="block-notes-body"></p>
+          <button class="btn-primary" id="block-notes-got-it-btn">Got It</button>
+        </div>
+      </div>
 
       <!-- ---------- EXERCISE VIDEO OVERLAY (pops up over the player without pausing it) ---------- -->
       <div class="exercise-video-overlay" id="exercise-video-overlay">

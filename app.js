@@ -1293,6 +1293,20 @@ function closeSupportScreen() {
   document.getElementById("support-overlay").classList.remove("visible");
 }
 
+// Block notes modal (2026-08-12) — opens by itself when a block loads and
+// must be dismissed before the member can reach Start, which the overlay
+// physically covers. Replaces the inline "Before You Start" panel that used
+// to sit on the ready screen.
+function openBlockNotes(blockLabel, notes) {
+  document.getElementById("block-notes-eyebrow").textContent = blockLabel || "";
+  document.getElementById("block-notes-body").textContent = notes;
+  document.getElementById("block-notes-overlay").classList.add("visible");
+}
+
+function closeBlockNotes() {
+  document.getElementById("block-notes-overlay").classList.remove("visible");
+}
+
 // ---------------- Block summary rendering (circuit detail screen) ----------------
 
 // Collapsible per-exercise technique cue (2026-08-11) — pulls from the same
@@ -1752,6 +1766,7 @@ const Player = {
 
   exit() {
     this.stop();
+    closeBlockNotes();
     showTab(resolveBackTarget("tab-home"));
   },
 
@@ -1790,16 +1805,11 @@ const Player = {
   beginPhaseTimer() {
     document.getElementById("player-start-btn").style.display = "none";
     document.getElementById("player-controls").style.display = "flex";
-    // "Before You Start" notes are meant to be read once, before committing —
-    // for most kinds they naturally disappear on their own (a new phase
-    // object renders for the next station/round, and isNewBlockStart() is
-    // false by then). EMOM is the exception: it's a single continuous phase
-    // for the whole block, so renderPhase() never runs again until the block
-    // ends, and the notes were sitting there the entire 10 minutes with
-    // nothing to hide them (2026-08-11 fix, Chris). Hiding it here — the
-    // moment the timer actually starts — covers EMOM without needing
-    // kind-specific logic, and is a no-op for kinds where it's already gone.
-    document.getElementById("player-format-explainer").style.display = "none";
+    // Belt-and-braces: the notes modal has to be dismissed to reach Start, so
+    // it should already be closed by the time we get here. Kept so no code
+    // path can leave it stranded over a running timer — that was the old
+    // inline panel's EMOM bug (2026-08-11), and it's cheap to prevent again.
+    closeBlockNotes();
     if (this.currentPhase().kind === "amrap") {
       document.getElementById("player-round-counter").style.display = "flex";
     }
@@ -1859,7 +1869,7 @@ const Player = {
     document.getElementById("player-controls").style.display = "none";
     document.getElementById("player-complete-set-btn").style.display = "none";
     document.getElementById("player-start-btn").style.display = "none";
-    document.getElementById("player-format-explainer").style.display = "none";
+    closeBlockNotes();
     document.getElementById("player-total-clock").style.display = "none";
     document.getElementById("player-sets-list").style.display = "none";
     document.getElementById("player-superset-list").style.display = "none";
@@ -1871,9 +1881,7 @@ const Player = {
     // a multi-round block doesn't repeat them every round, but a mixed workout (e.g.
     // AMRAP then EMOM) can show a different note when each new block begins.
     if (this.isNewBlockStart() && phase.blockNotes) {
-      document.getElementById("player-format-explainer").style.display = "block";
-      document.getElementById("player-format-explainer-title").textContent = "Before You Start";
-      document.getElementById("player-format-explainer-body").textContent = phase.blockNotes;
+      openBlockNotes(phase.blockLabel, phase.blockNotes);
     }
 
     if (phase.kind === "work" || phase.kind === "rest") {
@@ -3070,6 +3078,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("player-exit-btn").addEventListener("click", () => Player.exit());
   document.getElementById("player-start-btn").addEventListener("click", () => Player.beginPhaseTimer());
   document.getElementById("exercise-video-close-btn").addEventListener("click", closeExerciseVideo);
+  document.getElementById("block-notes-close-btn").addEventListener("click", closeBlockNotes);
+  document.getElementById("block-notes-got-it-btn").addEventListener("click", closeBlockNotes);
 
   document.getElementById("cardio-log-btn").addEventListener("click", openCardioLogModal);
   document.getElementById("cardio-log-close-btn").addEventListener("click", closeCardioLogModal);
