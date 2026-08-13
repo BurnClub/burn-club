@@ -412,10 +412,18 @@ const SCHEDULE_TEMPLATES = {
   "fit-functional": buildFitFunctionalSchedule(),
 };
 
+// Buzz is scoped to the member's own program (2026-08-13) — it used to be one
+// flat list of Burn Club members doing Burn Club workouts, shown to everyone,
+// so a Fit & Functional member watched activity from a program they aren't on.
+// Same seeded-and-fake caveat as the rest of the social data: these aren't
+// real other members, and nothing here syncs across the three apps.
 const FEED = [
-  { name: "Jamie R.", action: "completed Core Crusher", time: "12m ago", emoji: "🔥" },
-  { name: "Priya K.", action: "hit a 10-day streak", time: "1h ago", emoji: "🏆" },
-  { name: "Marcus T.", action: "completed Full Body Burn", time: "3h ago", emoji: "💪" },
+  { programId: "burn-club", name: "Jamie R.", action: "completed Core Crusher", time: "12m ago", emoji: "🔥" },
+  { programId: "burn-club", name: "Priya K.", action: "hit a 10-day streak", time: "1h ago", emoji: "🏆" },
+  { programId: "burn-club", name: "Marcus T.", action: "completed Full Body Burn", time: "3h ago", emoji: "💪" },
+  { programId: "fit-functional", name: "Dana W.", action: "completed Week 2 Chest and Tris", time: "24m ago", emoji: "🔥" },
+  { programId: "fit-functional", name: "Luis M.", action: "finished Week 2 — halfway through the program", time: "2h ago", emoji: "🏆" },
+  { programId: "fit-functional", name: "Priya K.", action: "completed Week 2 Quads and Glutes", time: "5h ago", emoji: "💪" },
 ];
 
 const LEADERBOARD = [

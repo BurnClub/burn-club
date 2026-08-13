@@ -66,6 +66,14 @@ function renderFeedItem(f) {
   `;
 }
 
+// A member's community is the people on their own program (2026-08-13) —
+// see FEED's own note in data.js. Falls back to showing everything if a
+// profile somehow has no programId, so the card is never mysteriously empty.
+function feedForCurrentMember() {
+  if (!CURRENT_MEMBER.programId) return FEED;
+  return FEED.filter((f) => f.programId === CURRENT_MEMBER.programId);
+}
+
 // Home's "Community Buzz" — same FEED data as the Community tab, but as plain
 // rows inside one card instead of a card per item (2026-08-04 Home redesign).
 function renderHomeBuzzRow(f) {
@@ -2341,8 +2349,11 @@ function init() {
   // are dead code now unless something else still needs the old card-per-item
   // look; left in place rather than deleted in case that's still wanted
   // elsewhere later.
-  document.getElementById("community-feed").innerHTML = FEED.map(renderHomeBuzzRow).join("");
-  document.getElementById("home-community-feed").innerHTML = FEED.map(renderHomeBuzzRow).join("");
+  // Both surfaces read the same program-scoped list (2026-08-13) so Home and
+  // Community can't disagree about who a member's community is.
+  const buzz = feedForCurrentMember().map(renderHomeBuzzRow).join("");
+  document.getElementById("community-feed").innerHTML = buzz;
+  document.getElementById("home-community-feed").innerHTML = buzz;
   updateUnreadBadges();
 
   WEARABLE = loadWearableState();
