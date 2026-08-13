@@ -470,10 +470,6 @@ function renderHomeWeekSnapshot() {
     else if (bucket === "cardio-activity") cardio++;
   });
   document.getElementById("home-week-circuits").textContent = circuits;
-  // "Circuits" is Burn Club's own vocabulary — structured programs just call
-  // them workouts (2026-08-13).
-  document.getElementById("home-week-circuits-label").textContent =
-    CURRENT_MEMBER.scheduleType === "structured" ? "Workouts Done" : "Circuits Done";
   document.getElementById("home-week-stretch-core").textContent = stretchCore;
   document.getElementById("home-week-cardio").textContent = cardio;
 }
