@@ -1445,7 +1445,10 @@ function buildPhaseQueue(circuit) {
   const totalBlocks = circuit.blocks.length;
 
   circuit.blocks.forEach((block, blockIndex) => {
-    const blockMeta = { blockLabel: block.label, blockIndex, totalBlocks, blockType: block.type, blockNotes: block.notes || "" };
+    // Notes come from the block's format, not the block itself (see
+    // BLOCK_FORMAT_NOTES in data.js) — staff no longer author these per
+    // workout, so every block of a given type always has the same explainer.
+    const blockMeta = { blockLabel: block.label, blockIndex, totalBlocks, blockType: block.type, blockNotes: BLOCK_FORMAT_NOTES[block.type] || "" };
 
     if (block.type === "interval") {
       const isTimed = block.timed !== false;

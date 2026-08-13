@@ -711,7 +711,6 @@ function schemaBlockToBuilderBlock(block) {
           work: block.work || 40,
           rest: block.rest,
           exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps || 12 })),
-          notes: block.notes || "",
         },
       };
     case "superset":
@@ -722,7 +721,6 @@ function schemaBlockToBuilderBlock(block) {
           rounds: block.rounds,
           rest: block.rest,
           exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps })),
-          notes: block.notes || "",
         },
       };
     case "straight":
@@ -735,7 +733,6 @@ function schemaBlockToBuilderBlock(block) {
           sets: block.sets,
           reps: block.reps,
           rest: block.rest,
-          notes: block.notes || "",
         },
         selected: false,
       };
@@ -748,7 +745,6 @@ function schemaBlockToBuilderBlock(block) {
           exerciseId: exerciseIdByName(block.exercise.name),
           scheme: block.scheme.join(","),
           rest: block.rest,
-          notes: block.notes || "",
         },
       };
     case "amrap":
@@ -758,7 +754,6 @@ function schemaBlockToBuilderBlock(block) {
           label: block.label,
           durationMin: Math.round(block.duration / 60),
           exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps })),
-          notes: block.notes || "",
         },
       };
     case "emom":
@@ -769,7 +764,6 @@ function schemaBlockToBuilderBlock(block) {
           durationMin: Math.round(block.duration / 60),
           intervalSec: block.interval,
           exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps })),
-          notes: block.notes || "",
         },
       };
     default:
@@ -816,9 +810,11 @@ function compatibleTypesFor(block) {
   return ["superset", "interval", "amrap", "emom"];
 }
 
+// Note: nothing to carry over for the explainer text — it's derived from the
+// new type via BLOCK_FORMAT_NOTES, so switching a block's type now swaps its
+// "Before You Start" copy automatically (2026-08-12).
 function convertBlockType(block, newType) {
   const fresh = defaultBlockValues(newType);
-  fresh.notes = block.values.notes || "";
   const singleFamily = newType === "straight" || newType === "ladder";
   if (singleFamily && block.values.exerciseName) {
     fresh.exerciseName = block.values.exerciseName;
@@ -996,9 +992,9 @@ function renderBuilderBlocks() {
         <button class="remove-block-btn" data-action="remove-block" data-block-index="${i}">✕</button>
       </div>
       ${blockFieldRow(block, i)}
-      <label class="builder-desc-label">Block Notes <span class="modal-field-hint">(optional — shown to members when this block starts)</span>
-        <textarea data-block-index="${i}" data-field="notes" rows="2" placeholder="e.g. explain an unfamiliar format like AMRAP or EMOM">${block.values.notes || ""}</textarea>
-      </label>
+      <div class="builder-desc-label">Before You Start <span class="modal-field-hint">(set automatically by block type — shown to members when this block starts)</span>
+        <p class="block-format-note-preview">${BLOCK_FORMAT_NOTES[block.type] || "No explainer defined for this block type yet."}</p>
+      </div>
     </div>
   `;
   }).join("") || `<p style="color:var(--deepblue);font-weight:700;font-size:13px;">No exercises yet — click "+ Add Exercise" to start building this workout.</p>`;
@@ -1028,19 +1024,19 @@ function builderBlocksToSchema() {
         const isTimed = v.timed !== false;
         const exercises = v.exercises.filter((e) => e.name.trim()).map((e) => (isTimed ? { name: e.name } : { name: e.name, reps: Number(e.reps) || 0 }));
         return isTimed
-          ? { type: "interval", label: v.label, timed: true, rounds: Number(v.rounds) || 1, work: Number(v.work) || 0, rest: Number(v.rest) || 0, exercises, notes: (v.notes || "").trim() }
-          : { type: "interval", label: v.label, timed: false, rounds: Number(v.rounds) || 1, rest: Number(v.rest) || 0, exercises, notes: (v.notes || "").trim() };
+          ? { type: "interval", label: v.label, timed: true, rounds: Number(v.rounds) || 1, work: Number(v.work) || 0, rest: Number(v.rest) || 0, exercises }
+          : { type: "interval", label: v.label, timed: false, rounds: Number(v.rounds) || 1, rest: Number(v.rest) || 0, exercises };
       }
       case "superset":
-        return { type: "superset", label: v.label, rounds: Number(v.rounds) || 1, rest: Number(v.rest) || 0, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })), notes: (v.notes || "").trim() };
+        return { type: "superset", label: v.label, rounds: Number(v.rounds) || 1, rest: Number(v.rest) || 0, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })) };
       case "straight":
-        return { type: "straight", label: v.label, exercise: { name: v.exerciseName || "" }, sets: Number(v.sets) || 1, reps: Number(v.reps) || 0, rest: Number(v.rest) || 0, notes: (v.notes || "").trim() };
+        return { type: "straight", label: v.label, exercise: { name: v.exerciseName || "" }, sets: Number(v.sets) || 1, reps: Number(v.reps) || 0, rest: Number(v.rest) || 0 };
       case "ladder":
-        return { type: "ladder", label: v.label, exercise: { name: v.exerciseName || "" }, scheme: String(v.scheme).split(",").map((n) => Number(n.trim())).filter((n) => !isNaN(n)), rest: Number(v.rest) || 0, notes: (v.notes || "").trim() };
+        return { type: "ladder", label: v.label, exercise: { name: v.exerciseName || "" }, scheme: String(v.scheme).split(",").map((n) => Number(n.trim())).filter((n) => !isNaN(n)), rest: Number(v.rest) || 0 };
       case "amrap":
-        return { type: "amrap", label: v.label, duration: (Number(v.durationMin) || 1) * 60, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })), notes: (v.notes || "").trim() };
+        return { type: "amrap", label: v.label, duration: (Number(v.durationMin) || 1) * 60, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })) };
       case "emom":
-        return { type: "emom", label: v.label, duration: (Number(v.durationMin) || 1) * 60, interval: Number(v.intervalSec) || 60, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })), notes: (v.notes || "").trim() };
+        return { type: "emom", label: v.label, duration: (Number(v.durationMin) || 1) * 60, interval: Number(v.intervalSec) || 60, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })) };
       default:
         return null;
     }
@@ -1635,7 +1631,7 @@ document.addEventListener("input", (e) => {
     block.values.exercises[ei][t.dataset.exfield] = t.value;
   } else if (t.dataset.field) {
     block.values[t.dataset.field] = t.value;
-    if (t.dataset.field !== "label" && t.dataset.field !== "notes") document.getElementById("builder-est").textContent =
+    if (t.dataset.field !== "label") document.getElementById("builder-est").textContent =
       `Estimated duration: ~${estimateCircuitMinutes(builderBlocksToSchema())} min`;
   }
 });

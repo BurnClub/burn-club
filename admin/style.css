@@ -795,6 +795,20 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-meta-grid label { font-size: 12px; font-weight: 700; color: var(--deepblue); display: flex; flex-direction: column; gap: 4px; }
 .builder-desc-label { font-size: 12px; font-weight: 700; color: var(--deepblue); display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px; }
 .builder-desc-label textarea { resize: vertical; font-family: 'Nunito', sans-serif; }
+/* Read-only "Before You Start" copy in the block editor (2026-08-12) —
+   derived from the block type, so it's shown for reference rather than
+   edited. Styled as quiet reference text, not a field. */
+.block-format-note-preview {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--periwinkle);
+  background: var(--bg);
+  border-radius: 0 8px 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--deepblue);
+}
 
 .builder-blocks-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .builder-blocks { display: flex; flex-direction: column; gap: 14px; }

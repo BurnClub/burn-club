@@ -182,6 +182,22 @@ function buildFitFunctionalCircuits() {
   return circuits;
 }
 
+// ---------------- Block format explainers ----------------
+// Must stay in sync with BLOCK_FORMAT_NOTES in the member app's data.js —
+// same duplication as every other shared shape across these three apps.
+// Admin shows this read-only in the workout builder; the member app is what
+// actually renders it in the "Before You Start" popup. Replaced the old
+// free-text per-block "Block Notes" field (2026-08-12, Chris) so the
+// explainer can't be forgotten or worded differently workout to workout.
+const BLOCK_FORMAT_NOTES = {
+  interval: "This is a timed circuit — work through each station for the set time, then take a short rest before moving to the next one. Once you've been through every station, that's one round; after a brief rest, start the next round from the top. Focus on clean, controlled reps within the work window instead of racing to beat the clock.",
+  superset: "Both exercises are on this one screen — finish all the reps for the first exercise, then move straight into the second with no rest in between. Once you've done both, that's one round; rest, then start the next round from the top.",
+  amrap: "AMRAP stands for As Many Rounds As Possible. Complete every exercise below once, in order — that's one round. As soon as you finish the last exercise, go right back to the first one and start the next round. Keep going until the clock hits zero, moving at a strong, steady pace and keeping your form solid. When time's up, log how many full rounds you completed.",
+  emom: "EMOM stands for Every Minute On the Minute. At the top of each minute, complete the listed reps for that minute's exercise, then rest with whatever time is left before the next minute starts. Move to the next exercise each time a new minute begins, cycling back to the first once you've gone through them all. The faster you finish your reps, the more rest you bank before the next round.",
+  straight: "Straight sets — complete all the reps for one set, then rest before starting the next. Take the full rest between sets; it's there so each set can be as strong as the one before it. Log the weight you used as you go so you have it to build on next time.",
+  ladder: "A ladder works through a changing rep count each set instead of the same number every time. Complete the reps shown for the set you're on, rest, then move to the next number in the sequence. Let the weight stay honest to the rep count rather than forcing the same load the whole way through.",
+};
+
 // Circuits use the same block schema as the member app:
 //   interval, superset, straight, ladder, amrap, emom
 const CIRCUITS = [
@@ -201,7 +217,6 @@ const CIRCUITS = [
         rounds: 2,
         work: 40,
         rest: 20,
-        notes: "This is a timed circuit — work through each station for the set time, then take a short rest before moving to the next one. Once you've been through every station, that's one round; after a brief rest, start the next round from the top. Focus on clean, controlled reps within the work window instead of racing to beat the clock.",
         exercises: [
           { name: "Jump Squats" },
           { name: "Push-Ups" },
@@ -263,7 +278,6 @@ const CIRCUITS = [
         type: "amrap",
         label: "12-Minute AMRAP",
         duration: 720,
-        notes: "AMRAP stands for As Many Rounds As Possible. Complete every exercise below once, in order — that's one round. As soon as you finish the last exercise, go right back to the first one and start the next round. Keep going until the clock hits zero, moving at a strong, steady pace and keeping your form solid. When time's up, log how many full rounds you completed.",
         exercises: [
           { name: "Kettlebell Swings", reps: 15 },
           { name: "Box Jumps", reps: 10 },
@@ -275,7 +289,6 @@ const CIRCUITS = [
         label: "10-Minute EMOM",
         duration: 600,
         interval: 60,
-        notes: "EMOM stands for Every Minute On the Minute. At the top of each minute, complete the listed reps for that minute's exercise, then rest with whatever time is left before the next minute starts. Move to the next exercise each time a new minute begins, cycling back to the first once you've gone through them all. The faster you finish your reps, the more rest you bank before the next round.",
         exercises: [
           { name: "Burpees", reps: 8 },
           { name: "Goblet Squats", reps: 12 },
@@ -397,7 +410,6 @@ const CIRCUITS = [
         rounds: 2,
         work: 40,
         rest: 20,
-        notes: "This is a timed circuit — work through each station for the set time, then take a short rest before moving to the next one. Once you've been through every station, that's one round; after a brief rest, start the next round from the top. Focus on clean, controlled reps within the work window instead of racing to beat the clock.",
         exercises: [
           { name: "Jump Squats" },
           { name: "Push-Ups" },
@@ -459,7 +471,6 @@ const CIRCUITS = [
         type: "amrap",
         label: "12-Minute AMRAP",
         duration: 720,
-        notes: "AMRAP stands for As Many Rounds As Possible. Complete every exercise below once, in order — that's one round. As soon as you finish the last exercise, go right back to the first one and start the next round. Keep going until the clock hits zero, moving at a strong, steady pace and keeping your form solid. When time's up, log how many full rounds you completed.",
         exercises: [
           { name: "Kettlebell Swings", reps: 15 },
           { name: "Box Jumps", reps: 10 },
@@ -471,7 +482,6 @@ const CIRCUITS = [
         label: "10-Minute EMOM",
         duration: 600,
         interval: 60,
-        notes: "EMOM stands for Every Minute On the Minute. At the top of each minute, complete the listed reps for that minute's exercise, then rest with whatever time is left before the next minute starts. Move to the next exercise each time a new minute begins, cycling back to the first once you've gone through them all. The faster you finish your reps, the more rest you bank before the next round.",
         exercises: [
           { name: "Burpees", reps: 8 },
           { name: "Goblet Squats", reps: 12 },
