@@ -2215,7 +2215,83 @@ function sendLiveChatMessage(text) {
 
 // Re-run whenever completion state may have changed (init, and on switching
 // into Home/Workouts) so the "✓ Completed" grey-out is always current.
+// ---------------- Home: Upcoming Workouts (structured programs) ----------------
+// A structured member's Home used to show the same rolling Burn Club workout
+// list as everyone else, which isn't their program at all (2026-08-13, Chris).
+// Their schedule decides what's next, so Home answers "what's coming up"
+// instead of "what's available."
+
+function upcomingDayLabel(date) {
+  const key = dateKey(date);
+  if (key === dateKey(new Date())) return "Today";
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (key === dateKey(tomorrow)) return "Tomorrow";
+  return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+// Next N scheduled workouts from today forward. Rest days are skipped (they'd
+// waste one of only three slots), and anything already completed on its own
+// scheduled date drops off so all three are genuinely still ahead of you —
+// completions are matched by date, not just workout id, the same way the
+// Calendar tab does it.
+function upcomingScheduledWorkouts(limit) {
+  const member = CURRENT_MEMBER;
+  const template = SCHEDULE_TEMPLATES[member.programId] || [];
+  const today = new Date();
+  const todayProgramDay = daysBetween(member.startDate, dateKey(today)) + 1;
+  const out = [];
+
+  for (const item of template) {
+    if (item.day < todayProgramDay || item.type !== "workout") continue;
+    const circuit = CIRCUITS.find((c) => c.id === item.workoutId);
+    if (!circuit) continue;
+
+    const date = new Date(today);
+    date.setDate(date.getDate() + (item.day - todayProgramDay));
+
+    const completion = mostRecentCompletion(circuit.id);
+    if (completion && completion.date === dateKey(date)) continue;
+
+    out.push({ circuit, date });
+    if (out.length === limit) break;
+  }
+  return out;
+}
+
+function renderUpcomingWorkoutCard({ circuit, date }) {
+  return `
+    <button class="circuit-card circuit-card-upcoming color-${circuit.color}" data-open-circuit="${circuit.id}">
+      <span class="circuit-bg-icon">${CIRCUIT_ICONS[circuitIconKey(circuit)]}</span>
+      <div class="circuit-card-top">
+        <h3>${circuit.title}</h3>
+        <span class="circuit-tag">${upcomingDayLabel(date)}</span>
+      </div>
+      <p>${circuit.meta}</p>
+    </button>
+  `;
+}
+
+function renderHomeUpcomingWorkouts() {
+  const upcoming = upcomingScheduledWorkouts(3);
+  document.getElementById("home-workouts-title").textContent = "Upcoming Workouts";
+  document.getElementById("home-circuit-list").innerHTML = upcoming.length
+    ? upcoming.map(renderUpcomingWorkoutCard).join("")
+    : `<p class="home-upcoming-empty">You're all caught up — nothing left on your schedule.</p>`;
+}
+
 function renderCircuitLists() {
+  // Structured members get their own schedule-driven section instead of the
+  // rolling program's weekly list.
+  if (CURRENT_MEMBER.scheduleType === "structured") {
+    renderHomeUpcomingWorkouts();
+    document.querySelectorAll("#home-circuit-list [data-open-circuit]").forEach((btn) => {
+      btn.addEventListener("click", () => openCircuit(btn.dataset.openCircuit));
+    });
+    return;
+  }
+  document.getElementById("home-workouts-title").textContent = "Workouts";
+
   const weeklyCircuits = CIRCUITS.filter((c) => c.category !== "stretch" && c.category !== "core-burn" && c.category !== "previous-week" && c.category !== "structured" && c.category !== "custom");
   const extraCircuits = CIRCUITS.filter((c) => c.category === "stretch" || c.category === "core-burn");
   const lastWeekCircuits = CIRCUITS.filter((c) => c.category === "previous-week");

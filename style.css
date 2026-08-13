@@ -502,6 +502,18 @@ h1, h2, h3 {
   pointer-events: none;
   z-index: 0;
 }
+/* Empty state when a structured member has no scheduled workouts left
+   (2026-08-13) — sits inside the blue Workouts card, so white text. */
+.home-upcoming-empty {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 6px 0 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+}
+
 .home-section-card .home-section-title,
 .home-section-card .circuit-list,
 .home-section-card .habits-list,
@@ -616,6 +628,12 @@ h1, h2, h3 {
 .color-periwinkle .circuit-bg-icon { color: var(--purple); }
 .color-deepblue .circuit-bg-icon { color: var(--pink); }
 .color-yellow .circuit-bg-icon { color: var(--yellow); }
+/* Structured-program workout names run long ("Week 3 Hamstring and Glutes")
+   and the day pill eats width, so these wrap instead of truncating
+   (2026-08-13). Scoped to the upcoming cards — the rolling program's short
+   names still get the single-line nowrap treatment. */
+.circuit-card-upcoming h3 { white-space: normal; }
+
 .circuit-tag {
   flex-shrink: 0;
   background: var(--periwinkle);
