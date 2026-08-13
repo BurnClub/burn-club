@@ -104,6 +104,16 @@ function renderCompactCircuitRow(c) {
   `;
 }
 
+// Per-member storage (2026-08-13). Completions, habits, habit check-offs,
+// the wearable connection and daily stats were all single global keys, so
+// switching demo profiles showed Jordan *Chris's* history, streak and stats
+// — the programs were separate but the data underneath never was. Everything
+// member-owned is now suffixed with the member id, matching the pattern
+// MY_WORKOUTS_STORAGE_PREFIX and the scheduled-items store already used.
+function memberKey(base) {
+  return `${base}-${CURRENT_MEMBER.id}`;
+}
+
 // ---------------- Progress / completion history ----------------
 
 const COMPLETIONS_STORAGE_KEY = "burnclub-completions";
@@ -117,13 +127,24 @@ const COMPLETIONS_STORAGE_KEY = "burnclub-completions";
 // Workouts tab) counts as a workout here too — same blue calendar highlight.
 const WORKOUT_CATEGORIES = ["circuit", "previous-week", "structured", "cardio-activity"];
 const STRETCH_CORE_CATEGORIES = ["stretch", "core-burn"];
+
+// "previous-week" and "structured" are ordinary workouts as far as any stat
+// is concerned — same content, just published through a different mechanism.
+// Centralised because this normalisation has now been missed twice: once for
+// previous-week (2026-07-24) and again for structured, which made a
+// structured member's completions count as nothing in the Home week stats
+// and the Progress donut (2026-08-13). Anything that buckets a completion's
+// category for counting should go through here.
+function statsBucket(category) {
+  return category === "previous-week" || category === "structured" ? "circuit" : category;
+}
 let COMPLETIONS = [];
 let progressRange = "week"; // "week" | "month" | "year"
 let currentCompletionEntry = null; // the just-logged completion, for the RPE slider to update
 let currentBenchmarkId = null; // set on finish() when the just-completed circuit is a benchmark
 
 function loadCompletions() {
-  const stored = localStorage.getItem(COMPLETIONS_STORAGE_KEY);
+  const stored = localStorage.getItem(memberKey(COMPLETIONS_STORAGE_KEY));
   if (stored) {
     try {
       return JSON.parse(stored);
@@ -131,13 +152,13 @@ function loadCompletions() {
       // fall through and reseed
     }
   }
-  const seeded = buildSeedCompletions();
-  localStorage.setItem(COMPLETIONS_STORAGE_KEY, JSON.stringify(seeded));
+  const seeded = buildSeedCompletionsForMember(CURRENT_MEMBER);
+  localStorage.setItem(memberKey(COMPLETIONS_STORAGE_KEY), JSON.stringify(seeded));
   return seeded;
 }
 
 function saveCompletions() {
-  localStorage.setItem(COMPLETIONS_STORAGE_KEY, JSON.stringify(COMPLETIONS));
+  localStorage.setItem(memberKey(COMPLETIONS_STORAGE_KEY), JSON.stringify(COMPLETIONS));
 }
 
 // Most recent completion of this specific workout, for the "✓ Completed"
@@ -424,12 +445,26 @@ function renderYearChart() {
 
 // Home's "This Week" snapshot (2026-08-10) — a copy of the Progress tab's
 // Week calendar, week-only (no Month/Year toggle), plus a 3-stat row Chris
-// asked to add underneath: circuits done (against a fixed weekly target of
-// 3 — Burn Club's actual cadence; hardcoded since there's no per-member
-// weekly-target field in this app yet), stretch & core sessions, and cardio
-// sessions. Same category buckets renderProgressTab() uses, just always
-// scoped to this week regardless of the Progress tab's own range toggle.
+// asked to add underneath: workouts done against a weekly target, stretch &
+// core sessions, and cardio sessions. Same category buckets
+// renderProgressTab() uses, just always scoped to this week regardless of
+// the Progress tab's own range toggle.
 const HOME_WEEKLY_CIRCUIT_TARGET = 3;
+
+// The target used to be a flat 3 for everyone — Burn Club's cadence, which
+// made Jordan read "4/3 done" while actually behind on a 6-a-week program
+// (2026-08-13). Structured programs derive it from their own schedule
+// instead of needing a hand-maintained field.
+function weeklyWorkoutTarget() {
+  if (CURRENT_MEMBER.scheduleType === "structured") {
+    const template = SCHEDULE_TEMPLATES[CURRENT_MEMBER.programId] || [];
+    if (template.length) {
+      const workoutDays = template.filter((d) => d.type === "workout").length;
+      return Math.max(1, Math.round(workoutDays / (template.length / 7)));
+    }
+  }
+  return HOME_WEEKLY_CIRCUIT_TARGET;
+}
 
 function renderHomeWeekSnapshot() {
   const grid = document.getElementById("home-week-grid");
@@ -439,12 +474,16 @@ function renderHomeWeekSnapshot() {
   const items = completionsInRange("week");
   let circuits = 0, stretchCore = 0, cardio = 0;
   items.forEach((c) => {
-    const bucket = c.category === "previous-week" ? "circuit" : c.category;
+    const bucket = statsBucket(c.category);
     if (bucket === "circuit") circuits++;
     else if (bucket === "stretch" || bucket === "core-burn") stretchCore++;
     else if (bucket === "cardio-activity") cardio++;
   });
-  document.getElementById("home-week-circuits").textContent = `${circuits}/${HOME_WEEKLY_CIRCUIT_TARGET}`;
+  document.getElementById("home-week-circuits").textContent = `${circuits}/${weeklyWorkoutTarget()}`;
+  // "Circuits" is Burn Club's own vocabulary — structured programs just call
+  // them workouts (2026-08-13).
+  document.getElementById("home-week-circuits-label").textContent =
+    CURRENT_MEMBER.scheduleType === "structured" ? "Workouts Done" : "Circuits Done";
   document.getElementById("home-week-stretch-core").textContent = stretchCore;
   document.getElementById("home-week-cardio").textContent = cardio;
 }
@@ -560,7 +599,7 @@ function renderProgressTab() {
   items.forEach((c) => {
     // Cardio-log entries get their own "Cardio Sessions" bucket (2026-08-09)
     // instead of folding into "Workouts Done".
-    const bucket = c.category === "previous-week" ? "circuit" : c.category;
+    const bucket = statsBucket(c.category);
     counts[bucket] = (counts[bucket] || 0) + 1;
     minutes += c.minutes || 0;
     calories += c.caloriesBurned || 0;
@@ -868,7 +907,7 @@ let WEARABLE = { ...WEARABLE_DEFAULT };
 let DAILY_STATS = [];
 
 function loadWearableState() {
-  const stored = localStorage.getItem(WEARABLE_STORAGE_KEY);
+  const stored = localStorage.getItem(memberKey(WEARABLE_STORAGE_KEY));
   if (stored) {
     try {
       return JSON.parse(stored);
@@ -876,16 +915,16 @@ function loadWearableState() {
       // fall through and reseed
     }
   }
-  localStorage.setItem(WEARABLE_STORAGE_KEY, JSON.stringify(WEARABLE_DEFAULT));
+  localStorage.setItem(memberKey(WEARABLE_STORAGE_KEY), JSON.stringify(WEARABLE_DEFAULT));
   return { ...WEARABLE_DEFAULT };
 }
 
 function saveWearableState() {
-  localStorage.setItem(WEARABLE_STORAGE_KEY, JSON.stringify(WEARABLE));
+  localStorage.setItem(memberKey(WEARABLE_STORAGE_KEY), JSON.stringify(WEARABLE));
 }
 
 function loadDailyStats() {
-  const stored = localStorage.getItem(DAILY_STATS_STORAGE_KEY);
+  const stored = localStorage.getItem(memberKey(DAILY_STATS_STORAGE_KEY));
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
@@ -893,7 +932,7 @@ function loadDailyStats() {
       // otherwise anyone with an existing local session just sees blank/0.
       if (parsed.length && parsed[0].restingHR === undefined) {
         parsed.forEach((d) => { d.restingHR = 54 + Math.floor(Math.random() * 16); });
-        localStorage.setItem(DAILY_STATS_STORAGE_KEY, JSON.stringify(parsed));
+        localStorage.setItem(memberKey(DAILY_STATS_STORAGE_KEY), JSON.stringify(parsed));
       }
       return parsed;
     } catch (e) {
@@ -901,7 +940,7 @@ function loadDailyStats() {
     }
   }
   const seeded = buildSeedDailyStats();
-  localStorage.setItem(DAILY_STATS_STORAGE_KEY, JSON.stringify(seeded));
+  localStorage.setItem(memberKey(DAILY_STATS_STORAGE_KEY), JSON.stringify(seeded));
   return seeded;
 }
 
@@ -971,7 +1010,7 @@ let HABIT_CHECKS = {};
 let habitPickerOpen = false;
 
 function loadMyHabits() {
-  const stored = localStorage.getItem(MY_HABITS_STORAGE_KEY);
+  const stored = localStorage.getItem(memberKey(MY_HABITS_STORAGE_KEY));
   if (stored) {
     try {
       return JSON.parse(stored);
@@ -979,16 +1018,16 @@ function loadMyHabits() {
       // fall through and reseed
     }
   }
-  localStorage.setItem(MY_HABITS_STORAGE_KEY, JSON.stringify(MY_HABITS_DEFAULT));
+  localStorage.setItem(memberKey(MY_HABITS_STORAGE_KEY), JSON.stringify(MY_HABITS_DEFAULT));
   return [...MY_HABITS_DEFAULT];
 }
 
 function saveMyHabits() {
-  localStorage.setItem(MY_HABITS_STORAGE_KEY, JSON.stringify(MY_HABITS));
+  localStorage.setItem(memberKey(MY_HABITS_STORAGE_KEY), JSON.stringify(MY_HABITS));
 }
 
 function loadHabitChecks() {
-  const stored = localStorage.getItem(HABIT_CHECKS_STORAGE_KEY);
+  const stored = localStorage.getItem(memberKey(HABIT_CHECKS_STORAGE_KEY));
   if (!stored) return {};
   try {
     return JSON.parse(stored);
@@ -998,7 +1037,7 @@ function loadHabitChecks() {
 }
 
 function saveHabitChecks() {
-  localStorage.setItem(HABIT_CHECKS_STORAGE_KEY, JSON.stringify(HABIT_CHECKS));
+  localStorage.setItem(memberKey(HABIT_CHECKS_STORAGE_KEY), JSON.stringify(HABIT_CHECKS));
 }
 
 // Auto habits (steps) derive from real wearable data unless the member has
@@ -2329,6 +2368,10 @@ function init() {
   HABIT_CHECKS = loadHabitChecks();
   renderHabitsSection();
   renderHabitManager();
+
+  // Home's greeting was hardcoded to "Chris" in the markup, so every other
+  // demo member was welcomed by someone else's name (2026-08-13).
+  document.getElementById("home-greeting-name").textContent = CURRENT_MEMBER.name;
 
   document.getElementById("profile-name").textContent = CURRENT_MEMBER.name;
   document.getElementById("profile-badge").style.display = CURRENT_MEMBER.badge ? "" : "none";

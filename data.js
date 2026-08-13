@@ -650,6 +650,51 @@ function buildSeedCompletions() {
   return completions.sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
+// A structured member's history has to come from their own schedule, not the
+// Burn Club circuit/stretch/core-burn pool above — those are a different
+// program's workouts entirely (2026-08-13). Walks their schedule from day 1
+// up to today, completing most workout days so there's real history to show
+// without making them look perfect.
+function buildSeedCompletionsForStructured(member) {
+  const template = SCHEDULE_TEMPLATES[member.programId] || [];
+  const today = new Date();
+  const todayProgramDay = daysBetween(member.startDate, dateKey(today)) + 1;
+  const completions = [];
+
+  template.forEach((item) => {
+    if (item.type !== "workout" || item.day >= todayProgramDay) return;
+    const circuit = CIRCUITS.find((c) => c.id === item.workoutId);
+    if (!circuit) return;
+    if (Math.random() >= 0.8) return; // a few genuinely missed days
+
+    const date = new Date(today);
+    date.setDate(date.getDate() - (todayProgramDay - item.day));
+    const minutes = parseInt(circuit.meta, 10) || 25;
+    completions.push({
+      id: `seed-ff-${item.day}`,
+      workoutId: circuit.id,
+      title: circuit.title,
+      category: circuit.category || "circuit",
+      date: dateKey(date),
+      minutes,
+      caloriesBurned: estimateCalories(minutes),
+      avgHeartRate: estimateHeartRate(),
+      rpe: estimateRpe(),
+    });
+  });
+
+  return completions.sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+// Which seed a member gets depends on their program shape. Library-only
+// members ("Build Your Own") start empty on purpose — their history should
+// only ever contain workouts they built themselves.
+function buildSeedCompletionsForMember(member) {
+  if (member.scheduleType === "structured") return buildSeedCompletionsForStructured(member);
+  if (member.scheduleType === "library") return [];
+  return buildSeedCompletions();
+}
+
 // ---------------- Benchmarks ----------------
 // Benchmark A/B/C are retest circuits programmed into "This Week's
 // Workouts" every few months, same as any other workout — the only
