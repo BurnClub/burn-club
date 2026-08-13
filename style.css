@@ -1219,6 +1219,24 @@ h1, h2, h3 {
   line-height: 1.55;
   text-align: center;
 }
+/* "Got It" is the only way out of this popup — the ✕ was dropped as
+   redundant (2026-08-12, Chris). That makes the button reachability a
+   correctness concern, not just a style one: a long staff-written note
+   could otherwise grow the card past the screen and strand the button
+   off-bottom with no other way to dismiss. Capping the height and letting
+   the card scroll guarantees it can always be reached.
+   Bounded by the overlay (the phone frame) rather than vh — the overlay is
+   inset:0 inside the phone, so vh units resolve against the browser window
+   and let the card grow taller than the phone, putting the button off the
+   bottom edge. */
+.block-notes-card {
+  max-height: 100%;
+  overflow-y: auto;
+}
+.block-notes-got-it {
+  display: block;
+  width: 100%;
+}
 
 .player-amrap-list {
   display: none;
@@ -1512,7 +1530,10 @@ h1, h2, h3 {
 /* Settings popups (2026-08-12): Notifications / My Health Profile / Invite
    a Friend / Help & Support all reuse .cardio-log-overlay/.cardio-log-card
    rather than introducing a new popup shell. */
-.health-profile-card { max-height: 85vh; overflow-y: auto; }
+/* 100% (the overlay/phone frame), not vh (the browser window) — vh let this
+   long form grow taller than the phone and push its Save button off the
+   bottom edge. Same fix as .block-notes-card (2026-08-12). */
+.health-profile-card { max-height: 100%; overflow-y: auto; }
 .health-profile-card .field { margin-bottom: 14px; }
 
 .notif-row {

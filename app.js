@@ -3078,7 +3078,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("player-exit-btn").addEventListener("click", () => Player.exit());
   document.getElementById("player-start-btn").addEventListener("click", () => Player.beginPhaseTimer());
   document.getElementById("exercise-video-close-btn").addEventListener("click", closeExerciseVideo);
-  document.getElementById("block-notes-close-btn").addEventListener("click", closeBlockNotes);
   document.getElementById("block-notes-got-it-btn").addEventListener("click", closeBlockNotes);
 
   document.getElementById("cardio-log-btn").addEventListener("click", openCardioLogModal);
