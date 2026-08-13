@@ -136,35 +136,35 @@ h1, h2, h3 {
 .screen::-webkit-scrollbar { display: none; }
 
 /* ---------- LOGIN ---------- */
+/* min-height rather than height (2026-08-12): with the bigger logo art the
+   content can exceed the screen, and a fixed 100% height + centering
+   clipped the top of the smiley with no way to scroll to it. min-height
+   still centers when there's room, but lets the column grow and scroll
+   when there isn't. */
 .login-wrap {
-  height: 100%;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding-bottom: 40px;
+  padding: 24px 0 40px;
 }
+/* Chris's own artwork, 2026-08-12: the drippy smiley plus the KY FIT BURN
+   CLUB wordmark, replacing the old logo + CSS-styled headline. Both PNGs
+   are transparent and were cropped to their artwork (the wordmark shipped
+   with ~30% empty padding baked in, which rendered as a dead gap), so
+   width alone controls their size here. */
 .login-logo {
-  width: 150px;
+  width: 210px;
   height: auto;
   filter: drop-shadow(0 12px 20px rgba(120,140,227,0.25));
-  margin-bottom: 12px;
+  margin-bottom: 18px;
 }
-.login-title {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--blue);
-  letter-spacing: 0.5px;
-}
-.login-title span { display: block; -webkit-text-stroke: 1.5px var(--blue); color: white; text-shadow: 0 0 0 var(--blue); }
-.login-sub {
-  margin: 6px 0 32px;
-  color: var(--deepblue);
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  font-size: 12px;
+.login-wordmark {
+  width: 220px;
+  height: auto;
+  margin-bottom: 32px;
 }
 .login-form {
   width: 100%;
