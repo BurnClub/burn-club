@@ -132,25 +132,6 @@ h1, h2, h3 {
   overflow-y: auto;
   padding: 28px 20px 100px;
 }
-/* TRIAL (2026-08-12) — the faint geometric line pattern, on the sign-in
-   screen and the Home tab while Chris and his partner decide whether it
-   stays. If it does, it likely belongs on .app so every screen shares it.
-   background-attachment defaults to scroll, which on a scrolling element
-   pins the image to the element rather than the content, so it reads as a
-   fixed backdrop.
-   Strength is dialed via a flat white wash layered over the image rather
-   than element opacity (which would fade the content too) or a re-exported
-   file — the alpha value below is the one knob to turn. 0.5 = half
-   strength (2026-08-12, Chris: wary of visuals reading cheap). */
-#screen-login,
-#tab-home {
-  background-image:
-    linear-gradient(rgba(255,255,255,0.5), rgba(255,255,255,0.5)),
-    url('assets/bg-pattern.png');
-  background-size: cover;
-  background-position: center top;
-  background-repeat: no-repeat;
-}
 .screen.visible { display: block; }
 .screen::-webkit-scrollbar { display: none; }
 
@@ -160,6 +141,10 @@ h1, h2, h3 {
    clipped the top of the smiley with no way to scroll to it. min-height
    still centers when there's room, but lets the column grow and scroll
    when there isn't. */
+/* .screen's 100px bottom padding exists to clear the bottom nav, which the
+   login screen doesn't have — left in place it was dead space that pushed
+   the centred column off-centre (2026-08-12). */
+#screen-login { padding-bottom: 28px; }
 .login-wrap {
   min-height: 100%;
   display: flex;
@@ -167,23 +152,18 @@ h1, h2, h3 {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 24px 0 40px;
+  padding: 24px 0;
 }
-/* Chris's own artwork, 2026-08-12: the drippy smiley plus the KY FIT BURN
-   CLUB wordmark, replacing the old logo + CSS-styled headline. Both PNGs
-   are transparent and were cropped to their artwork (the wordmark shipped
-   with ~30% empty padding baked in, which rendered as a dead gap), so
-   width alone controls their size here. */
+/* Chris's drippy smiley, replacing the old logo + CSS-styled headline. The
+   KY FIT BURN CLUB wordmark sat here too until 2026-08-12 — dropped in
+   favour of the smiley alone (the file is still in assets/ if it's wanted
+   elsewhere). Transparent PNG cropped to its artwork, so width alone
+   controls the size. */
 .login-logo {
-  width: 210px;
+  width: 231px;
   height: auto;
   filter: drop-shadow(0 12px 20px rgba(120,140,227,0.25));
-  margin-bottom: 18px;
-}
-.login-wordmark {
-  width: 220px;
-  height: auto;
-  margin-bottom: 32px;
+  margin: auto 0;
 }
 .login-form {
   width: 100%;
