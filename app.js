@@ -175,6 +175,9 @@ function logCompletion(circuit) {
   const entry = {
     id: `local-${Date.now()}`,
     workoutId: circuit.id,
+    // Which scheduled day this satisfies, for programs whose sessions have
+    // home/gym variants — doing either finishes the day (2026-08-14).
+    slotId: circuit.slotId || null,
     title: circuit.title,
     category: circuit.category,
     date: dateKey(new Date()),
@@ -2186,6 +2189,48 @@ function openMessagesInbox() {
 
 // Re-run whenever completion state may have changed (init, and on switching
 // into Home/Workouts) so the "✓ Completed" grey-out is always current.
+// ---------------- Program variants (2026-08-14) ----------------
+// A structured session exists once per variant (home / gym) but occupies one
+// slot in the schedule. What a member sees depends on what they bought:
+// home-only and gym-only get one workout for the day, combo members get both
+// and choose. Completion is tracked against the slot, not the variant — see
+// completionForSlotOnDate below — so doing either finishes that day.
+
+function memberAccess() {
+  return CURRENT_MEMBER.access || "both";
+}
+
+function variantLabel(variantKey) {
+  const v = PROGRAM_VARIANTS.find((x) => x.key === variantKey);
+  return v ? v.label : "";
+}
+
+// Every workout the member can see for a given schedule slot, in variant
+// order. Falls back to a direct id match for programs with no variants at
+// all (Burn Club's rolling workouts never set slotId).
+function workoutsForSlot(slotId) {
+  const variants = CIRCUITS.filter((c) => c.slotId === slotId);
+  if (!variants.length) {
+    const direct = CIRCUITS.find((c) => c.id === slotId);
+    return direct ? [direct] : [];
+  }
+  const access = memberAccess();
+  const allowed = access === "both" ? PROGRAM_VARIANTS.map((v) => v.key) : [access];
+  return PROGRAM_VARIANTS
+    .filter((v) => allowed.includes(v.key))
+    .map((v) => variants.find((c) => c.variant === v.key))
+    .filter(Boolean);
+}
+
+// A scheduled day counts as done when *any* variant of it was completed on
+// that date — a combo member who did the home session hasn't left the gym
+// session outstanding, they've finished the day.
+function completionForSlotOnDate(slotId, dateStr) {
+  const ids = new Set(workoutsForSlot(slotId).map((c) => c.id));
+  ids.add(slotId);
+  return COMPLETIONS.find((c) => c.date === dateStr && (ids.has(c.workoutId) || c.slotId === slotId)) || null;
+}
+
 // ---------------- Home: Upcoming Workouts (structured programs) ----------------
 // A structured member's Home used to show the same rolling Burn Club workout
 // list as everyone else, which isn't their program at all (2026-08-13, Chris).
@@ -2215,14 +2260,16 @@ function upcomingScheduledWorkouts(limit) {
 
   for (const item of template) {
     if (item.day < todayProgramDay || item.type !== "workout") continue;
-    const circuit = CIRCUITS.find((c) => c.id === item.workoutId);
-    if (!circuit) continue;
 
     const date = new Date(today);
     date.setDate(date.getDate() + (item.day - todayProgramDay));
+    if (completionForSlotOnDate(item.workoutId, dateKey(date))) continue;
 
-    const completion = mostRecentCompletion(circuit.id);
-    if (completion && completion.date === dateKey(date)) continue;
+    // Home counts a day once even for combo members — showing the same
+    // session twice in a three-slot "what's next" list would crowd out the
+    // days behind it. The Calendar is where both variants are offered.
+    const [circuit] = workoutsForSlot(item.workoutId);
+    if (!circuit) continue;
 
     out.push({ circuit, date });
     if (out.length === limit) break;
@@ -2624,19 +2671,29 @@ function renderCalendarDayRow(date, member, template) {
   } else if (item.type === "rest") {
     bodyHtml = `<span class="calendar-item-label calendar-item-muted">Rest Day</span>`;
   } else {
-    const circuit = CIRCUITS.find((c) => c.id === item.workoutId);
-    if (!circuit) {
+    const options = workoutsForSlot(item.workoutId);
+    if (!options.length) {
       bodyHtml = `<span class="calendar-item-label calendar-item-muted">Workout unavailable</span>`;
     } else {
-      const completion = mostRecentCompletion(circuit.id);
-      const isDoneToday = completion && completion.date === dateKey(date);
-      bodyHtml = `
-        <button class="calendar-item-btn ${isDoneToday ? "done" : ""}" data-open-circuit="${circuit.id}">
+      // The day is done once either variant is completed, so the tick lands
+      // on the one they actually did and the other simply stops being
+      // offered — no half-finished day for a combo member.
+      const completion = completionForSlotOnDate(item.workoutId, dateKey(date));
+      const showVariantLabels = options.length > 1;
+      bodyHtml = options
+        .filter((c) => !completion || completion.workoutId === c.id)
+        .map((circuit) => {
+          const isDone = !!completion;
+          return `
+        <button class="calendar-item-btn ${isDone ? "done" : ""}" data-open-circuit="${circuit.id}">
           <span class="calendar-item-label">${circuit.title}</span>
           <span class="calendar-item-meta">${circuit.meta}</span>
-          ${isDoneToday ? `<span class="calendar-item-check">✓ Done</span>` : ""}
+          ${showVariantLabels && !isDone ? `<span class="calendar-variant-tag">${variantLabel(circuit.variant)}</span>` : ""}
+          ${isDone ? `<span class="calendar-item-check">✓ Done</span>` : ""}
         </button>
       `;
+        })
+        .join("");
     }
   }
 

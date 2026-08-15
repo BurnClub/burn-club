@@ -40,6 +40,16 @@ const EXERCISE_LIBRARY = [
   { id: "leg-raises", name: "Leg Raises", bodyParts: ["Abs"], modality: "Strength", equipment: ["Bodyweight"], technique: "Lying flat, keep legs straight and lower back pressed down while raising the legs to vertical and back down.", trackWeight: false, videoUrl: "" },
   { id: "side-plank", name: "Side Plank", bodyParts: ["Abs"], modality: "Strength", equipment: ["Bodyweight"], technique: "Stack the feet and prop up on one forearm, lifting the hips so the body forms a straight line.", trackWeight: false, videoUrl: "" },
   { id: "dead-bug", name: "Dead Bug", bodyParts: ["Abs"], modality: "Strength", equipment: ["Bodyweight"], technique: "Lying on the back with arms and knees up, slowly extend opposite arm and leg while keeping the low back flat.", trackWeight: false, videoUrl: "" },
+  // Gym-only movements (2026-08-14) — the library was entirely bodyweight and
+  // dumbbell work, so a "gym" program variant had nothing to differ with.
+  { id: "barbell-bench-press", name: "Barbell Bench Press", bodyParts: ["Chest", "Triceps"], modality: "Strength", equipment: ["Barbell", "Bench"], technique: "Lower the bar to mid-chest with elbows tucked around 45 degrees, then press back up without bouncing.", trackWeight: true, videoUrl: "" },
+  { id: "barbell-back-squat", name: "Barbell Back Squat", bodyParts: ["Quads", "Glutes"], modality: "Strength", equipment: ["Barbell"], technique: "Bar racked across the upper back. Sit down between the hips, knees tracking over the toes, then drive up through mid-foot.", trackWeight: true, videoUrl: "" },
+  { id: "barbell-deadlift", name: "Barbell Deadlift", bodyParts: ["Hamstrings", "Back"], modality: "Strength", equipment: ["Barbell"], technique: "Hinge with a flat back and the bar against the shins. Push the floor away rather than pulling with the arms.", trackWeight: true, videoUrl: "" },
+  { id: "lat-pulldown", name: "Lat Pulldown", bodyParts: ["Back", "Biceps"], modality: "Strength", equipment: ["Pull-up Bar"], technique: "Pull the bar to the collarbone leading with the elbows, then control it all the way back up.", trackWeight: true, videoUrl: "" },
+  { id: "leg-press", name: "Leg Press", bodyParts: ["Quads", "Glutes"], modality: "Strength", equipment: ["Box/Step"], technique: "Feet shoulder-width on the platform. Lower until the knees reach about 90 degrees, then press without locking out hard.", trackWeight: true, videoUrl: "" },
+  { id: "cable-row", name: "Cable Row", bodyParts: ["Back", "Biceps"], modality: "Strength", equipment: ["Resistance Band"], technique: "Sit tall and row the handle to the stomach, squeezing the shoulder blades together at the end.", trackWeight: true, videoUrl: "" },
+  { id: "overhead-press", name: "Overhead Press", bodyParts: ["Shoulders", "Triceps"], modality: "Strength", equipment: ["Barbell"], technique: "Press the bar straight overhead from the collarbone, moving the head back slightly to let it pass.", trackWeight: true, videoUrl: "" },
+  { id: "rowing-machine", name: "Rowing Machine", bodyParts: ["Full Body"], modality: "Cardio", equipment: ["Battle Ropes"], technique: "Drive with the legs first, then lean back and pull the handle to the ribs. Reverse that order on the recovery.", trackWeight: false, videoUrl: "" },
 ];
 
 // ---------------- Fit & Functional content generator ----------------
@@ -47,14 +57,61 @@ const EXERCISE_LIBRARY = [
 // app's circuit schema (meta/color instead of focus/difficulty). Declared
 // before CIRCUITS since the array below calls this immediately — a `const`
 // declared after would still be in its temporal dead zone at that point.
+// Each focus area carries a home and a gym exercise pool (2026-08-14). The
+// two variants of a session share everything structural — same week, same
+// day, same sets and reps — and differ only in which exercises fill the
+// slots. That's what makes "combo" access coherent: one programme, one
+// schedule, two ways to execute the same day.
 const FF_FOCUS_AREAS = [
-  { key: "shoulders-abs", label: "Shoulders and Abs", pool: ["Push Press", "Plank Hold", "Bicycle Crunches", "Dead Bug", "Side Plank"] },
-  { key: "hamstrings-glutes", label: "Hamstring and Glutes", pool: ["Kettlebell Swings", "Walking Lunges", "Box Jumps", "Goblet Squats"] },
-  { key: "back-biceps", label: "Back and Biceps", pool: ["Dumbbell Rows", "Renegade Rows", "Battle Ropes"] },
-  { key: "chest-tris", label: "Chest and Tris", pool: ["Push-Ups", "Push Press", "Renegade Rows"] },
-  { key: "quads-glutes", label: "Quads and Glutes", pool: ["Goblet Squats", "Squat Jumps", "Walking Lunges", "Jump Squats", "Box Jumps"] },
+  {
+    key: "shoulders-abs",
+    label: "Shoulders and Abs",
+    pools: {
+      home: ["Push Press", "Plank Hold", "Bicycle Crunches", "Dead Bug", "Side Plank"],
+      gym: ["Overhead Press", "Cable Row", "Weighted Sit-Ups", "Plank Hold", "Side Plank"],
+    },
+  },
+  {
+    key: "hamstrings-glutes",
+    label: "Hamstring and Glutes",
+    pools: {
+      home: ["Kettlebell Swings", "Walking Lunges", "Box Jumps", "Goblet Squats"],
+      gym: ["Barbell Deadlift", "Leg Press", "Kettlebell Swings", "Walking Lunges"],
+    },
+  },
+  {
+    key: "back-biceps",
+    label: "Back and Biceps",
+    pools: {
+      home: ["Dumbbell Rows", "Renegade Rows", "Battle Ropes"],
+      gym: ["Lat Pulldown", "Cable Row", "Barbell Deadlift"],
+    },
+  },
+  {
+    key: "chest-tris",
+    label: "Chest and Tris",
+    pools: {
+      home: ["Push-Ups", "Push Press", "Renegade Rows"],
+      gym: ["Barbell Bench Press", "Overhead Press", "Cable Row"],
+    },
+  },
+  {
+    key: "quads-glutes",
+    label: "Quads and Glutes",
+    pools: {
+      home: ["Goblet Squats", "Squat Jumps", "Walking Lunges", "Jump Squats", "Box Jumps"],
+      gym: ["Barbell Back Squat", "Leg Press", "Walking Lunges", "Box Jumps"],
+    },
+  },
 ];
-const FF_CIRCUIT_POOL = ["Burpees", "Mountain Climbers", "High Knees", "Battle Ropes", "Sprint Intervals", "Squat Jumps"];
+const FF_CIRCUIT_POOLS = {
+  home: ["Burpees", "Mountain Climbers", "High Knees", "Sprint Intervals", "Squat Jumps"],
+  gym: ["Rowing Machine", "Battle Ropes", "Burpees", "Box Jumps", "Mountain Climbers"],
+};
+const PROGRAM_VARIANTS = [
+  { key: "home", label: "Home" },
+  { key: "gym", label: "Gym" },
+];
 const FF_CARD_COLORS = ["blue", "periwinkle", "deepblue", "yellow"];
 
 function ffPickRotating(pool, week, count) {
@@ -63,6 +120,9 @@ function ffPickRotating(pool, week, count) {
   return picks;
 }
 
+// Emits two workouts per slot — one per variant. Both carry `slotId`, which
+// is what the schedule points at, so a single schedule serves home, gym and
+// combo members alike.
 function buildFitFunctionalCircuits() {
   const circuits = [];
   let colorIndex = 0;
@@ -71,38 +131,50 @@ function buildFitFunctionalCircuits() {
     const sets = 3 + Math.floor((week - 1) / 2);
 
     FF_FOCUS_AREAS.forEach((area) => {
-      const names = ffPickRotating(area.pool, week, 3);
-      circuits.push({
-        id: `ff-w${week}-${area.key}`,
-        category: "structured",
-        tag: `Week ${week}`,
-        title: `Week ${week} ${area.label}`,
-        meta: `${20 + sets * 2} min · ${area.label} · ${difficulty}`,
-        color: FF_CARD_COLORS[colorIndex++ % FF_CARD_COLORS.length],
-        desc: `Week ${week} strength session focused on ${area.label.toLowerCase()}.`,
-        blocks: names.map((name) => ({ type: "straight", label: name, exercise: { name }, sets, reps: 10, rest: 45 })),
+      const slotId = `ff-w${week}-${area.key}`;
+      const color = FF_CARD_COLORS[colorIndex++ % FF_CARD_COLORS.length];
+      PROGRAM_VARIANTS.forEach((variant) => {
+        const names = ffPickRotating(area.pools[variant.key], week, 3);
+        circuits.push({
+          id: `${slotId}-${variant.key}`,
+          slotId,
+          variant: variant.key,
+          category: "structured",
+          tag: `Week ${week}`,
+          title: `Week ${week} ${area.label}`,
+          meta: `${20 + sets * 2} min · ${area.label} · ${difficulty}`,
+          color,
+          desc: `Week ${week} strength session focused on ${area.label.toLowerCase()}.`,
+          blocks: names.map((name) => ({ type: "straight", label: name, exercise: { name }, sets, reps: 10, rest: 45 })),
+        });
       });
     });
 
-    const circuitNames = ffPickRotating(FF_CIRCUIT_POOL, week, 4);
-    circuits.push({
-      id: `ff-w${week}-circuit`,
-      category: "structured",
-      tag: `Week ${week}`,
-      title: `Week ${week} Circuit`,
-      meta: `${20 + sets * 2} min · Full Body · ${difficulty}`,
-      color: FF_CARD_COLORS[colorIndex++ % FF_CARD_COLORS.length],
-      desc: `Week ${week}'s conditioning finisher.`,
-      blocks: [
-        {
-          type: "interval",
-          label: "Conditioning Circuit",
-          rounds: 3 + Math.floor((week - 1) / 3),
-          work: 40,
-          rest: 20,
-          exercises: circuitNames.map((name) => ({ name })),
-        },
-      ],
+    const circuitSlotId = `ff-w${week}-circuit`;
+    const circuitColor = FF_CARD_COLORS[colorIndex++ % FF_CARD_COLORS.length];
+    PROGRAM_VARIANTS.forEach((variant) => {
+      const circuitNames = ffPickRotating(FF_CIRCUIT_POOLS[variant.key], week, 4);
+      circuits.push({
+        id: `${circuitSlotId}-${variant.key}`,
+        slotId: circuitSlotId,
+        variant: variant.key,
+        category: "structured",
+        tag: `Week ${week}`,
+        title: `Week ${week} Circuit`,
+        meta: `${20 + sets * 2} min · Full Body · ${difficulty}`,
+        color: circuitColor,
+        desc: `Week ${week}'s conditioning finisher.`,
+        blocks: [
+          {
+            type: "interval",
+            label: "Conditioning Circuit",
+            rounds: 3 + Math.floor((week - 1) / 3),
+            work: 40,
+            rest: 20,
+            exercises: circuitNames.map((name) => ({ name })),
+          },
+        ],
+      });
     });
   }
   return circuits;
@@ -467,6 +539,11 @@ const MEMBER_PROFILES = [
     programId: "fit-functional",
     scheduleType: "structured",
     startDate: daysAgoDateKey(10), // 10 days in — demo has both past and upcoming days to show
+    // What they bought: "home", "gym", or "both" (the combo package). Combo
+    // members see each scheduled day twice — once per variant — and pick
+    // whichever suits where they are (2026-08-14, matching how members are
+    // used to choosing today).
+    access: "both",
     memberSince: "Jun 2025",
     badge: "",
     pointAdjustment: 0,
@@ -629,7 +706,14 @@ function buildSeedCompletionsForStructured(member) {
 
   template.forEach((item) => {
     if (item.type !== "workout" || item.day >= todayProgramDay) return;
-    const circuit = CIRCUITS.find((c) => c.id === item.workoutId);
+    // Sessions exist once per variant; seed history picks whichever one the
+    // member "did" that day, favouring the variant they bought.
+    const variants = CIRCUITS.filter((c) => c.slotId === item.workoutId);
+    const access = member.access || "both";
+    const pickable = access === "both" ? variants : variants.filter((c) => c.variant === access);
+    const circuit = pickable.length
+      ? pickable[Math.floor(Math.random() * pickable.length)]
+      : CIRCUITS.find((c) => c.id === item.workoutId);
     if (!circuit) return;
     if (Math.random() >= 0.8) return; // a few genuinely missed days
 
@@ -639,6 +723,7 @@ function buildSeedCompletionsForStructured(member) {
     completions.push({
       id: `seed-ff-${item.day}`,
       workoutId: circuit.id,
+      slotId: circuit.slotId || null,
       title: circuit.title,
       category: circuit.category || "circuit",
       date: dateKey(date),
