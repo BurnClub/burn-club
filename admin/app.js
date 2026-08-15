@@ -83,11 +83,17 @@ function estimateCircuitMinutes(blocks) {
 
 // ---------------- Nav / view switching ----------------
 
-function showView(viewId) {
+// Not every view has a sidebar link — Schedule never did, and a program's
+// folders now live under Programs rather than their own nav item. Highlight
+// `activeNavId` instead when given, and tolerate no match at all rather than
+// throwing (2026-08-15; openScheduleView used to hand-roll its own view swap
+// purely to dodge this).
+function showView(viewId, activeNavId) {
   document.querySelectorAll(".view").forEach((v) => v.classList.remove("visible"));
   document.getElementById(viewId).classList.add("visible");
   document.querySelectorAll(".side-link").forEach((b) => b.classList.remove("active"));
-  document.querySelector(`.side-link[data-view="${viewId}"]`).classList.add("active");
+  const nav = document.querySelector(`.side-link[data-view="${activeNavId || viewId}"]`);
+  if (nav) nav.classList.add("active");
 }
 
 // ---------------- Dashboard ----------------
@@ -129,9 +135,18 @@ function renderDashboard() {
 
 // ---------------- Programs ----------------
 
+let programStatusFilter = "active";
+
 function renderPrograms() {
-  document.getElementById("program-grid").innerHTML = PROGRAMS.map((p) => {
+  const visible = PROGRAMS.filter((p) => programStatusFilter === "all" || (p.status || "active") === programStatusFilter);
+
+  document.querySelectorAll("#program-status-filter .filter-pill").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.programStatus === programStatusFilter);
+  });
+
+  document.getElementById("program-grid").innerHTML = visible.map((p) => {
     const isStructured = p.scheduleType === "structured";
+    const isArchived = p.status === "archived";
     // Structured programs don't use the live-folder model, so a circuit
     // "belongs" to them just by living in one of their folders — not by
     // being published to a live folder, which doesn't exist for these.
@@ -146,7 +161,7 @@ function renderPrograms() {
       ? Math.round(((SCHEDULE_TEMPLATES[p.id] || []).filter((d) => d.type === "workout").length / (p.durationWeeks || 1)) * 10) / 10
       : p.circuitsPerWeek;
     return `
-      <div class="program-card color-${p.color}">
+      <div class="program-card color-${p.color} ${isArchived ? "archived" : ""}">
         <div class="program-card-top">
           <h3>${p.name}</h3>
           <span class="status-pill ${p.status}">${p.status}</span>
@@ -157,25 +172,33 @@ function renderPrograms() {
           <div><p>${circuitCount}</p><p>Workouts</p></div>
           <div><p>${perWeek}</p><p>Per Week</p></div>
         </div>
-        ${
-          isStructured
-            ? `<button class="btn-ghost-lg small" data-manage-schedule="${p.id}">Manage Schedule</button>`
-            : `<button class="btn-ghost-lg small" data-manage-program="${p.id}">Manage Workouts</button>`
-        }
+        <div class="program-card-actions">
+          <button class="btn-ghost-lg small" data-open-program="${p.id}">Open</button>
+          ${isStructured ? `<button class="btn-ghost-lg small" data-manage-schedule="${p.id}">Schedule</button>` : ""}
+          <button class="btn-ghost-lg small" data-archive-program="${p.id}">${isArchived ? "Restore" : "Archive"}</button>
+        </div>
       </div>
     `;
-  }).join("");
+  }).join("") || `<p style="color:var(--deepblue);font-weight:700;">No ${programStatusFilter} programs.</p>`;
 
-  document.querySelectorAll("[data-manage-program]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      openProgramDetail(btn.dataset.manageProgram);
-    });
+  document.querySelectorAll("[data-open-program]").forEach((btn) => {
+    btn.addEventListener("click", () => openProgramFolders(btn.dataset.openProgram));
   });
   document.querySelectorAll("[data-manage-schedule]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      openScheduleView(btn.dataset.manageSchedule);
-    });
+    btn.addEventListener("click", () => openScheduleView(btn.dataset.manageSchedule));
   });
+  document.querySelectorAll("[data-archive-program]").forEach((btn) => {
+    btn.addEventListener("click", () => toggleProgramArchived(btn.dataset.archiveProgram));
+  });
+}
+
+// Archiving is reversible and destroys nothing — the program keeps its
+// folders, workouts and schedule, it just drops out of the default view.
+function toggleProgramArchived(programId) {
+  const p = programById(programId);
+  if (!p) return;
+  p.status = p.status === "archived" ? "active" : "archived";
+  renderPrograms();
 }
 
 const PROGRAM_CARD_COLORS = ["blue", "deepblue", "yellow", "green"];
@@ -328,29 +351,29 @@ function orderedFoldersForScope(scope) {
   return [...live, ...library];
 }
 
-function renderProgramSideList() {
-  const entries = [...PROGRAMS.map((p) => ({ id: p.id, name: p.name })), { id: "general", name: "General (Unassigned)" }];
-  document.getElementById("program-side-list").innerHTML = entries.map((entry) => {
-    const count = orderedFoldersForScope(entry.id).length;
-    return `
-      <button class="program-side-item ${entry.id === selectedProgramScope ? "active" : ""}" data-action="select-program-scope" data-scope-id="${entry.id}">
-        <span>${entry.name}</span>
-        <span class="program-side-count">${count}</span>
-      </button>
-    `;
-  }).join("");
-}
-
 function renderFolderGrid() {
-  renderProgramSideList();
-
   const scope = selectedProgramScope;
-  const entryName = scope === "general" ? "General (Unassigned)" : (programById(scope) ? programById(scope).name : "");
+  const program = programById(scope);
+  const entryName = scope === "general" ? "General (Unassigned)" : (program ? program.name : "");
   document.getElementById("folder-pane-title").textContent = entryName;
+  document.getElementById("folder-grid-eyebrow").textContent =
+    program ? (program.scheduleType === "structured" ? `Structured · ${program.durationWeeks || 8} weeks` : "On demand") : "Content";
 
   const folders = orderedFoldersForScope(scope);
   document.getElementById("folder-grid").innerHTML = folders.map(folderCardHtml).join("")
     || `<p style="color:var(--deepblue);font-weight:700;">No folders here yet. Click "+ New Folder" to add one.</p>`;
+}
+
+// Entry point from the Programs page — content now lives inside the program
+// it belongs to rather than in a separate top-level section (2026-08-15).
+function openProgramFolders(programId) {
+  selectedProgramScope = programId;
+  currentScope = null;
+  selectedCircuitIds.clear();
+  showView("view-circuits", "view-programs");
+  document.getElementById("folder-detail-view").style.display = "none";
+  document.getElementById("folder-grid-view").style.display = "block";
+  renderFolderGrid();
 }
 
 function openFolder(folderId) {
@@ -453,7 +476,7 @@ function renderScheduleView() {
 function openProgramDetail(programId) {
   currentScope = { type: "program", id: programId };
   selectedCircuitIds.clear();
-  showView("view-circuits");
+  showView("view-circuits", "view-programs");
   document.getElementById("folder-grid-view").style.display = "none";
   document.getElementById("folder-detail-view").style.display = "block";
   renderScopeDetail();
@@ -1160,7 +1183,8 @@ function saveCircuit() {
   renderScopeDetail();
   renderFolderGrid();
   renderPrograms();
-  showView("view-circuits");
+  renderLibrary();
+  showView("view-circuits", "view-programs");
 }
 
 // ---------------- Exercise Library ----------------
@@ -1683,10 +1707,6 @@ document.addEventListener("click", (e) => {
   if (action === "reset-block-note") {
     resetBlockNote(el.dataset.noteType);
   }
-  if (action === "select-program-scope") {
-    selectedProgramScope = el.dataset.scopeId;
-    renderFolderGrid();
-  }
   if (action === "open-admin-thread") {
     openAdminThread(el.dataset.conversationId);
   }
@@ -1931,6 +1951,51 @@ window.addEventListener("storage", (e) => {
   renderAdminConversationList();
   if (selectedConversationId) renderAdminThreadMessages();
 });
+
+
+// ---------------- Workout Library (2026-08-15) ----------------
+// Every workout ever authored, across every program, searchable. Content is
+// created inside a program's folders; this is for finding a past session to
+// reuse rather than building new ones — which matters at four new eight-week
+// programs every two months.
+
+let libraryQuery = "";
+
+function renderLibrary() {
+  const q = libraryQuery.trim().toLowerCase();
+  const rows = CIRCUITS.filter((c) => {
+    if (!q) return true;
+    const folder = folderById(c.folderId);
+    const program = folder ? programById(folder.program) : null;
+    return [c.title, c.focus, c.difficulty, folder && folder.name, program && program.name]
+      .filter(Boolean).join(" ").toLowerCase().includes(q);
+  });
+
+  document.getElementById("library-count").textContent =
+    `${rows.length} of ${CIRCUITS.length} workouts`;
+
+  document.getElementById("library-table-body").innerHTML = rows.map((c) => {
+    const folder = folderById(c.folderId);
+    const program = folder ? programById(folder.program) : null;
+    return `
+      <tr>
+        <td>
+          <strong>${c.title}</strong>
+          ${c.variant ? `<span class="library-variant">${c.variant}</span>` : ""}
+          <br /><span class="library-sub">${[c.focus, c.difficulty].filter(Boolean).join(" · ")}</span>
+        </td>
+        <td>${program ? program.name : "—"}</td>
+        <td>${folder ? folder.name : "—"}</td>
+        <td>${(c.blocks || []).length}</td>
+        <td><button class="table-action-btn" data-edit-circuit="${c.id}">Edit</button></td>
+      </tr>
+    `;
+  }).join("") || `<tr><td colspan="5" style="text-align:center;color:var(--deepblue);padding:24px;">No workouts match that search.</td></tr>`;
+
+  document.querySelectorAll("#library-table-body [data-edit-circuit]").forEach((btn) => {
+    btn.addEventListener("click", () => openEditBuilder(btn.dataset.editCircuit));
+  });
+}
 
 // ---------------- Settings ----------------
 // Config that isn't tied to one piece of content. Only Workout Settings so
@@ -2353,11 +2418,29 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".side-link").forEach((btn) => {
     btn.addEventListener("click", () => {
       showView(btn.dataset.view);
-      if (btn.dataset.view === "view-circuits") backToFolders();
+      if (btn.dataset.view === "view-library") renderLibrary();
+      if (btn.dataset.view === "view-programs") renderPrograms();
       if (btn.dataset.view === "view-messages") renderAdminConversationList();
       if (btn.dataset.view === "view-challenges") closeChallengeDetail();
       if (btn.dataset.view === "view-settings") showSettingsIndex();
     });
+  });
+
+  document.querySelectorAll("#program-status-filter .filter-pill").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      programStatusFilter = btn.dataset.programStatus;
+      renderPrograms();
+    });
+  });
+
+  document.getElementById("programs-back-btn").addEventListener("click", () => {
+    showView("view-programs");
+    renderPrograms();
+  });
+
+  document.getElementById("library-search").addEventListener("input", (e) => {
+    libraryQuery = e.target.value;
+    renderLibrary();
   });
 
   document.getElementById("settings-back-btn").addEventListener("click", showSettingsIndex);

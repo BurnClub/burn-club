@@ -41,7 +41,7 @@
       <button class="side-link active" data-view="view-dashboard">📊 Dashboard</button>
       <button class="side-link" data-view="view-programs">🗂 Programs</button>
       <button class="side-link" data-view="view-exercises">🏋️ Exercises</button>
-      <button class="side-link" data-view="view-circuits">💧 Workouts</button>
+      <button class="side-link" data-view="view-library">💧 Library</button>
       <button class="side-link" data-view="view-members">👤 Members</button>
       <button class="side-link" data-view="view-challenges">🏆 Challenges</button>
       <button class="side-link" data-view="view-community">👥 Community</button>
@@ -109,6 +109,15 @@
         </div>
         <button class="btn-primary" id="new-program-btn">+ New Program</button>
       </header>
+      <!-- Finished cycles are archived rather than deleted — at four new
+           eight-week programs every two months, the active list would
+           otherwise be unusable within a year (2026-08-15). -->
+      <div class="filter-pill-row" id="program-status-filter">
+        <button class="filter-pill active" data-program-status="active">Active</button>
+        <button class="filter-pill" data-program-status="draft">Draft</button>
+        <button class="filter-pill" data-program-status="archived">Archived</button>
+        <button class="filter-pill" data-program-status="all">All</button>
+      </div>
       <div class="program-grid" id="program-grid"></div>
     </section>
 
@@ -305,22 +314,21 @@
     <!-- ---------- CIRCUITS ---------- -->
     <section class="view" id="view-circuits" data-view-section>
       <!-- ---------- FOLDER GRID ---------- -->
+      <!-- Reached by opening a program (2026-08-15). The program side list
+           that used to sit here was navigating the same hierarchy Programs
+           already does — you're inside a program by the time you get here,
+           so it was showing you the way to somewhere you'd already arrived. -->
       <div id="folder-grid-view">
+        <button class="folder-back-btn" id="programs-back-btn">← All Programs</button>
         <header class="view-header">
           <div>
-            <p class="eyebrow">Content</p>
-            <h1>Workouts</h1>
+            <p class="eyebrow" id="folder-grid-eyebrow">Program</p>
+            <h1 id="folder-pane-title">Program</h1>
           </div>
           <button class="btn-primary" id="new-folder-btn">+ New Folder</button>
         </header>
 
-        <div class="circuits-layout">
-          <div class="program-side-list" id="program-side-list"></div>
-          <div class="folder-pane">
-            <h2 class="folder-pane-title" id="folder-pane-title"></h2>
-            <div class="folder-grid" id="folder-grid"></div>
-          </div>
-        </div>
+        <div class="folder-grid" id="folder-grid"></div>
       </div>
 
       <!-- ---------- FOLDER DETAIL ---------- -->
@@ -497,6 +505,30 @@
     </div>
 
     <!-- ---------- COMMUNITY ---------- -->
+
+    <!-- ---------- WORKOUT LIBRARY (2026-08-15) ---------- -->
+    <!-- Everything ever authored, across every program, searchable. Content
+         is created inside a program's folders; this exists for finding a past
+         session to reuse rather than for building new ones. -->
+    <section class="view" id="view-library" data-view-section>
+      <header class="view-header">
+        <div>
+          <p class="eyebrow">Content</p>
+          <h1>Workout Library</h1>
+          <p class="challenge-detail-meta" id="library-count"></p>
+        </div>
+      </header>
+      <input type="text" class="library-search" id="library-search" placeholder="Search every workout by name, focus or program…" autocomplete="off" />
+      <div class="table-card">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Workout</th><th>Program</th><th>Folder</th><th>Blocks</th><th></th></tr>
+          </thead>
+          <tbody id="library-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- ---------- MEMBERS ---------- -->
     <section class="view" id="view-members" data-view-section>
       <header class="view-header">

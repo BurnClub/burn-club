@@ -257,6 +257,27 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .status-pill.benchmark-pill { background: var(--yellow); color: #8a6400; text-transform: none; }
 .status-pill.qualified { background: var(--yellow); color: #8a6400; }
 .status-pill.in-progress { background: var(--periwinkle); color: var(--blue); }
+.status-pill.archived { background: #eee; color: #888; }
+
+/* ---------- FILTER PILLS (2026-08-15) ---------- */
+.filter-pill-row { display: flex; gap: 8px; margin-bottom: 20px; }
+.filter-pill {
+  background: white;
+  border: 1px solid var(--periwinkle);
+  color: var(--deepblue);
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer;
+}
+.filter-pill:hover { border-color: var(--blue); }
+.filter-pill.active { background: var(--blue); border-color: var(--blue); color: white; }
+
+/* Archived programs read as set aside rather than gone. */
+.program-card.archived { opacity: 0.65; }
+.program-card.archived:hover { opacity: 1; }
 .program-card p.desc { font-size: 13px; color: var(--ink); opacity: 0.7; margin: 8px 0 16px; }
 .program-card-stats { display: flex; gap: 20px; margin-bottom: 16px; }
 .program-card-stats div p:first-child { font-family: 'Baloo 2', sans-serif; font-size: 20px; font-weight: 800; margin: 0; color: var(--ink); }
@@ -326,28 +347,6 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .point-adjust-btn:hover { background: var(--blue); color: white; }
 
 /* ---------- CIRCUIT FOLDERS ---------- */
-.circuits-layout { display: flex; gap: 24px; align-items: flex-start; }
-.program-side-list { width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; }
-.program-side-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  background: white;
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  font-family: 'Nunito', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink);
-  cursor: pointer;
-  text-align: left;
-  box-shadow: 0 2px 8px rgba(10,19,64,0.04);
-}
-.program-side-item:hover { background: var(--periwinkle); }
-.program-side-item.active { background: var(--blue); color: white; }
-.program-side-item .program-side-count { font-size: 12px; font-weight: 800; opacity: 0.7; }
 .folder-pane { flex: 1; min-width: 0; }
 .folder-pane-title { font-family: 'Baloo 2', sans-serif; font-size: 18px; font-weight: 800; color: var(--ink); margin: 0 0 14px; }
 .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
@@ -1012,4 +1011,31 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .dashboard-row { grid-template-columns: 1fr; }
   .builder-meta-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- WORKOUT LIBRARY (2026-08-15) ---------- */
+.library-search {
+  width: 100%;
+  max-width: 520px;
+  border: 2px solid var(--periwinkle);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: 'Nunito', sans-serif;
+  background: var(--field-bg);
+  outline: none;
+  margin-bottom: 20px;
+}
+.library-search:focus { border-color: var(--blue); }
+.library-sub { font-size: 12px; color: var(--deepblue); font-weight: 600; }
+.library-variant {
+  margin-left: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--blue);
+  background: rgba(0,87,255,0.1);
+  padding: 2px 8px;
+  border-radius: 999px;
 }
