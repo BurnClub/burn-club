@@ -651,21 +651,6 @@ h1, h2, h3 {
   color: var(--subtext-color);
 }
 
-/* ---------- FEED ---------- */
-.mini-feed { display: flex; flex-direction: column; gap: 10px; }
-.feed-item {
-  background: var(--white);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.06);
-}
-.feed-emoji { font-size: 20px; }
-.feed-text p { margin: 0; font-size: 13px; }
-.feed-time { color: var(--deepblue); font-size: 11px; margin-top: 2px !important; }
-
 /* ---------- HOME COMMUNITY BUZZ (single card, no per-item cards) ---------- */
 /* Capped + internally scrollable (2026-08-09) — Chris's fix for Habits
    getting stretched tall with dead space to match this card's full content
@@ -697,25 +682,6 @@ h1, h2, h3 {
 .card-community .buzz-text p.buzz-time { color: white; }
 
 /* ---------- ARCHIVE ---------- */
-/* Dead CSS as of 2026-08-11 — .archive-list/.archive-row/.archive-count no
-   longer appear in any markup (Year view became a bar chart, see
-   .year-chart below; Last Week's Workouts dropped its meta line in an
-   earlier pass). Left in place rather than deleted, matching how retired
-   styles are handled elsewhere in this file — safe to remove if this area
-   ever gets a real cleanup pass. */
-.archive-list { display: flex; flex-direction: column; gap: 8px; }
-.archive-row {
-  display: flex;
-  justify-content: space-between;
-  background: var(--white);
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  font-weight: 700;
-  font-size: 13px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
-}
-.archive-count { color: var(--deepblue); font-weight: 700; }
-
 /* ---------- STAT BUBBLES (2026-08-11) ---------- */
 /* Replaces the 6-tile stats card — proportional-circle stat treatment per
    Chris's reference image. Each bubble is its own independent metric
@@ -789,8 +755,7 @@ h1, h2, h3 {
 .year-chart-label { font-size: 7px; font-weight: 700; fill: var(--deepblue); font-family: var(--font-body); opacity: 0.7; }
 .year-chart-label.current { fill: var(--ink); opacity: 1; }
 
-/* Last Week's Workouts — same compact footprint as .archive-row, but a real
-   tappable workout entry rather than an informational row. Nested inside the
+/* Last Week's Workouts — a compact, tappable workout entry. Nested inside the
    pink .card-last-week wrapper (2026-08-10 revert) — white rows on the
    colored card, same nested-white-card convention as .circuit-card on the
    blue Workouts section. Title-only text (see renderCompactCircuitRow in
@@ -812,7 +777,6 @@ h1, h2, h3 {
   color: var(--ink);
   cursor: pointer;
 }
-.circuit-row-compact .archive-count { color: var(--deepblue); }
 .circuit-row-compact.completed { opacity: 0.6; }
 .circuit-row-compact.completed span:first-child { text-decoration: line-through; }
 .completed-note {

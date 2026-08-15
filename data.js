@@ -426,13 +426,6 @@ const FEED = [
   { programId: "fit-functional", name: "Priya K.", action: "completed Week 2 Quads and Glutes", time: "5h ago", emoji: "💪" },
 ];
 
-const LEADERBOARD = [
-  { rank: 1, name: "Priya K.", stat: "10 day streak" },
-  { rank: 2, name: "Marcus T.", stat: "8 day streak" },
-  { rank: 3, name: "Jamie R.", stat: "6 day streak" },
-  { rank: 4, name: "Chris (You)", stat: "5 day streak", me: true },
-  { rank: 5, name: "Alicia B.", stat: "4 day streak" },
-];
 
 // ---------------- Messaging ----------------
 // Prototype-only: messages live in this tab's memory, same as the rest of

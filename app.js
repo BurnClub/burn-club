@@ -54,18 +54,6 @@ function renderCircuitCard(c) {
   `;
 }
 
-function renderFeedItem(f) {
-  return `
-    <div class="feed-item">
-      <span class="feed-emoji">${f.emoji}</span>
-      <div class="feed-text">
-        <p><strong>${f.name}</strong> ${f.action}</p>
-        <p class="feed-time">${f.time}</p>
-      </div>
-    </div>
-  `;
-}
-
 // A member's community is the people on their own program (2026-08-13) —
 // see FEED's own note in data.js. Falls back to showing everything if a
 // profile somehow has no programId, so the card is never mysteriously empty.
@@ -2294,12 +2282,9 @@ function init() {
   renderCircuitLists();
   renderHomeWeekSnapshot();
 
-  // Community tab's Activity Feed now uses the same .buzz-row markup as
-  // Home's Community Buzz (2026-08-11) — renderFeedItem/.feed-item/.mini-feed
-  // are dead code now unless something else still needs the old card-per-item
-  // look; left in place rather than deleted in case that's still wanted
-  // elsewhere later.
-  // Both surfaces read the same program-scoped list (2026-08-13) so Home and
+  // Community tab's Activity Feed and Home's Community Buzz share the same
+  // .buzz-row markup (2026-08-11). Both read the same program-scoped list
+  // (2026-08-13) so Home and
   // Community can't disagree about who a member's community is.
   const buzz = feedForCurrentMember().map(renderHomeBuzzRow).join("");
   document.getElementById("community-feed").innerHTML = buzz;
