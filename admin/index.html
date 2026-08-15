@@ -430,6 +430,15 @@
         <div class="builder-content">
           <div class="builder-body">
             <p class="builder-hint" id="builder-folder-label">Adding to: —</p>
+            <!-- Variant switcher (2026-08-15). Only shown for programs with
+                 Home/Gym variants. The session's structure — title, focus,
+                 block types, sets, reps, rounds, rest — is shared, so editing
+                 it here applies to both. Only the exercise choices differ. -->
+            <div class="builder-variant-bar" id="builder-variant-bar" style="display:none;">
+              <span class="builder-variant-label">Editing exercises for</span>
+              <div class="filter-pill-row" id="builder-variant-pills"></div>
+              <span class="builder-variant-note">Structure and timing are shared across both</span>
+            </div>
             <div class="builder-meta-grid">
               <label>Title
                 <input type="text" id="builder-title" placeholder="e.g. Full Body Burn" />

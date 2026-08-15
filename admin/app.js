@@ -685,9 +685,18 @@ function defaultBlockValues(type) {
 let builderBlocks = [];
 let builderFolderId = null;
 let editingCircuitId = null;
+// Set when the workout being edited is one of a Home/Gym pair — see
+// PROGRAM_VARIANTS. builderSlotId identifies the shared session; the pills
+// switch which variant's exercises are on screen (2026-08-15).
+let builderSlotId = null;
+let builderVariantKey = null;
 
 function openBuilder(folderId) {
   editingCircuitId = null;
+  // A brand-new workout isn't part of a variant pair yet — creating both
+  // sides from scratch isn't built (see note in openEditBuilder).
+  builderSlotId = null;
+  builderVariantKey = null;
   builderFolderId = folderId;
   const folder = folderById(folderId);
   const program = programById(folder ? folder.program : null);
@@ -794,6 +803,78 @@ function schemaBlockToBuilderBlock(block) {
   }
 }
 
+// Switching variants saves whatever's on screen into the variant you're
+// leaving, so exercise picks aren't lost mid-edit.
+function switchBuilderVariant(variantKey) {
+  if (!builderSlotId || variantKey === builderVariantKey) return;
+  stashBuilderVariantBlocks();
+  builderVariantKey = variantKey;
+  const sibling = CIRCUITS.find((c) => c.slotId === builderSlotId && c.variant === variantKey);
+  builderBlocks = sibling ? sibling.blocks.map(schemaBlockToBuilderBlock).filter(Boolean) : [];
+  builderActiveSlot = null;
+  editingCircuitId = sibling ? sibling.id : null;
+  renderBuilderVariantPills();
+  renderBuilderBlocks();
+  renderBuilderLibraryList();
+}
+
+// Writes the on-screen blocks back to the variant currently being edited,
+// without going through the full save path.
+function stashBuilderVariantBlocks() {
+  if (!editingCircuitId) return;
+  const idx = CIRCUITS.findIndex((c) => c.id === editingCircuitId);
+  if (idx === -1) return;
+  CIRCUITS[idx] = { ...CIRCUITS[idx], blocks: builderBlocksToSchema() };
+}
+
+function renderBuilderVariantPills() {
+  const bar = document.getElementById("builder-variant-bar");
+  if (!builderSlotId) {
+    bar.style.display = "none";
+    return;
+  }
+  bar.style.display = "";
+  document.getElementById("builder-variant-pills").innerHTML = PROGRAM_VARIANTS.map((v) => `
+    <button class="filter-pill ${v.key === builderVariantKey ? "active" : ""}" data-builder-variant="${v.key}">${v.label}</button>
+  `).join("");
+  document.querySelectorAll("[data-builder-variant]").forEach((btn) => {
+    btn.addEventListener("click", () => switchBuilderVariant(btn.dataset.builderVariant));
+  });
+}
+
+// Structure is authored once and applies to every variant — only the
+// exercises in each block differ. Copies the shared fields across, keeping
+// each variant's own exercise picks intact.
+function syncStructureToSiblingVariants(source) {
+  if (!source.slotId) return;
+  CIRCUITS.forEach((c, i) => {
+    if (c.slotId !== source.slotId || c.id === source.id) return;
+    const blocks = source.blocks.map((sb, bi) => {
+      const own = c.blocks[bi];
+      // Same block type: keep this variant's exercises, take everything else.
+      if (own && own.type === sb.type) {
+        return own.exercise
+          ? { ...sb, exercise: own.exercise }
+          : { ...sb, exercises: own.exercises };
+      }
+      // Block added or its type changed — the variant has no matching
+      // exercises to preserve, so it inherits the source's as a starting point.
+      return JSON.parse(JSON.stringify(sb));
+    });
+    CIRCUITS[i] = {
+      ...c,
+      tag: source.tag,
+      title: source.title,
+      focus: source.focus,
+      difficulty: source.difficulty,
+      desc: source.desc,
+      isBenchmark: source.isBenchmark,
+      benchmarkId: source.benchmarkId,
+      blocks,
+    };
+  });
+}
+
 function openEditBuilder(circuitId) {
   const circuit = CIRCUITS.find((c) => c.id === circuitId);
   if (!circuit) return;
@@ -814,6 +895,9 @@ function openEditBuilder(circuitId) {
   document.getElementById("builder-benchmark-select").innerHTML = BENCHMARKS.map((b) => `<option value="${b.id}">${b.name} — ${b.subtitle}</option>`).join("");
   document.getElementById("builder-benchmark-select-wrap").style.display = circuit.isBenchmark ? "" : "none";
   if (circuit.isBenchmark) document.getElementById("builder-benchmark-select").value = circuit.benchmarkId;
+  builderSlotId = circuit.slotId || null;
+  builderVariantKey = circuit.variant || null;
+  renderBuilderVariantPills();
   builderBlocks = circuit.blocks.map(schemaBlockToBuilderBlock).filter(Boolean);
   builderActiveSlot = null;
   builderLibraryCategory = "All";
@@ -1160,6 +1244,8 @@ function saveCircuit() {
 
   const circuit = {
     id: editingCircuitId || (title.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now()),
+    slotId: builderSlotId,
+    variant: builderVariantKey,
     folderId: builderFolderId,
     category: document.getElementById("builder-category").value,
     tag: document.getElementById("builder-tag").value.trim() || "New",
@@ -1178,6 +1264,7 @@ function saveCircuit() {
   } else {
     CIRCUITS.unshift(circuit);
   }
+  syncStructureToSiblingVariants(circuit);
   syncCircuitToMemberApp(circuit);
   closeBuilder();
   renderScopeDetail();
