@@ -174,6 +174,7 @@ function renderPrograms() {
         </div>
         <div class="program-card-actions">
           <button class="btn-ghost-lg small" data-open-program="${p.id}">Open</button>
+          <button class="btn-ghost-lg small" data-edit-program="${p.id}">Edit</button>
           ${isStructured ? `<button class="btn-ghost-lg small" data-manage-schedule="${p.id}">Schedule</button>` : ""}
           <button class="btn-ghost-lg small" data-archive-program="${p.id}">${isArchived ? "Restore" : "Archive"}</button>
         </div>
@@ -186,6 +187,9 @@ function renderPrograms() {
   });
   document.querySelectorAll("[data-manage-schedule]").forEach((btn) => {
     btn.addEventListener("click", () => openScheduleView(btn.dataset.manageSchedule));
+  });
+  document.querySelectorAll("[data-edit-program]").forEach((btn) => {
+    btn.addEventListener("click", () => openEditProgramModal(btn.dataset.editProgram));
   });
   document.querySelectorAll("[data-archive-program]").forEach((btn) => {
     btn.addEventListener("click", () => toggleProgramArchived(btn.dataset.archiveProgram));
@@ -203,7 +207,43 @@ function toggleProgramArchived(programId) {
 
 const PROGRAM_CARD_COLORS = ["blue", "deepblue", "yellow", "green"];
 
+let editingProgramId = null;
+
+// Opens the same modal pre-filled. Program *type* is deliberately locked when
+// editing: switching rolling to structured would orphan the live folders, and
+// the reverse would orphan the schedule (2026-08-15).
+function openEditProgramModal(programId) {
+  const p = programById(programId);
+  if (!p) return;
+  openProgramModal();
+  editingProgramId = programId;
+
+  document.getElementById("program-modal-heading").textContent = "Edit Program";
+  document.getElementById("program-modal-save-btn").textContent = "Save Changes";
+  document.getElementById("program-modal-name").value = p.name;
+  document.getElementById("program-modal-desc").value = p.description || "";
+  document.getElementById("program-modal-per-week").value = p.circuitsPerWeek || 3;
+  document.getElementById("program-modal-duration").value = p.durationWeeks || 8;
+
+  const typeInput = document.querySelector(`#program-modal-type input[value="${p.scheduleType}"]`);
+  if (typeInput) typeInput.checked = true;
+  document.querySelectorAll("#program-modal-type input").forEach((i) => { i.disabled = true; });
+  updateProgramTypeFieldVisibility();
+  // Set after updateProgramTypeFieldVisibility — that function owns this
+  // element and would otherwise overwrite it with the create-flow copy.
+  document.getElementById("program-modal-type-note").textContent =
+    "Program type can't be changed after creation — it decides how content is published.";
+
+  const statusInput = document.querySelector(`#program-modal-status input[value="${p.status}"]`);
+  if (statusInput) statusInput.checked = true;
+}
+
 function openProgramModal() {
+  editingProgramId = null;
+  document.getElementById("program-modal-heading").textContent = "New Program";
+  document.getElementById("program-modal-save-btn").textContent = "Create Program";
+  document.getElementById("program-modal-type-note").textContent =
+    "This will also set up its three live workout folders automatically.";
   document.getElementById("program-modal-name").value = "";
   document.getElementById("program-modal-desc").value = "";
   document.getElementById("program-modal-per-week").value = 3;
@@ -218,6 +258,7 @@ function openProgramModal() {
     </label>
   `).join("");
   document.querySelectorAll('#program-modal-type input').forEach((input) => {
+    input.disabled = false;
     input.addEventListener("change", updateProgramTypeFieldVisibility);
   });
   updateProgramTypeFieldVisibility();
@@ -260,6 +301,28 @@ function saveProgram() {
   const scheduleType = typeInput ? typeInput.value : "rolling";
   const statusInput = document.querySelector("#program-modal-status input:checked");
   const status = statusInput ? statusInput.value : "draft";
+  // Editing only touches the fields on this form — id, colour, folders and
+  // schedule all stay exactly as they were.
+  if (editingProgramId) {
+    const p = programById(editingProgramId);
+    if (p) {
+      p.name = name;
+      p.description = description;
+      p.status = status;
+      if (p.scheduleType === "structured") p.durationWeeks = Number(document.getElementById("program-modal-duration").value) || p.durationWeeks;
+      else p.circuitsPerWeek = Number(document.getElementById("program-modal-per-week").value) || p.circuitsPerWeek;
+    }
+    // Program name appears in several dropdowns that are built once at load.
+    document.querySelectorAll(
+      `#folder-modal-program option[value="${editingProgramId}"], #member-modal-program option[value="${editingProgramId}"], #member-program-filter option[value="${editingProgramId}"], #challenge-modal-program option[value="${editingProgramId}"]`
+    ).forEach((opt) => { opt.textContent = name; });
+    closeProgramModal();
+    renderPrograms();
+    renderFolderGrid();
+    renderLibrary();
+    return;
+  }
+
   const id = name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now();
   const color = PROGRAM_CARD_COLORS[PROGRAMS.length % PROGRAM_CARD_COLORS.length];
 
