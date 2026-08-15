@@ -37,11 +37,21 @@ const EXERCISE_LIBRARY = [
   { id: "leg-raises", name: "Leg Raises", bodyParts: ["Abs"], modality: "Strength", equipment: ["Bodyweight"], technique: "Lying flat, keep legs straight and lower back pressed down while raising the legs to vertical and back down.", trackWeight: false, videoUrl: "" },
   { id: "side-plank", name: "Side Plank", bodyParts: ["Abs"], modality: "Strength", equipment: ["Bodyweight"], technique: "Stack the feet and prop up on one forearm, lifting the hips so the body forms a straight line.", trackWeight: false, videoUrl: "" },
   { id: "dead-bug", name: "Dead Bug", bodyParts: ["Abs"], modality: "Strength", equipment: ["Bodyweight"], technique: "Lying on the back with arms and knees up, slowly extend opposite arm and leg while keeping the low back flat.", trackWeight: false, videoUrl: "" },
+  // Gym-only movements (2026-08-14) — mirrors the member app's library.
+  { id: "barbell-bench-press", name: "Barbell Bench Press", bodyParts: ["Chest", "Triceps"], modality: "Strength", equipment: ["Barbell", "Bench"], technique: "Lower the bar to mid-chest with elbows tucked around 45 degrees, then press back up without bouncing.", trackWeight: true, videoUrl: "" },
+  { id: "barbell-back-squat", name: "Barbell Back Squat", bodyParts: ["Quads", "Glutes"], modality: "Strength", equipment: ["Barbell"], technique: "Bar racked across the upper back. Sit down between the hips, knees tracking over the toes, then drive up through mid-foot.", trackWeight: true, videoUrl: "" },
+  { id: "barbell-deadlift", name: "Barbell Deadlift", bodyParts: ["Hamstrings", "Back"], modality: "Strength", equipment: ["Barbell"], technique: "Hinge with a flat back and the bar against the shins. Push the floor away rather than pulling with the arms.", trackWeight: true, videoUrl: "" },
+  { id: "lat-pulldown", name: "Lat Pulldown", bodyParts: ["Back", "Biceps"], modality: "Strength", equipment: ["Pull-up Bar"], technique: "Pull the bar to the collarbone leading with the elbows, then control it all the way back up.", trackWeight: true, videoUrl: "" },
+  { id: "leg-press", name: "Leg Press", bodyParts: ["Quads", "Glutes"], modality: "Strength", equipment: ["Box/Step"], technique: "Feet shoulder-width on the platform. Lower until the knees reach about 90 degrees, then press without locking out hard.", trackWeight: true, videoUrl: "" },
+  { id: "cable-row", name: "Cable Row", bodyParts: ["Back", "Biceps"], modality: "Strength", equipment: ["Resistance Band"], technique: "Sit tall and row the handle to the stomach, squeezing the shoulder blades together at the end.", trackWeight: true, videoUrl: "" },
+  { id: "overhead-press", name: "Overhead Press", bodyParts: ["Shoulders", "Triceps"], modality: "Strength", equipment: ["Barbell"], technique: "Press the bar straight overhead from the collarbone, moving the head back slightly to let it pass.", trackWeight: true, videoUrl: "" },
+  { id: "rowing-machine", name: "Rowing Machine", bodyParts: ["Full Body"], modality: "Cardio", equipment: ["Battle Ropes"], technique: "Drive with the legs first, then lean back and pull the handle to the ribs. Reverse that order on the recovery.", trackWeight: false, videoUrl: "" },
 ];
 
 // scheduleType distinguishes two genuinely different program shapes:
-// "rolling" (Burn Club, Strength Foundations) — an ongoing weekly rotation,
-// browsed freely, no fixed start/end date. "structured" (Fit & Functional) —
+// "rolling" (Burn Club) — an ongoing weekly rotation,
+// browsed freely, no fixed start/end date. "structured" (Fit & Functional,
+// 30 Minute Burn) —
 // a fixed-length program with a specific day-by-day sequence, the same for
 // every member, projected onto real dates from each member's own start date
 // (see SCHEDULE_TEMPLATES below). Rolling programs still use the folder/live-
@@ -58,14 +68,16 @@ const PROGRAMS = [
     description: "The flagship full-body circuit program — 3 new circuits every week.",
   },
   {
-    id: "strength-foundations",
-    name: "Strength Foundations",
+    id: "thirty-minute-burn",
+    name: "30 Minute Burn",
     color: "deepblue",
-    status: "draft",
-    scheduleType: "rolling",
+    status: "active",
+    scheduleType: "structured",
+    durationWeeks: 8,
+    workoutsPerWeek: 5,
     memberCount: 0,
-    circuitsPerWeek: 2,
-    description: "A slower-paced strength-building program, in planning for a future launch.",
+    circuitsPerWeek: 5,
+    description: "A structured 8-week program built around short sessions — five 30-minute workouts a week, in Home and Gym variants.",
   },
   {
     id: "fit-functional",
@@ -97,21 +109,18 @@ const PROGRAMS = [
 const FOLDERS = [
   { id: "week-jul-20", name: "Week of Jul 20", program: "burn-club" },
   { id: "week-jul-27", name: "Week of Jul 27", program: "burn-club" },
-  { id: "foundations-drafts", name: "Foundations Drafts", program: "strength-foundations" },
   { id: "stretch-core-library", name: "Stretch & Core Library", program: "burn-club" },
   { id: "working-folder", name: "Working Folder", program: null },
   { id: "burn-club-this-week", name: "This Week's Workouts", program: "burn-club", live: true },
   { id: "burn-club-stretch-core", name: "Stretch & Core Library", program: "burn-club", live: true },
   { id: "burn-club-previous-week", name: "Previous Week", program: "burn-club", live: true },
-  { id: "strength-foundations-this-week", name: "This Week's Workouts", program: "strength-foundations", live: true },
-  { id: "strength-foundations-stretch-core", name: "Stretch & Core Library", program: "strength-foundations", live: true },
-  { id: "strength-foundations-previous-week", name: "Previous Week", program: "strength-foundations", live: true },
   // Structured programs don't use the live-folder publish model — these are
   // just library folders (one per program week) holding Fit & Functional's
   // actual workout content, which gets "published" by being slotted into
   // SCHEDULE_TEMPLATES instead. One folder per week rather than one folder
   // for the whole program, since every week's 6 workouts are fully unique.
   ...Array.from({ length: 8 }, (_, i) => ({ id: `ff-home-week-${i + 1}`, name: `F&F Home Week ${i + 1}`, program: "fit-functional" })),
+  ...Array.from({ length: 8 }, (_, i) => ({ id: `tmb-week-${i + 1}`, name: `30 Min Burn Week ${i + 1}`, program: "thirty-minute-burn" })),
 ];
 
 // ---------------- Fit & Functional content generator ----------------
@@ -121,13 +130,56 @@ const FOLDERS = [
 // and volume progresses week to week so the actual workouts differ, not
 // just the label.
 const FF_FOCUS_AREAS = [
-  { key: "shoulders-abs", label: "Shoulders and Abs", pool: ["Push Press", "Plank Hold", "Bicycle Crunches", "Dead Bug", "Side Plank"] },
-  { key: "hamstrings-glutes", label: "Hamstring and Glutes", pool: ["Kettlebell Swings", "Walking Lunges", "Box Jumps", "Goblet Squats"] },
-  { key: "back-biceps", label: "Back and Biceps", pool: ["Dumbbell Rows", "Renegade Rows", "Battle Ropes"] },
-  { key: "chest-tris", label: "Chest and Tris", pool: ["Push-Ups", "Push Press", "Renegade Rows"] },
-  { key: "quads-glutes", label: "Quads and Glutes", pool: ["Goblet Squats", "Squat Jumps", "Walking Lunges", "Jump Squats", "Box Jumps"] },
+  {
+    key: "shoulders-abs",
+    label: "Shoulders and Abs",
+    pools: {
+      home: ["Push Press", "Plank Hold", "Bicycle Crunches", "Dead Bug", "Side Plank"],
+      gym: ["Overhead Press", "Cable Row", "Weighted Sit-Ups", "Plank Hold", "Side Plank"],
+    },
+  },
+  {
+    key: "hamstrings-glutes",
+    label: "Hamstring and Glutes",
+    pools: {
+      home: ["Kettlebell Swings", "Walking Lunges", "Box Jumps", "Goblet Squats"],
+      gym: ["Barbell Deadlift", "Leg Press", "Kettlebell Swings", "Walking Lunges"],
+    },
+  },
+  {
+    key: "back-biceps",
+    label: "Back and Biceps",
+    pools: {
+      home: ["Dumbbell Rows", "Renegade Rows", "Battle Ropes"],
+      gym: ["Lat Pulldown", "Cable Row", "Barbell Deadlift"],
+    },
+  },
+  {
+    key: "chest-tris",
+    label: "Chest and Tris",
+    pools: {
+      home: ["Push-Ups", "Push Press", "Renegade Rows"],
+      gym: ["Barbell Bench Press", "Overhead Press", "Cable Row"],
+    },
+  },
+  {
+    key: "quads-glutes",
+    label: "Quads and Glutes",
+    pools: {
+      home: ["Goblet Squats", "Squat Jumps", "Walking Lunges", "Jump Squats", "Box Jumps"],
+      gym: ["Barbell Back Squat", "Leg Press", "Walking Lunges", "Box Jumps"],
+    },
+  },
 ];
-const FF_CIRCUIT_POOL = ["Burpees", "Mountain Climbers", "High Knees", "Battle Ropes", "Sprint Intervals", "Squat Jumps"];
+const FF_CIRCUIT_POOLS = {
+  home: ["Burpees", "Mountain Climbers", "High Knees", "Sprint Intervals", "Squat Jumps"],
+  gym: ["Rowing Machine", "Battle Ropes", "Burpees", "Box Jumps", "Mountain Climbers"],
+};
+// Mirrors PROGRAM_VARIANTS in the member app's data.js.
+const PROGRAM_VARIANTS = [
+  { key: "home", label: "Home" },
+  { key: "gym", label: "Gym" },
+];
 
 function ffPickRotating(pool, week, count) {
   const picks = [];
@@ -143,44 +195,156 @@ function buildFitFunctionalCircuits() {
     const sets = 3 + Math.floor((week - 1) / 2); // 3 sets weeks 1-2, up to 6 sets weeks 7-8
 
     FF_FOCUS_AREAS.forEach((area) => {
-      const names = ffPickRotating(area.pool, week, 3);
-      circuits.push({
-        id: `ff-w${week}-${area.key}`,
-        folderId,
-        category: "structured",
-        tag: `Week ${week}`,
-        title: `Week ${week} ${area.label}`,
-        focus: area.label,
-        difficulty,
-        desc: `Week ${week} strength session focused on ${area.label.toLowerCase()}.`,
-        blocks: names.map((name) => ({ type: "straight", label: name, exercise: { name }, sets, reps: 10, rest: 45 })),
+      const slotId = `ff-w${week}-${area.key}`;
+      PROGRAM_VARIANTS.forEach((variant) => {
+        const names = ffPickRotating(area.pools[variant.key], week, 3);
+        circuits.push({
+          id: `${slotId}-${variant.key}`,
+          slotId,
+          variant: variant.key,
+          folderId,
+          category: "structured",
+          tag: `Week ${week}`,
+          title: `Week ${week} ${area.label}`,
+          focus: area.label,
+          difficulty,
+          desc: `Week ${week} strength session focused on ${area.label.toLowerCase()}.`,
+          blocks: names.map((name) => ({ type: "straight", label: name, exercise: { name }, sets, reps: 10, rest: 45 })),
+        });
       });
     });
 
-    const circuitNames = ffPickRotating(FF_CIRCUIT_POOL, week, 4);
-    circuits.push({
-      id: `ff-w${week}-circuit`,
-      folderId,
-      category: "structured",
-      tag: `Week ${week}`,
-      title: `Week ${week} Circuit`,
-      focus: "Full Body",
-      difficulty,
-      desc: `Week ${week}'s conditioning finisher.`,
-      blocks: [
-        {
-          type: "interval",
-          label: "Conditioning Circuit",
-          rounds: 3 + Math.floor((week - 1) / 3),
-          work: 40,
-          rest: 20,
-          exercises: circuitNames.map((name) => ({ name })),
-        },
-      ],
+    const circuitSlotId = `ff-w${week}-circuit`;
+    PROGRAM_VARIANTS.forEach((variant) => {
+      const circuitNames = ffPickRotating(FF_CIRCUIT_POOLS[variant.key], week, 4);
+      circuits.push({
+        id: `${circuitSlotId}-${variant.key}`,
+        slotId: circuitSlotId,
+        variant: variant.key,
+        folderId,
+        category: "structured",
+        tag: `Week ${week}`,
+        title: `Week ${week} Circuit`,
+        focus: "Full Body",
+        difficulty,
+        desc: `Week ${week}'s conditioning finisher.`,
+        blocks: [
+          {
+            type: "interval",
+            label: "Conditioning Circuit",
+            rounds: 3 + Math.floor((week - 1) / 3),
+            work: 40,
+            rest: 20,
+            exercises: circuitNames.map((name) => ({ name })),
+          },
+        ],
+      });
     });
   }
   return circuits;
 }
+
+// ---------------- 30 Minute Burn content generator ----------------
+// Same shape as Fit & Functional — 8 weeks, home and gym variants sharing a
+// slot — but built around shorter sessions: five 30-minute workouts a week,
+// each a single conditioning block rather than straight-set strength work.
+const TMB_FOCUS_AREAS = [
+  {
+    key: "full-body",
+    label: "Full Body Burn",
+    pools: {
+      home: ["Burpees", "Squat Jumps", "Push-Ups", "Mountain Climbers"],
+      gym: ["Rowing Machine", "Barbell Back Squat", "Battle Ropes", "Box Jumps"],
+    },
+  },
+  {
+    key: "lower",
+    label: "Lower Body Burn",
+    pools: {
+      home: ["Walking Lunges", "Jump Squats", "Kettlebell Swings", "Box Jumps"],
+      gym: ["Leg Press", "Barbell Back Squat", "Kettlebell Swings", "Walking Lunges"],
+    },
+  },
+  {
+    key: "upper",
+    label: "Upper Body Burn",
+    pools: {
+      home: ["Push-Ups", "Renegade Rows", "Push Press", "Battle Ropes"],
+      gym: ["Barbell Bench Press", "Lat Pulldown", "Overhead Press", "Cable Row"],
+    },
+  },
+  {
+    key: "core",
+    label: "Core Burn",
+    pools: {
+      home: ["Bicycle Crunches", "Plank Hold", "Side Plank", "Dead Bug"],
+      gym: ["Weighted Sit-Ups", "Plank Hold", "Leg Raises", "Russian Twists"],
+    },
+  },
+  {
+    key: "conditioning",
+    label: "Conditioning",
+    pools: {
+      home: ["High Knees", "Sprint Intervals", "Burpees", "Mountain Climbers"],
+      gym: ["Rowing Machine", "Battle Ropes", "Sprint Intervals", "Box Jumps"],
+    },
+  },
+];
+
+function buildThirtyMinuteBurnCircuits() {
+  const circuits = [];
+  for (let week = 1; week <= 8; week++) {
+    const folderId = `tmb-week-${week}`;
+    const difficulty = week <= 5 ? "Intermediate" : "Advanced";
+    const rounds = 3 + Math.floor((week - 1) / 3);
+
+    TMB_FOCUS_AREAS.forEach((area) => {
+      const slotId = `tmb-w${week}-${area.key}`;
+      PROGRAM_VARIANTS.forEach((variant) => {
+        const names = ffPickRotating(area.pools[variant.key], week, 4);
+        circuits.push({
+          id: `${slotId}-${variant.key}`,
+          slotId,
+          variant: variant.key,
+          folderId,
+          category: "structured",
+          tag: `Week ${week}`,
+          title: `Week ${week} ${area.label}`,
+          focus: area.label,
+          difficulty,
+          desc: `Week ${week} 30-minute ${area.label.toLowerCase()} session.`,
+          blocks: [
+            {
+              type: "interval",
+              label: area.label,
+              rounds,
+              work: 45,
+              rest: 15,
+              exercises: names.map((name) => ({ name })),
+            },
+          ],
+        });
+      });
+    });
+  }
+  return circuits;
+}
+
+function buildThirtyMinuteBurnSchedule() {
+  const focusOrder = TMB_FOCUS_AREAS.map((a) => a.key);
+  const days = [];
+  let day = 1;
+  for (let week = 1; week <= 8; week++) {
+    focusOrder.forEach((key) => {
+      days.push({ day, type: "workout", workoutId: `tmb-w${week}-${key}` });
+      day++;
+    });
+    days.push({ day, type: "rest" }); day++;
+    days.push({ day, type: "rest" }); day++;
+  }
+  return days;
+}
+
 
 // ---------------- Block format explainers ----------------
 // Must stay in sync with BLOCK_FORMAT_NOTES in the member app's data.js —
@@ -346,7 +510,7 @@ const CIRCUITS = [
     title: "Foundations: Week 1",
     focus: "Full Body",
     difficulty: "Beginner",
-    desc: "Early draft for the Strength Foundations launch — straight sets to build baseline strength.",
+    desc: "Early draft — straight sets to build baseline strength.",
     blocks: [
       {
         type: "straight",
@@ -563,6 +727,7 @@ const CIRCUITS = [
   // change), but the exercise selection and volume vary week to week so the
   // actual workouts are genuinely different, not just relabeled duplicates.
   ...buildFitFunctionalCircuits(),
+  ...buildThirtyMinuteBurnCircuits(),
 ];
 
 // ---------------- Structured Program Schedules ----------------
@@ -589,6 +754,7 @@ function buildFitFunctionalSchedule() {
 
 const SCHEDULE_TEMPLATES = {
   "fit-functional": buildFitFunctionalSchedule(),
+  "thirty-minute-burn": buildThirtyMinuteBurnSchedule(),
 };
 
 // Fields split into two groups, kept explicit here for clarity even though it's
