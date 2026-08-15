@@ -81,7 +81,7 @@ const PROGRAMS = [
   },
   {
     id: "fit-functional",
-    name: "Fit & Functional Home",
+    name: "Fit & Functional",
     color: "yellow",
     status: "active",
     scheduleType: "structured",
@@ -119,7 +119,7 @@ const FOLDERS = [
   // actual workout content, which gets "published" by being slotted into
   // SCHEDULE_TEMPLATES instead. One folder per week rather than one folder
   // for the whole program, since every week's 6 workouts are fully unique.
-  ...Array.from({ length: 8 }, (_, i) => ({ id: `ff-home-week-${i + 1}`, name: `F&F Home Week ${i + 1}`, program: "fit-functional" })),
+  ...Array.from({ length: 8 }, (_, i) => ({ id: `ff-home-week-${i + 1}`, name: `F&F Week ${i + 1}`, program: "fit-functional" })),
   ...Array.from({ length: 8 }, (_, i) => ({ id: `tmb-week-${i + 1}`, name: `30 Min Burn Week ${i + 1}`, program: "thirty-minute-burn" })),
 ];
 

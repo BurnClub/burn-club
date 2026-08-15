@@ -345,6 +345,11 @@
           <button class="btn-primary" id="new-circuit-btn">+ New Workout</button>
         </header>
 
+        <!-- Variant filter (2026-08-15). A week folder holds both variants of
+             every session, so without this the table lists each workout twice
+             with identical text and no way to tell them apart. -->
+        <div class="filter-pill-row" id="circuit-variant-filter" style="display:none;"></div>
+
         <div class="bulk-bar" id="circuit-bulk-bar">
           <span id="circuit-bulk-count">0 selected</span>
           <div class="bulk-bar-actions">

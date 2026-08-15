@@ -499,12 +499,51 @@ function goBackFromDetail() {
 
 // Circuits currently visible in the open folder or program — shared by the
 // table render, "select all", and the bulk action buttons.
-function currentScopeCircuits() {
+// Which Home/Gym variant the workout table is showing. Defaults to the first
+// variant rather than "all" — a week folder holds both, and listing every
+// session twice with identical text is worse than useless (2026-08-15).
+let circuitVariantFilter = PROGRAM_VARIANTS[0].key;
+
+function scopeCircuitsUnfiltered() {
   return CIRCUITS.filter((c) => {
     if (!currentScope) return false;
     if (currentScope.type === "folder" && c.folderId !== currentScope.id) return false;
     if (currentScope.type === "program" && circuitProgramId(c) !== currentScope.id) return false;
     return true;
+  });
+}
+
+function scopeHasVariants() {
+  return scopeCircuitsUnfiltered().some((c) => c.variant);
+}
+
+function currentScopeCircuits() {
+  const all = scopeCircuitsUnfiltered();
+  if (!scopeHasVariants() || circuitVariantFilter === "all") return all;
+  // Workouts with no variant (a rolling program's, or one authored before
+  // variants existed) always show — they aren't part of a pair to filter.
+  return all.filter((c) => !c.variant || c.variant === circuitVariantFilter);
+}
+
+function renderCircuitVariantFilter() {
+  const bar = document.getElementById("circuit-variant-filter");
+  if (!scopeHasVariants()) {
+    bar.style.display = "none";
+    return;
+  }
+  bar.style.display = "";
+  const counts = {};
+  scopeCircuitsUnfiltered().forEach((c) => { if (c.variant) counts[c.variant] = (counts[c.variant] || 0) + 1; });
+  const options = [...PROGRAM_VARIANTS.map((v) => ({ key: v.key, label: `${v.label} (${counts[v.key] || 0})` })), { key: "all", label: "Show both" }];
+  bar.innerHTML = options.map((o) => `
+    <button class="filter-pill ${o.key === circuitVariantFilter ? "active" : ""}" data-circuit-variant="${o.key}">${o.label}</button>
+  `).join("");
+  bar.querySelectorAll("[data-circuit-variant]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      circuitVariantFilter = btn.dataset.circuitVariant;
+      selectedCircuitIds.clear();
+      renderScopeDetail();
+    });
   });
 }
 
@@ -531,6 +570,7 @@ function renderScopeDetail() {
     document.getElementById("folder-detail-edit-btn").style.display = folder.live ? "none" : "";
   }
 
+  renderCircuitVariantFilter();
   const rows = currentScopeCircuits();
 
   document.getElementById("circuit-table-body").innerHTML = rows.map((c) => {
@@ -538,7 +578,7 @@ function renderScopeDetail() {
     return `
     <tr>
       <td><input type="checkbox" class="select-item-checkbox" data-role="select-circuit" data-circuit-id="${c.id}" ${selectedCircuitIds.has(c.id) ? "checked" : ""} /></td>
-      <td><strong>${c.title}</strong>${c.category !== "circuit" ? ` <span class="status-pill">${categoryLabel(c.category)}</span>` : ""}${c.isBenchmark ? ` <span class="status-pill benchmark-pill">🏆 ${benchmarkById(c.benchmarkId)?.name || "Benchmark"}</span>` : ""}<br /><span style="color:var(--deepblue);font-weight:700;font-size:11px;">${c.focus} · ${c.difficulty}</span></td>
+      <td><strong>${c.title}</strong>${c.variant ? ` <span class="variant-pill variant-${c.variant}">${(PROGRAM_VARIANTS.find((v) => v.key === c.variant) || {}).label || c.variant}</span>` : ""}${c.category !== "circuit" && c.category !== "structured" ? ` <span class="status-pill">${categoryLabel(c.category)}</span>` : ""}${c.isBenchmark ? ` <span class="status-pill benchmark-pill">🏆 ${benchmarkById(c.benchmarkId)?.name || "Benchmark"}</span>` : ""}<br /><span style="color:var(--deepblue);font-weight:700;font-size:11px;">${c.focus} · ${c.difficulty}</span></td>
       <td>${folder ? folder.name : "—"}</td>
       <td>${c.blocks.length} blocks</td>
       <td><button class="table-action-btn" data-edit-circuit="${c.id}">Edit</button></td>
@@ -2068,7 +2108,7 @@ function renderLibrary() {
       <tr>
         <td>
           <strong>${c.title}</strong>
-          ${c.variant ? `<span class="library-variant">${c.variant}</span>` : ""}
+          ${c.variant ? `<span class="variant-pill variant-${c.variant}">${(PROGRAM_VARIANTS.find((v) => v.key === c.variant) || {}).label || c.variant}</span>` : ""}
           <br /><span class="library-sub">${[c.focus, c.difficulty].filter(Boolean).join(" · ")}</span>
         </td>
         <td>${program ? program.name : "—"}</td>
@@ -2555,7 +2595,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("circuit-select-all").addEventListener("change", (e) => {
-    const rows = currentScopeCircuits();
+    renderCircuitVariantFilter();
+  const rows = currentScopeCircuits();
     if (e.target.checked) rows.forEach((c) => selectedCircuitIds.add(c.id));
     else rows.forEach((c) => selectedCircuitIds.delete(c.id));
     renderScopeDetail();
