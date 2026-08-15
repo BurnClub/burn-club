@@ -478,17 +478,6 @@ const MEMBER_PROFILES = [
     badge: "",
     pointAdjustment: 0,
   },
-  {
-    id: "sam-r",
-    name: "Sam",
-    email: "sam.r@example.com",
-    program: "Build Your Own",
-    programId: null,
-    scheduleType: "library",
-    memberSince: "Aug 2025",
-    badge: "",
-    pointAdjustment: 0,
-  },
 ];
 
 let CURRENT_MEMBER = MEMBER_PROFILES[0];
@@ -552,30 +541,6 @@ try {
 // way, keyed by member id so admin's member modal can read it read-only
 // (2026-08-12, Chris: "make these all tie back to the back end system").
 const LIVE_HEALTH_PROFILES_KEY = "burnClubHealthProfiles";
-
-// ---------------- Live Session (faked — no real video streaming yet) ----------------
-// See project notes: real one-way live video needs a third-party streaming
-// provider (Mux/IVS/Agora/etc.) plus a real backend; this fakes what the
-// member-facing experience would look like — a placeholder video area and
-// a real, typeable chat — so the UX can be validated before any of that is
-// built. Defaulted to "live" so the banner is visible without needing to
-// coordinate with the separate staff app (no real cross-app sync, same
-// limitation as everything else in this prototype).
-const LIVE_SESSION = {
-  // Off by default (2026-08-07) — Chris wants to look at Home without the
-  // banner for now since it'll only actually show up occasionally in real
-  // use. Flip back to true to see it again; nothing else about the feature
-  // changed.
-  isLive: false,
-  title: "Live Q&A with Coach Chris",
-  hostName: "Chris V.",
-};
-
-const LIVE_CHAT_SEED = [
-  { id: "lc1", name: "Priya K.", text: "Excited for this!! 🔥", me: false },
-  { id: "lc2", name: "Marcus T.", text: "Can you go over form for the kettlebell swing again?", me: false },
-  { id: "lc3", name: "Jamie R.", text: "loving the energy today", me: false },
-];
 
 // ---------------- Completion history ----------------
 // Prototype-only: this seed is generated relative to *today* (not fixed

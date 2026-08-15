@@ -117,7 +117,7 @@ function renderCompactCircuitRow(c) {
 // switching demo profiles showed Jordan *Chris's* history, streak and stats
 // — the programs were separate but the data underneath never was. Everything
 // member-owned is now suffixed with the member id, matching the pattern
-// MY_WORKOUTS_STORAGE_PREFIX and the scheduled-items store already used.
+// the scheduled-items store already used.
 function memberKey(base) {
   return `${base}-${CURRENT_MEMBER.id}`;
 }
@@ -1446,9 +1446,6 @@ function showTab(tabId) {
   if (tabId === "tab-home") renderHomeWeekSnapshot();
   if (tabId === "tab-circuits") renderCardioLog();
   if (tabId === "tab-calendar") renderCalendarTab();
-  if (tabId === "tab-library-home") renderLibraryHomeTab();
-  if (tabId === "tab-library") renderExerciseLibraryTab();
-  if (tabId === "tab-my-workouts") renderMyWorkoutsTab();
 
   document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"));
   const navBtn = document.querySelector(`.nav-btn[data-tab-target="${tabId}"]`);
@@ -1803,7 +1800,7 @@ const Player = {
   exit() {
     this.stop();
     closeBlockNotes();
-    showTab(resolveBackTarget("tab-home"));
+    showTab("tab-home");
   },
 
   togglePause() {
@@ -2197,53 +2194,6 @@ function openMessagesInbox() {
   document.getElementById("bottom-nav").style.display = "flex";
 }
 
-// ---------------- Live Session (faked — see data.js note on LIVE_SESSION) ----------------
-
-let liveChatMessages = [];
-
-function renderLiveBanner() {
-  const banner = document.getElementById("live-now-banner");
-  if (!LIVE_SESSION.isLive) {
-    banner.style.display = "none";
-    return;
-  }
-  banner.style.display = "flex";
-  document.getElementById("live-now-title").textContent = LIVE_SESSION.title;
-}
-
-function renderLiveChatBubble(m) {
-  return `
-    <div class="msg-bubble-row ${m.me ? "from-me" : ""}">
-      <div class="msg-bubble">
-        ${!m.me ? `<p class="msg-sender">${m.name}</p>` : ""}
-        <p>${m.text}</p>
-      </div>
-    </div>
-  `;
-}
-
-function renderLiveChat() {
-  const list = document.getElementById("live-chat-messages");
-  list.innerHTML = liveChatMessages.map(renderLiveChatBubble).join("");
-  list.scrollTop = list.scrollHeight;
-}
-
-function openLiveScreen() {
-  if (!LIVE_SESSION.isLive) return;
-  document.getElementById("live-video-title").textContent = LIVE_SESSION.title;
-  document.getElementById("live-video-host").textContent = `with ${LIVE_SESSION.hostName}`;
-  if (liveChatMessages.length === 0) liveChatMessages = LIVE_CHAT_SEED.slice();
-  renderLiveChat();
-  showScreen("screen-live");
-  document.getElementById("bottom-nav").style.display = "none";
-}
-
-function sendLiveChatMessage(text) {
-  if (!text.trim()) return;
-  liveChatMessages.push({ id: `lc-${Date.now()}`, name: CURRENT_MEMBER.name, text: text.trim(), me: true });
-  renderLiveChat();
-}
-
 // ---------------- Init ----------------
 
 // Re-run whenever completion state may have changed (init, and on switching
@@ -2325,7 +2275,7 @@ function renderCircuitLists() {
   }
   document.getElementById("home-workouts-title").textContent = "Workouts";
 
-  const weeklyCircuits = CIRCUITS.filter((c) => c.category !== "stretch" && c.category !== "core-burn" && c.category !== "previous-week" && c.category !== "structured" && c.category !== "custom");
+  const weeklyCircuits = CIRCUITS.filter((c) => c.category !== "stretch" && c.category !== "core-burn" && c.category !== "previous-week" && c.category !== "structured");
   const extraCircuits = CIRCUITS.filter((c) => c.category === "stretch" || c.category === "core-burn");
   const lastWeekCircuits = CIRCUITS.filter((c) => c.category === "previous-week");
 
@@ -2376,8 +2326,6 @@ function init() {
   document.getElementById("profile-email").textContent = CURRENT_MEMBER.email;
   document.getElementById("profile-program").textContent = CURRENT_MEMBER.program;
   document.getElementById("profile-member-since").textContent = CURRENT_MEMBER.memberSince;
-
-  renderLiveBanner();
   applyMemberProgramMode();
 }
 
@@ -2432,44 +2380,14 @@ function editEmail() {
 // unchanged; a "structured" member sees a Calendar tab instead, built from
 // their own startDate projected onto SCHEDULE_TEMPLATES.
 
-// A handful of back/exit buttons are hardcoded to "tab-home" (screen-detail,
-// screen-workout, Player.exit()) — Home is hidden entirely for "library"
-// profiles, so redirect just that one target to their actual landing tab.
-function resolveBackTarget(tabId) {
-  if (tabId === "tab-home" && CURRENT_MEMBER.scheduleType === "library") return "tab-library-home";
-  return tabId;
-}
-
-function renderLibraryHomeTab() {
-  document.getElementById("library-home-greeting").textContent = `Hi ${CURRENT_MEMBER.name} 👋`;
-  document.getElementById("library-home-exercise-count").textContent = `${EXERCISE_LIBRARY.length} exercises to browse`;
-  const mine = CIRCUITS.filter((c) => c.category === "custom" && c.ownerId === CURRENT_MEMBER.id);
-  document.getElementById("library-home-workout-count").textContent = mine.length
-    ? `${mine.length} saved workout${mine.length === 1 ? "" : "s"}`
-    : "Nothing saved yet";
-}
-
 function applyMemberProgramMode() {
   const isStructured = CURRENT_MEMBER.scheduleType === "structured";
-  const isLibraryOnly = CURRENT_MEMBER.scheduleType === "library";
 
-  document.getElementById("nav-home-btn").style.display = isLibraryOnly ? "none" : "";
-  document.getElementById("nav-library-home-btn").style.display = isLibraryOnly ? "" : "none";
-  document.getElementById("nav-workouts-btn").style.display = (isStructured || isLibraryOnly) ? "none" : "";
+  document.getElementById("nav-workouts-btn").style.display = isStructured ? "none" : "";
   document.getElementById("nav-calendar-btn").style.display = isStructured ? "" : "none";
-  document.getElementById("nav-community-btn").style.display = isLibraryOnly ? "none" : "";
-  document.getElementById("nav-progress-btn").style.display = isLibraryOnly ? "none" : "";
-  document.getElementById("nav-my-workouts-btn").style.display = isLibraryOnly ? "" : "none";
-  document.getElementById("profile-wearables-section").style.display = isLibraryOnly ? "none" : "";
-  document.getElementById("profile-habits-section").style.display = isLibraryOnly ? "none" : "";
 
   document.getElementById("calendar-program-label").textContent = CURRENT_MEMBER.program;
   if (isStructured) renderCalendarTab();
-  if (isLibraryOnly) {
-    mergeMyWorkoutsIntoCircuits();
-    renderLibraryHomeTab();
-    renderMyWorkoutsTab();
-  }
 }
 
 function switchMemberProfile(id) {
@@ -2477,7 +2395,7 @@ function switchMemberProfile(id) {
   if (!profile) return;
   CURRENT_MEMBER = profile;
   init();
-  showTab(profile.scheduleType === "library" ? "tab-library-home" : "tab-home");
+  showTab("tab-home");
 }
 
 // If the admin app is open in another tab and publishes a new workout, pick it up
@@ -2751,6 +2669,11 @@ function renderCalendarDayRow(date, member, template) {
 
 function renderCalendarTab() {
   const member = CURRENT_MEMBER;
+  // Only structured members have a startDate to project a schedule from.
+  // The tab is hidden for everyone else so this never fires in normal use,
+  // but without the guard a rolling member reaching it would crash on an
+  // undefined date rather than just showing nothing (2026-08-13).
+  if (member.scheduleType !== "structured" || !member.startDate) return;
   const template = SCHEDULE_TEMPLATES[member.programId] || [];
   const today = new Date();
 
@@ -2773,365 +2696,6 @@ function renderCalendarTab() {
   });
 }
 
-// ---------------- Exercise Library ----------------
-// A standalone browse/search/filter view over EXERCISE_LIBRARY — deliberately
-// not wired into stats, streaks, challenges, or completions. It doesn't
-// represent a "workout" being done, just reference material.
-
-let libraryQuery = "";
-// Multi-select via a Filters popup (2026-08-10 redesign, same pattern as
-// admin's Exercise Library) — was single-select "All"-or-one pill rows.
-let libraryFilterBodyParts = new Set();
-let libraryFilterEquipment = new Set();
-
-function renderLibraryFilterCheckboxes() {
-  document.getElementById("library-filter-bodyparts").innerHTML = BODY_PART_TAGS
-    .map((c) => `<button type="button" class="pill-filter ${libraryFilterBodyParts.has(c) ? "active" : ""}" data-filter-group="bodypart" data-filter-value="${c}">${c}</button>`)
-    .join("");
-  document.getElementById("library-filter-equipment").innerHTML = EQUIPMENT_TAGS
-    .map((c) => `<button type="button" class="pill-filter ${libraryFilterEquipment.has(c) ? "active" : ""}" data-filter-group="equipment" data-filter-value="${c}">${c}</button>`)
-    .join("");
-}
-
-function openLibraryFilterPopup() {
-  renderLibraryFilterCheckboxes();
-  document.getElementById("library-filter-overlay").classList.add("visible");
-}
-
-function closeLibraryFilterPopup() {
-  document.getElementById("library-filter-overlay").classList.remove("visible");
-}
-
-function updateLibraryFilterBadge() {
-  const count = libraryFilterBodyParts.size + libraryFilterEquipment.size;
-  const badge = document.getElementById("library-filter-count");
-  if (count > 0) {
-    badge.textContent = count;
-    badge.style.display = "";
-  } else {
-    badge.style.display = "none";
-  }
-}
-
-// Replaces the old expand-in-place technique text (2026-08-10) now that
-// cards only show name + video — this is where body part/equipment/type/
-// technique actually live for a member to read.
-function openLibraryExerciseDetail(exId) {
-  const ex = EXERCISE_LIBRARY.find((x) => x.id === exId);
-  if (!ex) return;
-  document.getElementById("library-detail-name").textContent = ex.name;
-  document.getElementById("library-detail-tags").innerHTML = [...ex.bodyParts, ex.modality]
-    .map((tag) => `<span class="status-pill">${tag}</span>`).join("");
-  document.getElementById("library-detail-equipment").textContent = ex.equipment.join(", ") || "No equipment";
-  document.getElementById("library-detail-technique").textContent = ex.technique;
-  document.getElementById("library-detail-overlay").classList.add("visible");
-}
-
-function closeLibraryExerciseDetail() {
-  document.getElementById("library-detail-overlay").classList.remove("visible");
-}
-
-function renderExerciseLibraryTab() {
-  const query = libraryQuery.trim().toLowerCase();
-  const filtered = EXERCISE_LIBRARY.filter((ex) => {
-    if (libraryFilterBodyParts.size && !ex.bodyParts.some((bp) => libraryFilterBodyParts.has(bp))) return false;
-    if (libraryFilterEquipment.size && !ex.equipment.some((eq) => libraryFilterEquipment.has(eq))) return false;
-    if (query && !ex.name.toLowerCase().includes(query)) return false;
-    return true;
-  });
-
-  // Card shows only name + a video play button — body part/equipment/type/
-  // technique moved into the tap-to-view detail popup instead of printed on
-  // the card face or expanded in place.
-  document.getElementById("library-exercise-list").innerHTML = filtered.map((ex) => `
-    <div class="exercise-card" data-open-exercise-detail="${ex.id}">
-      <div class="exercise-card-video">
-        <button class="exercise-card-play" data-view-library-video="${ex.id}" title="View video">▶</button>
-      </div>
-      <p class="exercise-card-name">${ex.name}</p>
-    </div>
-  `).join("") || `<p class="section-subtitle">No exercises match your filters.</p>`;
-
-  document.querySelectorAll("#library-exercise-list [data-open-exercise-detail]").forEach((card) => {
-    card.addEventListener("click", () => openLibraryExerciseDetail(card.dataset.openExerciseDetail));
-  });
-  document.querySelectorAll("#library-exercise-list [data-view-library-video]").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const ex = EXERCISE_LIBRARY.find((x) => x.id === btn.dataset.viewLibraryVideo);
-      if (ex) openExerciseVideo(ex.name);
-    });
-  });
-}
-
-// ---------------- My Workouts (member-built, "library" profiles only) ----------------
-// Custom workouts are stored per-member (keyed by CURRENT_MEMBER.id) so switching
-// demo profiles doesn't mix one member's saved workouts into another's. On load
-// they're merged into the shared CIRCUITS array (same pattern as the admin live-sync
-// bridge) tagged category:"custom" + ownerId, so the existing detail/player screens
-// work on them with zero changes — but weeklyCircuits explicitly excludes "custom"
-// so they never leak into another profile's Home/Workouts lists.
-
-const MY_WORKOUTS_STORAGE_PREFIX = "burnclub-my-workouts-";
-
-function loadMyWorkouts(memberId) {
-  const stored = localStorage.getItem(MY_WORKOUTS_STORAGE_PREFIX + memberId);
-  if (!stored) return [];
-  try {
-    return JSON.parse(stored);
-  } catch (e) {
-    return [];
-  }
-}
-
-function saveMyWorkouts(memberId, list) {
-  localStorage.setItem(MY_WORKOUTS_STORAGE_PREFIX + memberId, JSON.stringify(list));
-}
-
-function mergeMyWorkoutsIntoCircuits() {
-  loadMyWorkouts(CURRENT_MEMBER.id).forEach((w) => {
-    const idx = CIRCUITS.findIndex((c) => c.id === w.id);
-    if (idx === -1) CIRCUITS.unshift(w);
-    else CIRCUITS[idx] = w;
-  });
-}
-
-function renderMyWorkoutsTab() {
-  const mine = CIRCUITS.filter((c) => c.category === "custom" && c.ownerId === CURRENT_MEMBER.id);
-  document.getElementById("my-workouts-list").innerHTML = mine.length
-    ? mine.map(renderCircuitCard).join("")
-    : `<p class="section-subtitle">You haven't built a workout yet. Tap "+ Build a Workout" to create your first one.</p>`;
-  document.querySelectorAll("#my-workouts-list [data-open-circuit]").forEach((btn) => {
-    btn.addEventListener("click", () => openCircuit(btn.dataset.openCircuit));
-  });
-}
-
-// ---------------- Workout Builder (guided, step-by-step) ----------------
-// Deliberately only two formats (Timed Circuit / Superset), chosen via chip
-// presets rather than free-typed numbers, per Chris's "dummy proof" bar —
-// the goal is a member can't really get this wrong, not maximum flexibility.
-
-let builderStep = 1;
-let builderFormat = null; // "interval" | "superset"
-let builderSelectedExercises = [];
-let builderQuery = "";
-let builderBodyPart = "All";
-let builderWork = null;
-let builderRest = null;
-let builderRounds = null;
-let builderReps = null;
-
-function resetBuilder() {
-  builderStep = 1;
-  builderFormat = null;
-  builderSelectedExercises = [];
-  builderQuery = "";
-  builderBodyPart = "All";
-  builderWork = null;
-  builderRest = null;
-  builderRounds = null;
-  builderReps = null;
-  document.getElementById("builder-search").value = "";
-  document.getElementById("builder-name-input").value = "";
-  renderBuilderStep();
-}
-
-function renderBuilderStep() {
-  document.querySelectorAll(".builder-step").forEach((el) => el.classList.remove("active"));
-  document.getElementById(`builder-step-${builderStep}`).classList.add("active");
-  document.getElementById("builder-back-btn").style.display = builderStep > 1 ? "" : "none";
-
-  if (builderStep === 2) {
-    document.getElementById("builder-step2-hint").textContent = builderFormat === "superset"
-      ? "Pick at least 2 exercises to pair together."
-      : "Pick 1 or more exercises for your stations.";
-    renderBuilderExerciseList();
-  }
-  if (builderStep === 3) {
-    document.getElementById("builder-step3-title").textContent = builderFormat === "interval" ? "Set the Timing" : "Set Reps & Rounds";
-    renderBuilderTimingFields();
-  }
-  if (builderStep === 4) renderBuilderSummary();
-
-  updateBuilderContinueState();
-}
-
-function renderBuilderFilters() {
-  const cats = ["All", ...BODY_PART_TAGS];
-  document.getElementById("builder-bodypart-filters").innerHTML = cats
-    .map((c) => `<button class="pill-filter ${c === builderBodyPart ? "active" : ""}" data-filter-value="${c}">${c}</button>`)
-    .join("");
-}
-
-function renderBuilderExerciseList() {
-  renderBuilderFilters();
-  const query = builderQuery.trim().toLowerCase();
-  const filtered = EXERCISE_LIBRARY.filter((ex) => {
-    if (builderBodyPart !== "All" && !ex.bodyParts.includes(builderBodyPart)) return false;
-    if (query && !ex.name.toLowerCase().includes(query)) return false;
-    return true;
-  });
-
-  document.getElementById("builder-exercise-list").innerHTML = filtered.map((ex) => {
-    const picked = builderSelectedExercises.includes(ex.name);
-    return `
-      <button class="exercise-lib-card builder-pick-card ${picked ? "picked" : ""}" data-pick-exercise="${ex.name}">
-        <div class="exercise-lib-card-top">
-          <p class="exercise-lib-name">${ex.name}</p>
-          <span class="builder-pick-check">${picked ? "✓" : "+"}</span>
-        </div>
-        <div class="exercise-lib-tags">
-          ${ex.bodyParts.map((bp) => `<span class="status-pill">${bp}</span>`).join("")}
-        </div>
-        <p class="exercise-lib-equipment">${ex.equipment.join(", ") || "No equipment"}</p>
-      </button>
-    `;
-  }).join("") || `<p class="section-subtitle">No exercises match.</p>`;
-
-  document.querySelectorAll("#builder-exercise-list [data-pick-exercise]").forEach((card) => {
-    card.addEventListener("click", () => toggleBuilderExercise(card.dataset.pickExercise));
-  });
-
-  renderBuilderSelectedChips();
-}
-
-function toggleBuilderExercise(name) {
-  const idx = builderSelectedExercises.indexOf(name);
-  if (idx === -1) builderSelectedExercises.push(name);
-  else builderSelectedExercises.splice(idx, 1);
-  renderBuilderExerciseList();
-  updateBuilderContinueState();
-}
-
-function renderBuilderSelectedChips() {
-  document.getElementById("builder-selected-chips").innerHTML = builderSelectedExercises.map((name) => `
-    <span class="builder-chip">${name} <button data-remove-exercise="${name}">×</button></span>
-  `).join("");
-  document.querySelectorAll("#builder-selected-chips [data-remove-exercise]").forEach((btn) => {
-    btn.addEventListener("click", () => toggleBuilderExercise(btn.dataset.removeExercise));
-  });
-}
-
-function renderBuilderTimingFields() {
-  const container = document.getElementById("builder-timing-fields");
-  if (builderFormat === "interval") {
-    container.innerHTML = `
-      <p class="builder-field-label">Work time per station</p>
-      <div class="pill-filter-row" data-chip-group="work">
-        ${[20, 30, 40, 45, 60].map((s) => `<button class="pill-filter ${builderWork === s ? "active" : ""}" data-chip-value="${s}">${s}s</button>`).join("")}
-      </div>
-      <p class="builder-field-label">Rest between stations</p>
-      <div class="pill-filter-row" data-chip-group="rest">
-        ${[10, 15, 20, 30].map((s) => `<button class="pill-filter ${builderRest === s ? "active" : ""}" data-chip-value="${s}">${s}s</button>`).join("")}
-      </div>
-      <p class="builder-field-label">Rounds</p>
-      <div class="pill-filter-row" data-chip-group="rounds">
-        ${[2, 3, 4, 5].map((n) => `<button class="pill-filter ${builderRounds === n ? "active" : ""}" data-chip-value="${n}">${n}</button>`).join("")}
-      </div>
-    `;
-  } else {
-    container.innerHTML = `
-      <p class="builder-field-label">Reps per exercise</p>
-      <div class="pill-filter-row" data-chip-group="reps">
-        ${[8, 10, 12, 15].map((n) => `<button class="pill-filter ${builderReps === n ? "active" : ""}" data-chip-value="${n}">${n}</button>`).join("")}
-      </div>
-      <p class="builder-field-label">Rounds</p>
-      <div class="pill-filter-row" data-chip-group="rounds">
-        ${[2, 3, 4, 5].map((n) => `<button class="pill-filter ${builderRounds === n ? "active" : ""}" data-chip-value="${n}">${n}</button>`).join("")}
-      </div>
-      <p class="builder-field-label">Rest between rounds</p>
-      <div class="pill-filter-row" data-chip-group="rest">
-        ${[30, 45, 60, 90].map((s) => `<button class="pill-filter ${builderRest === s ? "active" : ""}" data-chip-value="${s}">${s}s</button>`).join("")}
-      </div>
-    `;
-  }
-  container.querySelectorAll("[data-chip-value]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const group = btn.closest("[data-chip-group]").dataset.chipGroup;
-      const val = Number(btn.dataset.chipValue);
-      if (group === "work") builderWork = val;
-      if (group === "rest") builderRest = val;
-      if (group === "rounds") builderRounds = val;
-      if (group === "reps") builderReps = val;
-      renderBuilderTimingFields();
-      updateBuilderContinueState();
-    });
-  });
-}
-
-function estimateCustomMinutes() {
-  let seconds;
-  if (builderFormat === "interval") {
-    seconds = builderRounds * builderSelectedExercises.length * (builderWork + builderRest);
-  } else {
-    seconds = builderRounds * (builderSelectedExercises.length * 30 + builderRest);
-  }
-  return Math.max(5, Math.round(seconds / 60 / 5) * 5);
-}
-
-function renderBuilderSummary() {
-  const formatLabel = builderFormat === "interval" ? "Timed Circuit" : "Superset";
-  document.getElementById("builder-summary-card").innerHTML = `
-    <p><strong>${formatLabel}</strong> · ~${estimateCustomMinutes()} min</p>
-    <p>${builderSelectedExercises.join(", ")}</p>
-    <p>${builderFormat === "interval"
-      ? `${builderWork}s work / ${builderRest}s rest · ${builderRounds} rounds`
-      : `${builderReps} reps each · ${builderRounds} rounds · ${builderRest}s rest between rounds`}</p>
-  `;
-}
-
-function updateBuilderContinueState() {
-  const btn = document.getElementById("builder-continue-btn");
-  if (builderStep === 1) {
-    btn.style.display = "none";
-    return;
-  }
-  btn.style.display = "";
-  if (builderStep === 2) {
-    const min = builderFormat === "superset" ? 2 : 1;
-    btn.disabled = builderSelectedExercises.length < min;
-    btn.textContent = "Continue";
-  } else if (builderStep === 3) {
-    const valid = builderFormat === "interval"
-      ? (builderWork && builderRest && builderRounds)
-      : (builderReps && builderRounds && builderRest);
-    btn.disabled = !valid;
-    btn.textContent = "Continue";
-  } else if (builderStep === 4) {
-    btn.disabled = !document.getElementById("builder-name-input").value.trim();
-    btn.textContent = "Save Workout";
-  }
-}
-
-function saveBuiltWorkout() {
-  const name = document.getElementById("builder-name-input").value.trim();
-  if (!name) return;
-
-  const block = builderFormat === "interval"
-    ? { type: "interval", label: "Timed Circuit", rounds: builderRounds, work: builderWork, rest: builderRest, exercises: builderSelectedExercises.map((n) => ({ name: n })) }
-    : { type: "superset", label: "Superset", rounds: builderRounds, rest: builderRest, exercises: builderSelectedExercises.map((n) => ({ name: n, reps: builderReps })) };
-
-  const circuit = {
-    id: `custom-${Date.now()}`,
-    category: "custom",
-    ownerId: CURRENT_MEMBER.id,
-    tag: "Custom",
-    title: name,
-    meta: `${estimateCustomMinutes()} min · Custom`,
-    color: "blue",
-    desc: "Built by you.",
-    blocks: [block],
-  };
-
-  const mine = loadMyWorkouts(CURRENT_MEMBER.id);
-  mine.unshift(circuit);
-  saveMyWorkouts(CURRENT_MEMBER.id, mine);
-  CIRCUITS.unshift(circuit);
-
-  resetBuilder();
-  showTab("tab-my-workouts");
-}
-
 document.addEventListener("DOMContentLoaded", () => {
   init();
   wireStaticControls();
@@ -3149,10 +2713,6 @@ document.addEventListener("DOMContentLoaded", () => {
     switchMemberProfile("jordan-p");
   });
 
-  document.getElementById("guest-library-btn").addEventListener("click", () => {
-    switchMemberProfile("sam-r");
-  });
-
   document.querySelectorAll("[data-tab-target]").forEach((btn) => {
     btn.addEventListener("click", () => showTab(btn.dataset.tabTarget));
   });
@@ -3165,7 +2725,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.querySelectorAll("[data-back]").forEach((btn) => {
-    btn.addEventListener("click", () => showTab(resolveBackTarget(btn.dataset.back)));
+    btn.addEventListener("click", () => showTab(btn.dataset.back));
   });
 
   document.querySelectorAll("[data-action='open-messages']").forEach((btn) => {
@@ -3176,16 +2736,6 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     const input = document.getElementById("thread-input");
     sendThreadMessage(input.value);
-    input.value = "";
-  });
-
-  document.querySelectorAll("[data-action='open-live']").forEach((btn) => {
-    btn.addEventListener("click", openLiveScreen);
-  });
-  document.getElementById("live-chat-composer").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const input = document.getElementById("live-chat-input");
-    sendLiveChatMessage(input.value);
     input.value = "";
   });
 
@@ -3248,82 +2798,6 @@ document.addEventListener("DOMContentLoaded", () => {
     Player.amrapRounds = Math.max(0, Player.amrapRounds - 1);
     document.getElementById("round-count").textContent = Player.amrapRounds;
   });
-
-  document.getElementById("library-search").addEventListener("input", (e) => {
-    libraryQuery = e.target.value;
-    renderExerciseLibraryTab();
-  });
-  document.getElementById("library-filter-btn").addEventListener("click", openLibraryFilterPopup);
-  document.getElementById("library-filter-close-btn").addEventListener("click", closeLibraryFilterPopup);
-  document.getElementById("library-filter-clear-btn").addEventListener("click", () => {
-    libraryFilterBodyParts.clear();
-    libraryFilterEquipment.clear();
-    renderLibraryFilterCheckboxes();
-  });
-  document.getElementById("library-filter-save-btn").addEventListener("click", () => {
-    closeLibraryFilterPopup();
-    updateLibraryFilterBadge();
-    renderExerciseLibraryTab();
-  });
-  document.getElementById("library-filter-bodyparts").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-filter-value]");
-    if (!btn) return;
-    const v = btn.dataset.filterValue;
-    if (libraryFilterBodyParts.has(v)) libraryFilterBodyParts.delete(v);
-    else libraryFilterBodyParts.add(v);
-    renderLibraryFilterCheckboxes();
-  });
-  document.getElementById("library-filter-equipment").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-filter-value]");
-    if (!btn) return;
-    const v = btn.dataset.filterValue;
-    if (libraryFilterEquipment.has(v)) libraryFilterEquipment.delete(v);
-    else libraryFilterEquipment.add(v);
-    renderLibraryFilterCheckboxes();
-  });
-  document.getElementById("library-detail-close-btn").addEventListener("click", closeLibraryExerciseDetail);
-
-  document.getElementById("build-workout-btn").addEventListener("click", () => {
-    resetBuilder();
-    showScreen("screen-builder");
-  });
-  document.getElementById("library-home-build-btn").addEventListener("click", () => {
-    resetBuilder();
-    showScreen("screen-builder");
-  });
-
-  document.querySelectorAll("[data-format]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      builderFormat = btn.dataset.format;
-      builderStep = 2;
-      renderBuilderStep();
-    });
-  });
-
-  document.getElementById("builder-back-btn").addEventListener("click", () => {
-    if (builderStep > 1) {
-      builderStep--;
-      renderBuilderStep();
-    }
-  });
-
-  document.getElementById("builder-continue-btn").addEventListener("click", () => {
-    if (builderStep === 2) { builderStep = 3; renderBuilderStep(); }
-    else if (builderStep === 3) { builderStep = 4; renderBuilderStep(); }
-    else if (builderStep === 4) { saveBuiltWorkout(); }
-  });
-
-  document.getElementById("builder-search").addEventListener("input", (e) => {
-    builderQuery = e.target.value;
-    renderBuilderExerciseList();
-  });
-  document.getElementById("builder-bodypart-filters").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-filter-value]");
-    if (!btn) return;
-    builderBodyPart = btn.dataset.filterValue;
-    renderBuilderExerciseList();
-  });
-  document.getElementById("builder-name-input").addEventListener("input", updateBuilderContinueState);
 
   document.getElementById("logout-btn").addEventListener("click", () => {
     Player.stop();
