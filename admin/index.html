@@ -329,6 +329,10 @@
             <h1 id="folder-pane-title">Program</h1>
           </div>
           <button class="btn-primary" id="new-folder-btn">+ New Folder</button>
+          <!-- Rolling programs have no folders to create, so the header
+               offers the thing you actually came here to do. Which week the
+               workout lands in is decided by the date you give it. -->
+          <button class="btn-primary" id="new-rolling-workout-btn" style="display:none;">+ New Workout</button>
         </header>
 
         <div class="folder-grid" id="folder-grid"></div>
@@ -367,7 +371,7 @@
             <tr>
               <th><input type="checkbox" id="circuit-select-all" /></th>
               <th>Workout</th>
-              <th>Folder</th>
+              <th id="circuit-table-where-col">Folder</th>
               <th>Blocks</th>
               <th></th>
             </tr>
@@ -413,9 +417,15 @@
         </header>
         <div class="builder-body">
           <p id="target-folder-modal-desc" class="modal-desc"></p>
-          <label class="modal-field">Destination folder
+          <label class="modal-field" id="target-folder-modal-field">Destination folder
             <select id="target-folder-modal-select"></select>
           </label>
+          <!-- Rolling programs have no destination folder — the destination
+               is a date. Same modal, same Copy/Move semantics. -->
+          <label class="modal-field" id="target-date-modal-field" style="display:none;">Available from
+            <input type="date" id="target-date-modal-input" />
+          </label>
+          <p class="modal-desc" id="target-date-modal-note"></p>
         </div>
         <footer class="builder-footer">
           <span></span>
@@ -446,6 +456,25 @@
               <span class="builder-variant-label">Editing exercises for</span>
               <div class="filter-pill-row" id="builder-variant-pills"></div>
               <span class="builder-variant-note">Structure and timing are shared across both</span>
+            </div>
+
+            <!-- Availability, rolling programs only (2026-08-15). This
+                 replaced the copy-into-a-live-folder publish step. Neither
+                 radio is pre-selected on a new workout on purpose — a default
+                 here would mean a workout could publish itself because
+                 someone didn't notice the field. -->
+            <div class="builder-availability" id="builder-availability" style="display:none;">
+              <p class="builder-availability-title">Availability</p>
+              <label class="builder-availability-row">
+                <input type="radio" name="builder-availability-mode" value="dated" id="builder-availability-dated" />
+                <span>Available from</span>
+                <input type="date" id="builder-available-from" />
+              </label>
+              <label class="builder-availability-row">
+                <input type="radio" name="builder-availability-mode" value="always" id="builder-availability-always" />
+                <span>Always available <em>— evergreen, never rotates out (Stretch &amp; Core)</em></span>
+              </label>
+              <p class="builder-availability-note" id="builder-availability-note"></p>
             </div>
             <div class="builder-meta-grid">
               <label>Title

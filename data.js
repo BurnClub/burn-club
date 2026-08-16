@@ -213,9 +213,55 @@ try {
   });
 } catch (e) {}
 
+// ---------------- Dated availability (2026-08-15) ----------------
+// Rolling-program workouts carry their own availability instead of being
+// tagged into a "this week" or "previous week" bucket by admin. The app works
+// out which bucket a workout is in every time it renders, so content moves
+// itself when the week turns — nobody has to publish or retire anything.
+// Mirrors admin/data.js; weeks start Sunday, matching Chris's rotation day.
+function startOfWeek(d) {
+  const s = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  s.setDate(s.getDate() - s.getDay());
+  return s;
+}
+
+function weekStartKeyOf(dateStr) {
+  const [y, m, d] = String(dateStr).split("-").map(Number);
+  return dateKey(startOfWeek(new Date(y, m - 1, d)));
+}
+
+function currentWeekStartKey() {
+  return dateKey(startOfWeek(new Date()));
+}
+
+function shiftWeeks(weekStartKeyStr, n) {
+  const [y, m, d] = String(weekStartKeyStr).split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + n * 7);
+  return dateKey(dt);
+}
+
+// live | last-week | scheduled | past | always | undated.
+function circuitAvailability(circuit) {
+  if (circuit.always) return { state: "always" };
+  if (!circuit.availableFrom) return { state: "undated" };
+  const wk = weekStartKeyOf(circuit.availableFrom);
+  const cur = currentWeekStartKey();
+  if (wk === cur) return { state: "live", weekStart: wk };
+  if (wk === shiftWeeks(cur, -1)) return { state: "last-week", weekStart: wk };
+  return { state: wk > cur ? "scheduled" : "past", weekStart: wk };
+}
+
+// Seed dates relative to today so the demo never goes stale.
+const SEED_THIS_WEEK = currentWeekStartKey();
+const SEED_LAST_WEEK = shiftWeeks(SEED_THIS_WEEK, -1);
+const SEED_NEXT_WEEK = shiftWeeks(SEED_THIS_WEEK, 1);
+
 const CIRCUITS = [
   {
     id: "full-body-burn",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
     category: "circuit",
     tag: "New",
     title: "Full Body Burn",
@@ -251,6 +297,8 @@ const CIRCUITS = [
   },
   {
     id: "core-crusher",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
     category: "circuit",
     tag: "Core",
     title: "Core Crusher",
@@ -277,6 +325,8 @@ const CIRCUITS = [
   },
   {
     id: "sweat-sculpt",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
     category: "circuit",
     tag: "Cardio",
     title: "Sweat & Sculpt",
@@ -308,6 +358,8 @@ const CIRCUITS = [
   },
   {
     id: "the-gauntlet",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
     category: "circuit",
     tag: "Benchmark",
     title: "The Gauntlet",
@@ -331,6 +383,8 @@ const CIRCUITS = [
   },
   {
     id: "stretch-mobility",
+    programId: "burn-club",
+    always: true,
     category: "stretch",
     tag: "Recovery",
     title: "Full Body Stretch & Mobility",
@@ -357,6 +411,8 @@ const CIRCUITS = [
   },
   {
     id: "ab-burn-10",
+    programId: "burn-club",
+    always: true,
     category: "core-burn",
     tag: "Core",
     title: "10-Minute Ab Burn",
@@ -383,7 +439,9 @@ const CIRCUITS = [
   // prototype), so these are seeded directly here for the Workouts tab.
   {
     id: "power-hour",
-    category: "previous-week",
+    programId: "burn-club",
+    availableFrom: SEED_NEXT_WEEK,
+    category: "circuit",
     tag: "Last Week",
     title: "Power Hour",
     meta: "30 min · Full Body · Intermediate",
@@ -407,7 +465,9 @@ const CIRCUITS = [
   },
   {
     id: "lower-body-blast",
-    category: "previous-week",
+    programId: "burn-club",
+    availableFrom: SEED_LAST_WEEK,
+    category: "circuit",
     tag: "Last Week",
     title: "Lower Body Blast",
     meta: "25 min · Lower Body · Intermediate",
@@ -426,7 +486,9 @@ const CIRCUITS = [
   },
   {
     id: "cardio-kickstart",
-    category: "previous-week",
+    programId: "burn-club",
+    availableFrom: SEED_LAST_WEEK,
+    category: "circuit",
     tag: "Last Week",
     title: "Cardio Kickstart",
     meta: "20 min · Cardio · All Levels",
@@ -452,12 +514,23 @@ const CIRCUITS = [
   ...buildFitFunctionalCircuits(),
 ];
 
-// Workouts the admin app publishes into a program's live folders get bridged in here
-// via localStorage — same-origin browser storage is the only thing these otherwise-
-// independent static apps actually share (see admin/app.js's syncCircuitToMemberApp).
+// Workouts the admin app publishes get bridged in here via localStorage —
+// same-origin browser storage is the only thing these otherwise-independent
+// static apps actually share (see admin/app.js's syncCircuitToMemberApp).
+//
+// Replace-by-id, not a plain unshift. The bridge used to only carry copies
+// living in a live folder, which had their own ids (`full-body-burn-live`),
+// so a collision with the seed was unlikely. Dated publishing sends every
+// rolling workout under its real id, so an unshift would render each synced
+// workout twice — once bridged, once seeded. This matches what app.js's
+// "storage" listener already did for live updates.
 const LIVE_CIRCUITS_KEY = "burnClubLiveCircuits";
 try {
-  CIRCUITS.unshift(...JSON.parse(localStorage.getItem(LIVE_CIRCUITS_KEY) || "[]"));
+  JSON.parse(localStorage.getItem(LIVE_CIRCUITS_KEY) || "[]").forEach((lc) => {
+    const idx = CIRCUITS.findIndex((c) => c.id === lc.id);
+    if (idx === -1) CIRCUITS.unshift(lc);
+    else CIRCUITS[idx] = lc;
+  });
 } catch (e) {}
 
 // ---------------- Structured Program Schedules ----------------
@@ -626,7 +699,6 @@ const LIVE_HEALTH_PROFILES_KEY = "burnClubHealthProfiles";
 function dateKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
-
 // Rough calorie estimate for a completed workout — not a real formula (no
 // weight/HR-zone data), just enough to make wearable-sourced fields feel
 // plausible: ~7-11 cal/minute, in line with moderate-to-vigorous circuit training.

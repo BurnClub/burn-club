@@ -377,6 +377,74 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .folder-card .folder-delete-btn:hover { color: #e0435f; }
 
+/* Rolling programs shelve content in weeks computed from each workout's
+   availability date rather than in folders (2026-08-15). The top border
+   carries the state so the week you care about is findable without reading:
+   green = live now, blue = coming, grey = done. */
+.week-card.state-live { border-top-color: #1a8a44; }
+.week-card.state-scheduled { border-top-color: var(--blue); }
+.week-card.state-last-week { border-top-color: var(--deepblue); }
+.week-card.state-past { border-top-color: #cfd6e4; }
+.week-card.state-always { border-top-color: var(--yellow); }
+.week-card.state-undated { border-top-color: #e0435f; }
+.week-card .folder-live-badge.state-live { color: #1a8a44; }
+.week-card .folder-live-badge.state-scheduled { color: var(--blue); }
+.week-card .folder-live-badge.state-last-week { color: var(--deepblue); }
+.week-card .folder-live-badge.state-always { color: #8a6400; }
+.week-card .folder-live-badge.state-undated { color: #e0435f; }
+
+/* The workout table's availability cell. */
+.avail-state { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; }
+.avail-state.state-live { color: #1a8a44; }
+.avail-state.state-scheduled { color: var(--blue); }
+.avail-state.state-last-week { color: var(--deepblue); }
+.avail-state.state-past { color: #9aa4b8; }
+.avail-state.state-always { color: #8a6400; }
+.avail-state.state-undated { color: #e0435f; }
+
+/* Builder availability block — the field that replaced the copy-into-a-
+   live-folder publish step. */
+.builder-availability {
+  border: 2px solid var(--periwinkle);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  background: var(--field-bg);
+}
+.builder-availability-title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--deepblue);
+}
+.builder-availability-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.builder-availability-row em { font-weight: 600; font-style: normal; color: var(--deepblue); font-size: 12px; }
+.builder-availability-row input[type="date"] {
+  border: 2px solid var(--periwinkle);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  background: white;
+}
+.builder-availability-note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue);
+  min-height: 16px;
+}
+
 .folder-detail-title-row { display: flex; align-items: center; gap: 10px; }
 .folder-detail-edit-btn {
   background: none;

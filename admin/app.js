@@ -2,12 +2,9 @@
 
 // ---------------- Shared helpers (mirrors member app's block schema) ----------------
 
-// Local calendar-day key (YYYY-MM-DD) — not toISOString(), which converts to
-// UTC and can roll "today" over to tomorrow's date in the evening for any
-// timezone behind UTC. Used to compare against challenge start/end dates.
-function dateKey(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
+// dateKey / parseDateKey / weekStartKey / circuitAvailability now live in
+// data.js — the seed data needs them to compute availability dates relative
+// to today, and data.js loads first.
 
 function formatClock(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -46,12 +43,63 @@ function benchmarkById(id) {
   return BENCHMARKS.find((b) => b.id === id);
 }
 
-// A circuit only counts as live/published to a program once it's copied into
-// one of that program's three permanent "live" folders — sitting in a
-// program-tagged library folder (e.g. "Week of Jul 20") doesn't count on its own.
+// Which program owns a workout. Rolling programs put it on the workout
+// directly; structured programs still reach it through the week folder the
+// workout lives in. Note this is ownership, not visibility — for a rolling
+// workout, whether members can see it is circuitAvailability()'s question.
 function circuitProgramId(circuit) {
+  if (circuit.programId) return circuit.programId;
   const folder = folderById(circuit.folderId);
-  return folder && folder.live ? folder.program : null;
+  return folder ? folder.program : null;
+}
+
+// Rolling programs group their content by the week a workout goes live,
+// derived from its date — replacing the hand-made "Week of ..." folders.
+// Returns groups newest-first, with any evergreen content in its own group.
+const AVAILABILITY_LABELS = {
+  live: "Live now",
+  "last-week": "Last week",
+  scheduled: "Scheduled",
+  past: "Past",
+  undated: "No date set",
+};
+
+function circuitsForProgram(programId) {
+  return CIRCUITS.filter((c) => circuitProgramId(c) === programId);
+}
+
+function weekGroupsForProgram(programId) {
+  const circuits = circuitsForProgram(programId);
+  const byWeek = new Map();
+  const always = [];
+  const undated = [];
+
+  circuits.forEach((c) => {
+    const { state, weekStart } = circuitAvailability(c);
+    if (state === "always") return always.push(c);
+    if (state === "undated") return undated.push(c);
+    if (!byWeek.has(weekStart)) byWeek.set(weekStart, { weekStart, state, circuits: [] });
+    byWeek.get(weekStart).circuits.push(c);
+  });
+
+  // Newest week first, so next week's content sits above this week's and the
+  // back catalogue falls away below — the order staff actually work in.
+  const weeks = [...byWeek.values()].sort((a, b) => (a.weekStart < b.weekStart ? 1 : -1));
+  const groups = weeks.map((w) => ({
+    key: w.weekStart,
+    kind: "week",
+    name: weekLabel(w.weekStart),
+    state: w.state,
+    circuits: w.circuits,
+  }));
+
+  if (always.length) {
+    groups.push({ key: "always", kind: "always", name: "Always available", state: "always", circuits: always });
+  }
+  if (undated.length) {
+    groups.push({ key: "undated", kind: "undated", name: "No date set", state: "undated", circuits: undated });
+  }
+  return groups;
 }
 
 // Rough estimated duration for a block, in seconds — used for the auto-calculated
@@ -425,6 +473,38 @@ function orderedFoldersForScope(scope) {
   return [...live, ...library];
 }
 
+function isRollingProgram(programId) {
+  const p = programById(programId);
+  return !!p && p.scheduleType !== "structured";
+}
+
+const AVAILABILITY_BADGES = {
+  live: "● LIVE",
+  "last-week": "LAST WEEK",
+  scheduled: "SCHEDULED",
+  always: "ALWAYS",
+  undated: "NO DATE",
+};
+
+// The rolling-program equivalent of a folder card. Deliberately the same
+// `.folder-card` shape so the page reads identically to the folder grid it
+// replaces — the difference is that these groups are computed from dates and
+// can't be created, renamed, deleted or filed into by hand.
+function weekGroupCardHtml(g, programId, opts = {}) {
+  const count = g.circuits.length;
+  const badge = AVAILABILITY_BADGES[g.state];
+  const action = opts.readonly ? "open-library-week" : "open-week";
+  return `
+    <div class="folder-card tagged week-card state-${g.state}" data-action="${action}" data-program-id="${programId}" data-week-key="${g.key}">
+      <div class="folder-card-top">
+        <h3>${g.name}</h3>
+        ${badge ? `<span class="folder-live-badge state-${g.state}">${badge}</span>` : ""}
+      </div>
+      <p class="folder-count">${count} workout${count === 1 ? "" : "s"}</p>
+    </div>
+  `;
+}
+
 function renderFolderGrid() {
   const scope = selectedProgramScope;
   const program = programById(scope);
@@ -432,6 +512,20 @@ function renderFolderGrid() {
   document.getElementById("folder-pane-title").textContent = entryName;
   document.getElementById("folder-grid-eyebrow").textContent =
     program ? (program.scheduleType === "structured" ? `Structured · ${program.durationWeeks || 8} weeks` : "On demand") : "Content";
+
+  // Rolling programs have no folders to make, so the header offers the thing
+  // you actually came here to do instead.
+  const rolling = isRollingProgram(scope);
+  document.getElementById("new-folder-btn").style.display = rolling ? "none" : "";
+  document.getElementById("new-rolling-workout-btn").style.display = rolling ? "" : "none";
+
+  if (rolling) {
+    const groups = weekGroupsForProgram(scope);
+    document.getElementById("folder-grid").innerHTML =
+      groups.map((g) => weekGroupCardHtml(g, scope)).join("")
+      || `<p style="color:var(--deepblue);font-weight:700;">No workouts yet. Click "+ New Workout" to add one — the date you give it decides the week it lands in.</p>`;
+    return;
+  }
 
   const folders = orderedFoldersForScope(scope);
   document.getElementById("folder-grid").innerHTML = folders.map(folderCardHtml).join("")
@@ -474,6 +568,23 @@ function openFolder(folderId) {
   document.getElementById("folder-grid-view").style.display = "none";
   document.getElementById("folder-detail-view").style.display = "block";
   renderScopeDetail();
+}
+
+// A rolling program's derived week group — the folder-detail view, scoped by
+// date instead of by folder id.
+function openWeek(programId, weekKey) {
+  currentScope = { type: "week", programId, weekKey };
+  selectedCircuitIds.clear();
+  document.getElementById("folder-grid-view").style.display = "none";
+  document.getElementById("folder-detail-view").style.display = "block";
+  renderScopeDetail();
+}
+
+function openLibraryWeek(programId, weekKey) {
+  selectedProgramScope = programId;
+  folderEntryPoint = "library";
+  showView("view-circuits", "view-library");
+  openWeek(programId, weekKey);
 }
 
 function backToFolders() {
@@ -581,8 +692,8 @@ function openProgramDetail(programId) {
 }
 
 // The detail view's back button returns to wherever makes sense for how it
-// was entered: a program's circuits go back to Programs, a folder's circuits
-// go back to the folder grid.
+// was entered: a program's circuits go back to Programs, a folder's or week's
+// circuits go back to the grid they came from (or the Library).
 function goBackFromDetail() {
   if (currentScope && currentScope.type === "program") {
     currentScope = null;
@@ -602,11 +713,23 @@ function goBackFromDetail() {
 // session twice with identical text is worse than useless (2026-08-15).
 let circuitVariantFilter = PROGRAM_VARIANTS[0].key;
 
+// A week scope's membership is computed, not stored — which is the point.
+// "always" and "undated" are group keys rather than dates, so they match on
+// the availability state instead of on a week.
+function circuitInWeekScope(circuit, scope) {
+  if (circuitProgramId(circuit) !== scope.programId) return false;
+  const { state, weekStart } = circuitAvailability(circuit);
+  if (scope.weekKey === "always") return state === "always";
+  if (scope.weekKey === "undated") return state === "undated";
+  return weekStart === scope.weekKey;
+}
+
 function scopeCircuitsUnfiltered() {
   return CIRCUITS.filter((c) => {
     if (!currentScope) return false;
     if (currentScope.type === "folder" && c.folderId !== currentScope.id) return false;
     if (currentScope.type === "program" && circuitProgramId(c) !== currentScope.id) return false;
+    if (currentScope.type === "week" && !circuitInWeekScope(c, currentScope)) return false;
     return true;
   });
 }
@@ -645,11 +768,36 @@ function renderCircuitVariantFilter() {
   });
 }
 
+// The one place a rolling workout's availability is shown as raw fact — the
+// exact date it goes live, plus what that currently means.
+function availabilityCellHtml(circuit) {
+  const { state } = circuitAvailability(circuit);
+  if (state === "always") return `<span class="avail-state state-always">Always</span>`;
+  if (state === "undated") return `<span class="avail-state state-undated">No date set</span>`;
+  const d = parseDateKey(circuit.availableFrom);
+  return `${d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+    <br /><span class="avail-state state-${state}">${AVAILABILITY_LABELS[state]}</span>`;
+}
+
 function renderScopeDetail() {
   if (!currentScope) return;
   const isProgram = currentScope.type === "program";
+  const isWeek = currentScope.type === "week";
 
-  if (isProgram) {
+  if (isWeek) {
+    const program = programById(currentScope.programId);
+    const group = weekGroupsForProgram(currentScope.programId).find((g) => g.key === currentScope.weekKey);
+    const state = group ? group.state : "past";
+    document.getElementById("folder-detail-title").textContent =
+      group ? group.name : weekLabel(currentScope.weekKey);
+    document.getElementById("folder-detail-badge").textContent =
+      `${program ? program.name : ""} · ${AVAILABILITY_LABELS[state] || state}`;
+    document.getElementById("folder-back-btn").textContent =
+      folderEntryPoint === "library" ? "← Library" : "← All Weeks";
+    document.getElementById("new-circuit-btn").style.display = "";
+    // A week isn't a thing you can rename — its name is its date.
+    document.getElementById("folder-detail-edit-btn").style.display = "none";
+  } else if (isProgram) {
     const program = programById(currentScope.id);
     if (!program) return;
     document.getElementById("folder-detail-title").textContent = program.name;
@@ -672,18 +820,20 @@ function renderScopeDetail() {
   renderCircuitVariantFilter();
   const rows = currentScopeCircuits();
 
+  document.getElementById("circuit-table-where-col").textContent = isWeek ? "Available" : "Folder";
+
   document.getElementById("circuit-table-body").innerHTML = rows.map((c) => {
     const folder = folderById(c.folderId);
     return `
     <tr>
       <td><input type="checkbox" class="select-item-checkbox" data-role="select-circuit" data-circuit-id="${c.id}" ${selectedCircuitIds.has(c.id) ? "checked" : ""} /></td>
       <td><strong>${c.title}</strong>${c.variant ? ` <span class="variant-pill variant-${c.variant}">${(PROGRAM_VARIANTS.find((v) => v.key === c.variant) || {}).label || c.variant}</span>` : ""}${c.category !== "circuit" && c.category !== "structured" ? ` <span class="status-pill">${categoryLabel(c.category)}</span>` : ""}${c.isBenchmark ? ` <span class="status-pill benchmark-pill">🏆 ${benchmarkById(c.benchmarkId)?.name || "Benchmark"}</span>` : ""}<br /><span style="color:var(--deepblue);font-weight:700;font-size:11px;">${c.focus} · ${c.difficulty}</span></td>
-      <td>${folder ? folder.name : "—"}</td>
+      <td>${isWeek ? availabilityCellHtml(c) : (folder ? folder.name : "—")}</td>
       <td>${c.blocks.length} blocks</td>
       <td><button class="table-action-btn" data-edit-circuit="${c.id}">Edit</button></td>
     </tr>
   `;
-  }).join("") || `<tr><td colspan="5" style="text-align:center;color:var(--deepblue);padding:24px;">No workouts ${isProgram ? "in this program" : "in this folder"}.${isProgram ? "" : ' Click "+ New Workout" to add one.'}</td></tr>`;
+  }).join("") || `<tr><td colspan="5" style="text-align:center;color:var(--deepblue);padding:24px;">No workouts ${isProgram ? "in this program" : isWeek ? "in this week" : "in this folder"}.${isProgram ? "" : ' Click "+ New Workout" to add one.'}</td></tr>`;
 
   document.querySelectorAll("[data-edit-circuit]").forEach((btn) => {
     btn.addEventListener("click", () => openEditBuilder(btn.dataset.editCircuit));
@@ -695,24 +845,58 @@ function renderScopeDetail() {
 
 let pendingBulkAction = null;
 
+// In a week scope the destination is a date, not a folder — "move to next
+// week" is now literally what re-dating does, and the three-step Sunday
+// folder shuffle it replaces is gone.
+function targetIsDate() {
+  return !!currentScope && currentScope.type === "week";
+}
+
 function openTargetFolderModal(action) {
   if (selectedCircuitIds.size === 0) return;
   pendingBulkAction = action;
   const isCopy = action === "copy";
-  document.getElementById("target-folder-modal-title").textContent = isCopy ? "Copy to Folder" : "Move to Folder";
+  const byDate = targetIsDate();
+  const noun = byDate ? "Date" : "Folder";
+  document.getElementById("target-folder-modal-title").textContent = `${isCopy ? "Copy" : "Move"} to ${noun}`;
   document.getElementById("target-folder-modal-confirm-btn").textContent = isCopy ? "Copy" : "Move";
   const count = selectedCircuitIds.size;
   document.getElementById("target-folder-modal-desc").textContent =
-    `${count} workout${count === 1 ? "" : "s"} selected. Choose where to ${isCopy ? "copy" : "move"} ${count === 1 ? "it" : "them"}.`;
+    `${count} workout${count === 1 ? "" : "s"} selected. Choose ${byDate ? "the date" : "where"} to ${isCopy ? "copy" : "move"} ${count === 1 ? "it" : "them"} to.`;
 
-  const excludeId = currentScope && currentScope.type === "folder" ? currentScope.id : null;
-  const select = document.getElementById("target-folder-modal-select");
-  select.innerHTML = FOLDERS.filter((f) => f.id !== excludeId).map((f) => {
-    const program = programById(f.program);
-    return `<option value="${f.id}">${f.name} (${program ? program.name : "General"})</option>`;
-  }).join("");
+  document.getElementById("target-folder-modal-field").style.display = byDate ? "none" : "";
+  document.getElementById("target-date-modal-field").style.display = byDate ? "" : "none";
+  document.getElementById("target-date-modal-note").textContent = "";
+
+  if (byDate) {
+    // Default to the week after the one you're standing in — the overwhelmingly
+    // common case is pushing content forward.
+    const from = currentScope.weekKey === "always" || currentScope.weekKey === "undated"
+      ? currentWeekStartKey()
+      : currentScope.weekKey;
+    document.getElementById("target-date-modal-input").value = shiftWeeks(from, 1);
+    updateTargetDateNote();
+  } else {
+    const excludeId = currentScope && currentScope.type === "folder" ? currentScope.id : null;
+    const select = document.getElementById("target-folder-modal-select");
+    select.innerHTML = FOLDERS.filter((f) => f.id !== excludeId).map((f) => {
+      const program = programById(f.program);
+      return `<option value="${f.id}">${f.name} (${program ? program.name : "General"})</option>`;
+    }).join("");
+  }
 
   document.getElementById("target-folder-modal-overlay").classList.add("visible");
+}
+
+function updateTargetDateNote() {
+  const value = document.getElementById("target-date-modal-input").value;
+  const note = document.getElementById("target-date-modal-note");
+  if (!value) {
+    note.textContent = "";
+    return;
+  }
+  const { state } = circuitAvailability({ availableFrom: value });
+  note.textContent = `${weekLabel(weekStartKey(value))} · ${AVAILABILITY_LABELS[state]}`;
 }
 
 function closeTargetFolderModal() {
@@ -721,8 +905,23 @@ function closeTargetFolderModal() {
 }
 
 function confirmTargetFolderModal() {
+  if (!pendingBulkAction) return;
+  const byDate = targetIsDate();
+  const targetDate = document.getElementById("target-date-modal-input").value;
   const targetId = document.getElementById("target-folder-modal-select").value;
-  if (!targetId || !pendingBulkAction) return;
+  if (byDate ? !targetDate : !targetId) return;
+
+  // Re-dating a workout is how content moves between weeks now. Copying is
+  // how you re-run an old session without erasing the record that it ran
+  // back then — which is why reuse duplicates rather than re-dates.
+  const applyTarget = (c) => {
+    if (!byDate) {
+      c.folderId = targetId;
+      return;
+    }
+    c.availableFrom = targetDate;
+    delete c.always;
+  };
 
   if (pendingBulkAction === "copy") {
     // Snapshot the selected circuits before mutating CIRCUITS, since unshifting
@@ -731,12 +930,15 @@ function confirmTargetFolderModal() {
     toCopy.forEach((c, i) => {
       const copy = JSON.parse(JSON.stringify(c));
       copy.id = c.id + "-copy-" + Date.now() + "-" + i;
-      copy.folderId = targetId;
+      applyTarget(copy);
       CIRCUITS.unshift(copy);
+      syncCircuitToMemberApp(copy);
     });
   } else {
     CIRCUITS.forEach((c) => {
-      if (selectedCircuitIds.has(c.id)) c.folderId = targetId;
+      if (!selectedCircuitIds.has(c.id)) return;
+      applyTarget(c);
+      syncCircuitToMemberApp(c);
     });
   }
 
@@ -745,6 +947,7 @@ function confirmTargetFolderModal() {
   renderScopeDetail();
   renderFolderGrid();
   renderPrograms();
+  renderLibrary();
 }
 
 function renderBulkBar() {
@@ -830,6 +1033,58 @@ let editingCircuitId = null;
 let builderSlotId = null;
 let builderVariantKey = null;
 
+// Set when authoring into a rolling program, which has no folder to file
+// into — the workout's own date decides where it lands.
+let builderProgramId = null;
+
+// Shows the availability block and preselects nothing for a new workout;
+// `preset` is the existing availability when editing, or a suggested date
+// when creating inside a week group.
+function setBuilderAvailability(show, preset = {}) {
+  document.getElementById("builder-availability").style.display = show ? "" : "none";
+  const datedRadio = document.getElementById("builder-availability-dated");
+  const alwaysRadio = document.getElementById("builder-availability-always");
+  const dateInput = document.getElementById("builder-available-from");
+  datedRadio.checked = false;
+  alwaysRadio.checked = false;
+  dateInput.value = "";
+  document.getElementById("builder-availability-note").textContent = "";
+  if (!show) return;
+
+  if (preset.always) {
+    alwaysRadio.checked = true;
+  } else if (preset.availableFrom) {
+    datedRadio.checked = true;
+    dateInput.value = preset.availableFrom;
+  } else if (preset.suggestedDate) {
+    // Entering from a week group suggests that week's date but still makes
+    // you tick the radio, so the choice is always deliberate.
+    dateInput.value = preset.suggestedDate;
+  }
+  updateBuilderAvailabilityNote();
+}
+
+// Tells you, in plain words, what the date you just picked will actually do.
+function updateBuilderAvailabilityNote() {
+  const note = document.getElementById("builder-availability-note");
+  if (document.getElementById("builder-availability-always").checked) {
+    note.textContent = "Members will always see this workout.";
+    return;
+  }
+  const value = document.getElementById("builder-available-from").value;
+  if (!value) {
+    note.textContent = "";
+    return;
+  }
+  const { state } = circuitAvailability({ availableFrom: value });
+  note.textContent = {
+    live: "Goes live immediately — this date is in the current week.",
+    "last-week": "Shows under Last Week's Workouts, and drops off members' app next week.",
+    scheduled: `Hidden from members until ${weekLabel(weekStartKey(value))} begins.`,
+    past: "Already past — this won't appear in the member app, only in the Library.",
+  }[state] || "";
+}
+
 function openBuilder(folderId) {
   editingCircuitId = null;
   // A brand-new workout isn't part of a variant pair yet — creating both
@@ -837,8 +1092,10 @@ function openBuilder(folderId) {
   builderSlotId = null;
   builderVariantKey = null;
   builderFolderId = folderId;
+  builderProgramId = null;
   const folder = folderById(folderId);
   const program = programById(folder ? folder.program : null);
+  setBuilderAvailability(false);
   document.getElementById("builder-heading").textContent = "New Workout";
   document.getElementById("builder-folder-label").textContent =
     `Adding to: ${folder ? folder.name : "—"}${program ? " · " + program.name : ""}`;
@@ -859,6 +1116,17 @@ function openBuilder(folderId) {
   renderBuilderLibraryFilters();
   renderBuilderLibraryList();
   document.getElementById("builder-overlay").classList.add("visible");
+}
+
+// New workout in a rolling program. There's no folder to add to — the date
+// picked in the availability block is what files it.
+function openRollingBuilder(programId, suggestedDate) {
+  openBuilder(null);
+  builderProgramId = programId;
+  const program = programById(programId);
+  document.getElementById("builder-folder-label").textContent =
+    `Adding to: ${program ? program.name : "—"} · filed by its availability date`;
+  setBuilderAvailability(true, { suggestedDate });
 }
 
 // Reverses builderBlocksToSchema() for editing an existing workout — reconstructs
@@ -1018,12 +1286,20 @@ function openEditBuilder(circuitId) {
   const circuit = CIRCUITS.find((c) => c.id === circuitId);
   if (!circuit) return;
   editingCircuitId = circuitId;
-  builderFolderId = circuit.folderId;
+  builderFolderId = circuit.folderId || null;
+  builderProgramId = circuit.programId || null;
   const folder = folderById(circuit.folderId);
-  const program = programById(folder ? folder.program : null);
+  const program = programById(circuitProgramId(circuit));
   document.getElementById("builder-heading").textContent = "Edit Workout";
-  document.getElementById("builder-folder-label").textContent =
-    `Editing in: ${folder ? folder.name : "—"}${program ? " · " + program.name : ""}`;
+  document.getElementById("builder-folder-label").textContent = builderProgramId
+    ? `Editing in: ${program ? program.name : "—"} · filed by its availability date`
+    : `Editing in: ${folder ? folder.name : "—"}${program ? " · " + program.name : ""}`;
+  // Rolling workouts carry availability; structured ones are published by
+  // the schedule template, so the field would be meaningless there.
+  setBuilderAvailability(!!builderProgramId, {
+    always: circuit.always,
+    availableFrom: circuit.availableFrom,
+  });
   document.getElementById("builder-title").value = circuit.title;
   document.getElementById("builder-tag").value = circuit.tag;
   document.getElementById("builder-category").value = circuit.category;
@@ -1336,14 +1612,28 @@ function renderHealthProfileReadout(memberId) {
   return lines.join("<br>");
 }
 
+// Push a workout across the localStorage bridge to the member app.
+//
+// This used to only send workouts sitting in a `live: true` folder — and,
+// because it was called from saveCircuit() alone and never from the bulk
+// Copy/Move that staff actually publish with, the real publish action never
+// reached members at all. Dated availability removes the question: a rolling
+// workout is sent with its date attached and the member app decides for
+// itself, each time it loads, whether that date makes it this week's, last
+// week's, or neither. Nothing needs to be re-pushed when the week turns.
 function syncCircuitToMemberApp(circuit) {
-  const folder = folderById(circuit.folderId);
-  if (!folder || !folder.live) return; // only workouts published to a live folder go out to members
+  const programId = circuitProgramId(circuit);
+  const program = programById(programId);
+  // Structured programs publish through SCHEDULE_TEMPLATES, not this bridge.
+  if (!program || program.scheduleType === "structured") return;
+  if (!circuit.always && !circuit.availableFrom) return;
 
-  const category = folder.id.endsWith("-previous-week") ? "previous-week" : circuit.category;
   const memberCircuit = {
     id: circuit.id,
-    category,
+    programId,
+    category: circuit.category,
+    always: circuit.always || undefined,
+    availableFrom: circuit.availableFrom || undefined,
     tag: circuit.tag,
     title: circuit.title,
     meta: `${estimateCircuitMinutes(circuit.blocks)} min · ${circuit.focus} · ${circuit.difficulty}`,
@@ -1357,6 +1647,13 @@ function syncCircuitToMemberApp(circuit) {
   const stored = JSON.parse(localStorage.getItem(LIVE_CIRCUITS_KEY) || "[]");
   const next = [memberCircuit, ...stored.filter((c) => c.id !== memberCircuit.id)];
   localStorage.setItem(LIVE_CIRCUITS_KEY, JSON.stringify(next));
+}
+
+// Drop a workout from the bridge — used when its date changes such that the
+// stored copy would be stale, and when it's deleted outright.
+function unsyncCircuitFromMemberApp(circuitId) {
+  const stored = JSON.parse(localStorage.getItem(LIVE_CIRCUITS_KEY) || "[]");
+  localStorage.setItem(LIVE_CIRCUITS_KEY, JSON.stringify(stored.filter((c) => c.id !== circuitId)));
 }
 
 function saveCircuit() {
@@ -1381,11 +1678,35 @@ function saveCircuit() {
   const isBenchmark = document.getElementById("builder-is-benchmark").checked;
   const benchmarkId = isBenchmark ? document.getElementById("builder-benchmark-select").value : null;
 
+  // Rolling workouts must say when they're available before they can be
+  // saved. Blocking here rather than defaulting is the whole point: an
+  // unanswered availability question used to mean "sitting in a library
+  // folder, invisible", which was at least explicit. A silent default would
+  // either publish something nobody meant to publish, or hide something
+  // nobody meant to hide.
+  let availability = {};
+  if (builderProgramId) {
+    const alwaysChecked = document.getElementById("builder-availability-always").checked;
+    const datedChecked = document.getElementById("builder-availability-dated").checked;
+    const fromDate = document.getElementById("builder-available-from").value;
+    if (!alwaysChecked && !datedChecked) {
+      alert("Choose when this workout is available — pick a date, or mark it always available.");
+      return;
+    }
+    if (datedChecked && !fromDate) {
+      alert("Pick the date this workout becomes available.");
+      return;
+    }
+    availability = alwaysChecked ? { always: true } : { availableFrom: fromDate };
+  }
+
   const circuit = {
     id: editingCircuitId || (title.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now()),
     slotId: builderSlotId,
     variant: builderVariantKey,
     folderId: builderFolderId,
+    programId: builderProgramId,
+    ...availability,
     category: document.getElementById("builder-category").value,
     tag: document.getElementById("builder-tag").value.trim() || "New",
     title,
@@ -1930,6 +2251,12 @@ document.addEventListener("click", (e) => {
   if (action === "open-library-folder") {
     openLibraryFolder(el.dataset.folderId);
   }
+  if (action === "open-week") {
+    openWeek(el.dataset.programId, el.dataset.weekKey);
+  }
+  if (action === "open-library-week") {
+    openLibraryWeek(el.dataset.programId, el.dataset.weekKey);
+  }
   if (action === "restore-program") {
     toggleProgramArchived(el.dataset.programId);
   }
@@ -2244,47 +2571,65 @@ function renderLibrary() {
   });
 }
 
-// Every folder, grouped by the program that owns it. Active programs first in
-// their Programs-page order, then archived ones, then unassigned folders —
-// so the archive reads newest-and-live at the top, finished cycles below.
+// Everything a program holds, grouped by the program that owns it. Active
+// programs first in their Programs-page order, then archived ones, then
+// unassigned folders — so the archive reads newest-and-live at the top,
+// finished cycles below.
+//
+// The shelves themselves differ by program shape: structured programs are
+// shelved in folders, rolling programs in weeks derived from their workouts'
+// dates. Both render as the same grid of cards, because from the archive's
+// point of view they're the same thing — a labelled bundle of workouts.
 function libraryArchiveGroups() {
   const active = PROGRAMS.filter((p) => (p.status || "active") !== "archived");
   const archived = PROGRAMS.filter((p) => (p.status || "active") === "archived");
-  const groups = [...active, ...archived].map((p) => ({
-    key: p.id,
-    name: p.name,
-    meta: p.scheduleType === "structured" ? `Structured · ${p.durationWeeks || 8} weeks` : "On demand",
-    archived: (p.status || "active") === "archived",
-    program: p,
-    folders: orderedFoldersForScope(p.id),
-  }));
+  const groups = [...active, ...archived].map((p) => {
+    const rolling = p.scheduleType !== "structured";
+    const shelves = rolling
+      ? weekGroupsForProgram(p.id)
+      : orderedFoldersForScope(p.id);
+    return {
+      key: p.id,
+      name: p.name,
+      meta: rolling ? "On demand" : `Structured · ${p.durationWeeks || 8} weeks`,
+      archived: (p.status || "active") === "archived",
+      rolling,
+      shelves,
+      workouts: rolling
+        ? shelves.reduce((n, g) => n + g.circuits.length, 0)
+        : shelves.reduce((n, f) => n + CIRCUITS.filter((c) => c.folderId === f.id).length, 0),
+    };
+  });
 
   const unassigned = FOLDERS.filter((f) => !f.program);
   if (unassigned.length) {
+    const shelves = orderedFoldersForScope("general");
     groups.push({
       key: "general",
       name: "General (Unassigned)",
       meta: "Not tied to a program",
       archived: false,
-      program: null,
-      folders: orderedFoldersForScope("general"),
+      rolling: false,
+      shelves,
+      workouts: shelves.reduce((n, f) => n + CIRCUITS.filter((c) => c.folderId === f.id).length, 0),
     });
   }
 
-  return groups.filter((g) => g.folders.length);
+  return groups.filter((g) => g.shelves.length);
 }
 
 function renderLibraryArchive() {
   const groups = libraryArchiveGroups();
-  const folderCount = groups.reduce((n, g) => n + g.folders.length, 0);
+  const shelfCount = groups.reduce((n, g) => n + g.shelves.length, 0);
 
   document.getElementById("library-count").textContent =
-    `${folderCount} folder${folderCount === 1 ? "" : "s"} · ${CIRCUITS.length} workouts`;
+    `${shelfCount} week${shelfCount === 1 ? "" : "s"} and folders · ${CIRCUITS.length} workouts`;
 
   document.getElementById("library-archive").innerHTML = groups.map((g) => {
-    const workouts = g.folders.reduce(
-      (n, f) => n + CIRCUITS.filter((c) => c.folderId === f.id).length, 0
-    );
+    const unit = g.rolling ? "week" : "folder";
+    const cards = g.rolling
+      ? g.shelves.map((w) => weekGroupCardHtml(w, g.key, { readonly: true })).join("")
+      : g.shelves.map((f) => folderCardHtml(f, { readonly: true })).join("");
     return `
       <section class="library-group ${g.archived ? "archived" : ""}">
         <div class="library-group-head">
@@ -2293,16 +2638,16 @@ function renderLibraryArchive() {
             <h2>${g.name}${g.archived ? ` <span class="status-pill archived">archived</span>` : ""}</h2>
           </div>
           <div class="library-group-actions">
-            <span class="library-group-count">${g.folders.length} folder${g.folders.length === 1 ? "" : "s"} · ${workouts} workout${workouts === 1 ? "" : "s"}</span>
+            <span class="library-group-count">${g.shelves.length} ${unit}${g.shelves.length === 1 ? "" : "s"} · ${g.workouts} workout${g.workouts === 1 ? "" : "s"}</span>
             ${g.archived ? `<button class="btn-ghost-lg small" data-action="restore-program" data-program-id="${g.key}">Restore</button>` : ""}
           </div>
         </div>
         <div class="folder-grid">
-          ${g.folders.map((f) => folderCardHtml(f, { readonly: true })).join("")}
+          ${cards}
         </div>
       </section>
     `;
-  }).join("") || `<p style="color:var(--deepblue);font-weight:700;">Nothing archived yet — folders appear here as soon as a program has them.</p>`;
+  }).join("") || `<p style="color:var(--deepblue);font-weight:700;">Nothing here yet — content appears as soon as a program has some.</p>`;
 }
 
 // ---------------- Settings ----------------
@@ -2762,9 +3107,27 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("new-circuit-btn").addEventListener("click", () => {
-    if (!currentScope || currentScope.type !== "folder") return;
-    openBuilder(currentScope.id);
+    if (!currentScope) return;
+    if (currentScope.type === "folder") return openBuilder(currentScope.id);
+    if (currentScope.type === "week") {
+      // Suggest the week you're standing in, so adding to next week from
+      // inside next week doesn't make you retype the date.
+      const suggested = currentScope.weekKey === "always" || currentScope.weekKey === "undated"
+        ? currentWeekStartKey()
+        : currentScope.weekKey;
+      openRollingBuilder(currentScope.programId, suggested);
+    }
   });
+  document.getElementById("new-rolling-workout-btn").addEventListener("click", () => {
+    openRollingBuilder(selectedProgramScope, currentWeekStartKey());
+  });
+  document.getElementById("builder-available-from").addEventListener("input", () => {
+    document.getElementById("builder-availability-dated").checked = true;
+    updateBuilderAvailabilityNote();
+  });
+  document.getElementById("builder-availability-always").addEventListener("change", updateBuilderAvailabilityNote);
+  document.getElementById("builder-availability-dated").addEventListener("change", updateBuilderAvailabilityNote);
+  document.getElementById("target-date-modal-input").addEventListener("input", updateTargetDateNote);
   document.getElementById("new-folder-btn").addEventListener("click", openFolderModal);
   document.getElementById("folder-modal-close-btn").addEventListener("click", closeFolderModal);
   document.getElementById("folder-modal-cancel-btn").addEventListener("click", closeFolderModal);

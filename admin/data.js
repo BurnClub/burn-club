@@ -1,5 +1,80 @@
 // Sample data for the Burn Club admin prototype — placeholder content only, in-memory.
 
+// ---------------- Dated publishing (2026-08-15) ----------------
+// Rolling programs (Burn Club) used to publish by folder placement: staff
+// copied a week's workouts into a "This Week's Workouts" live folder, moved
+// last week's into "Previous Week", and deleted the week before that. Three
+// ordered steps every Sunday, no warning if you got the order wrong, and the
+// record of what ran when was destroyed each cycle.
+//
+// Now a workout carries its own availability and "this week" / "last week"
+// are questions asked about that date, not places content is moved between.
+// Nothing has to happen on a Sunday, and nothing ages out by being deleted.
+//
+// Two availability shapes, always explicit — there is deliberately no default,
+// so a workout can't publish itself because someone forgot to pick:
+//   { always: true }              evergreen (Stretch & Core), never rotates
+//   { availableFrom: "2026-08-16" } goes live the week containing that date
+
+// Local calendar-day key (YYYY-MM-DD). Not toISOString(), which converts to
+// UTC and rolls "today" over to tomorrow in the evening for any timezone
+// behind UTC — that bug already bit the member app's streak logic once.
+function dateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function parseDateKey(str) {
+  const [y, m, d] = String(str).split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+// Weeks start Sunday, matching the day Chris already rotates content on.
+function startOfWeek(d) {
+  const s = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  s.setDate(s.getDate() - s.getDay());
+  return s;
+}
+
+function shiftWeeks(weekStartKeyStr, n) {
+  const d = parseDateKey(weekStartKeyStr);
+  d.setDate(d.getDate() + n * 7);
+  return dateKey(d);
+}
+
+// The Sunday of the week containing a given YYYY-MM-DD.
+function weekStartKey(dateStr) {
+  return dateKey(startOfWeek(parseDateKey(dateStr)));
+}
+
+function currentWeekStartKey() {
+  return dateKey(startOfWeek(new Date()));
+}
+
+// "Week of Aug 17" — the heading a derived week group gets, replacing the
+// folder names staff used to type by hand.
+function weekLabel(weekStartKeyStr) {
+  const d = parseDateKey(weekStartKeyStr);
+  return `Week of ${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+}
+
+// live | last-week | scheduled | past | always | undated. Keys are plain
+// YYYY-MM-DD strings, so lexicographic comparison is chronological.
+function circuitAvailability(circuit) {
+  if (circuit.always) return { state: "always", weekStart: null };
+  if (!circuit.availableFrom) return { state: "undated", weekStart: null };
+  const wk = weekStartKey(circuit.availableFrom);
+  const cur = currentWeekStartKey();
+  if (wk === cur) return { state: "live", weekStart: wk };
+  if (wk === shiftWeeks(cur, -1)) return { state: "last-week", weekStart: wk };
+  return { state: wk > cur ? "scheduled" : "past", weekStart: wk };
+}
+
+// Seed dates are computed relative to today so the demo never goes stale —
+// same reason the seeded completion history is generated rather than fixed.
+const SEED_THIS_WEEK = currentWeekStartKey();
+const SEED_LAST_WEEK = shiftWeeks(SEED_THIS_WEEK, -1);
+const SEED_NEXT_WEEK = shiftWeeks(SEED_THIS_WEEK, 1);
+
 // Body part is its own multi-select tag dimension, separate from modality —
 // switched from broad zones (Full Body/Upper Body/Lower Body/Core) to specific
 // muscle groups per Chris's request (2026-08-04), so filtering is actually
@@ -93,27 +168,20 @@ const PROGRAMS = [
   },
 ];
 
-// Folders organize circuits into a browsable library. A folder can be tied to a
-// specific program (for filtering in the library), or left general (program: null)
-// as a staging area for circuits that aren't assigned yet.
+// Folders organize circuits for **structured** programs only, plus a general
+// (program: null) staging area for content that isn't assigned yet.
 //
-// A folder marked `live: true` is one of a program's three permanent, un-deletable
-// folders ("This Week's Workouts" / "Stretch & Core Library" / "Previous Week") —
-// a circuit only counts as actually published to that program once it's copied
-// into one of these, not just because it sits in a program-tagged library folder.
-// "Previous Week" holds last week's workouts for one extra week in case a member
-// wants to catch up — staff move content into it manually (Move to Folder) right
-// before copying in the new week's, same workflow as the other two.
-// Everything else (the "Week of..." folders) is just the library workspace for
-// building content.
+// Rolling programs no longer have folders at all (2026-08-15). They used to
+// have three permanent `live: true` folders whose entire job was to answer
+// "is this published" — a job the workout's own availability date now does.
+// Keeping both would mean two facts claiming to say which week a workout
+// belongs to, free to disagree; that's the same defect as the old per-workout
+// `status` field, which is why folder placement replaced it in the first
+// place. So Burn Club's six folders are gone, and its content is grouped by
+// week computed from `availableFrom` instead. See the dated-publishing note
+// at the top of this file.
 const FOLDERS = [
-  { id: "week-jul-20", name: "Week of Jul 20", program: "burn-club" },
-  { id: "week-jul-27", name: "Week of Jul 27", program: "burn-club" },
-  { id: "stretch-core-library", name: "Stretch & Core Library", program: "burn-club" },
   { id: "working-folder", name: "Working Folder", program: null },
-  { id: "burn-club-this-week", name: "This Week's Workouts", program: "burn-club", live: true },
-  { id: "burn-club-stretch-core", name: "Stretch & Core Library", program: "burn-club", live: true },
-  { id: "burn-club-previous-week", name: "Previous Week", program: "burn-club", live: true },
   // Structured programs don't use the live-folder publish model — these are
   // just library folders (one per program week) holding Fit & Functional's
   // actual workout content, which gets "published" by being slotted into
@@ -385,7 +453,8 @@ try {
 const CIRCUITS = [
   {
     id: "full-body-burn",
-    folderId: "week-jul-20",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
     category: "circuit",
     tag: "New",
     title: "Full Body Burn",
@@ -421,7 +490,8 @@ const CIRCUITS = [
   },
   {
     id: "core-crusher",
-    folderId: "week-jul-20",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
     category: "circuit",
     tag: "Core",
     title: "Core Crusher",
@@ -448,7 +518,8 @@ const CIRCUITS = [
   },
   {
     id: "sweat-sculpt",
-    folderId: "week-jul-20",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
     category: "circuit",
     tag: "Cardio",
     title: "Sweat & Sculpt",
@@ -480,13 +551,14 @@ const CIRCUITS = [
   },
   {
     id: "power-hour",
-    folderId: "week-jul-27",
+    programId: "burn-club",
+    availableFrom: SEED_NEXT_WEEK,
     category: "circuit",
     tag: "New",
     title: "Power Hour",
     focus: "Full Body",
     difficulty: "Advanced",
-    desc: "Next week's headline circuit — draft, not yet published to members.",
+    desc: "Next week's headline circuit — already dated, goes live on its own when the week turns.",
     blocks: [
       {
         type: "interval",
@@ -529,7 +601,8 @@ const CIRCUITS = [
   },
   {
     id: "stretch-mobility",
-    folderId: "stretch-core-library",
+    programId: "burn-club",
+    always: true,
     category: "stretch",
     tag: "Recovery",
     title: "Full Body Stretch & Mobility",
@@ -556,7 +629,8 @@ const CIRCUITS = [
   },
   {
     id: "ab-burn-10",
-    folderId: "stretch-core-library",
+    programId: "burn-club",
+    always: true,
     category: "core-burn",
     tag: "Core",
     title: "10-Minute Ab Burn",
@@ -577,151 +651,51 @@ const CIRCUITS = [
       },
     ],
   },
-  // The circuits below are copies already living in Burn Club's two permanent
-  // "live" folders — demonstrating the promoted state after copying over from
-  // the library folders above. Power Hour (still only in "Week of Jul 27") and
-  // Foundations: Week 1 are left un-copied, showing content still awaiting promotion.
+  // Last week's content, kept only by its date. Under the old folder model
+  // these would have been manually moved into "Previous Week" and then
+  // deleted a week later to make room; now they age out of the member app on
+  // their own and stay in the Library permanently. Mirrors the member app's
+  // two previous-week circuits so both sides tell the same story.
   {
-    id: "full-body-burn-live",
-    folderId: "burn-club-this-week",
+    id: "lower-body-blast",
+    programId: "burn-club",
+    availableFrom: SEED_LAST_WEEK,
     category: "circuit",
-    tag: "New",
-    title: "Full Body Burn",
-    focus: "Full Body",
+    tag: "Legs",
+    title: "Lower Body Blast",
+    focus: "Lower Body",
     difficulty: "Intermediate",
-    desc: "A high-energy circuit hitting every major muscle group — timed stations into a superset finisher.",
-    blocks: [
-      {
-        type: "interval",
-        label: "Station Circuit",
-        rounds: 2,
-        work: 40,
-        rest: 20,
-        exercises: [
-          { name: "Jump Squats" },
-          { name: "Push-Ups" },
-          { name: "Mountain Climbers" },
-          { name: "Plank Hold" },
-          { name: "Burpees" },
-        ],
-      },
-      {
-        type: "superset",
-        label: "Finisher Superset",
-        rounds: 3,
-        rest: 30,
-        exercises: [
-          { name: "Kettlebell Swings", reps: 15 },
-          { name: "Walking Lunges", reps: 12 },
-        ],
-      },
-    ],
-  },
-  {
-    id: "core-crusher-live",
-    folderId: "burn-club-this-week",
-    category: "circuit",
-    tag: "Core",
-    title: "Core Crusher",
-    focus: "Core & Abs",
-    difficulty: "All Levels",
-    desc: "Short, sharp, and focused entirely on your core — straight sets into a rep ladder.",
+    desc: "Last week's leg day — straight sets into a rep ladder.",
     blocks: [
       {
         type: "straight",
         label: "Straight Sets",
-        exercise: { name: "Weighted Sit-Ups" },
+        exercise: { name: "Jump Squats" },
         sets: 3,
         reps: 15,
         rest: 30,
       },
-      {
-        type: "ladder",
-        label: "Rep Ladder",
-        exercise: { name: "Russian Twists" },
-        scheme: [10, 8, 6, 4, 2, 4, 6, 8, 10],
-        rest: 15,
-      },
     ],
   },
   {
-    id: "sweat-sculpt-live",
-    folderId: "burn-club-this-week",
+    id: "cardio-kickstart",
+    programId: "burn-club",
+    availableFrom: SEED_LAST_WEEK,
     category: "circuit",
     tag: "Cardio",
-    title: "Sweat & Sculpt",
-    focus: "Cardio + Strength",
-    difficulty: "Advanced",
-    desc: "The week's toughest session — a 12-minute AMRAP into a 10-minute EMOM to finish you off.",
+    title: "Cardio Kickstart",
+    focus: "Cardio",
+    difficulty: "All Levels",
+    desc: "Last week's cardio finisher — a 20-minute AMRAP to get the heart rate up.",
     blocks: [
       {
         type: "amrap",
-        label: "12-Minute AMRAP",
-        duration: 720,
+        label: "20-Minute AMRAP",
+        duration: 1200,
         exercises: [
-          { name: "Kettlebell Swings", reps: 15 },
-          { name: "Box Jumps", reps: 10 },
-          { name: "Push Press", reps: 12 },
-        ],
-      },
-      {
-        type: "emom",
-        label: "10-Minute EMOM",
-        duration: 600,
-        interval: 60,
-        exercises: [
-          { name: "Burpees", reps: 8 },
-          { name: "Goblet Squats", reps: 12 },
-        ],
-      },
-    ],
-  },
-  {
-    id: "stretch-mobility-live",
-    folderId: "burn-club-stretch-core",
-    category: "stretch",
-    tag: "Recovery",
-    title: "Full Body Stretch & Mobility",
-    focus: "Full Body",
-    difficulty: "All Levels",
-    desc: "A slow, guided stretch flow to help members recover between circuit days — one of two stretching sessions offered each month.",
-    blocks: [
-      {
-        type: "interval",
-        label: "Stretch Flow",
-        timed: true,
-        rounds: 1,
-        work: 60,
-        rest: 15,
-        exercises: [
-          { name: "Standing Hamstring Stretch" },
-          { name: "Hip Flexor Stretch" },
-          { name: "Child's Pose" },
-          { name: "Cat-Cow Stretch" },
-          { name: "Shoulder & Chest Opener" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "ab-burn-10-live",
-    folderId: "burn-club-stretch-core",
-    category: "core-burn",
-    tag: "Core",
-    title: "10-Minute Ab Burn",
-    focus: "Core & Abs",
-    difficulty: "All Levels",
-    desc: "A quick, focused core finisher — one of two ab/core burns offered each month.",
-    blocks: [
-      {
-        type: "amrap",
-        label: "10-Minute Ab Burn",
-        duration: 600,
-        exercises: [
-          { name: "Bicycle Crunches", reps: 20 },
-          { name: "Leg Raises", reps: 15 },
-          { name: "Plank Hold", reps: 30 },
-          { name: "Russian Twists", reps: 20 },
+          { name: "Burpees", reps: 10 },
+          { name: "Mountain Climbers", reps: 20 },
+          { name: "Jump Squats", reps: 15 },
         ],
       },
     ],

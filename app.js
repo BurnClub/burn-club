@@ -2310,9 +2310,18 @@ function renderCircuitLists() {
   }
   document.getElementById("home-workouts-title").textContent = "Workouts";
 
-  const weeklyCircuits = CIRCUITS.filter((c) => c.category !== "stretch" && c.category !== "core-burn" && c.category !== "previous-week" && c.category !== "structured");
-  const extraCircuits = CIRCUITS.filter((c) => c.category === "stretch" || c.category === "core-burn");
-  const lastWeekCircuits = CIRCUITS.filter((c) => c.category === "previous-week");
+  // Which bucket a workout lands in is worked out here, on every render, from
+  // its own availability date — admin no longer tags content as "this week"
+  // or "previous week" by moving it between folders (2026-08-15). Scheduled
+  // and past workouts simply match nothing, so they're invisible to members
+  // without anyone having to publish or retire them.
+  const isEvergreen = (c) => c.category === "stretch" || c.category === "core-burn";
+  const inWeek = (c, state) => !isEvergreen(c) && c.category !== "structured"
+    && circuitAvailability(c).state === state;
+
+  const weeklyCircuits = CIRCUITS.filter((c) => inWeek(c, "live"));
+  const extraCircuits = CIRCUITS.filter(isEvergreen);
+  const lastWeekCircuits = CIRCUITS.filter((c) => inWeek(c, "last-week"));
 
   document.getElementById("home-circuit-list").innerHTML = weeklyCircuits.map(renderCircuitCard).join("");
   document.getElementById("circuits-list-full").innerHTML = weeklyCircuits.map(renderCircuitCard).join("");
