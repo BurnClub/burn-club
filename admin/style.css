@@ -426,8 +426,11 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   font-size: 14px;
   font-weight: 700;
   margin-bottom: 8px;
-  flex-wrap: wrap;
 }
+.builder-availability-row input[type="radio"] { flex-shrink: 0; }
+/* Let the label text shrink and wrap inside itself rather than wrapping the
+   whole span onto the line below its own radio button. */
+.builder-availability-row > span { flex: 1; min-width: 0; }
 .builder-availability-row em { font-weight: 600; font-style: normal; color: var(--deepblue); font-size: 12px; }
 .builder-availability-row input[type="date"] {
   border: 2px solid var(--periwinkle);
