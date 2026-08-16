@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Burn Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="app" id="app">
+
+    <!-- ============ LOGIN SCREEN ============ -->
+    <section class="screen visible" id="screen-login" data-screen>
+      <div class="login-wrap">
+        <img class="login-logo" src="assets/burn-club-smiley.png" alt="KY Fit Burn Club" />
+
+        <form class="login-form" id="login-form">
+          <label class="field">
+            <span>Email</span>
+            <input type="email" placeholder="you@email.com" />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input type="password" placeholder="••••••••" />
+          </label>
+          <button type="submit" class="btn-primary">Log In</button>
+        </form>
+        <button class="btn-ghost" id="guest-btn">Continue as Guest</button>
+        <button class="btn-ghost" id="guest-ff-btn">Preview as Fit &amp; Functional member</button>
+      </div>
+    </section>
+
+    <!-- ============ MAIN APP (tabs) ============ -->
+    <div class="main-app" id="main-app">
+
+      <!-- ---------- HOME ---------- -->
+      <section class="screen tab-screen" id="tab-home" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Welcome back</p>
+            <h1 class="topbar-title" id="home-greeting-name">Chris</h1>
+          </div>
+          <div class="topbar-actions">
+            <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+            <img class="avatar" src="assets/burn-club-logo.png" alt="" />
+          </div>
+        </header>
+
+        <!-- ---------- THIS WEEK SNAPSHOT (2026-08-10) ---------- -->
+        <!-- Copied from the Progress tab's Week calendar per Chris's request —
+             week-only (no Month/Year toggle), and deliberately NOT wrapped in
+             a .home-section-card: sits straight on the white page backdrop. -->
+        <div class="home-week-snapshot" id="home-week-snapshot">
+          <h2 class="home-section-title">This Week</h2>
+          <div class="calendar-grid" id="home-week-grid"></div>
+          <div class="stats-plain-grid home-week-stats-row">
+            <div class="stat-item">
+              <p class="stat-num" id="home-week-circuits">0</p>
+              <p class="stat-label">Workouts Done</p>
+            </div>
+            <div class="stat-item">
+              <p class="stat-num" id="home-week-stretch-core">0</p>
+              <p class="stat-label">Stretch &amp; Core</p>
+            </div>
+            <div class="stat-item">
+              <p class="stat-num" id="home-week-cardio">0</p>
+              <p class="stat-label">Cardio Sessions</p>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="home-section-card card-blue">
+          <span class="workouts-bg-icon"></span>
+          <!-- "This Week" now lives in the snapshot section above (2026-08-10)
+               — shortened from "This Week's Workouts" here to avoid repeating
+               it right underneath. Workouts tab's own card (below) keeps the
+               full title since it doesn't have that snapshot above it. -->
+          <h2 class="home-section-title" id="home-workouts-title">Workouts</h2>
+          <div class="circuit-list" id="home-circuit-list"></div>
+        </div>
+
+        <!-- Stats: no card, one full-width row, evenly split (2026-08-09
+             layout pass) — was paired narrow-column next to Habits. -->
+        <div class="today-stats-row home-stats-plain" id="today-stats-row"></div>
+
+        <!-- Habits + Community side by side, split screen (2026-08-09). -->
+        <div class="home-split-row">
+          <div class="home-section-card card-habits home-habits-compact">
+            <h2 class="home-section-title">Daily Habits</h2>
+            <div class="habits-list" id="habits-list"></div>
+            <!-- Fills the leftover space at the bottom now that this card
+                 stretches to match Community Buzz's height (2026-08-09). -->
+            <div class="habit-streak-footer">
+              <span class="habit-streak-icon">🔥</span>
+              <p class="habit-streak-text"><span id="habit-streak-num">0</span> Day Streak</p>
+            </div>
+          </div>
+
+          <div class="home-section-card card-community">
+            <h2 class="home-section-title">Community Buzz</h2>
+            <div class="buzz-list" id="home-community-feed"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- WORKOUTS ---------- -->
+      <section class="screen tab-screen" id="tab-circuits" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">This week</p>
+            <h1 class="topbar-title">Workouts</h1>
+          </div>
+          <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+        </header>
+        <div class="home-section-card card-blue">
+          <span class="workouts-bg-icon"></span>
+          <h2 class="home-section-title">This Week's Workouts</h2>
+          <div class="circuit-list" id="circuits-list-full"></div>
+        </div>
+
+        <!-- ---------- CARDIO LOG (2026-08-09) ---------- -->
+        <!-- Manual entry (walk/run/bike/stair stepper + distance + time) or a
+             fake "sync" from a connected wearable — either way it lands in
+             COMPLETIONS, so it counts toward challenge points, the streak,
+             and the calendar the same as any workout completion. No card
+             (2026-08-10 revert); swapped above Stretch & Core Library per
+             Chris's order request same day. -->
+        <div class="home-plain-section">
+          <h2 class="home-section-title">Cardio Log</h2>
+          <div class="cardio-log-list" id="cardio-log-list"></div>
+          <div class="cardio-log-actions">
+            <button class="btn-primary small" id="cardio-log-btn">+ Log Activity</button>
+            <button class="btn-outline small" id="cardio-sync-btn" style="display:none;">Sync from Wearable</button>
+          </div>
+        </div>
+
+        <div class="home-section-card card-green">
+          <h2 class="home-section-title">Stretch &amp; Core Library</h2>
+          <p class="section-subtitle">Two stretching sessions and two ab/core burns, available anytime this month.</p>
+          <div class="circuit-list" id="circuits-list-extras"></div>
+        </div>
+
+        <!-- Last Week's Workouts moved to the bottom, own full-width card,
+             pink to match Community Buzz (2026-08-10 revert — was a
+             no-background split-row column). -->
+        <div class="home-section-card card-last-week">
+          <h2 class="home-section-title">Last Week's Workouts</h2>
+          <div class="circuit-list-compact" id="last-week-list"></div>
+        </div>
+      </section>
+
+      <!-- ---------- HOME (for "Build Your Own" / "library" profiles only) ---------- -->
+
+      <!-- ---------- EXERCISE LIBRARY ---------- -->
+
+      <!-- ---------- MY WORKOUTS (member-built, "library"-only profiles) ---------- -->
+
+      <!-- ---------- CALENDAR (structured programs) ---------- -->
+      <section class="screen tab-screen" id="tab-calendar" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="calendar-program-label">Your program</p>
+            <h1 class="topbar-title">Calendar</h1>
+          </div>
+          <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+        </header>
+        <div class="calendar-list-header">
+          <h2 class="section-title">This Week</h2>
+          <button class="btn-primary small" id="calendar-add-btn">+ Add</button>
+        </div>
+        <div class="calendar-day-list" id="calendar-day-list"></div>
+      </section>
+
+      <!-- ---------- ADD TO CALENDAR POPUP (2026-08-12) ---------- -->
+      <!-- Schedules a *planned* cardio session onto the calendar. Distinct
+           from the Cardio Log popup below, which records an activity the
+           member already finished — that one writes to COMPLETIONS and
+           counts toward stats/streaks/points; this one deliberately does
+           not, since the session hasn't happened yet. -->
+      <div class="cardio-log-overlay" id="calendar-add-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="calendar-add-close-btn">✕</button>
+          <h2 class="cardio-log-title">Add to Calendar</h2>
+
+          <label class="field">
+            <span>Activity</span>
+          </label>
+          <div class="pill-filter-row" id="calendar-add-activity-picker">
+            <button class="pill-filter" type="button" data-sched-activity="Run">Run</button>
+            <button class="pill-filter" type="button" data-sched-activity="Walk">Walk</button>
+            <button class="pill-filter" type="button" data-sched-activity="Stairs">Stairs</button>
+          </div>
+
+          <label class="field">
+            <span>Date</span>
+            <input type="date" id="calendar-add-date" />
+          </label>
+
+          <button class="btn-primary" id="calendar-add-save-btn">Add to Calendar</button>
+          <p class="cardio-log-saved" id="calendar-add-saved" style="display:none;"></p>
+        </div>
+      </div>
+
+      <!-- ---------- COMPLETE A PLANNED SESSION (2026-08-12) ---------- -->
+      <!-- Turns a planned green calendar card into a real cardio completion,
+           which is what makes it count toward challenge points. -->
+      <div class="cardio-log-overlay" id="complete-sched-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="complete-sched-close-btn">✕</button>
+          <h2 class="cardio-log-title" id="complete-sched-title">Complete Session</h2>
+          <p class="complete-sched-date" id="complete-sched-date"></p>
+
+          <label class="field" id="complete-sched-minutes-field">
+            <span>Time (minutes)</span>
+            <input type="number" id="complete-sched-minutes" min="0" step="1" inputmode="numeric" />
+          </label>
+
+          <p class="complete-sched-future" id="complete-sched-future-note" style="display:none;"></p>
+          <button class="btn-primary" id="complete-sched-save-btn">Mark Complete</button>
+          <p class="cardio-log-saved" id="complete-sched-saved" style="display:none;"></p>
+        </div>
+      </div>
+
+      <!-- ---------- CIRCUIT DETAIL ---------- -->
+      <section class="screen" id="screen-detail" data-screen>
+        <header class="detail-header">
+          <button class="back-btn" data-back="tab-home">←</button>
+          <span class="detail-tag" id="detail-tag">Circuit</span>
+        </header>
+        <div class="detail-hero" id="detail-hero">
+          <h1 id="detail-title">Circuit Name</h1>
+          <p id="detail-meta">30 min · Full Body · Intermediate</p>
+        </div>
+        <p class="detail-desc" id="detail-desc"></p>
+        <h2 class="section-title">Workout Breakdown</h2>
+        <div class="block-summary-list" id="block-summary-list"></div>
+        <button class="btn-primary sticky-cta" id="start-circuit-btn">Start Workout</button>
+      </section>
+
+      <!-- ---------- BUILD YOUR OWN WORKOUT ---------- -->
+
+      <!-- ---------- WORKOUT PLAYER (active session) ---------- -->
+      <section class="screen player-screen" id="screen-player" data-screen>
+        <header class="player-header">
+          <button class="player-exit" id="player-exit-btn">✕</button>
+          <span class="detail-tag" id="player-block-label">Block</span>
+          <span class="player-progress-text" id="player-progress-text">1 / 1</span>
+        </header>
+        <div class="player-progress-track"><div class="player-progress-fill" id="player-progress-fill"></div></div>
+
+        <!-- Round/station location moved here, right under the progress bar
+             (2026-08-11 try) — was under the exercise name below. Chris
+             wanted it out of the way, not competing for attention with the
+             name. -->
+        <p class="player-sub-pill" id="player-sub-pill">Round 1 of 1</p>
+
+        <!-- Video now leads (2026-08-07): sits above the exercise name so the
+             title and set numbers land right above the set list, instead of
+             the video sitting between them. Applies to every phase kind. -->
+        <div class="player-video" id="player-video">
+          <div class="player-video-play">▶</div>
+          <p class="player-video-label" id="player-video-label">Demo Video Placeholder</p>
+        </div>
+
+        <p class="player-exercise-name" id="player-exercise-name">Exercise</p>
+
+        <!-- Collapsible technique cue (2026-08-11) — pulls from the same
+             EXERCISE_LIBRARY.technique field the Exercise Library tab's
+             detail popup uses. Only shown for single-exercise phases (work/
+             rest/emom/sets) since AMRAP/superset show a list of exercises,
+             not one under the title — see setPlayerExerciseTechnique(). -->
+        <button class="player-technique-toggle" id="player-technique-toggle" type="button" style="display:none;">
+          <span>Technique</span><span class="player-technique-caret">⌄</span>
+        </button>
+        <p class="player-technique-body" id="player-technique-body"></p>
+
+        <div class="player-center" id="player-center">
+          <p class="player-clock" id="player-clock">00:00</p>
+          <p class="player-clock-label" id="player-clock-label"></p>
+          <p class="player-total-clock" id="player-total-clock"></p>
+        </div>
+
+        <div class="player-amrap-list" id="player-amrap-list"></div>
+
+        <!-- Superset: both exercises on one screen, video swapped for a
+             per-exercise popup button (2026-08-07). Reuses the AMRAP row
+             styling since the layout is identical. -->
+        <div class="player-amrap-list" id="player-superset-list"></div>
+
+        <!-- Straight Sets / Rep Ladder: every set for the block's one exercise
+             on this one screen (2026-08-06), instead of a separate screen per
+             set. Weight field is UI-only for now, not saved. -->
+        <div class="player-sets-list" id="player-sets-list"></div>
+
+        <div class="player-round-counter" id="player-round-counter">
+          <p class="round-count-label">Rounds Completed</p>
+          <p class="round-count" id="round-count">0</p>
+          <button class="btn-primary round-add-btn" id="round-plus-btn">+ Add Round</button>
+          <button class="round-fix-btn" id="round-minus-btn">−1</button>
+        </div>
+
+        <div class="player-controls" id="player-controls">
+          <button class="btn-ghost-lg" id="player-pause-btn">Pause</button>
+          <button class="btn-primary" id="player-skip-btn">Skip →</button>
+        </div>
+
+        <button class="btn-primary sticky-cta" id="player-start-btn" style="display:none;">Start</button>
+        <button class="btn-primary sticky-cta" id="player-complete-set-btn">Mark Set Complete ✓</button>
+      </section>
+
+      <!-- ---------- BLOCK NOTES POPUP (2026-08-12) ---------- -->
+      <!-- Staff-authored notes for a block. Was an inline "Before You Start"
+           panel on the ready screen; now a modal that opens by itself when a
+           block loads and must be dismissed before Start can be reached —
+           the overlay physically covers the sticky Start button. -->
+      <div class="cardio-log-overlay" id="block-notes-overlay">
+        <div class="cardio-log-card block-notes-card">
+          <p class="block-notes-eyebrow" id="block-notes-eyebrow"></p>
+          <h2 class="cardio-log-title">Before You Start</h2>
+          <p class="block-notes-body" id="block-notes-body"></p>
+          <button class="btn-primary block-notes-got-it" id="block-notes-got-it-btn">Got It</button>
+        </div>
+      </div>
+
+      <!-- ---------- EXERCISE VIDEO OVERLAY (pops up over the player without pausing it) ---------- -->
+      <div class="exercise-video-overlay" id="exercise-video-overlay">
+        <div class="exercise-video-card">
+          <button class="player-exit" id="exercise-video-close-btn">✕</button>
+          <div class="player-video">
+            <div class="player-video-play">▶</div>
+            <p class="player-video-label">Demo Video Placeholder</p>
+          </div>
+          <p class="exercise-video-name" id="exercise-video-name">Exercise Name</p>
+          <p class="exercise-video-technique" id="exercise-video-technique"></p>
+        </div>
+      </div>
+
+      <!-- ---------- CARDIO LOG OVERLAY (2026-08-09) ---------- -->
+      <div class="cardio-log-overlay" id="cardio-log-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="cardio-log-close-btn">✕</button>
+          <h2 class="cardio-log-title">Log Cardio Activity</h2>
+
+          <div class="pill-filter-row" id="cardio-activity-picker">
+            <button class="pill-filter" type="button" data-activity="Walk">Walk</button>
+            <button class="pill-filter" type="button" data-activity="Run">Run</button>
+            <button class="pill-filter" type="button" data-activity="Bike">Bike</button>
+            <button class="pill-filter" type="button" data-activity="Stair Stepper">Stair Stepper</button>
+          </div>
+
+          <label class="field">
+            <span id="cardio-distance-label">Distance (mi)</span>
+            <input type="number" id="cardio-distance-input" min="0" step="0.1" placeholder="0" inputmode="decimal" />
+          </label>
+
+          <label class="field">
+            <span>Time (minutes)</span>
+            <input type="number" id="cardio-minutes-input" min="0" step="1" placeholder="0" inputmode="numeric" />
+          </label>
+
+          <button class="btn-primary" id="cardio-log-save-btn">Save Activity</button>
+          <p class="cardio-log-saved" id="cardio-log-saved" style="display:none;">✓ Activity logged!</p>
+        </div>
+      </div>
+
+      <!-- ---------- EXERCISE LIBRARY FILTER POPUP (2026-08-10) ---------- -->
+
+      <!-- ---------- EXERCISE LIBRARY DETAIL POPUP (2026-08-10) ---------- -->
+      <!-- Replaces the old expand-in-place technique text now that cards only
+           show name + video — tapping a card (not the video play button)
+           opens this instead. -->
+
+      <!-- ---------- REST TIMER OVERLAY (between sets in the Straight Sets / Rep Ladder checklist) ---------- -->
+      <!-- Weight field lives here now, not on the row (2026-08-07) — see the
+           note above Player.toggleSetChecked in app.js for why. -->
+      <div class="rest-timer-overlay" id="rest-timer-overlay">
+        <div class="rest-timer-card">
+          <div class="rest-overlay-clock-wrap" id="rest-overlay-clock-wrap">
+            <p class="player-clock-label">Rest</p>
+            <p class="player-clock" id="rest-overlay-clock">00:00</p>
+          </div>
+          <p class="player-sub-pill" id="rest-overlay-upnext">Up next</p>
+          <div class="rest-overlay-weight-field" id="rest-overlay-weight-field" style="display:none;">
+            <label class="rest-overlay-weight-label" for="rest-overlay-weight-input">Weight used</label>
+            <div class="rest-overlay-weight-row">
+              <input type="number" id="rest-overlay-weight-input" placeholder="lbs" inputmode="numeric" />
+              <button class="rest-overlay-weight-save-btn" id="rest-overlay-weight-save-btn" type="button">Save</button>
+            </div>
+          </div>
+          <button class="btn-primary" id="rest-overlay-skip-btn">Skip Rest →</button>
+        </div>
+      </div>
+
+      <!-- ---------- WORKOUT COMPLETE ---------- -->
+      <section class="screen" id="screen-workout" data-screen>
+        <header class="detail-header">
+          <button class="back-btn" data-back="tab-home">✕</button>
+          <span class="detail-tag">Complete</span>
+        </header>
+        <div class="workout-complete">
+          <div class="complete-badge">✔</div>
+          <h1>Nice work!</h1>
+          <p id="workout-complete-text">You crushed the workout.</p>
+          <div class="today-stats-row" id="workout-complete-stats"></div>
+          <div class="benchmark-score-section" id="benchmark-score-section" style="display:none;">
+            <p class="benchmark-score-label" id="benchmark-score-label">How many rounds did you complete?</p>
+            <div class="benchmark-score-input-row" id="benchmark-score-rounds-row">
+              <input type="number" id="benchmark-score-rounds" min="0" placeholder="Rounds" />
+            </div>
+            <div class="benchmark-score-input-row" id="benchmark-score-time-row" style="display:none;">
+              <input type="number" id="benchmark-score-min" min="0" placeholder="Min" />
+              <span class="benchmark-score-colon">:</span>
+              <input type="number" id="benchmark-score-sec" min="0" max="59.9" step="0.1" placeholder="Sec" />
+            </div>
+            <button class="btn-primary small" id="benchmark-score-save-btn">Save Score</button>
+            <p class="benchmark-score-saved" id="benchmark-score-saved" style="display:none;">✓ Score saved — check Progress to see your history.</p>
+          </div>
+          <div class="rpe-section">
+            <label class="rpe-label" for="rpe-slider">How hard did that feel? <span id="rpe-value">5</span>/10</label>
+            <input type="range" id="rpe-slider" class="rpe-slider" min="1" max="10" step="1" value="5" />
+            <div class="rpe-scale-labels"><span>Easy</span><span>Max Effort</span></div>
+          </div>
+          <button class="btn-primary" data-back="tab-progress">View Progress</button>
+        </div>
+      </section>
+
+      <!-- ---------- LIVE SESSION ---------- -->
+
+      <!-- ---------- MESSAGES INBOX ---------- -->
+      <section class="screen" id="screen-messages" data-screen>
+        <header class="detail-header">
+          <button class="back-btn" data-back="tab-home">←</button>
+          <span class="detail-tag">Messages</span>
+        </header>
+        <div class="conversation-list" id="conversation-list"></div>
+      </section>
+
+      <!-- ---------- MESSAGE THREAD ---------- -->
+      <section class="screen thread-screen" id="screen-thread" data-screen>
+        <header class="detail-header">
+          <button class="back-btn" id="thread-back-btn">←</button>
+          <span class="detail-tag" id="thread-title">Conversation</span>
+        </header>
+        <div class="thread-messages" id="thread-messages"></div>
+        <form class="thread-composer" id="thread-composer">
+          <input type="text" id="thread-input" placeholder="Message…" autocomplete="off" />
+          <button type="submit" class="thread-send-btn">➤</button>
+        </form>
+      </section>
+
+      <!-- ---------- COMMUNITY ---------- -->
+      <section class="screen tab-screen" id="tab-community" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Burn Club</p>
+            <h1 class="topbar-title">Community</h1>
+          </div>
+          <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+        </header>
+
+        <div id="challenge-card"></div>
+
+        <!-- Same look as Home's Community Buzz card (2026-08-11) — pink
+             section card + .buzz-list rows. -->
+        <div class="home-section-card card-community">
+          <h2 class="home-section-title">Activity Feed</h2>
+          <div class="buzz-list" id="community-feed"></div>
+        </div>
+      </section>
+
+      <!-- ---------- PROGRESS ---------- -->
+      <section class="screen tab-screen" id="tab-progress" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Your stats</p>
+            <h1 class="topbar-title">Progress</h1>
+          </div>
+          <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+        </header>
+
+        <div class="range-toggle" id="progress-range-toggle">
+          <button class="range-btn active" data-range="week">Week</button>
+          <button class="range-btn" data-range="month">Month</button>
+          <button class="range-btn" data-range="year">Year</button>
+        </div>
+
+        <div class="streak-banner">
+          <div class="streak-flame">🔥</div>
+          <div>
+            <p class="streak-num" id="progress-streak-num">0 Day Streak</p>
+            <p class="streak-sub" id="progress-streak-sub">Complete a workout today to start a streak</p>
+          </div>
+        </div>
+
+        <!-- Calendar now leads, standardized to match Home's "This Week"
+             snapshot: no card, plain on the white page (2026-08-11). Was a
+             pink .home-section-card sitting below the stats grid. -->
+        <div class="home-week-snapshot" id="progress-calendar-section"></div>
+
+        <!-- Donut, replacing the benchmark-sparkline try (2026-08-11) —
+             workout-type mix for the same range as the stats grid above,
+             4 categorical series (fixed hue order) with a legend, per the
+             dataviz skill's rules for a ≥2-series chart. -->
+        <div class="home-section-card card-white">
+          <h2 class="home-section-title">Workout Mix</h2>
+          <div id="workout-mix-donut"></div>
+        </div>
+
+        <!-- Circle "bubble" stats (2026-08-11) — replaces the 6-tile stats
+             card. Burn Minutes + Calories Burned only; the other 4 (session
+             counts) are in the Workout Mix donut above. Each bubble also
+             shows %-change vs the full prior week/month/year. Moved below
+             the donut per Chris's follow-up. -->
+        <div id="stat-bubbles"></div>
+
+        <div class="home-section-card card-blue">
+          <h2 class="home-section-title">Benchmarks</h2>
+          <div class="benchmark-list" id="benchmark-list"></div>
+        </div>
+
+        <div class="motivation-card" id="progress-motivation">
+          <p>"Every drop counts." — keep sweating, you're building something real. 🔥</p>
+        </div>
+      </section>
+
+      <!-- ---------- PROFILE ---------- -->
+      <section class="screen tab-screen" id="tab-profile" data-tab>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Account</p>
+            <h1 class="topbar-title">Profile</h1>
+          </div>
+          <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
+        </header>
+
+        <div class="profile-card">
+          <img class="avatar-lg" src="assets/burn-club-logo.png" alt="" />
+          <h2 id="profile-name">Chris</h2>
+          <span class="badge" id="profile-badge">Founding Member</span>
+        </div>
+
+        <div class="profile-info-list">
+          <div class="profile-info-row"><span>Email</span><span class="profile-info-value-group"><span id="profile-email"></span><button class="edit-field-btn" id="edit-email-btn" type="button" aria-label="Edit email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button></span></div>
+          <div class="profile-info-row"><span>Program</span><span id="profile-program"></span></div>
+          <div class="profile-info-row"><span>Member Since</span><span id="profile-member-since"></span></div>
+        </div>
+
+        <div id="profile-wearables-section">
+          <h2 class="section-title">Connected Devices</h2>
+          <div class="wearable-section" id="wearable-section"></div>
+        </div>
+
+        <div class="home-section-card card-habits" id="profile-habits-section">
+          <h2 class="home-section-title">Manage your daily habits</h2>
+          <div id="habit-manager"></div>
+        </div>
+
+        <div class="settings-list">
+          <button class="settings-row" id="open-notifications-btn"><span>Notifications</span><span>›</span></button>
+          <button class="settings-row" id="open-health-profile-btn"><span>My Health Profile</span><span>›</span></button>
+          <button class="settings-row" id="open-invite-btn"><span>Invite a Friend</span><span>›</span></button>
+          <button class="settings-row" id="open-support-btn"><span>Help &amp; Support</span><span>›</span></button>
+          <button class="settings-row danger" id="logout-btn"><span>Log Out</span><span>›</span></button>
+        </div>
+      </section>
+
+      <!-- ---------- NOTIFICATIONS POPUP (2026-08-12) ---------- -->
+      <div class="cardio-log-overlay" id="notifications-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="notifications-close-btn">✕</button>
+          <h2 class="cardio-log-title">Notifications</h2>
+          <div id="notif-prefs-list"></div>
+        </div>
+      </div>
+
+      <!-- ---------- MY HEALTH PROFILE POPUP (2026-08-12) ---------- -->
+      <!-- Saves into LIVE_HEALTH_PROFILES_KEY (see data.js) — the same
+           same-browser localStorage bridge pattern as circuits/messages —
+           so Admin's member modal can read it back read-only. -->
+      <div class="cardio-log-overlay" id="health-profile-overlay">
+        <div class="cardio-log-card health-profile-card">
+          <button class="player-exit" id="health-profile-close-btn">✕</button>
+          <h2 class="cardio-log-title">My Health Profile</h2>
+
+          <label class="field">
+            <span>Height</span>
+            <input type="text" id="hp-height" placeholder="e.g. 5&#39;9&quot;" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Weight (lbs)</span>
+            <input type="number" id="hp-weight" min="0" step="1" placeholder="e.g. 165" inputmode="numeric" />
+          </label>
+          <label class="field">
+            <span>Date of Birth</span>
+            <input type="date" id="hp-dob" />
+          </label>
+          <label class="field">
+            <span>Sex</span>
+            <select id="hp-sex">
+              <option value="">Select…</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="prefer-not-to-say">Prefer not to say</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Activity Level</span>
+            <select id="hp-activity">
+              <option value="">Select…</option>
+              <option value="sedentary">Sedentary</option>
+              <option value="lightly-active">Lightly Active</option>
+              <option value="active">Active</option>
+              <option value="very-active">Very Active</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Primary Goal</span>
+            <select id="hp-goal">
+              <option value="">Select…</option>
+              <option value="lose-weight">Lose Weight</option>
+              <option value="build-muscle">Build Muscle</option>
+              <option value="improve-endurance">Improve Endurance</option>
+              <option value="general-fitness">General Fitness</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Target Weight (lbs, optional)</span>
+            <input type="number" id="hp-target-weight" min="0" step="1" placeholder="e.g. 155" inputmode="numeric" />
+          </label>
+          <label class="field">
+            <span>Injuries / Limitations (optional)</span>
+            <textarea id="hp-injuries" rows="3" placeholder="e.g. Left knee — avoid deep lunges"></textarea>
+          </label>
+
+          <button class="btn-primary" id="health-profile-save-btn">Save Health Profile</button>
+          <p class="cardio-log-saved" id="hp-saved-note" style="display:none;">✓ Saved!</p>
+        </div>
+      </div>
+
+      <!-- ---------- INVITE A FRIEND POPUP (2026-08-12) ---------- -->
+      <div class="cardio-log-overlay" id="invite-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="invite-close-btn">✕</button>
+          <h2 class="cardio-log-title">Invite a Friend</h2>
+          <p class="invite-blurb">Share your code — when a friend joins Burn Club with it, you both get a free week.</p>
+          <p class="invite-code" id="invite-code">CHRIS-BURN</p>
+          <button class="btn-primary" id="invite-copy-btn">Copy Invite Link</button>
+          <p class="cardio-log-saved" id="invite-copied-note" style="display:none;">✓ Link copied!</p>
+        </div>
+      </div>
+
+      <!-- ---------- HELP & SUPPORT POPUP (2026-08-12) ---------- -->
+      <div class="cardio-log-overlay" id="support-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="support-close-btn">✕</button>
+          <h2 class="cardio-log-title">Help &amp; Support</h2>
+          <div class="support-faq">
+            <div class="support-faq-item">
+              <p class="support-faq-q">How do I change my workout schedule?</p>
+              <p class="support-faq-a">Head to Workouts — you can start any circuit any day, or build your own from the Exercise Library.</p>
+            </div>
+            <div class="support-faq-item">
+              <p class="support-faq-q">Can I pause my membership?</p>
+              <p class="support-faq-a">Yes — message your coach and they'll take care of it for you.</p>
+            </div>
+            <div class="support-faq-item">
+              <p class="support-faq-q">How do I connect a wearable?</p>
+              <p class="support-faq-a">Go to Profile → Connected Devices and tap Connect next to your device.</p>
+            </div>
+          </div>
+          <a class="btn-primary support-email-link" href="mailto:support@burnclub.com">Email Support</a>
+        </div>
+      </div>
+
+      <!-- ---------- BOTTOM NAV ---------- -->
+      <nav class="bottom-nav" id="bottom-nav">
+        <button class="nav-btn active" data-tab-target="tab-home" id="nav-home-btn">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span><span>Home</span>
+        </button>
+        <button class="nav-btn" data-tab-target="tab-circuits" id="nav-workouts-btn">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s7 8 7 13a7 7 0 1 1-14 0c0-5 7-13 7-13z"/></svg></span><span>Workouts</span>
+        </button>
+        <button class="nav-btn" data-tab-target="tab-calendar" id="nav-calendar-btn" style="display:none;">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span><span>Calendar</span>
+        </button>
+        <button class="nav-btn" data-tab-target="tab-community" id="nav-community-btn">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><path d="M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="7" r="2.3"/><path d="M14 20c.3-2.7 2-4.6 4.3-5"/></svg></span><span>Community</span>
+        </button>
+        <button class="nav-btn" data-tab-target="tab-progress" id="nav-progress-btn">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span><span>Progress</span>
+        </button>
+        <button class="nav-btn" data-tab-target="tab-profile">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span><span>Profile</span>
+        </button>
+      </nav>
+
+    </div><!-- /main-app -->
+  </div><!-- /app -->
+</div><!-- /phone-frame -->
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
