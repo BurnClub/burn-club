@@ -2310,6 +2310,13 @@ function renderCircuitLists() {
   }
   document.getElementById("home-workouts-title").textContent = "Workouts";
 
+  // Rolling content is scoped to the member's own program (2026-08-15). This
+  // was a real leak: a workout published to any rolling program's live folder
+  // showed to every rolling member regardless of what they'd bought. It never
+  // bit because Burn Club is the only rolling program, and it only became
+  // fixable now that workouts carry a programId of their own.
+  const mine = (c) => c.programId === CURRENT_MEMBER.programId;
+
   // Which bucket a workout lands in is worked out here, on every render, from
   // its own availability date — admin no longer tags content as "this week"
   // or "previous week" by moving it between folders (2026-08-15). Scheduled
@@ -2319,9 +2326,9 @@ function renderCircuitLists() {
   const inWeek = (c, state) => !isEvergreen(c) && c.category !== "structured"
     && circuitAvailability(c).state === state;
 
-  const weeklyCircuits = CIRCUITS.filter((c) => inWeek(c, "live"));
-  const extraCircuits = CIRCUITS.filter(isEvergreen);
-  const lastWeekCircuits = CIRCUITS.filter((c) => inWeek(c, "last-week"));
+  const weeklyCircuits = CIRCUITS.filter((c) => mine(c) && inWeek(c, "live"));
+  const extraCircuits = CIRCUITS.filter((c) => mine(c) && isEvergreen(c));
+  const lastWeekCircuits = CIRCUITS.filter((c) => mine(c) && inWeek(c, "last-week"));
 
   document.getElementById("home-circuit-list").innerHTML = weeklyCircuits.map(renderCircuitCard).join("");
   document.getElementById("circuits-list-full").innerHTML = weeklyCircuits.map(renderCircuitCard).join("");
