@@ -275,9 +275,8 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .filter-pill:hover { border-color: var(--blue); }
 .filter-pill.active { background: var(--blue); border-color: var(--blue); color: white; }
 
-/* Archived programs read as set aside rather than gone. */
-.program-card.archived { opacity: 0.65; }
-.program-card.archived:hover { opacity: 1; }
+/* Archived programs no longer render here at all — they live in the Library,
+   which styles them itself (.library-group.archived). */
 .program-card p.desc { font-size: 13px; color: var(--ink); opacity: 0.7; margin: 8px 0 16px; }
 .program-card-stats { display: flex; gap: 20px; margin-bottom: 16px; }
 .program-card-stats div p:first-child { font-family: 'Baloo 2', sans-serif; font-size: 20px; font-weight: 800; margin: 0; color: var(--ink); }
@@ -1028,6 +1027,34 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .library-search:focus { border-color: var(--blue); }
 .library-sub { font-size: 12px; color: var(--deepblue); font-weight: 600; }
+
+/* Folder archive, grouped by program. Each group is a labelled band so the
+   eye can skip whole programs at a glance rather than reading folder names. */
+.library-group { margin-bottom: 32px; }
+.library-group:last-child { margin-bottom: 0; }
+.library-group-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  border-bottom: 2px solid var(--periwinkle);
+}
+.library-group-head h2 {
+  margin: 2px 0 0;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.library-group-actions { display: flex; align-items: center; gap: 12px; }
+.library-group-count { font-size: 12px; font-weight: 700; color: var(--deepblue); }
+/* Archived programs stay legible but visibly secondary — they're the back
+   of the catalogue, not hidden. */
+.library-group.archived { opacity: 0.7; }
+.library-group.archived:hover { opacity: 1; }
 
 /* ---------- BUILDER VARIANT SWITCHER (2026-08-15) ---------- */
 .builder-variant-bar {

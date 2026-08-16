@@ -504,7 +504,12 @@ const CIRCUITS = [
   },
   {
     id: "foundations-intro",
-    folderId: "foundations-drafts",
+    // Was "foundations-drafts", a folder deleted along with the old Strength
+    // Foundations program — which left this workout pointing at nothing and
+    // invisible everywhere except Library search (caught 2026-08-15 once the
+    // Library started counting folders against workouts). Parked in the
+    // general Working Folder, which is what that staging area is for.
+    folderId: "working-folder",
     category: "circuit",
     tag: "Draft",
     title: "Foundations: Week 1",

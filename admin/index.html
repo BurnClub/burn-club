@@ -109,13 +109,16 @@
         </div>
         <button class="btn-primary" id="new-program-btn">+ New Program</button>
       </header>
-      <!-- Finished cycles are archived rather than deleted — at four new
-           eight-week programs every two months, the active list would
-           otherwise be unusable within a year (2026-08-15). -->
+      <!-- Programs is the working surface: what's live now, and where new
+           programs and workouts get made. Archiving a program moves it out
+           of here entirely and into the Library, which is the archive — at
+           four new eight-week programs every two months, keeping finished
+           cycles on this page would make it unusable within a year
+           (2026-08-15). Hence no "archived" pill: archived programs are
+           deliberately unreachable from this view. -->
       <div class="filter-pill-row" id="program-status-filter">
         <button class="filter-pill active" data-program-status="active">Active</button>
         <button class="filter-pill" data-program-status="draft">Draft</button>
-        <button class="filter-pill" data-program-status="archived">Archived</button>
         <button class="filter-pill" data-program-status="all">All</button>
       </div>
       <div class="program-grid" id="program-grid"></div>
@@ -527,19 +530,28 @@
     <section class="view" id="view-library" data-view-section>
       <header class="view-header">
         <div>
-          <p class="eyebrow">Content</p>
-          <h1>Workout Library</h1>
+          <p class="eyebrow">Archive</p>
+          <h1>Library</h1>
           <p class="challenge-detail-meta" id="library-count"></p>
         </div>
       </header>
       <input type="text" class="library-search" id="library-search" placeholder="Search every workout by name, focus or program…" autocomplete="off" />
-      <div class="table-card">
-        <table class="admin-table">
-          <thead>
-            <tr><th>Workout</th><th>Program</th><th>Folder</th><th>Blocks</th><th></th></tr>
-          </thead>
-          <tbody id="library-table-body"></tbody>
-        </table>
+
+      <!-- Two modes, one control. Empty search browses the folder archive
+           grouped by program; typing switches to workout-level results,
+           which is the one thing folders can't do. A folder count grows
+           roughly a sixteenth as fast as a workout count, so folders stay
+           browsable at scale where a flat table of every workout does not. -->
+      <div id="library-archive"></div>
+      <div id="library-results" style="display:none;">
+        <div class="table-card">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Workout</th><th>Program</th><th>Folder</th><th>Blocks</th><th></th></tr>
+            </thead>
+            <tbody id="library-table-body"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 

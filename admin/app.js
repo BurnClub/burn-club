@@ -137,8 +137,13 @@ function renderDashboard() {
 
 let programStatusFilter = "active";
 
+// Programs is the working surface — live programs, and where new content is
+// made. Archived programs are excluded unconditionally, including from "All",
+// because the Library is now the archive and showing them in both places is
+// the clutter archiving exists to prevent (2026-08-15).
 function renderPrograms() {
-  const visible = PROGRAMS.filter((p) => programStatusFilter === "all" || (p.status || "active") === programStatusFilter);
+  const visible = PROGRAMS.filter((p) => (p.status || "active") !== "archived")
+    .filter((p) => programStatusFilter === "all" || (p.status || "active") === programStatusFilter);
 
   document.querySelectorAll("#program-status-filter .filter-pill").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.programStatus === programStatusFilter);
@@ -146,7 +151,6 @@ function renderPrograms() {
 
   document.getElementById("program-grid").innerHTML = visible.map((p) => {
     const isStructured = p.scheduleType === "structured";
-    const isArchived = p.status === "archived";
     // Structured programs don't use the live-folder model, so a circuit
     // "belongs" to them just by living in one of their folders — not by
     // being published to a live folder, which doesn't exist for these.
@@ -161,7 +165,7 @@ function renderPrograms() {
       ? Math.round(((SCHEDULE_TEMPLATES[p.id] || []).filter((d) => d.type === "workout").length / (p.durationWeeks || 1)) * 10) / 10
       : p.circuitsPerWeek;
     return `
-      <div class="program-card color-${p.color} ${isArchived ? "archived" : ""}">
+      <div class="program-card color-${p.color}">
         <div class="program-card-top">
           <h3>${p.name}</h3>
           <span class="status-pill ${p.status}">${p.status}</span>
@@ -176,7 +180,7 @@ function renderPrograms() {
           <button class="btn-ghost-lg small" data-open-program="${p.id}">Open</button>
           <button class="btn-ghost-lg small" data-edit-program="${p.id}">Edit</button>
           ${isStructured ? `<button class="btn-ghost-lg small" data-manage-schedule="${p.id}">Schedule</button>` : ""}
-          <button class="btn-ghost-lg small" data-archive-program="${p.id}">${isArchived ? "Restore" : "Archive"}</button>
+          <button class="btn-ghost-lg small" data-archive-program="${p.id}" title="Moves this program and its folders to the Library">Archive</button>
         </div>
       </div>
     `;
@@ -197,12 +201,14 @@ function renderPrograms() {
 }
 
 // Archiving is reversible and destroys nothing — the program keeps its
-// folders, workouts and schedule, it just drops out of the default view.
+// folders, workouts and schedule. It moves between the two surfaces:
+// archive from Programs, restore from the Library.
 function toggleProgramArchived(programId) {
   const p = programById(programId);
   if (!p) return;
   p.status = p.status === "archived" ? "active" : "archived";
   renderPrograms();
+  renderLibrary();
 }
 
 const PROGRAM_CARD_COLORS = ["blue", "deepblue", "yellow", "green"];
@@ -390,11 +396,16 @@ function populateProgramFilters() {
 // Program name is deliberately left off the card — the left-side program
 // list already scopes what's showing, so repeating it on every card here
 // was redundant clutter (Chris's call, once workout counts started growing).
-function folderCardHtml(f) {
+// `opts.readonly` drops the delete button and routes the click back to the
+// Library instead of the program's folder grid. The Library is for finding
+// old content, not editing the shelf it sits on — deleting a folder is an
+// authoring action and belongs on the authoring surface.
+function folderCardHtml(f, opts = {}) {
   const count = CIRCUITS.filter((c) => c.folderId === f.id).length;
+  const action = opts.readonly ? "open-library-folder" : "open-folder";
   return `
-    <div class="folder-card ${f.program ? "tagged" : ""} ${f.live ? "live" : ""}" data-action="open-folder" data-folder-id="${f.id}">
-      ${f.live ? "" : `<button class="folder-delete-btn" data-action="delete-folder" data-folder-id="${f.id}" title="Delete folder">✕</button>`}
+    <div class="folder-card ${f.program ? "tagged" : ""} ${f.live ? "live" : ""}" data-action="${action}" data-folder-id="${f.id}">
+      ${f.live || opts.readonly ? "" : `<button class="folder-delete-btn" data-action="delete-folder" data-folder-id="${f.id}" title="Delete folder">✕</button>`}
       <div class="folder-card-top">
         <h3>${f.name}</h3>
         ${f.live ? `<span class="folder-live-badge">● LIVE</span>` : ""}
@@ -427,16 +438,34 @@ function renderFolderGrid() {
     || `<p style="color:var(--deepblue);font-weight:700;">No folders here yet. Click "+ New Folder" to add one.</p>`;
 }
 
+// A folder's workouts can be reached from two places — the program that owns
+// it, or the Library archive — and "back" has to return to whichever one you
+// came from, so remember it (2026-08-15).
+let folderEntryPoint = "programs";
+
 // Entry point from the Programs page — content now lives inside the program
 // it belongs to rather than in a separate top-level section (2026-08-15).
 function openProgramFolders(programId) {
   selectedProgramScope = programId;
   currentScope = null;
+  folderEntryPoint = "programs";
   selectedCircuitIds.clear();
   showView("view-circuits", "view-programs");
   document.getElementById("folder-detail-view").style.display = "none";
   document.getElementById("folder-grid-view").style.display = "block";
   renderFolderGrid();
+}
+
+// Entry point from the Library — jumps straight to a folder's workouts,
+// skipping the program's folder grid, and keeps the Library nav highlighted
+// so it's clear which surface you're on.
+function openLibraryFolder(folderId) {
+  const folder = folderById(folderId);
+  if (!folder) return;
+  selectedProgramScope = folder.program || "general";
+  folderEntryPoint = "library";
+  showView("view-circuits", "view-library");
+  openFolder(folderId);
 }
 
 function openFolder(folderId) {
@@ -452,6 +481,12 @@ function backToFolders() {
   selectedCircuitIds.clear();
   document.getElementById("folder-detail-view").style.display = "none";
   document.getElementById("folder-grid-view").style.display = "block";
+  if (folderEntryPoint === "library") {
+    folderEntryPoint = "programs";
+    showView("view-library");
+    renderLibrary();
+    return;
+  }
   renderFolderGrid();
 }
 
@@ -628,7 +663,8 @@ function renderScopeDetail() {
     const program = programById(folder.program);
     document.getElementById("folder-detail-title").textContent = folder.name;
     document.getElementById("folder-detail-badge").textContent = program ? program.name : "General folder";
-    document.getElementById("folder-back-btn").textContent = "← All Folders";
+    document.getElementById("folder-back-btn").textContent =
+      folderEntryPoint === "library" ? "← Library" : "← All Folders";
     document.getElementById("new-circuit-btn").style.display = "";
     document.getElementById("folder-detail-edit-btn").style.display = folder.live ? "none" : "";
   }
@@ -1891,6 +1927,12 @@ document.addEventListener("click", (e) => {
   if (action === "open-folder") {
     openFolder(el.dataset.folderId);
   }
+  if (action === "open-library-folder") {
+    openLibraryFolder(el.dataset.folderId);
+  }
+  if (action === "restore-program") {
+    toggleProgramArchived(el.dataset.programId);
+  }
   if (action === "open-setting" && el.dataset.setting === "before-you-start") {
     openBlockNotesSettings();
   }
@@ -2143,18 +2185,33 @@ window.addEventListener("storage", (e) => {
 });
 
 
-// ---------------- Workout Library (2026-08-15) ----------------
-// Every workout ever authored, across every program, searchable. Content is
-// created inside a program's folders; this is for finding a past session to
-// reuse rather than building new ones — which matters at four new eight-week
-// programs every two months.
+// ---------------- Library (2026-08-15) ----------------
+// The archive. Every folder from every program, including programs that have
+// been archived out of the Programs page, lives here — so Programs stays the
+// working surface (what's live, where new content is made) and this stays the
+// back catalogue. Content is created inside a program's folders; this is for
+// finding a past session to reuse.
+//
+// Empty search browses folders; typing searches individual workouts. Folders
+// are what make the archive browsable — a cycle adds ~200 workouts but only
+// ~32 folders, so a flat workout list stops being scrollable long before the
+// folder list does. Search covers the case folders can't.
 
 let libraryQuery = "";
 
 function renderLibrary() {
   const q = libraryQuery.trim().toLowerCase();
+  const searching = q.length > 0;
+
+  document.getElementById("library-archive").style.display = searching ? "none" : "";
+  document.getElementById("library-results").style.display = searching ? "" : "none";
+
+  if (!searching) {
+    renderLibraryArchive();
+    return;
+  }
+
   const rows = CIRCUITS.filter((c) => {
-    if (!q) return true;
     const folder = folderById(c.folderId);
     const program = folder ? programById(folder.program) : null;
     return [c.title, c.focus, c.difficulty, folder && folder.name, program && program.name]
@@ -2185,6 +2242,67 @@ function renderLibrary() {
   document.querySelectorAll("#library-table-body [data-edit-circuit]").forEach((btn) => {
     btn.addEventListener("click", () => openEditBuilder(btn.dataset.editCircuit));
   });
+}
+
+// Every folder, grouped by the program that owns it. Active programs first in
+// their Programs-page order, then archived ones, then unassigned folders —
+// so the archive reads newest-and-live at the top, finished cycles below.
+function libraryArchiveGroups() {
+  const active = PROGRAMS.filter((p) => (p.status || "active") !== "archived");
+  const archived = PROGRAMS.filter((p) => (p.status || "active") === "archived");
+  const groups = [...active, ...archived].map((p) => ({
+    key: p.id,
+    name: p.name,
+    meta: p.scheduleType === "structured" ? `Structured · ${p.durationWeeks || 8} weeks` : "On demand",
+    archived: (p.status || "active") === "archived",
+    program: p,
+    folders: orderedFoldersForScope(p.id),
+  }));
+
+  const unassigned = FOLDERS.filter((f) => !f.program);
+  if (unassigned.length) {
+    groups.push({
+      key: "general",
+      name: "General (Unassigned)",
+      meta: "Not tied to a program",
+      archived: false,
+      program: null,
+      folders: orderedFoldersForScope("general"),
+    });
+  }
+
+  return groups.filter((g) => g.folders.length);
+}
+
+function renderLibraryArchive() {
+  const groups = libraryArchiveGroups();
+  const folderCount = groups.reduce((n, g) => n + g.folders.length, 0);
+
+  document.getElementById("library-count").textContent =
+    `${folderCount} folder${folderCount === 1 ? "" : "s"} · ${CIRCUITS.length} workouts`;
+
+  document.getElementById("library-archive").innerHTML = groups.map((g) => {
+    const workouts = g.folders.reduce(
+      (n, f) => n + CIRCUITS.filter((c) => c.folderId === f.id).length, 0
+    );
+    return `
+      <section class="library-group ${g.archived ? "archived" : ""}">
+        <div class="library-group-head">
+          <div>
+            <p class="eyebrow">${g.meta}</p>
+            <h2>${g.name}${g.archived ? ` <span class="status-pill archived">archived</span>` : ""}</h2>
+          </div>
+          <div class="library-group-actions">
+            <span class="library-group-count">${g.folders.length} folder${g.folders.length === 1 ? "" : "s"} · ${workouts} workout${workouts === 1 ? "" : "s"}</span>
+            ${g.archived ? `<button class="btn-ghost-lg small" data-action="restore-program" data-program-id="${g.key}">Restore</button>` : ""}
+          </div>
+        </div>
+        <div class="folder-grid">
+          ${g.folders.map((f) => folderCardHtml(f, { readonly: true })).join("")}
+        </div>
+      </section>
+    `;
+  }).join("") || `<p style="color:var(--deepblue);font-weight:700;">Nothing archived yet — folders appear here as soon as a program has them.</p>`;
 }
 
 // ---------------- Settings ----------------
