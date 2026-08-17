@@ -797,7 +797,10 @@ function renderScopeDetail() {
       <td><strong>${c.title}</strong>${c.variant ? ` <span class="variant-pill variant-${c.variant}">${(PROGRAM_VARIANTS.find((v) => v.key === c.variant) || {}).label || c.variant}</span>` : ""}${c.category !== "circuit" && c.category !== "structured" ? ` <span class="status-pill">${categoryLabel(c.category)}</span>` : ""}${c.isBenchmark ? ` <span class="status-pill benchmark-pill">🏆 ${benchmarkById(c.benchmarkId)?.name || "Benchmark"}</span>` : ""}<br /><span style="color:var(--deepblue);font-weight:700;font-size:11px;">${c.focus} · ${c.difficulty}</span></td>
       <td>${isWeek ? availabilityCellHtml(c) : (folder ? folder.name : "—")}</td>
       <td>${c.blocks.length} blocks</td>
-      <td><button class="table-action-btn" data-edit-circuit="${c.id}">Edit</button></td>
+      <td>
+        <button class="table-action-btn" data-edit-circuit="${c.id}">Edit</button>
+        ${isStructuredCircuit(c) ? `<button class="table-action-btn" data-duplicate-circuit="${c.id}">Duplicate</button>` : ""}
+      </td>
     </tr>
   `;
   }).join("") || `<tr><td colspan="5" style="text-align:center;color:var(--deepblue);padding:24px;">No workouts ${isProgram ? "in this program" : isWeek ? "in this week" : "in this folder"}.${isProgram ? "" : ' Click "+ New Workout" to add one.'}</td></tr>`;
@@ -805,9 +808,121 @@ function renderScopeDetail() {
   document.querySelectorAll("[data-edit-circuit]").forEach((btn) => {
     btn.addEventListener("click", () => openEditBuilder(btn.dataset.editCircuit));
   });
+  document.querySelectorAll("[data-duplicate-circuit]").forEach((btn) => {
+    btn.addEventListener("click", () => openDuplicateModal(btn.dataset.duplicateCircuit));
+  });
 
   document.getElementById("circuit-select-all").checked = rows.length > 0 && rows.every((c) => selectedCircuitIds.has(c.id));
   renderBulkBar();
+}
+
+// ---------------- Duplicate a structured workout (2026-08-15) ----------------
+// Rolling programs already duplicate through Copy to Date. Structured ones had
+// no equivalent, which mattered because creating a workout there makes a single
+// variant — so there was no way at all to produce a session's Home/Gym pair.
+
+let duplicatingCircuitId = null;
+
+function isStructuredCircuit(circuit) {
+  const folder = folderById(circuit.folderId);
+  const program = folder ? programById(folder.program) : null;
+  return !!program && program.scheduleType === "structured";
+}
+
+// The whole point of the variant choice. Two workouts are the same scheduled
+// session — one day on the calendar, shown to a combo member as a Home/Gym
+// choice — precisely when they share a slotId, because SCHEDULE_TEMPLATES
+// points at slots, not workout ids. So a duplicate either joins the source's
+// slot (when that variant is still free) or becomes its own session.
+// The source counts against its own slot here: duplicating a Home workout as
+// Home would otherwise "pair" it with itself and put two Home versions on one
+// scheduled day, which is the one outcome the slot model can't represent.
+function duplicateJoinsSlot(source, variantKey) {
+  if (!source.slotId) return false;
+  return !CIRCUITS.some((c) => c.slotId === source.slotId && c.variant === variantKey);
+}
+
+function openDuplicateModal(circuitId) {
+  const source = CIRCUITS.find((c) => c.id === circuitId);
+  if (!source) return;
+  duplicatingCircuitId = circuitId;
+
+  // Default to the variant the source isn't — making the counterpart is the
+  // reason this exists, so it should be one click away.
+  const other = PROGRAM_VARIANTS.find((v) => v.key !== source.variant);
+  const preselect = (other || PROGRAM_VARIANTS[0]).key;
+
+  document.getElementById("duplicate-modal-desc").textContent = `Duplicating "${source.title}".`;
+  document.getElementById("duplicate-modal-name").value = source.title;
+  document.getElementById("duplicate-modal-variants").innerHTML = PROGRAM_VARIANTS.map((v) => `
+    <label class="builder-availability-row">
+      <input type="radio" name="duplicate-variant" value="${v.key}" ${v.key === preselect ? "checked" : ""} />
+      <span>${v.label}</span>
+    </label>
+  `).join("");
+
+  document.getElementById("duplicate-modal-variants")
+    .querySelectorAll('input[name="duplicate-variant"]')
+    .forEach((r) => r.addEventListener("change", renderDuplicateNote));
+
+  renderDuplicateNote();
+  document.getElementById("duplicate-modal-overlay").classList.add("visible");
+  document.getElementById("duplicate-modal-name").focus();
+}
+
+// Says out loud which of the two things is about to happen, so pairing a
+// session and making a separate one aren't distinguished by silence.
+function renderDuplicateNote() {
+  const source = CIRCUITS.find((c) => c.id === duplicatingCircuitId);
+  if (!source) return;
+  const variantKey = selectedDuplicateVariant();
+  const label = (PROGRAM_VARIANTS.find((v) => v.key === variantKey) || {}).label || variantKey;
+  document.getElementById("duplicate-modal-note").textContent = duplicateJoinsSlot(source, variantKey)
+    ? `Saved as the ${label} version of this session — it lands on the same scheduled day, and members see it as the ${label} option.`
+    : `This session already has a ${label} version, so the copy is saved as a separate workout. Add it to the schedule yourself.`;
+}
+
+function selectedDuplicateVariant() {
+  const checked = document.querySelector('input[name="duplicate-variant"]:checked');
+  return checked ? checked.value : PROGRAM_VARIANTS[0].key;
+}
+
+function closeDuplicateModal() {
+  duplicatingCircuitId = null;
+  document.getElementById("duplicate-modal-overlay").classList.remove("visible");
+}
+
+function confirmDuplicateModal() {
+  const source = CIRCUITS.find((c) => c.id === duplicatingCircuitId);
+  if (!source) return;
+  const title = document.getElementById("duplicate-modal-name").value.trim();
+  if (!title) {
+    alert("Give the duplicate a name.");
+    return;
+  }
+
+  const variantKey = selectedDuplicateVariant();
+  const joinsSlot = duplicateJoinsSlot(source, variantKey);
+  const slotId = joinsSlot ? source.slotId : `${source.slotId || source.id}-copy-${Date.now()}`;
+
+  const copy = JSON.parse(JSON.stringify(source));
+  copy.slotId = slotId;
+  copy.variant = variantKey;
+  copy.title = title;
+  // Match the seeded id convention when the slot is free, so a paired variant
+  // is named the same way the generator would have named it.
+  const preferredId = `${slotId}-${variantKey}`;
+  copy.id = CIRCUITS.some((c) => c.id === preferredId) ? `${preferredId}-${Date.now()}` : preferredId;
+
+  // Sit the copy directly after its source rather than at the top of the
+  // list — a pair reads as a pair.
+  CIRCUITS.splice(CIRCUITS.indexOf(source) + 1, 0, copy);
+
+  closeDuplicateModal();
+  renderScopeDetail();
+  renderFolderGrid();
+  renderPrograms();
+  renderLibrary();
 }
 
 let pendingBulkAction = null;
@@ -921,6 +1036,12 @@ function renderBulkBar() {
   const bar = document.getElementById("circuit-bulk-bar");
   bar.classList.toggle("visible", selectedCircuitIds.size > 0);
   document.getElementById("circuit-bulk-count").textContent = `${selectedCircuitIds.size} selected`;
+  // The modal already renamed itself for week scopes; the buttons that open it
+  // didn't, so a rolling program offered "Copy to Folder" and then asked for a
+  // date. Label them for the destination that actually applies.
+  const noun = targetIsDate() ? "Date" : "Folder";
+  document.getElementById("bulk-copy-btn").textContent = `Copy to ${noun}`;
+  document.getElementById("bulk-move-btn").textContent = `Move to ${noun}`;
 }
 
 let editingFolderId = null;
@@ -3255,6 +3376,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("target-folder-modal-close-btn").addEventListener("click", closeTargetFolderModal);
   document.getElementById("target-folder-modal-cancel-btn").addEventListener("click", closeTargetFolderModal);
   document.getElementById("target-folder-modal-confirm-btn").addEventListener("click", confirmTargetFolderModal);
+
+  document.getElementById("duplicate-modal-close-btn").addEventListener("click", closeDuplicateModal);
+  document.getElementById("duplicate-modal-cancel-btn").addEventListener("click", closeDuplicateModal);
+  document.getElementById("duplicate-modal-confirm-btn").addEventListener("click", confirmDuplicateModal);
+  document.getElementById("duplicate-modal-name").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") confirmDuplicateModal();
+  });
 
   document.getElementById("bulk-delete-btn").addEventListener("click", () => {
     if (selectedCircuitIds.size === 0) return;

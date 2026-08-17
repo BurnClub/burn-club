@@ -437,6 +437,38 @@
       </div>
     </div>
 
+    <!-- ---------- DUPLICATE WORKOUT (structured programs) ---------- -->
+    <!-- Creating a workout in a structured program still makes one variant,
+         not a Home/Gym pair (2026-08-15, Chris's call: he doesn't need both
+         up front). This is the other half — take the one you built and make
+         its counterpart, which is also how a slot gets its second variant. -->
+    <div class="builder-overlay" id="duplicate-modal-overlay">
+      <div class="builder-panel small">
+        <header class="builder-header">
+          <h2>Duplicate Workout</h2>
+          <button class="player-exit" id="duplicate-modal-close-btn">✕</button>
+        </header>
+        <div class="builder-body">
+          <p id="duplicate-modal-desc" class="modal-desc"></p>
+          <label class="modal-field">Workout name
+            <input type="text" id="duplicate-modal-name" autocomplete="off" />
+          </label>
+          <div class="builder-availability">
+            <p class="builder-availability-title">Equipment variant</p>
+            <div id="duplicate-modal-variants"></div>
+            <p class="builder-availability-note" id="duplicate-modal-note"></p>
+          </div>
+        </div>
+        <footer class="builder-footer">
+          <span></span>
+          <div>
+            <button class="btn-ghost-lg" id="duplicate-modal-cancel-btn">Cancel</button>
+            <button class="btn-primary" id="duplicate-modal-confirm-btn">Duplicate</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
     <!-- ---------- CIRCUIT BUILDER (overlay) ---------- -->
     <div class="builder-overlay" id="builder-overlay">
       <div class="builder-panel builder-panel-wide">
