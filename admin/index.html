@@ -694,6 +694,17 @@
             <label class="modal-field">Program
               <select id="member-modal-program"></select>
             </label>
+            <!-- What the member bought, for programs authored in Home/Gym
+                 variants. The member app has always honoured this; until now
+                 there was nowhere to actually set it (2026-08-17). Hidden for
+                 programs with no variants, where the question is meaningless. -->
+            <label class="modal-field" id="member-modal-access-wrap" style="display:none;">Program Access <span class="modal-field-hint">(which equipment variant they purchased)</span>
+              <select id="member-modal-access">
+                <option value="home">Home only</option>
+                <option value="gym">Gym only</option>
+                <option value="both">Combo — both Home and Gym</option>
+              </select>
+            </label>
             <label class="modal-field">Member Since
               <input type="text" id="member-modal-member-since" placeholder="e.g. Jul 2026" />
             </label>

@@ -1218,3 +1218,6 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .variant-pill.variant-home { background: #e4f0ff; color: #0057ff; }
 .variant-pill.variant-gym { background: #ffeccc; color: #a35c00; }
+/* Combo access — deliberately neither of the two variant colours, since it
+   means "both" rather than a third kind of workout. */
+.variant-pill.variant-combo { background: #dff5e3; color: #1a8a44; }

@@ -2951,6 +2951,8 @@ let memberStatusFilter = "all";
 let editingMemberId = null;
 let selectedMemberIds = new Set();
 
+const MEMBER_ACCESS_LABELS = { home: "Home", gym: "Gym", both: "Combo" };
+
 function renderMemberTable() {
   const programFilter = document.getElementById("member-program-filter").value;
   const filtered = MEMBERS.filter((m) => {
@@ -2965,7 +2967,10 @@ function renderMemberTable() {
       <tr data-action="edit-member" data-member-id="${m.id}" style="cursor:pointer;">
         <td><input type="checkbox" class="select-item-checkbox" data-action="select-member" data-member-id="${m.id}" ${selectedMemberIds.has(m.id) ? "checked" : ""} /></td>
         <td><strong>${m.name}</strong></td>
-        <td>${program ? program.name : "—"}</td>
+        <td>
+          ${program ? program.name : "—"}
+          ${m.access && programHasVariants(m.program) ? ` <span class="variant-pill variant-${m.access === "both" ? "combo" : m.access}">${MEMBER_ACCESS_LABELS[m.access] || m.access}</span>` : ""}
+        </td>
         <td><span class="status-pill ${m.status === "active" ? "active" : "draft"}">${m.status}</span></td>
         <td>${m.memberSince}</td>
         <td>${m.streak} days</td>
@@ -2993,6 +2998,24 @@ function updateMemberStartDateField() {
   document.getElementById("member-modal-start-date").required = isStructured;
 }
 
+// Whether a program is authored in variants is a property of its content, not
+// a flag on the program — so ask the content. Burn Club has no variants, so
+// the access question never appears for it.
+function programHasVariants(programId) {
+  return CIRCUITS.some((c) => c.variant && circuitProgramId(c) === programId);
+}
+
+function updateMemberAccessField() {
+  const programId = document.getElementById("member-modal-program").value;
+  document.getElementById("member-modal-access-wrap").style.display =
+    programHasVariants(programId) ? "" : "none";
+}
+
+function updateMemberProgramFields() {
+  updateMemberStartDateField();
+  updateMemberAccessField();
+}
+
 function openMemberModal() {
   editingMemberId = null;
   document.getElementById("member-modal-title").textContent = "Add Member";
@@ -3006,7 +3029,11 @@ function openMemberModal() {
   document.getElementById("member-modal-habits").textContent = "None set";
   document.getElementById("member-modal-health-profile").innerHTML = "No health profile submitted yet.";
   document.getElementById("member-modal-start-date").value = "";
-  updateMemberStartDateField();
+  // Combo is the safe default on a new record: it shows the member everything
+  // the program has, so a mis-set access level can't hide content they paid
+  // for. Narrowing it later is a deliberate act.
+  document.getElementById("member-modal-access").value = "both";
+  updateMemberProgramFields();
   document.getElementById("member-modal-status").innerHTML = ["Active", "Inactive"].map((opt) => `
     <label class="tag-checkbox">
       <input type="radio" name="member-modal-status-radio" value="${opt.toLowerCase()}" ${opt === "Active" ? "checked" : ""} />
@@ -3031,7 +3058,8 @@ function openEditMemberModal(memberId) {
   document.getElementById("member-modal-habits").textContent = m.habits && m.habits.length ? m.habits.join(", ") : "None set";
   document.getElementById("member-modal-health-profile").innerHTML = renderHealthProfileReadout(m.id);
   document.getElementById("member-modal-start-date").value = m.startDate || "";
-  updateMemberStartDateField();
+  document.getElementById("member-modal-access").value = m.access || "both";
+  updateMemberProgramFields();
   document.getElementById("member-modal-status").innerHTML = ["Active", "Inactive"].map((opt) => `
     <label class="tag-checkbox">
       <input type="radio" name="member-modal-status-radio" value="${opt.toLowerCase()}" ${m.status === opt.toLowerCase() ? "checked" : ""} />
@@ -3067,12 +3095,17 @@ function saveMember() {
     return;
   }
   const startDate = isStructured ? startDateInput : null;
+  // Stored only where it means something. Carrying an access level on a
+  // Burn Club member would be a value nothing reads, waiting to be believed.
+  const access = programHasVariants(program)
+    ? document.getElementById("member-modal-access").value
+    : null;
 
   if (editingMemberId) {
     const m = MEMBERS.find((x) => x.id === editingMemberId);
-    Object.assign(m, { name, email, program, memberSince, badge, status, notes, startDate });
+    Object.assign(m, { name, email, program, memberSince, badge, status, notes, startDate, access });
   } else {
-    MEMBERS.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now(), name, email, program, streak: 0, memberSince, badge, status, notes, habits: [], startDate });
+    MEMBERS.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now(), name, email, program, streak: 0, memberSince, badge, status, notes, habits: [], startDate, access });
   }
   closeMemberModal();
   renderMemberTable();
@@ -3352,7 +3385,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("builder-availability-always").addEventListener("change", updateBuilderAvailabilityNote);
   document.getElementById("builder-availability-dated").addEventListener("change", updateBuilderAvailabilityNote);
+  // Both events: typing a date fires `input`, but some native date-picker
+  // interactions only fire `change`, and a stale week preview beside a changed
+  // date is worse than none.
   document.getElementById("target-date-modal-input").addEventListener("input", updateTargetDateNote);
+  document.getElementById("target-date-modal-input").addEventListener("change", updateTargetDateNote);
   document.getElementById("new-folder-btn").addEventListener("click", openFolderModal);
   document.getElementById("folder-modal-close-btn").addEventListener("click", closeFolderModal);
   document.getElementById("folder-modal-cancel-btn").addEventListener("click", closeFolderModal);
@@ -3431,7 +3468,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("member-modal-close-btn").addEventListener("click", closeMemberModal);
   document.getElementById("member-modal-cancel-btn").addEventListener("click", closeMemberModal);
   document.getElementById("member-modal-save-btn").addEventListener("click", saveMember);
-  document.getElementById("member-modal-program").addEventListener("change", updateMemberStartDateField);
+  document.getElementById("member-modal-program").addEventListener("change", updateMemberProgramFields);
 
   document.getElementById("new-challenge-btn").addEventListener("click", openChallengeModal);
   document.getElementById("challenge-modal-close-btn").addEventListener("click", closeChallengeModal);

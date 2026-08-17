@@ -765,6 +765,14 @@ const MEMBERS = [
   { id: "jamie-r", name: "Jamie R.", email: "jamie.r@example.com", program: "burn-club", streak: 6, memberSince: "Mar 2025", badge: "", status: "active", notes: "", challengePoints: 110, pointAdjustment: 0, habits: ["100oz Water"] },
   { id: "chris-v", name: "Chris V.", email: "chris.v@example.com", program: "burn-club", streak: 5, memberSince: "Jan 2025", badge: "Founding Member", status: "active", notes: "Asked about modifying Sweat & Sculpt frequency — flagged in DMs.", challengePoints: 90, pointAdjustment: 0, habits: ["10,000 Steps", "100oz Water", "Outdoor Activity"] },
   { id: "alicia-b", name: "Alicia B.", email: "alicia.b@example.com", program: "burn-club", streak: 4, memberSince: "Apr 2025", badge: "", status: "inactive", notes: "Paused membership — traveling for work through end of month.", challengePoints: 40, pointAdjustment: 0, habits: [] },
+  // Mirrors the member app's Jordan profile (2026-08-17). Every member here
+  // was on Burn Club, so Fit & Functional claimed a member it didn't have and
+  // the new Program Access field had nothing to appear on. `access` is only
+  // meaningful for programs authored in Home/Gym variants — see
+  // programHasVariants() — and `startDate` anchors this member's Day 1 against
+  // SCHEDULE_TEMPLATES. Kept a fixed date rather than one computed from today,
+  // matching how the member app seeds its own structured history.
+  { id: "jordan-p", name: "Jordan P.", email: "jordan.p@example.com", program: "fit-functional", streak: 3, memberSince: "Jun 2025", badge: "", status: "active", notes: "Bought the combo package — sees both Home and Gym each day.", challengePoints: 60, pointAdjustment: 0, habits: ["10,000 Steps"], startDate: "2026-08-07", access: "both" },
 ];
 
 // ---------------- Challenges ----------------
