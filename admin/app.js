@@ -444,16 +444,14 @@ function populateProgramFilters() {
 // Program name is deliberately left off the card — the left-side program
 // list already scopes what's showing, so repeating it on every card here
 // was redundant clutter (Chris's call, once workout counts started growing).
-// `opts.readonly` drops the delete button and routes the click back to the
-// Library instead of the program's folder grid. The Library is for finding
-// old content, not editing the shelf it sits on — deleting a folder is an
-// authoring action and belongs on the authoring surface.
-function folderCardHtml(f, opts = {}) {
+// Authoring-surface only. The Library used to render these too, in a
+// read-only mode, but it now has its own week menu and workout pane
+// (2026-08-15) — so there's one caller and no readonly variant.
+function folderCardHtml(f) {
   const count = CIRCUITS.filter((c) => c.folderId === f.id).length;
-  const action = opts.readonly ? "open-library-folder" : "open-folder";
   return `
-    <div class="folder-card ${f.program ? "tagged" : ""} ${f.live ? "live" : ""}" data-action="${action}" data-folder-id="${f.id}">
-      ${f.live || opts.readonly ? "" : `<button class="folder-delete-btn" data-action="delete-folder" data-folder-id="${f.id}" title="Delete folder">✕</button>`}
+    <div class="folder-card ${f.program ? "tagged" : ""} ${f.live ? "live" : ""}" data-action="open-folder" data-folder-id="${f.id}">
+      ${f.live ? "" : `<button class="folder-delete-btn" data-action="delete-folder" data-folder-id="${f.id}" title="Delete folder">✕</button>`}
       <div class="folder-card-top">
         <h3>${f.name}</h3>
         ${f.live ? `<span class="folder-live-badge">● LIVE</span>` : ""}
@@ -490,12 +488,11 @@ const AVAILABILITY_BADGES = {
 // `.folder-card` shape so the page reads identically to the folder grid it
 // replaces — the difference is that these groups are computed from dates and
 // can't be created, renamed, deleted or filed into by hand.
-function weekGroupCardHtml(g, programId, opts = {}) {
+function weekGroupCardHtml(g, programId) {
   const count = g.circuits.length;
   const badge = AVAILABILITY_BADGES[g.state];
-  const action = opts.readonly ? "open-library-week" : "open-week";
   return `
-    <div class="folder-card tagged week-card state-${g.state}" data-action="${action}" data-program-id="${programId}" data-week-key="${g.key}">
+    <div class="folder-card tagged week-card state-${g.state}" data-action="open-week" data-program-id="${programId}" data-week-key="${g.key}">
       <div class="folder-card-top">
         <h3>${g.name}</h3>
         ${badge ? `<span class="folder-live-badge state-${g.state}">${badge}</span>` : ""}
@@ -532,34 +529,19 @@ function renderFolderGrid() {
     || `<p style="color:var(--deepblue);font-weight:700;">No folders here yet. Click "+ New Folder" to add one.</p>`;
 }
 
-// A folder's workouts can be reached from two places — the program that owns
-// it, or the Library archive — and "back" has to return to whichever one you
-// came from, so remember it (2026-08-15).
-let folderEntryPoint = "programs";
-
 // Entry point from the Programs page — content now lives inside the program
 // it belongs to rather than in a separate top-level section (2026-08-15).
+// The Library used to jump in here too, which is why "back" once had to
+// remember where you came from; it browses its own weeks now, so this is
+// the only way in and back always means the program's own grid.
 function openProgramFolders(programId) {
   selectedProgramScope = programId;
   currentScope = null;
-  folderEntryPoint = "programs";
   selectedCircuitIds.clear();
   showView("view-circuits", "view-programs");
   document.getElementById("folder-detail-view").style.display = "none";
   document.getElementById("folder-grid-view").style.display = "block";
   renderFolderGrid();
-}
-
-// Entry point from the Library — jumps straight to a folder's workouts,
-// skipping the program's folder grid, and keeps the Library nav highlighted
-// so it's clear which surface you're on.
-function openLibraryFolder(folderId) {
-  const folder = folderById(folderId);
-  if (!folder) return;
-  selectedProgramScope = folder.program || "general";
-  folderEntryPoint = "library";
-  showView("view-circuits", "view-library");
-  openFolder(folderId);
 }
 
 function openFolder(folderId) {
@@ -580,24 +562,11 @@ function openWeek(programId, weekKey) {
   renderScopeDetail();
 }
 
-function openLibraryWeek(programId, weekKey) {
-  selectedProgramScope = programId;
-  folderEntryPoint = "library";
-  showView("view-circuits", "view-library");
-  openWeek(programId, weekKey);
-}
-
 function backToFolders() {
   currentScope = null;
   selectedCircuitIds.clear();
   document.getElementById("folder-detail-view").style.display = "none";
   document.getElementById("folder-grid-view").style.display = "block";
-  if (folderEntryPoint === "library") {
-    folderEntryPoint = "programs";
-    showView("view-library");
-    renderLibrary();
-    return;
-  }
   renderFolderGrid();
 }
 
@@ -792,8 +761,7 @@ function renderScopeDetail() {
       group ? group.name : weekLabel(currentScope.weekKey);
     document.getElementById("folder-detail-badge").textContent =
       `${program ? program.name : ""} · ${AVAILABILITY_LABELS[state] || state}`;
-    document.getElementById("folder-back-btn").textContent =
-      folderEntryPoint === "library" ? "← Library" : "← All Weeks";
+    document.getElementById("folder-back-btn").textContent = "← All Weeks";
     document.getElementById("new-circuit-btn").style.display = "";
     // A week isn't a thing you can rename — its name is its date.
     document.getElementById("folder-detail-edit-btn").style.display = "none";
@@ -811,8 +779,7 @@ function renderScopeDetail() {
     const program = programById(folder.program);
     document.getElementById("folder-detail-title").textContent = folder.name;
     document.getElementById("folder-detail-badge").textContent = program ? program.name : "General folder";
-    document.getElementById("folder-back-btn").textContent =
-      folderEntryPoint === "library" ? "← Library" : "← All Folders";
+    document.getElementById("folder-back-btn").textContent = "← All Folders";
     document.getElementById("new-circuit-btn").style.display = "";
     document.getElementById("folder-detail-edit-btn").style.display = folder.live ? "none" : "";
   }
@@ -2248,14 +2215,20 @@ document.addEventListener("click", (e) => {
   if (action === "open-folder") {
     openFolder(el.dataset.folderId);
   }
-  if (action === "open-library-folder") {
-    openLibraryFolder(el.dataset.folderId);
-  }
   if (action === "open-week") {
     openWeek(el.dataset.programId, el.dataset.weekKey);
   }
-  if (action === "open-library-week") {
-    openLibraryWeek(el.dataset.programId, el.dataset.weekKey);
+  if (action === "open-library-program") {
+    openLibraryProgram(el.dataset.programId);
+  }
+  if (action === "open-library-shelf") {
+    librarySelectedShelf = el.dataset.shelfKey;
+    libraryVariantFilter = "all";
+    renderLibraryBrowser();
+  }
+  if (action === "library-variant") {
+    libraryVariantFilter = el.dataset.variant;
+    renderLibraryShelfPane();
   }
   if (action === "restore-program") {
     toggleProgramArchived(el.dataset.programId);
@@ -2525,18 +2498,25 @@ window.addEventListener("storage", (e) => {
 // folder list does. Search covers the case folders can't.
 
 let libraryQuery = "";
+// null = the default screen (programs only). Set = drilled into one program.
+let libraryProgramId = null;
+let librarySelectedShelf = null;
+// Deliberately its own state, separate from the authoring surface's
+// circuitVariantFilter: browsing an archive starts by showing everything,
+// whereas authoring starts scoped to one variant (Chris's call, 2026-08-15).
+let libraryVariantFilter = "all";
 
 function renderLibrary() {
   const q = libraryQuery.trim().toLowerCase();
   const searching = q.length > 0;
+  const browsing = !searching && libraryProgramId !== null;
 
-  document.getElementById("library-archive").style.display = searching ? "none" : "";
+  document.getElementById("library-programs").style.display = searching || browsing ? "none" : "";
+  document.getElementById("library-browser").style.display = browsing ? "" : "none";
   document.getElementById("library-results").style.display = searching ? "" : "none";
 
-  if (!searching) {
-    renderLibraryArchive();
-    return;
-  }
+  if (browsing) return renderLibraryBrowser();
+  if (!searching) return renderLibraryPrograms();
 
   const rows = CIRCUITS.filter((c) => {
     const folder = folderById(c.folderId);
@@ -2571,83 +2551,205 @@ function renderLibrary() {
   });
 }
 
-// Everything a program holds, grouped by the program that owns it. Active
-// programs first in their Programs-page order, then archived ones, then
-// unassigned folders — so the archive reads newest-and-live at the top,
-// finished cycles below.
+// A program's shelves, normalized so the browser doesn't care which shape it
+// is looking at. Structured programs are shelved in folders, rolling programs
+// in weeks derived from their workouts' dates — from the archive's point of
+// view both are the same thing: a labelled bundle of workouts.
 //
-// The shelves themselves differ by program shape: structured programs are
-// shelved in folders, rolling programs in weeks derived from their workouts'
-// dates. Both render as the same grid of cards, because from the archive's
-// point of view they're the same thing — a labelled bundle of workouts.
-function libraryArchiveGroups() {
+// Ordered low → high (oldest week first, Week 1 before Week 8) per Chris's
+// spec. That's the opposite of the authoring surface, where newest-first is
+// right because you work on what's next; here you're reading a history.
+function libraryShelvesFor(programId) {
+  const program = programById(programId);
+
+  if (program && program.scheduleType !== "structured") {
+    const groups = weekGroupsForProgram(programId);
+    const weeks = groups.filter((g) => g.kind === "week").sort((a, b) => (a.key < b.key ? -1 : 1));
+    const evergreen = groups.filter((g) => g.kind !== "week");
+    return [...weeks, ...evergreen].map((g) => ({
+      key: g.key,
+      name: g.name,
+      meta: AVAILABILITY_LABELS[g.state] || "",
+      state: g.state,
+      circuits: g.circuits,
+    }));
+  }
+
+  const folders = programId === "general"
+    ? FOLDERS.filter((f) => !f.program)
+    : FOLDERS.filter((f) => f.program === programId);
+  return folders.map((f) => ({
+    key: f.id,
+    name: f.name,
+    meta: f.live ? "Live" : "",
+    state: f.live ? "live" : "",
+    circuits: CIRCUITS.filter((c) => c.folderId === f.id),
+  }));
+}
+
+function libraryProgramEntries() {
   const active = PROGRAMS.filter((p) => (p.status || "active") !== "archived");
   const archived = PROGRAMS.filter((p) => (p.status || "active") === "archived");
-  const groups = [...active, ...archived].map((p) => {
-    const rolling = p.scheduleType !== "structured";
-    const shelves = rolling
-      ? weekGroupsForProgram(p.id)
-      : orderedFoldersForScope(p.id);
-    return {
-      key: p.id,
-      name: p.name,
-      meta: rolling ? "On demand" : `Structured · ${p.durationWeeks || 8} weeks`,
-      archived: (p.status || "active") === "archived",
-      rolling,
-      shelves,
-      workouts: rolling
-        ? shelves.reduce((n, g) => n + g.circuits.length, 0)
-        : shelves.reduce((n, f) => n + CIRCUITS.filter((c) => c.folderId === f.id).length, 0),
-    };
-  });
+  const entries = [...active, ...archived].map((p) => ({
+    key: p.id,
+    name: p.name,
+    meta: p.scheduleType === "structured" ? `Structured · ${p.durationWeeks || 8} weeks` : "On demand",
+    archived: (p.status || "active") === "archived",
+    shelves: libraryShelvesFor(p.id),
+  }));
 
-  const unassigned = FOLDERS.filter((f) => !f.program);
-  if (unassigned.length) {
-    const shelves = orderedFoldersForScope("general");
-    groups.push({
+  if (FOLDERS.some((f) => !f.program)) {
+    entries.push({
       key: "general",
       name: "General (Unassigned)",
       meta: "Not tied to a program",
       archived: false,
-      rolling: false,
-      shelves,
-      workouts: shelves.reduce((n, f) => n + CIRCUITS.filter((c) => c.folderId === f.id).length, 0),
+      shelves: libraryShelvesFor("general"),
     });
   }
 
-  return groups.filter((g) => g.shelves.length);
+  return entries.filter((e) => e.shelves.length);
 }
 
-function renderLibraryArchive() {
-  const groups = libraryArchiveGroups();
-  const shelfCount = groups.reduce((n, g) => n + g.shelves.length, 0);
+// Level 1 — the default screen. Programs only, nothing else, because this is
+// the one list that stays short: it grows by one every couple of months,
+// where weeks grow by one a week and workouts by two hundred a cycle.
+function renderLibraryPrograms() {
+  const entries = libraryProgramEntries();
 
   document.getElementById("library-count").textContent =
-    `${shelfCount} week${shelfCount === 1 ? "" : "s"} and folders · ${CIRCUITS.length} workouts`;
+    `${entries.length} program${entries.length === 1 ? "" : "s"} · ${CIRCUITS.length} workouts`;
 
-  document.getElementById("library-archive").innerHTML = groups.map((g) => {
-    const unit = g.rolling ? "week" : "folder";
-    const cards = g.rolling
-      ? g.shelves.map((w) => weekGroupCardHtml(w, g.key, { readonly: true })).join("")
-      : g.shelves.map((f) => folderCardHtml(f, { readonly: true })).join("");
+  document.getElementById("library-programs").innerHTML = entries.map((e) => {
+    const workouts = e.shelves.reduce((n, s) => n + s.circuits.length, 0);
+    const unit = programById(e.key) && programById(e.key).scheduleType !== "structured" ? "week" : "folder";
     return `
-      <section class="library-group ${g.archived ? "archived" : ""}">
-        <div class="library-group-head">
-          <div>
-            <p class="eyebrow">${g.meta}</p>
-            <h2>${g.name}${g.archived ? ` <span class="status-pill archived">archived</span>` : ""}</h2>
-          </div>
-          <div class="library-group-actions">
-            <span class="library-group-count">${g.shelves.length} ${unit}${g.shelves.length === 1 ? "" : "s"} · ${g.workouts} workout${g.workouts === 1 ? "" : "s"}</span>
-            ${g.archived ? `<button class="btn-ghost-lg small" data-action="restore-program" data-program-id="${g.key}">Restore</button>` : ""}
-          </div>
+      <div class="library-program-card ${e.archived ? "archived" : ""}" data-action="open-library-program" data-program-id="${e.key}">
+        <div class="library-program-card-main">
+          <p class="eyebrow">${e.meta}</p>
+          <h3>${e.name}${e.archived ? ` <span class="status-pill archived">archived</span>` : ""}</h3>
+          <p class="library-program-card-count">${e.shelves.length} ${unit}${e.shelves.length === 1 ? "" : "s"} · ${workouts} workout${workouts === 1 ? "" : "s"}</p>
         </div>
-        <div class="folder-grid">
-          ${cards}
-        </div>
-      </section>
+        ${e.archived ? `<button class="btn-ghost-lg small" data-action="restore-program" data-program-id="${e.key}">Restore</button>` : ""}
+      </div>
     `;
-  }).join("") || `<p style="color:var(--deepblue);font-weight:700;">Nothing here yet — content appears as soon as a program has some.</p>`;
+  }).join("") || `<p style="color:var(--deepblue);font-weight:700;">Nothing here yet — programs appear as soon as they have content.</p>`;
+}
+
+function openLibraryProgram(programId) {
+  libraryProgramId = programId;
+  libraryVariantFilter = "all";
+  librarySelectedShelf = defaultLibraryShelf(programId);
+  renderLibrary();
+}
+
+// The menu reads oldest-first, but landing on the oldest week would mean
+// opening Burn Club to a week from last August once the archive has a year
+// in it. Start on what's live instead, and fall back to the first shelf for
+// structured programs, which have no live week.
+function defaultLibraryShelf(programId) {
+  const shelves = libraryShelvesFor(programId);
+  if (!shelves.length) return null;
+  const live = shelves.find((s) => s.state === "live");
+  return (live || shelves[0]).key;
+}
+
+function backToLibraryPrograms() {
+  libraryProgramId = null;
+  librarySelectedShelf = null;
+  renderLibrary();
+}
+
+// Levels 2 and 3 — the week menu on the left, the selected week's workouts on
+// the right. Only one week's worth of rows is ever in the DOM.
+function renderLibraryBrowser() {
+  const entry = libraryProgramEntries().find((e) => e.key === libraryProgramId);
+  if (!entry) return backToLibraryPrograms();
+
+  const shelves = entry.shelves;
+  if (!shelves.some((s) => s.key === librarySelectedShelf)) {
+    librarySelectedShelf = defaultLibraryShelf(libraryProgramId);
+  }
+  const workouts = shelves.reduce((n, s) => n + s.circuits.length, 0);
+
+  document.getElementById("library-browser-eyebrow").textContent = entry.meta;
+  document.getElementById("library-browser-title").textContent = entry.name;
+  const program = programById(libraryProgramId);
+  const unit = program && program.scheduleType !== "structured" ? "week" : "folder";
+  document.getElementById("library-browser-count").textContent =
+    `${shelves.length} ${unit}${shelves.length === 1 ? "" : "s"} · ${workouts} workout${workouts === 1 ? "" : "s"}`;
+  document.getElementById("library-count").textContent =
+    `${entry.name} · ${workouts} workout${workouts === 1 ? "" : "s"}`;
+
+  document.getElementById("library-shelf-menu").innerHTML = shelves.map((s) => `
+    <button class="library-shelf-link ${s.key === librarySelectedShelf ? "active" : ""}"
+            data-action="open-library-shelf" data-shelf-key="${s.key}">
+      <span class="library-shelf-name">${s.name}</span>
+      <span class="library-shelf-meta">${s.circuits.length}${s.meta ? ` · ${s.meta}` : ""}</span>
+    </button>
+  `).join("");
+
+  renderLibraryShelfPane();
+}
+
+function renderLibraryShelfPane() {
+  const pane = document.getElementById("library-shelf-pane");
+  const shelf = libraryShelvesFor(libraryProgramId).find((s) => s.key === librarySelectedShelf);
+  if (!shelf) {
+    pane.innerHTML = `<p class="library-shelf-empty">Nothing here yet.</p>`;
+    return;
+  }
+
+  // The toggle only earns its space when the shelf actually holds variants —
+  // Burn Club has none, so showing Home/Gym there would be three dead pills.
+  const hasVariants = shelf.circuits.some((c) => c.variant);
+  if (!hasVariants) libraryVariantFilter = "all";
+
+  const counts = {};
+  shelf.circuits.forEach((c) => { if (c.variant) counts[c.variant] = (counts[c.variant] || 0) + 1; });
+  const options = [
+    { key: "all", label: `Show All (${shelf.circuits.length})` },
+    ...PROGRAM_VARIANTS.map((v) => ({ key: v.key, label: `${v.label} (${counts[v.key] || 0})` })),
+  ];
+
+  const rows = libraryVariantFilter === "all"
+    ? shelf.circuits
+    : shelf.circuits.filter((c) => c.variant === libraryVariantFilter);
+
+  pane.innerHTML = `
+    <div class="library-shelf-head">
+      <div>
+        <p class="eyebrow">${shelf.meta || "Workouts"}</p>
+        <h2>${shelf.name}</h2>
+      </div>
+      ${hasVariants ? `<div class="filter-pill-row">${options.map((o) => `
+        <button class="filter-pill ${o.key === libraryVariantFilter ? "active" : ""}"
+                data-action="library-variant" data-variant="${o.key}">${o.label}</button>
+      `).join("")}</div>` : ""}
+    </div>
+    <div class="table-card">
+      <table class="admin-table">
+        <thead><tr><th>Workout</th><th>Blocks</th><th></th></tr></thead>
+        <tbody>
+          ${rows.map((c) => `
+            <tr>
+              <td>
+                <strong>${c.title}</strong>
+                ${c.variant ? `<span class="variant-pill variant-${c.variant}">${(PROGRAM_VARIANTS.find((v) => v.key === c.variant) || {}).label || c.variant}</span>` : ""}
+                <br /><span class="library-sub">${[c.focus, c.difficulty].filter(Boolean).join(" · ")}</span>
+              </td>
+              <td>${(c.blocks || []).length}</td>
+              <td><button class="table-action-btn" data-edit-circuit="${c.id}">Edit</button></td>
+            </tr>
+          `).join("") || `<tr><td colspan="3" style="text-align:center;color:var(--deepblue);padding:24px;">No ${libraryVariantFilter} workouts in ${shelf.name}.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  pane.querySelectorAll("[data-edit-circuit]").forEach((btn) => {
+    btn.addEventListener("click", () => openEditBuilder(btn.dataset.editCircuit));
+  });
 }
 
 // ---------------- Settings ----------------
@@ -3095,6 +3197,8 @@ document.addEventListener("DOMContentLoaded", () => {
     libraryQuery = e.target.value;
     renderLibrary();
   });
+
+  document.getElementById("library-back-btn").addEventListener("click", backToLibraryPrograms);
 
   document.getElementById("settings-back-btn").addEventListener("click", showSettingsIndex);
   document.getElementById("settings-notes-save-btn").addEventListener("click", saveBlockNotesSettings);

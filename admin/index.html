@@ -566,12 +566,30 @@
       </header>
       <input type="text" class="library-search" id="library-search" placeholder="Search every workout by name, focus or program…" autocomplete="off" />
 
-      <!-- Two modes, one control. Empty search browses the folder archive
-           grouped by program; typing switches to workout-level results,
-           which is the one thing folders can't do. A folder count grows
-           roughly a sixteenth as fast as a workout count, so folders stay
-           browsable at scale where a flat table of every workout does not. -->
-      <div id="library-archive"></div>
+      <!-- Three levels, so no single screen grows without limit (2026-08-15,
+           Chris: "I see this getting to be very long, very quickly"). The
+           default screen is programs only — a list that grows by one every
+           couple of months. Weeks live one level in, as a left-hand menu, and
+           only the selected week's workouts ever render. Typing in the search
+           box cuts across all three and shows flat workout results, which is
+           the one thing a drill-down can't do. -->
+      <div id="library-programs"></div>
+
+      <div id="library-browser" style="display:none;">
+        <button class="folder-back-btn" id="library-back-btn">← All Programs</button>
+        <header class="view-header">
+          <div>
+            <p class="eyebrow" id="library-browser-eyebrow">Program</p>
+            <h1 id="library-browser-title">Program</h1>
+          </div>
+          <span class="library-group-count" id="library-browser-count"></span>
+        </header>
+        <div class="library-browser-body">
+          <nav class="library-shelf-menu" id="library-shelf-menu"></nav>
+          <div class="library-shelf-pane" id="library-shelf-pane"></div>
+        </div>
+      </div>
+
       <div id="library-results" style="display:none;">
         <div class="table-card">
           <table class="admin-table">

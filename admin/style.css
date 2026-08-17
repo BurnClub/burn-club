@@ -276,7 +276,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .filter-pill.active { background: var(--blue); border-color: var(--blue); color: white; }
 
 /* Archived programs no longer render here at all — they live in the Library,
-   which styles them itself (.library-group.archived). */
+   which styles them itself (.library-program-card.archived). */
 .program-card p.desc { font-size: 13px; color: var(--ink); opacity: 0.7; margin: 8px 0 16px; }
 .program-card-stats { display: flex; gap: 20px; margin-bottom: 16px; }
 .program-card-stats div p:first-child { font-family: 'Baloo 2', sans-serif; font-size: 20px; font-weight: 800; margin: 0; color: var(--ink); }
@@ -1099,33 +1099,93 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .library-search:focus { border-color: var(--blue); }
 .library-sub { font-size: 12px; color: var(--deepblue); font-weight: 600; }
 
-/* Folder archive, grouped by program. Each group is a labelled band so the
-   eye can skip whole programs at a glance rather than reading folder names. */
-.library-group { margin-bottom: 32px; }
-.library-group:last-child { margin-bottom: 0; }
-.library-group-head {
+.library-group-count { font-size: 12px; font-weight: 700; color: var(--deepblue); }
+
+/* Level 1 — programs only. A short list that stays short, so full-width rows
+   rather than a grid: they read like a menu, which is what they are. */
+.library-program-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: white;
+  border: 2px solid var(--periwinkle);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.library-program-card:hover { border-color: var(--blue); transform: translateY(-1px); }
+.library-program-card h3 {
+  margin: 2px 0 0;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.library-program-card-count { margin: 6px 0 0; font-size: 12px; font-weight: 700; color: var(--deepblue); }
+/* Archived programs stay legible but visibly secondary — they're the back
+   of the catalogue, not hidden. */
+.library-program-card.archived { opacity: 0.7; }
+.library-program-card.archived:hover { opacity: 1; }
+
+/* Levels 2 and 3 — week menu left, selected week's workouts right. */
+.library-browser-body { display: flex; gap: 20px; align-items: flex-start; }
+.library-shelf-menu {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 14px rgba(10,19,64,0.05);
+  padding: 10px;
+  /* The menu is the one part that grows forever — Burn Club adds a week every
+     week — so it scrolls on its own instead of stretching the page. */
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.library-shelf-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  color: var(--ink);
+  transition: background 0.12s;
+}
+.library-shelf-link:hover { background: var(--bg); }
+.library-shelf-link.active { background: var(--blue); }
+.library-shelf-link.active .library-shelf-name,
+.library-shelf-link.active .library-shelf-meta { color: white; }
+.library-shelf-name { font-weight: 800; font-size: 13px; }
+.library-shelf-meta { font-size: 11px; font-weight: 700; color: var(--deepblue); }
+
+.library-shelf-pane { flex: 1; min-width: 0; }
+.library-shelf-head {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding-bottom: 10px;
   margin-bottom: 14px;
-  border-bottom: 2px solid var(--periwinkle);
 }
-.library-group-head h2 {
-  margin: 2px 0 0;
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.library-group-actions { display: flex; align-items: center; gap: 12px; }
-.library-group-count { font-size: 12px; font-weight: 700; color: var(--deepblue); }
-/* Archived programs stay legible but visibly secondary — they're the back
-   of the catalogue, not hidden. */
-.library-group.archived { opacity: 0.7; }
-.library-group.archived:hover { opacity: 1; }
+.library-shelf-head h2 { margin: 2px 0 0; font-size: 20px; }
+.library-shelf-head .filter-pill-row { margin: 0; }
+.library-shelf-empty { color: var(--deepblue); font-weight: 700; }
+/* The menu takes 220px off the width, so focus/difficulty sits under the
+   title rather than in its own column — same shape as the search results,
+   and it stops the title wrapping to three words-per-line on a narrow window. */
+.library-shelf-pane .admin-table th:nth-child(2),
+.library-shelf-pane .admin-table th:nth-child(3) { width: 70px; }
+.library-shelf-pane .admin-table td:first-child strong { margin-right: 6px; }
 
 /* ---------- BUILDER VARIANT SWITCHER (2026-08-15) ---------- */
 .builder-variant-bar {
