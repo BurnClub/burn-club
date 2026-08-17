@@ -516,17 +516,75 @@ function renderFolderGrid() {
   document.getElementById("new-folder-btn").style.display = rolling ? "none" : "";
   document.getElementById("new-rolling-workout-btn").style.display = rolling ? "" : "none";
 
+  // Rolling programs stack labelled bands, each holding its own card grid, so
+  // the container itself must not be a grid — otherwise the bands become grid
+  // items and sit side by side in columns.
+  const grid = document.getElementById("folder-grid");
+  grid.classList.toggle("week-sections", rolling);
+
   if (rolling) {
-    const groups = weekGroupsForProgram(scope);
-    document.getElementById("folder-grid").innerHTML =
-      groups.map((g) => weekGroupCardHtml(g, scope)).join("")
-      || `<p style="color:var(--deepblue);font-weight:700;">No workouts yet. Click "+ New Workout" to add one — the date you give it decides the week it lands in.</p>`;
+    grid.innerHTML = rollingWeekGridHtml(scope);
     return;
   }
 
   const folders = orderedFoldersForScope(scope);
-  document.getElementById("folder-grid").innerHTML = folders.map(folderCardHtml).join("")
+  grid.innerHTML = folders.map(folderCardHtml).join("")
     || `<p style="color:var(--deepblue);font-weight:700;">No folders here yet. Click "+ New Folder" to add one.</p>`;
+}
+
+// Previous weeks start collapsed (2026-08-17, Chris's layout). This is the
+// authoring surface, where the useful weeks are the live one and what's coming;
+// the back catalogue has the Library, so here it only needs to be reachable.
+let rollingPastCollapsed = true;
+
+// The week grid, ordered the way the work runs: what's live, what's next, the
+// evergreen shelf, anything still needing a date, then history folded away.
+// Deliberately different from the Library's flat oldest-first menu — that reads
+// a history, this one runs a program.
+function rollingWeekGridHtml(programId) {
+  const groups = weekGroupsForProgram(programId);
+  if (!groups.length) {
+    return `<p style="color:var(--deepblue);font-weight:700;">No workouts yet. Click "+ New Workout" to add one — the date you give it decides the week it lands in.</p>`;
+  }
+
+  const live = groups.filter((g) => g.state === "live");
+  // Soonest first: the next week you have to fill is the one that matters.
+  const upcoming = groups.filter((g) => g.state === "scheduled").sort((a, b) => (a.key < b.key ? -1 : 1));
+  const evergreen = groups.filter((g) => g.state === "always");
+  const undated = groups.filter((g) => g.state === "undated");
+  // "Last week" belongs here by Chris's grouping, but it's still published to
+  // members, so the header says so rather than letting the collapse imply it's
+  // retired. Newest first — recent history is what gets reused.
+  const previous = groups.filter((g) => g.state === "last-week" || g.state === "past")
+    .sort((a, b) => (a.key < b.key ? 1 : -1));
+
+  const cards = (list) => list.map((g) => weekGroupCardHtml(g, programId)).join("");
+  const section = (label, list, hint) => list.length ? `
+    <div class="week-section">
+      <p class="week-section-label">${label}${hint ? ` <span class="week-section-hint">${hint}</span>` : ""}</p>
+      <div class="folder-grid">${cards(list)}</div>
+    </div>
+  ` : "";
+
+  const stillLive = previous.some((g) => g.state === "last-week");
+  const previousWorkouts = previous.reduce((n, g) => n + g.circuits.length, 0);
+
+  return `
+    ${section("Live now", live, live.length ? "" : undefined)}
+    ${section("Upcoming", upcoming)}
+    ${section("Always available", evergreen)}
+    ${section("Needs a date", undated, "not visible to members until dated")}
+    ${previous.length ? `
+      <div class="week-section">
+        <button class="week-collapse-toggle ${rollingPastCollapsed ? "" : "open"}" data-action="toggle-past-weeks">
+          <span class="week-collapse-caret">${rollingPastCollapsed ? "▸" : "▾"}</span>
+          Previous weeks
+          <span class="week-section-hint">${previous.length} week${previous.length === 1 ? "" : "s"} · ${previousWorkouts} workout${previousWorkouts === 1 ? "" : "s"}${stillLive ? " · last week still shows to members" : ""}</span>
+        </button>
+        ${rollingPastCollapsed ? "" : `<div class="folder-grid">${cards(previous)}</div>`}
+      </div>
+    ` : ""}
+  `;
 }
 
 // Entry point from the Programs page — content now lives inside the program
@@ -2338,6 +2396,10 @@ document.addEventListener("click", (e) => {
   }
   if (action === "open-week") {
     openWeek(el.dataset.programId, el.dataset.weekKey);
+  }
+  if (action === "toggle-past-weeks") {
+    rollingPastCollapsed = !rollingPastCollapsed;
+    renderFolderGrid();
   }
   if (action === "open-library-program") {
     openLibraryProgram(el.dataset.programId);
