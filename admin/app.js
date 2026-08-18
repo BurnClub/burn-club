@@ -187,6 +187,9 @@ function groupConversationId(group) {
 
 let selectedGroupId = null;
 
+// Name and member count only (2026-08-17, Chris) — the descriptions made every
+// card a paragraph and the list stopped being scannable. Plus the group's chat
+// state, since the chat is now part of what a group is.
 function renderGroupList() {
   const groups = allGroups();
   document.getElementById("group-count").textContent =
@@ -194,13 +197,19 @@ function renderGroupList() {
 
   document.getElementById("group-list").innerHTML = groups.map((g) => {
     const members = groupMembers(g);
+    const msgs = conversationMessages(groupConversationId(g));
+    const unread = msgs.filter((m) => !m.isStaff && !m.read).length;
     return `
       <div class="library-program-card" data-action="open-group" data-group-id="${g.id}">
         <div class="library-program-card-main">
           <p class="eyebrow">${g.type === "program" ? "Program group" : "Custom group"}</p>
           <h3>${g.name}</h3>
-          <p class="library-program-card-count">${members.length} member${members.length === 1 ? "" : "s"}${g.description ? ` · ${g.description}` : ""}</p>
+          <p class="library-program-card-count">${members.length} member${members.length === 1 ? "" : "s"}</p>
         </div>
+        <span class="group-card-chat ${unread ? "has-unread" : ""}">
+          <span class="group-card-chat-count">💬 ${msgs.length}</span>
+          ${unread ? `<span class="unread-row-count">${unread} new</span>` : ""}
+        </span>
       </div>
     `;
   }).join("");
@@ -208,6 +217,7 @@ function renderGroupList() {
 
 function openGroup(groupId) {
   selectedGroupId = groupId;
+  resetGroupRosterControls();
   document.getElementById("group-list-view").style.display = "none";
   document.getElementById("group-detail-view").style.display = "block";
   renderGroupDetail();
@@ -224,6 +234,22 @@ function backToGroups() {
 // they haven't shown up in it at all — which is the signal worth seeing.
 function latestActivityFor(memberId) {
   return ACTIVITY_FEED.find((a) => a.memberId === memberId) || null;
+}
+
+// Roster search/filter state. Reset whenever a different group is opened, so
+// filters can't silently hide members of a group you've just arrived at.
+let groupRosterQuery = "";
+let groupRosterStatus = "all";
+let groupRosterActivity = "all";
+let groupRosterSortDesc = true;
+
+function resetGroupRosterControls() {
+  groupRosterQuery = "";
+  groupRosterStatus = "all";
+  groupRosterActivity = "all";
+  groupRosterSortDesc = true;
+  const search = document.getElementById("group-roster-search");
+  if (search) search.value = "";
 }
 
 function renderGroupDetail() {
@@ -246,18 +272,6 @@ function renderGroupDetail() {
     ? `${active.length} of ${members.length} member${members.length === 1 ? "" : "s"} show recent activity`
     : "No members in this group yet.";
 
-  document.getElementById("group-roster-body").innerHTML = members.map((m) => {
-    const last = latestActivityFor(m.id);
-    return `
-      <tr data-action="edit-member" data-member-id="${m.id}" style="cursor:pointer;">
-        <td><strong>${m.name}</strong><br /><span class="library-sub">${m.email}</span></td>
-        <td><span class="status-pill ${m.status === "active" ? "active" : "draft"}">${m.status}</span></td>
-        <td>${m.streak} day${m.streak === 1 ? "" : "s"}</td>
-        <td>${last ? `${last.workoutTitle}<br /><span class="library-sub">${last.time}</span>` : `<span class="library-sub">No recent activity</span>`}</td>
-      </tr>
-    `;
-  }).join("") || `<tr><td colspan="4" style="text-align:center;color:var(--deepblue);padding:24px;">No members in this group yet.</td></tr>`;
-
   const memberIds = new Set(members.map((m) => m.id));
   const feed = ACTIVITY_FEED.filter((a) => memberIds.has(a.memberId));
   document.getElementById("group-activity-feed").innerHTML = feed.map((a) => `
@@ -269,6 +283,95 @@ function renderGroupDetail() {
       </div>
     </div>
   `).join("") || `<p style="color:var(--deepblue);font-weight:700;">Nothing logged by this group yet.</p>`;
+
+  renderGroupChat();
+  renderGroupRoster();
+}
+
+function renderGroupRoster() {
+  const group = groupById(selectedGroupId);
+  if (!group) return;
+  const members = groupMembers(group);
+
+  const statusOptions = [
+    { key: "all", label: `All (${members.length})` },
+    { key: "active", label: `Active (${members.filter((m) => m.status === "active").length})` },
+    { key: "inactive", label: `Inactive (${members.filter((m) => m.status !== "active").length})` },
+  ];
+  const activityOptions = [
+    { key: "all", label: "Any activity" },
+    { key: "recent", label: `Trained recently (${members.filter((m) => latestActivityFor(m.id)).length})` },
+    { key: "quiet", label: `No recent activity (${members.filter((m) => !latestActivityFor(m.id)).length})` },
+  ];
+  const pills = (opts, current, action) => opts.map((o) => `
+    <button class="filter-pill ${o.key === current ? "active" : ""}" data-action="${action}" data-key="${o.key}">${o.label}</button>
+  `).join("");
+  document.getElementById("group-roster-status").innerHTML = pills(statusOptions, groupRosterStatus, "group-roster-status");
+  document.getElementById("group-roster-activity").innerHTML = pills(activityOptions, groupRosterActivity, "group-roster-activity");
+
+  const q = groupRosterQuery.trim().toLowerCase();
+  const rows = members
+    .filter((m) => {
+      if (groupRosterStatus === "active" && m.status !== "active") return false;
+      if (groupRosterStatus === "inactive" && m.status === "active") return false;
+      if (groupRosterActivity === "recent" && !latestActivityFor(m.id)) return false;
+      if (groupRosterActivity === "quiet" && latestActivityFor(m.id)) return false;
+      if (!q) return true;
+      return `${m.name} ${m.email}`.toLowerCase().includes(q);
+    })
+    .sort((a, b) => (groupRosterSortDesc ? b.streak - a.streak : a.streak - b.streak));
+
+  document.getElementById("group-roster-count").textContent = members.length
+    ? `Showing ${rows.length} of ${members.length} member${members.length === 1 ? "" : "s"}`
+    : "";
+
+  document.getElementById("group-roster-body").innerHTML = rows.map((m) => {
+    const last = latestActivityFor(m.id);
+    return `
+      <tr data-action="edit-member" data-member-id="${m.id}" style="cursor:pointer;">
+        <td><strong>${m.name}</strong><br /><span class="library-sub">${m.email}</span></td>
+        <td><span class="status-pill ${m.status === "active" ? "active" : "draft"}">${m.status}</span></td>
+        <td>${m.streak} day${m.streak === 1 ? "" : "s"}</td>
+        <td>${last ? `${last.workoutTitle}<br /><span class="library-sub">${last.time}</span>` : `<span class="library-sub">No recent activity</span>`}</td>
+      </tr>
+    `;
+  }).join("") || `<tr><td colspan="4" style="text-align:center;color:var(--deepblue);padding:24px;">${members.length ? "No members match those filters." : "No members in this group yet."}</td></tr>`;
+}
+
+// ---------------- Group chat (inline) ----------------
+
+function renderGroupChat() {
+  const group = groupById(selectedGroupId);
+  if (!group) return;
+  const convId = groupConversationId(group);
+  const msgs = conversationMessages(convId);
+
+  // Opening the group counts as reading its chat, same as opening the thread
+  // in Messages does — otherwise the unread badge never clears from here.
+  msgs.forEach((m) => { if (!m.isStaff) m.read = true; });
+  updateAdminUnreadBadge();
+
+  const list = document.getElementById("group-chat-messages");
+  list.innerHTML = msgs.map((m) => renderAdminMessageBubble(m, true)).join("")
+    || `<p style="color:var(--deepblue);font-weight:700;">No messages yet — say something to the group.</p>`;
+  list.scrollTop = list.scrollHeight;
+}
+
+function sendGroupChat(text) {
+  const group = groupById(selectedGroupId);
+  if (!group || !text.trim()) return;
+  broadcastMessage({
+    id: "msg-" + Date.now(),
+    conversationId: groupConversationId(group),
+    senderId: "staff",
+    senderName: "Staff",
+    isStaff: true,
+    text: text.trim(),
+    time: "Just now",
+    read: true,
+  });
+  renderGroupChat();
+  renderAdminConversationList();
 }
 
 // ---------------- Group create / edit ----------------
@@ -353,16 +456,6 @@ function deleteGroup() {
 }
 
 // ---------------- Group actions ----------------
-
-function messageGroup() {
-  const group = groupById(selectedGroupId);
-  if (!group) return;
-  const convId = groupConversationId(group);
-  showView("view-messages");
-  renderAdminConversationList();
-  openAdminThread(convId);
-  document.getElementById("admin-thread-input").focus();
-}
 
 function openGroupChallengeModal() {
   const group = groupById(selectedGroupId);
@@ -2845,6 +2938,18 @@ document.addEventListener("click", (e) => {
   if (action === "open-group") {
     openGroup(el.dataset.groupId);
   }
+  if (action === "group-roster-status") {
+    groupRosterStatus = el.dataset.key;
+    renderGroupRoster();
+  }
+  if (action === "group-roster-activity") {
+    groupRosterActivity = el.dataset.key;
+    renderGroupRoster();
+  }
+  if (action === "group-sort") {
+    groupRosterSortDesc = !groupRosterSortDesc;
+    renderGroupRoster();
+  }
   if (action === "group-pick-member") {
     if (el.checked) groupModalPicked.add(el.dataset.memberId);
     else groupModalPicked.delete(el.dataset.memberId);
@@ -3868,8 +3973,17 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("group-back-btn").addEventListener("click", backToGroups);
   document.getElementById("group-edit-btn").addEventListener("click", () => openGroupModal(selectedGroupId));
   document.getElementById("group-delete-btn").addEventListener("click", deleteGroup);
-  document.getElementById("group-message-btn").addEventListener("click", messageGroup);
   document.getElementById("group-challenge-btn").addEventListener("click", openGroupChallengeModal);
+  document.getElementById("group-chat-composer").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const input = document.getElementById("group-chat-input");
+    sendGroupChat(input.value);
+    input.value = "";
+  });
+  document.getElementById("group-roster-search").addEventListener("input", (e) => {
+    groupRosterQuery = e.target.value;
+    renderGroupRoster();
+  });
   document.getElementById("group-modal-close-btn").addEventListener("click", closeGroupModal);
   document.getElementById("group-modal-cancel-btn").addEventListener("click", closeGroupModal);
   document.getElementById("group-modal-save-btn").addEventListener("click", saveGroup);

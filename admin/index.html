@@ -805,29 +805,52 @@
             <p class="challenge-detail-meta" id="group-detail-desc"></p>
           </div>
           <div class="view-header-actions">
-            <button class="btn-ghost-lg small" id="group-message-btn">Message Group</button>
             <button class="btn-ghost-lg small" id="group-challenge-btn">Add to Challenge</button>
             <button class="btn-ghost-lg small" id="group-edit-btn">Edit</button>
             <button class="btn-ghost-lg small btn-danger" id="group-delete-btn">Delete</button>
           </div>
         </header>
 
+        <!-- The chat lives here rather than sending you to Messages — a group
+             and the conversation with it are the same thing (2026-08-17). -->
         <div class="panel">
-          <h2>Member Activity</h2>
-          <p class="activity-summary" id="group-activity-summary" style="margin: 0 0 14px;"></p>
-          <div class="table-card">
-            <table class="admin-table">
-              <thead>
-                <tr><th>Member</th><th>Status</th><th>Streak</th><th>Last Activity</th></tr>
-              </thead>
-              <tbody id="group-roster-body"></tbody>
-            </table>
-          </div>
+          <h2>Group Chat</h2>
+          <div class="group-chat-messages" id="group-chat-messages"></div>
+          <form class="thread-composer" id="group-chat-composer">
+            <input type="text" id="group-chat-input" placeholder="Message the group…" autocomplete="off" />
+            <button type="submit" class="btn-primary small">Send</button>
+          </form>
         </div>
 
         <div class="panel">
           <h2>Recent Activity</h2>
           <div class="activity-feed-list" id="group-activity-feed"></div>
+        </div>
+
+        <!-- Moved to the bottom per Chris, and given its own search/filters
+             since it's the part that gets long as a group grows. -->
+        <div class="panel">
+          <h2>Member Activity</h2>
+          <p class="activity-summary" id="group-activity-summary" style="margin: 0 0 14px;"></p>
+          <div class="group-roster-controls">
+            <input type="text" class="library-search" id="group-roster-search" placeholder="Search this group by name or email…" autocomplete="off" />
+            <div class="filter-pill-row" id="group-roster-status"></div>
+            <div class="filter-pill-row" id="group-roster-activity"></div>
+          </div>
+          <div class="table-card">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Status</th>
+                  <th class="sortable-th" data-action="group-sort" data-sort="streak">Streak</th>
+                  <th>Last Activity</th>
+                </tr>
+              </thead>
+              <tbody id="group-roster-body"></tbody>
+            </table>
+          </div>
+          <p class="activity-summary" id="group-roster-count"></p>
         </div>
       </div>
     </section>
