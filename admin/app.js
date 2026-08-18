@@ -108,9 +108,7 @@ function weekGroupsForProgram(programId) {
 function estimateBlockSeconds(block) {
   switch (block.type) {
     case "interval":
-      return block.timed === false
-        ? block.rounds * block.exercises.length * (25 + block.rest)
-        : block.rounds * block.exercises.length * (block.work + block.rest);
+      return block.rounds * block.exercises.length * (block.work + block.rest);
     case "superset":
       return block.rounds * (block.exercises.length * 30 + block.rest);
     case "straight":
@@ -1826,7 +1824,11 @@ function schemaBlockToBuilderBlock(block) {
         type: "interval",
         values: {
           label: block.label,
-          timed: block.timed !== false,
+          // Anything saved as rep-based before the toggle was removed opens as
+          // a timed circuit, picking up the default work window (2026-08-18).
+          // Nothing in the content was ever saved that way, so this is only a
+          // guard against an old bridged workout.
+          timed: true,
           rounds: block.rounds,
           work: block.work || 40,
           rest: block.rest,
@@ -2082,21 +2084,21 @@ function blockFieldRow(block, i) {
   const v = block.values;
   switch (block.type) {
     case "interval":
+      // Circuits are always timed (2026-08-18). The rep-based variant this
+      // toggle used to offer put one exercise per screen with a rest after
+      // every station — but Chris programs rep work as "all the exercises,
+      // then rest", which is exactly what a Superset already does. Superset
+      // is the classification for that, so this is one path instead of two.
       return `
-        <label class="timed-toggle-label">
-          <input type="checkbox" data-block-index="${i}" data-field="timed" ${v.timed !== false ? "checked" : ""} />
-          Timed (uncheck for rep-based — self-paced reps instead of a work timer)
-        </label>
         <div class="builder-field-row">
           <label>Rounds<input type="number" min="1" value="${v.rounds}" data-block-index="${i}" data-field="rounds" /></label>
-          ${v.timed !== false ? `<label>Work (sec)<input type="number" min="1" value="${v.work}" data-block-index="${i}" data-field="work" /></label>` : ""}
+          <label>Work (sec)<input type="number" min="1" value="${v.work}" data-block-index="${i}" data-field="work" /></label>
           <label>Rest (sec)<input type="number" min="0" value="${v.rest}" data-block-index="${i}" data-field="rest" /></label>
         </div>
         <div class="builder-ex-list">
           ${v.exercises.map((e, ei) => `
             <div class="builder-ex-row">
               ${chosenExercisePill(e.name, i, ei)}
-              ${v.timed === false ? `<input type="number" placeholder="Reps" value="${e.reps || ""}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />` : ""}
               <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
             </div>
           `).join("")}
@@ -2224,11 +2226,8 @@ function builderBlocksToSchema() {
     const v = b.values;
     switch (b.type) {
       case "interval": {
-        const isTimed = v.timed !== false;
-        const exercises = v.exercises.filter((e) => e.name.trim()).map((e) => (isTimed ? { name: e.name } : { name: e.name, reps: Number(e.reps) || 0 }));
-        return isTimed
-          ? { type: "interval", label: v.label, timed: true, rounds: Number(v.rounds) || 1, work: Number(v.work) || 0, rest: Number(v.rest) || 0, exercises }
-          : { type: "interval", label: v.label, timed: false, rounds: Number(v.rounds) || 1, rest: Number(v.rest) || 0, exercises };
+        const exercises = v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name }));
+        return { type: "interval", label: v.label, timed: true, rounds: Number(v.rounds) || 1, work: Number(v.work) || 0, rest: Number(v.rest) || 0, exercises };
       }
       case "superset":
         return { type: "superset", label: v.label, rounds: Number(v.rounds) || 1, rest: Number(v.rest) || 0, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })) };
@@ -2899,11 +2898,6 @@ document.addEventListener("change", (e) => {
     const bi = Number(t.dataset.blockIndex);
     builderBlocks[bi].selected = t.checked;
     renderCombineBar();
-  }
-  if (t.dataset.field === "timed") {
-    const bi = Number(t.dataset.blockIndex);
-    builderBlocks[bi].values.timed = t.checked;
-    renderBuilderBlocks();
   }
   if (t.dataset.role === "select-circuit") {
     if (t.checked) selectedCircuitIds.add(t.dataset.circuitId);

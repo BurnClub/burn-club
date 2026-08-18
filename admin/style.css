@@ -1074,24 +1074,6 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   flex-shrink: 0;
 }
 
-.timed-toggle-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--deepblue);
-  margin-bottom: 10px;
-  cursor: pointer;
-}
-.timed-toggle-label input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--blue);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
 /* ---------- TABLE ---------- */
 .admin-table { width: 100%; border-collapse: collapse; background: white; border-radius: var(--radius-md); overflow: hidden; box-shadow: 0 4px 14px rgba(10,19,64,0.05); }
 .admin-table th {

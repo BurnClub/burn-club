@@ -1398,9 +1398,7 @@ function blockTypeLabel(type) {
 function blockSummaryLine(block) {
   switch (block.type) {
     case "interval":
-      return block.timed === false
-        ? `${block.rounds} rounds · self-paced reps · rest ${block.rest}s`
-        : `${block.rounds} rounds · ${block.work}s work / ${block.rest}s rest`;
+      return `${block.rounds} rounds · ${block.work}s work / ${block.rest}s rest`;
     case "superset":
       return `${block.rounds} rounds · rest ${block.rest}s between rounds`;
     case "straight":
@@ -1490,32 +1488,32 @@ function buildPhaseQueue(circuit) {
   const totalBlocks = circuit.blocks.length;
 
   circuit.blocks.forEach((block, blockIndex) => {
+    // Circuits are timed. A rep-based one used to put a single exercise on
+    // screen with a rest after every station, but that isn't how Chris
+    // programs rep work — he rests once the whole set is done, which is what
+    // a superset is. The builder no longer offers the rep-based option
+    // (2026-08-18); anything already saved that way runs as a superset rather
+    // than through a screen with no clock and the wrong instructions.
+    const isRepBased = block.type === "interval" && block.timed === false;
+
     // Notes come from the block's format, not the block itself (see
     // BLOCK_FORMAT_NOTES in data.js) — staff no longer author these per
     // workout, so every block of a given type always has the same explainer.
-    const blockMeta = { blockLabel: block.label, blockIndex, totalBlocks, blockType: block.type, blockNotes: BLOCK_FORMAT_NOTES[block.type] || "" };
+    // A rep-based leftover takes the superset note, since that's the screen it
+    // actually gets; keyed on type alone it would promise a clock it hasn't got.
+    const noteKey = isRepBased ? "superset" : block.type;
+    const blockMeta = { blockLabel: block.label, blockIndex, totalBlocks, blockType: block.type, blockNotes: BLOCK_FORMAT_NOTES[noteKey] || "" };
 
-    if (block.type === "interval") {
-      const isTimed = block.timed !== false;
+    if (block.type === "interval" && !isRepBased) {
       for (let round = 1; round <= block.rounds; round++) {
         block.exercises.forEach((ex, exIndex) => {
-          if (isTimed) {
-            phases.push({
-              ...blockMeta,
-              kind: "work",
-              exerciseName: ex.name,
-              duration: block.work,
-              progressLabel: `Round ${round} of ${block.rounds} · Station ${exIndex + 1} of ${block.exercises.length}`,
-            });
-          } else {
-            phases.push({
-              ...blockMeta,
-              kind: "set",
-              exerciseName: ex.name,
-              reps: ex.reps,
-              progressLabel: `Round ${round} of ${block.rounds} · Station ${exIndex + 1} of ${block.exercises.length}`,
-            });
-          }
+          phases.push({
+            ...blockMeta,
+            kind: "work",
+            exerciseName: ex.name,
+            duration: block.work,
+            progressLabel: `Round ${round} of ${block.rounds} · Station ${exIndex + 1} of ${block.exercises.length}`,
+          });
           const isLastOfBlock = round === block.rounds && exIndex === block.exercises.length - 1;
           if (!isLastOfBlock) {
             const nextEx = block.exercises[exIndex + 1] || block.exercises[0];
@@ -1535,7 +1533,7 @@ function buildPhaseQueue(circuit) {
     // screen per exercise (2026-08-07) — Chris wants everything right in
     // front of them, video swapped for a per-exercise popup button like the
     // AMRAP list already does. One "superset" phase per round.
-    if (block.type === "superset") {
+    if (block.type === "superset" || isRepBased) {
       for (let round = 1; round <= block.rounds; round++) {
         phases.push({
           ...blockMeta,
@@ -1946,16 +1944,11 @@ const Player = {
       if (this.isNewBlockStart()) this.awaitStart(); else this.beginPhaseTimer();
     }
 
-    if (phase.kind === "set") {
-      document.getElementById("player-exercise-name").textContent = phase.exerciseName;
-      document.getElementById("player-sub-pill").textContent =
-        phase.progressLabel + (phase.reps ? ` · ${phase.reps} reps` : "");
-      document.getElementById("player-video").style.display = "flex";
-      document.getElementById("player-complete-set-btn").style.display = "block";
-      setPlayerExerciseTechnique(phase.exerciseName);
-    }
+    // The "set" phase kind that lived here is gone (2026-08-18) — it was the
+    // one-exercise-per-screen rep-based circuit, which nothing produces now
+    // that rep work is programmed as a superset.
 
-    // Superset: both exercises on one screen (2026-08-07) — no persistent
+    // Superset: every exercise on one screen (2026-08-07) — no persistent
     // video panel, each exercise row gets its own popup play button instead
     // (same pattern as the AMRAP list). Mark Set Complete advances to the
     // rest phase between rounds, same as every other kind.
