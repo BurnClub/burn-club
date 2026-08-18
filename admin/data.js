@@ -797,11 +797,41 @@ const CHALLENGES = [
 // localStorage, same-origin/same-browser only — see broadcastMessage() in
 // app.js and the matching LIVE_CIRCUITS_KEY bridge for workouts.
 
-// A DM per member, plus one group chat per program — membership for a
-// program's group chat is just every MEMBERS entry with that program.
+// ---------------- Groups (2026-08-17) ----------------
+// Two kinds, one shape once read through groupMembers():
+//
+//   Program groups are derived, never stored — one per program, membership is
+//   every member on it. Deliberately variant-agnostic: Home, Gym and Combo
+//   members of the same program are one group, per Chris. A member's access
+//   level is an attribute of them, not a separate audience.
+//
+//   Custom groups are hand-picked. They store their member ids outright, so
+//   membership only changes when someone changes it.
+//
+// The per-program group chats that already existed are these same program
+// groups — the Groups section is where they surface, rather than a second,
+// competing idea of "the Burn Club group".
+const CUSTOM_GROUPS = [
+  {
+    id: "custom-founding-members",
+    name: "Founding Members",
+    description: "The original crew — first to sign up, first to hear about anything new.",
+    memberIds: ["priya-k", "chris-v"],
+  },
+  {
+    id: "custom-form-check",
+    name: "Form Check Volunteers",
+    description: "Members who agreed to send video for technique feedback.",
+    memberIds: ["marcus-t", "jamie-r", "jordan-p"],
+  },
+];
+
+// A DM per member, one chat per program group, and one per custom group so a
+// custom group is messageable the moment it exists.
 const CONVERSATIONS = [
   ...MEMBERS.map((m) => ({ id: "dm-" + m.id, type: "dm", memberId: m.id })),
   ...PROGRAMS.map((p) => ({ id: "group-" + p.id, type: "group", programId: p.id, name: p.name + " Group Chat" })),
+  ...CUSTOM_GROUPS.map((g) => ({ id: "group-" + g.id, type: "group", groupId: g.id, name: g.name + " Group Chat" })),
 ];
 
 const MESSAGES = [

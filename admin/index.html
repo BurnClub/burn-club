@@ -43,6 +43,7 @@
       <button class="side-link" data-view="view-exercises">🏋️ Exercises</button>
       <button class="side-link" data-view="view-library">💧 Library</button>
       <button class="side-link" data-view="view-members">👤 Members</button>
+      <button class="side-link" data-view="view-groups">🫂 Groups</button>
       <button class="side-link" data-view="view-challenges">🏆 Challenges</button>
       <button class="side-link" data-view="view-community">👥 Community</button>
       <button class="side-link" data-view="view-messages">💬 Messages<span class="side-unread-badge" id="side-unread-badge" style="display:none;"></span></button>
@@ -772,6 +773,113 @@
           <div>
             <button class="btn-ghost-lg" id="member-modal-cancel-btn">Cancel</button>
             <button class="btn-primary" id="member-modal-save-btn">Save Member</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ---------- GROUPS (2026-08-17) ---------- -->
+    <!-- One group per program (Home/Gym/Combo members together — access level
+         is an attribute of a member, not a separate audience), plus custom
+         hand-picked groups. The per-program group chats that already existed
+         are these same groups; this is where they surface. -->
+    <section class="view" id="view-groups" data-view-section>
+      <div id="group-list-view">
+        <header class="view-header">
+          <div>
+            <p class="eyebrow">Audiences</p>
+            <h1>Groups</h1>
+            <p class="challenge-detail-meta" id="group-count"></p>
+          </div>
+          <button class="btn-primary" id="new-group-btn">+ New Group</button>
+        </header>
+        <div id="group-list"></div>
+      </div>
+
+      <div id="group-detail-view" style="display:none;">
+        <button class="folder-back-btn" id="group-back-btn">← All Groups</button>
+        <header class="view-header">
+          <div>
+            <p class="eyebrow" id="group-detail-badge"></p>
+            <h1 id="group-detail-title"></h1>
+            <p class="challenge-detail-meta" id="group-detail-desc"></p>
+          </div>
+          <div class="view-header-actions">
+            <button class="btn-ghost-lg small" id="group-message-btn">Message Group</button>
+            <button class="btn-ghost-lg small" id="group-challenge-btn">Add to Challenge</button>
+            <button class="btn-ghost-lg small" id="group-edit-btn">Edit</button>
+            <button class="btn-ghost-lg small btn-danger" id="group-delete-btn">Delete</button>
+          </div>
+        </header>
+
+        <div class="panel">
+          <h2>Member Activity</h2>
+          <p class="activity-summary" id="group-activity-summary" style="margin: 0 0 14px;"></p>
+          <div class="table-card">
+            <table class="admin-table">
+              <thead>
+                <tr><th>Member</th><th>Status</th><th>Streak</th><th>Last Activity</th></tr>
+              </thead>
+              <tbody id="group-roster-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Recent Activity</h2>
+          <div class="activity-feed-list" id="group-activity-feed"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- GROUP MODAL ---------- -->
+    <div class="builder-overlay" id="group-modal-overlay">
+      <div class="builder-panel small">
+        <header class="builder-header">
+          <h2 id="group-modal-title">New Group</h2>
+          <button class="player-exit" id="group-modal-close-btn">✕</button>
+        </header>
+        <div class="builder-body">
+          <label class="modal-field">Group name
+            <input type="text" id="group-modal-name" placeholder="e.g. Founding Members" autocomplete="off" />
+          </label>
+          <label class="modal-field">Description <span class="modal-field-hint">(optional)</span>
+            <input type="text" id="group-modal-desc" placeholder="What this group is for" autocomplete="off" />
+          </label>
+          <div class="modal-field">
+            <span class="modal-field-label">Members <span class="modal-field-hint" id="group-modal-picked"></span></span>
+            <div class="group-member-picker" id="group-modal-members"></div>
+          </div>
+        </div>
+        <footer class="builder-footer">
+          <span></span>
+          <div>
+            <button class="btn-ghost-lg" id="group-modal-cancel-btn">Cancel</button>
+            <button class="btn-primary" id="group-modal-save-btn">Create Group</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ---------- ADD GROUP TO CHALLENGE ---------- -->
+    <div class="builder-overlay" id="group-challenge-overlay">
+      <div class="builder-panel small">
+        <header class="builder-header">
+          <h2>Add Group to Challenge</h2>
+          <button class="player-exit" id="group-challenge-close-btn">✕</button>
+        </header>
+        <div class="builder-body">
+          <p id="group-challenge-desc" class="modal-desc"></p>
+          <label class="modal-field">Challenge
+            <select id="group-challenge-select"></select>
+          </label>
+          <p class="modal-desc" id="group-challenge-note"></p>
+        </div>
+        <footer class="builder-footer">
+          <span></span>
+          <div>
+            <button class="btn-ghost-lg" id="group-challenge-cancel-btn">Cancel</button>
+            <button class="btn-primary" id="group-challenge-confirm-btn">Add to Challenge</button>
           </div>
         </footer>
       </div>

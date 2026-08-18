@@ -145,6 +145,265 @@ function showView(viewId, activeNavId) {
   if (nav) nav.classList.add("active");
 }
 
+// ---------------- Groups (2026-08-17) ----------------
+// Program groups are computed from PROGRAMS every time rather than stored, so
+// they can't drift out of step with the programs or the roster. Custom groups
+// carry their own member ids. Everything downstream reads groupMembers(), so
+// neither kind is a special case past this point.
+
+function programGroups() {
+  return PROGRAMS.map((p) => ({
+    id: "group-" + p.id,
+    type: "program",
+    programId: p.id,
+    name: p.name,
+    description: p.description,
+  }));
+}
+
+function customGroups() {
+  return CUSTOM_GROUPS.map((g) => ({ ...g, type: "custom" }));
+}
+
+function allGroups() {
+  return [...programGroups(), ...customGroups()];
+}
+
+function groupById(id) {
+  return allGroups().find((g) => g.id === id);
+}
+
+function groupMembers(group) {
+  if (!group) return [];
+  if (group.type === "program") return MEMBERS.filter((m) => m.program === group.programId);
+  return (group.memberIds || []).map((id) => memberById(id)).filter(Boolean);
+}
+
+// The group's chat thread. Program groups already had one; custom groups get
+// one created alongside them, so "Message Group" never dead-ends.
+function groupConversationId(group) {
+  return "group-" + (group.type === "program" ? group.programId : group.id);
+}
+
+let selectedGroupId = null;
+
+function renderGroupList() {
+  const groups = allGroups();
+  document.getElementById("group-count").textContent =
+    `${groups.length} group${groups.length === 1 ? "" : "s"}`;
+
+  document.getElementById("group-list").innerHTML = groups.map((g) => {
+    const members = groupMembers(g);
+    return `
+      <div class="library-program-card" data-action="open-group" data-group-id="${g.id}">
+        <div class="library-program-card-main">
+          <p class="eyebrow">${g.type === "program" ? "Program group" : "Custom group"}</p>
+          <h3>${g.name}</h3>
+          <p class="library-program-card-count">${members.length} member${members.length === 1 ? "" : "s"}${g.description ? ` · ${g.description}` : ""}</p>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function openGroup(groupId) {
+  selectedGroupId = groupId;
+  document.getElementById("group-list-view").style.display = "none";
+  document.getElementById("group-detail-view").style.display = "block";
+  renderGroupDetail();
+}
+
+function backToGroups() {
+  selectedGroupId = null;
+  document.getElementById("group-detail-view").style.display = "none";
+  document.getElementById("group-list-view").style.display = "block";
+  renderGroupList();
+}
+
+// Most recent thing a member did, from the activity feed. Returns null when
+// they haven't shown up in it at all — which is the signal worth seeing.
+function latestActivityFor(memberId) {
+  return ACTIVITY_FEED.find((a) => a.memberId === memberId) || null;
+}
+
+function renderGroupDetail() {
+  const group = groupById(selectedGroupId);
+  if (!group) return backToGroups();
+  const members = groupMembers(group);
+
+  document.getElementById("group-detail-title").textContent = group.name;
+  document.getElementById("group-detail-badge").textContent =
+    group.type === "program" ? "Program group · membership follows the program" : "Custom group · hand-picked";
+  document.getElementById("group-detail-desc").textContent = group.description || "";
+
+  // Only custom groups can be edited or deleted — a program group is a view of
+  // the program, so the way to change it is to change who's on the program.
+  document.getElementById("group-edit-btn").style.display = group.type === "custom" ? "" : "none";
+  document.getElementById("group-delete-btn").style.display = group.type === "custom" ? "" : "none";
+
+  const active = members.filter((m) => latestActivityFor(m.id));
+  document.getElementById("group-activity-summary").textContent = members.length
+    ? `${active.length} of ${members.length} member${members.length === 1 ? "" : "s"} show recent activity`
+    : "No members in this group yet.";
+
+  document.getElementById("group-roster-body").innerHTML = members.map((m) => {
+    const last = latestActivityFor(m.id);
+    return `
+      <tr data-action="edit-member" data-member-id="${m.id}" style="cursor:pointer;">
+        <td><strong>${m.name}</strong><br /><span class="library-sub">${m.email}</span></td>
+        <td><span class="status-pill ${m.status === "active" ? "active" : "draft"}">${m.status}</span></td>
+        <td>${m.streak} day${m.streak === 1 ? "" : "s"}</td>
+        <td>${last ? `${last.workoutTitle}<br /><span class="library-sub">${last.time}</span>` : `<span class="library-sub">No recent activity</span>`}</td>
+      </tr>
+    `;
+  }).join("") || `<tr><td colspan="4" style="text-align:center;color:var(--deepblue);padding:24px;">No members in this group yet.</td></tr>`;
+
+  const memberIds = new Set(members.map((m) => m.id));
+  const feed = ACTIVITY_FEED.filter((a) => memberIds.has(a.memberId));
+  document.getElementById("group-activity-feed").innerHTML = feed.map((a) => `
+    <div class="activity-feed-row" data-action="edit-member" data-member-id="${a.memberId}">
+      <div class="activity-feed-text"><strong>${a.memberName}</strong> completed ${a.workoutTitle}</div>
+      <div class="activity-feed-meta">
+        <span class="activity-feed-rpe">RPE ${a.rpe}/10</span>
+        <span class="activity-feed-time">${a.time}</span>
+      </div>
+    </div>
+  `).join("") || `<p style="color:var(--deepblue);font-weight:700;">Nothing logged by this group yet.</p>`;
+}
+
+// ---------------- Group create / edit ----------------
+
+let editingGroupId = null;
+let groupModalPicked = new Set();
+
+function renderGroupMemberPicker() {
+  document.getElementById("group-modal-picked").textContent =
+    groupModalPicked.size ? `(${groupModalPicked.size} selected)` : "(none selected)";
+  document.getElementById("group-modal-members").innerHTML = MEMBERS.map((m) => {
+    const program = programById(m.program);
+    return `
+      <label class="group-member-option">
+        <input type="checkbox" data-action="group-pick-member" data-member-id="${m.id}" ${groupModalPicked.has(m.id) ? "checked" : ""} />
+        <span class="group-member-name">${m.name}</span>
+        <span class="group-member-program">${program ? program.name : "—"}</span>
+      </label>
+    `;
+  }).join("");
+}
+
+function openGroupModal(groupId) {
+  const group = groupId ? groupById(groupId) : null;
+  editingGroupId = group && group.type === "custom" ? group.id : null;
+  groupModalPicked = new Set(group && group.memberIds ? group.memberIds : []);
+
+  document.getElementById("group-modal-title").textContent = editingGroupId ? "Edit Group" : "New Group";
+  document.getElementById("group-modal-save-btn").textContent = editingGroupId ? "Save Changes" : "Create Group";
+  document.getElementById("group-modal-name").value = group ? group.name : "";
+  document.getElementById("group-modal-desc").value = group ? group.description || "" : "";
+  renderGroupMemberPicker();
+  document.getElementById("group-modal-overlay").classList.add("visible");
+  document.getElementById("group-modal-name").focus();
+}
+
+function closeGroupModal() {
+  editingGroupId = null;
+  document.getElementById("group-modal-overlay").classList.remove("visible");
+}
+
+function saveGroup() {
+  const name = document.getElementById("group-modal-name").value.trim();
+  if (!name) {
+    alert("Give the group a name.");
+    return;
+  }
+  const description = document.getElementById("group-modal-desc").value.trim();
+  const memberIds = [...groupModalPicked];
+
+  if (editingGroupId) {
+    const g = CUSTOM_GROUPS.find((x) => x.id === editingGroupId);
+    Object.assign(g, { name, description, memberIds });
+    // Keep the group's chat thread named after the group.
+    const conv = CONVERSATIONS.find((c) => c.id === "group-" + g.id);
+    if (conv) conv.name = name + " Group Chat";
+    selectedGroupId = g.id;
+  } else {
+    const id = "custom-" + name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now();
+    CUSTOM_GROUPS.push({ id, name, description, memberIds });
+    // A group with no thread would dead-end on "Message Group", so create it
+    // alongside rather than lazily on first message.
+    CONVERSATIONS.push({ id: "group-" + id, type: "group", groupId: id, name: name + " Group Chat" });
+    selectedGroupId = id;
+  }
+
+  closeGroupModal();
+  renderGroupList();
+  if (document.getElementById("group-detail-view").style.display !== "none") renderGroupDetail();
+}
+
+function deleteGroup() {
+  const group = groupById(selectedGroupId);
+  if (!group || group.type !== "custom") return;
+  const members = groupMembers(group);
+  if (!confirm(`Delete "${group.name}"? Its ${members.length} member${members.length === 1 ? "" : "s"} stay on their programs — only the group goes.`)) return;
+
+  CUSTOM_GROUPS.splice(CUSTOM_GROUPS.findIndex((g) => g.id === group.id), 1);
+  const convIdx = CONVERSATIONS.findIndex((c) => c.id === "group-" + group.id);
+  if (convIdx !== -1) CONVERSATIONS.splice(convIdx, 1);
+  backToGroups();
+}
+
+// ---------------- Group actions ----------------
+
+function messageGroup() {
+  const group = groupById(selectedGroupId);
+  if (!group) return;
+  const convId = groupConversationId(group);
+  showView("view-messages");
+  renderAdminConversationList();
+  openAdminThread(convId);
+  document.getElementById("admin-thread-input").focus();
+}
+
+function openGroupChallengeModal() {
+  const group = groupById(selectedGroupId);
+  if (!group) return;
+  if (!CHALLENGES.length) {
+    alert("There are no challenges yet — create one in Challenges first.");
+    return;
+  }
+  const members = groupMembers(group);
+  document.getElementById("group-challenge-desc").textContent =
+    `Adding ${members.length} member${members.length === 1 ? "" : "s"} from "${group.name}".`;
+  document.getElementById("group-challenge-select").innerHTML = CHALLENGES
+    .map((c) => `<option value="${c.id}">${c.name}</option>`).join("");
+  updateGroupChallengeNote();
+  document.getElementById("group-challenge-overlay").classList.add("visible");
+}
+
+// Says how many are genuinely being added — a challenge scoped to a program
+// already includes that program's members, so adding its own program group
+// changes nothing and should say so rather than looking like it worked.
+function updateGroupChallengeNote() {
+  const group = groupById(selectedGroupId);
+  const challenge = challengeById(document.getElementById("group-challenge-select").value);
+  const note = document.getElementById("group-challenge-note");
+  if (!group || !challenge) return (note.textContent = "");
+  const already = new Set(challengeStandings(challenge).map((s) => s.member.id));
+  const adding = groupMembers(group).filter((m) => !already.has(m.id));
+  note.textContent = adding.length
+    ? `${adding.length} new member${adding.length === 1 ? "" : "s"} will join this challenge.`
+    : "Everyone in this group is already in this challenge.";
+}
+
+function confirmGroupChallenge() {
+  const group = groupById(selectedGroupId);
+  const challenge = challengeById(document.getElementById("group-challenge-select").value);
+  if (!group || !challenge) return;
+  challenge.groupIds = [...new Set([...(challenge.groupIds || []), group.id])];
+  document.getElementById("group-challenge-overlay").classList.remove("visible");
+  renderChallenges();
+}
+
 // ---------------- Dashboard ----------------
 
 // Conversations with something waiting on a reply, longest-waiting first —
@@ -2583,6 +2842,15 @@ document.addEventListener("click", (e) => {
   if (action === "open-unread") {
     openUnreadConversation(el.dataset.conversationId);
   }
+  if (action === "open-group") {
+    openGroup(el.dataset.groupId);
+  }
+  if (action === "group-pick-member") {
+    if (el.checked) groupModalPicked.add(el.dataset.memberId);
+    else groupModalPicked.delete(el.dataset.memberId);
+    document.getElementById("group-modal-picked").textContent =
+      groupModalPicked.size ? `(${groupModalPicked.size} selected)` : "(none selected)";
+  }
   if (action === "edit-folder") {
     openEditFolderModal(el.dataset.folderId);
   }
@@ -3355,8 +3623,21 @@ function challengeById(id) {
 }
 
 // Sorted high-to-low by total points (auto challengePoints + manual adjustment).
+// Membership is the program scope plus any groups added to the challenge
+// (2026-08-17). Groups were bolted on rather than replacing the program scope
+// so existing challenges keep working untouched — a challenge with no groupIds
+// behaves exactly as before.
 function challengeStandings(challenge) {
-  const members = MEMBERS.filter((m) => challenge.programId === "all" || m.program === challenge.programId);
+  const byProgram = MEMBERS.filter((m) => challenge.programId === "all" || m.program === challenge.programId);
+  const byGroup = (challenge.groupIds || []).flatMap((gid) => groupMembers(groupById(gid)));
+
+  const seen = new Set();
+  const members = [...byProgram, ...byGroup].filter((m) => {
+    if (seen.has(m.id)) return false;
+    seen.add(m.id);
+    return true;
+  });
+
   return members
     .map((m) => ({ member: m, total: (m.challengePoints || 0) + (m.pointAdjustment || 0) }))
     .sort((a, b) => b.total - a.total);
@@ -3557,6 +3838,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (btn.dataset.view === "view-library") renderLibrary();
       if (btn.dataset.view === "view-programs") renderPrograms();
       if (btn.dataset.view === "view-dashboard") renderDashboardUnread();
+      if (btn.dataset.view === "view-groups") { backToGroups(); }
       if (btn.dataset.view === "view-messages") renderAdminConversationList();
       if (btn.dataset.view === "view-challenges") closeChallengeDetail();
       if (btn.dataset.view === "view-settings") showSettingsIndex();
@@ -3581,6 +3863,20 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("library-back-btn").addEventListener("click", backToLibraryPrograms);
+
+  document.getElementById("new-group-btn").addEventListener("click", () => openGroupModal(null));
+  document.getElementById("group-back-btn").addEventListener("click", backToGroups);
+  document.getElementById("group-edit-btn").addEventListener("click", () => openGroupModal(selectedGroupId));
+  document.getElementById("group-delete-btn").addEventListener("click", deleteGroup);
+  document.getElementById("group-message-btn").addEventListener("click", messageGroup);
+  document.getElementById("group-challenge-btn").addEventListener("click", openGroupChallengeModal);
+  document.getElementById("group-modal-close-btn").addEventListener("click", closeGroupModal);
+  document.getElementById("group-modal-cancel-btn").addEventListener("click", closeGroupModal);
+  document.getElementById("group-modal-save-btn").addEventListener("click", saveGroup);
+  document.getElementById("group-challenge-close-btn").addEventListener("click", () => document.getElementById("group-challenge-overlay").classList.remove("visible"));
+  document.getElementById("group-challenge-cancel-btn").addEventListener("click", () => document.getElementById("group-challenge-overlay").classList.remove("visible"));
+  document.getElementById("group-challenge-select").addEventListener("change", updateGroupChallengeNote);
+  document.getElementById("group-challenge-confirm-btn").addEventListener("click", confirmGroupChallenge);
 
   document.getElementById("activity-program-filter").addEventListener("change", (e) => {
     activityProgramFilter = e.target.value;
