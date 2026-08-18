@@ -61,6 +61,7 @@ const AVAILABILITY_LABELS = {
   "last-week": "Last week",
   scheduled: "Scheduled",
   past: "Past",
+  always: "Stretch & Core",
   undated: "No date set",
 };
 
@@ -94,7 +95,7 @@ function weekGroupsForProgram(programId) {
   }));
 
   if (always.length) {
-    groups.push({ key: "always", kind: "always", name: "Always available", state: "always", circuits: always });
+    groups.push({ key: "always", kind: "always", name: "Stretch & Core", state: "always", circuits: always });
   }
   if (undated.length) {
     groups.push({ key: "undated", kind: "undated", name: "No date set", state: "undated", circuits: undated });
@@ -572,7 +573,7 @@ function rollingWeekGridHtml(programId) {
   return `
     ${section("Live now", live, live.length ? "" : undefined)}
     ${section("Upcoming", upcoming)}
-    ${section("Always available", evergreen)}
+    ${section("Stretch & Core", evergreen)}
     ${section("Needs a date", undated, "not visible to members until dated")}
     ${previous.length ? `
       <div class="week-section">
@@ -815,10 +816,13 @@ function renderScopeDetail() {
     const program = programById(currentScope.programId);
     const group = weekGroupsForProgram(currentScope.programId).find((g) => g.key === currentScope.weekKey);
     const state = group ? group.state : "past";
-    document.getElementById("folder-detail-title").textContent =
-      group ? group.name : weekLabel(currentScope.weekKey);
+    const title = group ? group.name : weekLabel(currentScope.weekKey);
+    const stateLabel = AVAILABILITY_LABELS[state] || state;
+    document.getElementById("folder-detail-title").textContent = title;
+    // Same as the Library menu: Stretch & Core is named by its state, so
+    // don't print the state again underneath its own name.
     document.getElementById("folder-detail-badge").textContent =
-      `${program ? program.name : ""} · ${AVAILABILITY_LABELS[state] || state}`;
+      [program ? program.name : "", stateLabel === title ? "" : stateLabel].filter(Boolean).join(" · ");
     document.getElementById("folder-back-btn").textContent = "← All Weeks";
     document.getElementById("new-circuit-btn").style.display = "";
     // A week isn't a thing you can rename — its name is its date.
@@ -1836,7 +1840,7 @@ function saveCircuit() {
     const datedChecked = document.getElementById("builder-availability-dated").checked;
     const fromDate = document.getElementById("builder-available-from").value;
     if (!alwaysChecked && !datedChecked) {
-      alert("Choose when this workout is available — pick a date, or mark it always available.");
+      alert("Choose when this workout is available — pick a date, or file it under Stretch & Core.");
       return;
     }
     if (datedChecked && !fromDate) {
@@ -2749,13 +2753,19 @@ function libraryShelvesFor(programId) {
     const groups = weekGroupsForProgram(programId);
     const weeks = groups.filter((g) => g.kind === "week").sort((a, b) => (a.key < b.key ? -1 : 1));
     const evergreen = groups.filter((g) => g.kind !== "week");
-    return [...weeks, ...evergreen].map((g) => ({
-      key: g.key,
-      name: g.name,
-      meta: AVAILABILITY_LABELS[g.state] || "",
-      state: g.state,
-      circuits: g.circuits,
-    }));
+    return [...weeks, ...evergreen].map((g) => {
+      // A week is named by its date and described by its state ("Week of Aug
+      // 16" / "Live now"). Stretch & Core is named by its state, so the two
+      // would read as the same words twice.
+      const label = AVAILABILITY_LABELS[g.state] || "";
+      return {
+        key: g.key,
+        name: g.name,
+        meta: label === g.name ? "" : label,
+        state: g.state,
+        circuits: g.circuits,
+      };
+    });
   }
 
   const folders = programId === "general"
