@@ -147,7 +147,73 @@ function showView(viewId, activeNavId) {
 
 // ---------------- Dashboard ----------------
 
+// Conversations with something waiting on a reply, longest-waiting first —
+// the one at risk of being forgotten is the one that came in first, not the
+// one that just arrived.
+//
+// Ordering follows MESSAGES order, which is chronological. In the real system
+// these carry proper timestamps and this sorts on them; the demo's `time` is a
+// display string ("Mon 6:47 PM") that can't be compared, so array order stands
+// in for it here.
+function unreadConversations() {
+  return CONVERSATIONS.map((conv) => {
+    const unread = conversationMessages(conv.id).filter((m) => !m.isStaff && !m.read);
+    if (!unread.length) return null;
+    const first = unread[0];
+    const latest = unread[unread.length - 1];
+    return {
+      conv,
+      count: unread.length,
+      // Show the newest message — it's the one you're replying to — but keep
+      // the oldest for ordering, so a long thread doesn't jump the queue every
+      // time someone adds to it.
+      text: latest.text,
+      senderName: latest.senderName,
+      time: latest.time,
+      order: MESSAGES.indexOf(first),
+    };
+  }).filter(Boolean).sort((a, b) => a.order - b.order);
+}
+
+function renderDashboardUnread() {
+  const rows = unreadConversations();
+  const total = rows.reduce((n, r) => n + r.count, 0);
+
+  document.getElementById("dashboard-unread-count").textContent = total
+    ? `${total} message${total === 1 ? "" : "s"} across ${rows.length} conversation${rows.length === 1 ? "" : "s"}`
+    : "";
+
+  document.getElementById("dashboard-unread-list").innerHTML = rows.map((r) => `
+    <div class="unread-row" data-action="open-unread" data-conversation-id="${r.conv.id}">
+      <div class="conversation-icon">${r.conv.type === "group" ? "👥" : "💬"}</div>
+      <div class="unread-row-text">
+        <p class="unread-row-name">
+          ${conversationDisplayName(r.conv)}
+          ${r.conv.type === "group" ? `<span class="unread-row-sender">${r.senderName}</span>` : ""}
+          ${r.count > 1 ? `<span class="unread-row-count">${r.count}</span>` : ""}
+        </p>
+        <p class="unread-row-preview">${r.text}</p>
+      </div>
+      <div class="unread-row-meta">
+        <span class="conversation-time">${r.time}</span>
+        <span class="unread-row-reply">Reply →</span>
+      </div>
+    </div>
+  `).join("") || `<p class="unread-empty">✓ All caught up — nothing waiting on a reply.</p>`;
+}
+
+// Jump straight from the dashboard into the thread, already open and ready to
+// type. Opening it marks it read, so the panel has to re-render after.
+function openUnreadConversation(conversationId) {
+  showView("view-messages");
+  renderAdminConversationList();
+  openAdminThread(conversationId);
+  renderDashboardUnread();
+  document.getElementById("admin-thread-input").focus();
+}
+
 function renderDashboard() {
+  renderDashboardUnread();
   document.getElementById("stat-total-members").textContent = ANALYTICS.totalMembers;
   document.getElementById("stat-active-pct").textContent = ANALYTICS.activeThisWeekPct + "%";
   document.getElementById("stat-completion-pct").textContent = ANALYTICS.avgCompletionPct + "%";
@@ -2429,6 +2495,9 @@ document.addEventListener("click", (e) => {
   if (action === "open-admin-thread") {
     openAdminThread(el.dataset.conversationId);
   }
+  if (action === "open-unread") {
+    openUnreadConversation(el.dataset.conversationId);
+  }
   if (action === "edit-folder") {
     openEditFolderModal(el.dataset.folderId);
   }
@@ -2668,6 +2737,7 @@ window.addEventListener("storage", (e) => {
     else MESSAGES[idx] = m;
   });
   renderAdminConversationList();
+  renderDashboardUnread();
   if (selectedConversationId) renderAdminThreadMessages();
 });
 
@@ -3401,6 +3471,7 @@ document.addEventListener("DOMContentLoaded", () => {
       showView(btn.dataset.view);
       if (btn.dataset.view === "view-library") renderLibrary();
       if (btn.dataset.view === "view-programs") renderPrograms();
+      if (btn.dataset.view === "view-dashboard") renderDashboardUnread();
       if (btn.dataset.view === "view-messages") renderAdminConversationList();
       if (btn.dataset.view === "view-challenges") closeChallengeDetail();
       if (btn.dataset.view === "view-settings") showSettingsIndex();

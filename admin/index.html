@@ -64,6 +64,18 @@
         </div>
       </header>
 
+      <!-- Above the stats on purpose (2026-08-17, Chris: "getting back to
+           people quickly is a big priority for me"). A number in a sidebar
+           badge tells you there's something waiting; this tells you who,
+           what they said, and gets you into the reply in one click. -->
+      <div class="panel unread-panel" id="dashboard-unread-panel">
+        <div class="unread-panel-head">
+          <h2>Unread Messages</h2>
+          <span class="unread-panel-count" id="dashboard-unread-count"></span>
+        </div>
+        <div class="unread-list" id="dashboard-unread-list"></div>
+      </div>
+
       <div class="stat-grid">
         <div class="admin-stat-card">
           <p class="admin-stat-num" id="stat-total-members"></p>

@@ -197,6 +197,74 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .panel h2 { font-size: 15px; margin-bottom: 16px; }
 
+/* Unread messages, first thing on the dashboard (2026-08-17). Deliberately
+   quiet when there's nothing waiting — an empty panel shouting for attention
+   every day is how people learn to stop looking at it. */
+.unread-panel { margin-bottom: 20px; }
+.unread-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.unread-panel-head h2 { margin: 0; }
+.unread-panel-count { font-size: 12px; font-weight: 700; color: var(--deepblue); }
+.unread-list { display: flex; flex-direction: column; gap: 8px; }
+.unread-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  /* The unread marker is the row's left edge rather than a dot off to the
+     side — it survives being scanned quickly, which is the whole point. */
+  border-left: 3px solid var(--blue);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.unread-row:hover { background: var(--periwinkle); }
+.unread-row-text { flex: 1; min-width: 0; }
+.unread-row-name {
+  margin: 0 0 3px;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.unread-row-sender { font-weight: 700; font-size: 11px; color: var(--deepblue); }
+.unread-row-count {
+  background: #e0435f;
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.unread-row-preview {
+  margin: 0;
+  font-size: 12px;
+  color: var(--deepblue);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.unread-row-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.unread-row-reply { font-size: 11px; font-weight: 800; color: var(--blue); }
+.unread-empty { margin: 0; font-size: 13px; font-weight: 700; color: #1a8a44; }
+
 .bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 140px; }
 .bar-chart .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
 .bar-chart .bar {
