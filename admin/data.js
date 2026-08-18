@@ -864,3 +864,74 @@ const ANALYTICS = {
     { title: "Sweat & Sculpt", completions: 141 },
   ],
 };
+
+// ---------------- Member activity (2026-08-17) ----------------
+// Powers the dashboard's per-day activity chart: how many distinct members
+// completed a workout or a cardio session on each day of a given week.
+//
+// Real records rather than pre-computed totals, so the chart's actual logic —
+// count distinct members per day, filtered by program — is the same code that
+// will run against a real completions table. What's synthetic is only the
+// source: the prototype has no cross-app completion log (members' history
+// lives in their own browser), so a plausible population is generated here
+// from each program's memberCount.
+//
+// Deterministic: seeded off memberId + date, so reloading doesn't reshuffle
+// the chart. Generated relative to today, so the demo never goes stale.
+
+const ACTIVITY_WEEKS_BACK = 10;
+
+// Cheap string hash → a stable number in [0, 1). Not random, just evenly
+// spread and repeatable, which is all the seed data needs.
+function activityHash(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 100000) / 100000;
+}
+
+// Rough real-world shape: strong start to the week, tailing off into the
+// weekend. Index is getDay() — 0 = Sunday.
+const ACTIVITY_DAY_WEIGHTS = [0.22, 0.55, 0.48, 0.50, 0.44, 0.30, 0.24];
+
+// Not everyone on the roster trains in a given week — a third of any real
+// membership is dormant at any time. Without this the chart reported ~100%
+// weekly participation, which is both implausible and useless as a signal.
+const ACTIVITY_DORMANT_SHARE = 0.32;
+
+function buildMemberActivity() {
+  const records = [];
+  const start = parseDateKey(shiftWeeks(currentWeekStartKey(), -ACTIVITY_WEEKS_BACK));
+  const days = (ACTIVITY_WEEKS_BACK + 1) * 7;
+
+  PROGRAMS.forEach((program) => {
+    const population = program.memberCount || 0;
+    for (let i = 0; i < population; i++) {
+      const memberId = `${program.id}-m${i + 1}`;
+      // Per-member consistency: the same people are regulars week to week,
+      // rather than turnout being reshuffled at random every day.
+      const engagement = activityHash(memberId);
+      if (engagement < ACTIVITY_DORMANT_SHARE) continue;
+      const commitment = 0.35 + engagement * 0.75;
+      for (let d = 0; d < days; d++) {
+        const day = new Date(start);
+        day.setDate(start.getDate() + d);
+        const key = dateKey(day);
+        const chance = ACTIVITY_DAY_WEIGHTS[day.getDay()] * commitment;
+        if (activityHash(memberId + key) >= chance) continue;
+        records.push({
+          memberId,
+          programId: program.id,
+          date: key,
+          type: activityHash(key + memberId) < 0.25 ? "cardio" : "workout",
+        });
+      }
+    }
+  });
+
+  return records;
+}
+
+const MEMBER_ACTIVITY = buildMemberActivity();

@@ -265,6 +265,63 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .unread-row-reply { font-size: 11px; font-weight: 800; color: var(--blue); }
 .unread-empty { margin: 0; font-size: 13px; font-weight: 700; color: #1a8a44; }
 
+/* Member activity chart (2026-08-17) — distinct members per day, one week. */
+.activity-panel { margin-bottom: 20px; }
+.activity-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.activity-panel-head h2 { margin: 0 0 2px; }
+.activity-panel-sub { margin: 0; font-size: 12px; font-weight: 700; color: var(--deepblue); }
+.activity-panel-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.activity-select {
+  border: 2px solid var(--periwinkle);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--field-bg);
+  color: var(--ink);
+  outline: none;
+}
+.activity-select:focus { border-color: var(--blue); }
+.activity-week-nav { display: flex; gap: 6px; }
+.activity-week-nav button:disabled { opacity: 0.4; cursor: default; }
+
+.activity-chart { display: flex; align-items: flex-end; gap: 10px; height: 180px; }
+.activity-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+}
+.activity-col-value { font-size: 12px; font-weight: 800; color: var(--ink); }
+/* The track keeps every bar's baseline aligned — without it, columns with a
+   taller number label sit lower than their neighbours. */
+.activity-col-track { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.activity-col-bar {
+  width: 100%;
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(180deg, #6f8bff, var(--blue));
+  min-height: 2px;
+}
+.activity-col-label { font-size: 11px; font-weight: 700; color: var(--deepblue); }
+.activity-col.is-today .activity-col-bar { background: linear-gradient(180deg, #2fc46a, #1a8a44); }
+.activity-col.is-today .activity-col-label { color: #1a8a44; }
+/* Days that haven't happened yet read as empty slots, not as zero turnout. */
+.activity-col.is-future .activity-col-track {
+  border-bottom: 2px dashed var(--periwinkle);
+}
+.activity-col.is-future .activity-col-label { opacity: 0.45; }
+.activity-summary { margin: 14px 0 0; font-size: 12px; font-weight: 700; color: var(--deepblue); }
+
 .bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 140px; }
 .bar-chart .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
 .bar-chart .bar {

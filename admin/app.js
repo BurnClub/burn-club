@@ -212,8 +212,100 @@ function openUnreadConversation(conversationId) {
   document.getElementById("admin-thread-input").focus();
 }
 
+// ---------------- Member activity chart (2026-08-17) ----------------
+// Distinct members active per day for one week, filterable by program.
+// Distinct members rather than total completions: someone doing two sessions
+// in a day is still one member showing up, and "how many of my people trained
+// on Tuesday" is the question a weekly glance is actually asking.
+
+let activityWeekStart = null; // null until first render, then a YYYY-MM-DD Sunday
+let activityProgramFilter = "all";
+
+const ACTIVITY_DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function activityPopulation(programId) {
+  if (programId === "all") return PROGRAMS.reduce((n, p) => n + (p.memberCount || 0), 0);
+  const p = programById(programId);
+  return p ? p.memberCount || 0 : 0;
+}
+
+// Seven counts, Sunday first. Counting into a Set per day is what makes this
+// "members" and not "completions".
+function activityCountsForWeek(weekStart, programId) {
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = parseDateKey(weekStart);
+    d.setDate(d.getDate() + i);
+    return dateKey(d);
+  });
+  const byDay = days.map(() => new Set());
+
+  MEMBER_ACTIVITY.forEach((a) => {
+    if (programId !== "all" && a.programId !== programId) return;
+    const idx = days.indexOf(a.date);
+    if (idx !== -1) byDay[idx].add(a.memberId);
+  });
+
+  return days.map((date, i) => ({ date, count: byDay[i].size }));
+}
+
+function renderActivityChart() {
+  if (!activityWeekStart) activityWeekStart = currentWeekStartKey();
+
+  const isCurrent = activityWeekStart === currentWeekStartKey();
+  document.getElementById("activity-week-label").textContent =
+    `${weekLabel(activityWeekStart)}${isCurrent ? " · this week" : ""}`;
+  // Can't look at a week that hasn't happened.
+  document.getElementById("activity-next-week").disabled = isCurrent;
+  document.getElementById("activity-this-week").disabled = isCurrent;
+
+  const population = activityPopulation(activityProgramFilter);
+  const chart = document.getElementById("activity-chart");
+  const summary = document.getElementById("activity-summary");
+
+  if (!population) {
+    chart.innerHTML = "";
+    summary.textContent = "No members enrolled in this program yet — nothing to chart.";
+    return;
+  }
+
+  const rows = activityCountsForWeek(activityWeekStart, activityProgramFilter);
+  const today = dateKey(new Date());
+  // Scale against the program's membership, not the week's own peak, so bars
+  // mean the same thing week to week and a quiet week actually looks quiet.
+  const peak = Math.max(...rows.map((r) => r.count), 1);
+  const scaleTo = Math.max(peak, Math.round(population * 0.5)) || 1;
+
+  chart.innerHTML = rows.map((r) => {
+    const future = r.date > today;
+    const pct = future ? 0 : Math.round((r.count / scaleTo) * 100);
+    return `
+      <div class="activity-col ${r.date === today ? "is-today" : ""} ${future ? "is-future" : ""}">
+        <span class="activity-col-value">${future ? "" : r.count}</span>
+        <div class="activity-col-track">
+          <div class="activity-col-bar" style="height:${Math.min(pct, 100)}%"></div>
+        </div>
+        <span class="activity-col-label">${ACTIVITY_DAY_NAMES[parseDateKey(r.date).getDay()]}</span>
+      </div>
+    `;
+  }).join("");
+
+  // Distinct members across the whole week — not the sum of the daily counts,
+  // since most people train more than once.
+  const weekly = new Set();
+  const days = rows.map((r) => r.date);
+  MEMBER_ACTIVITY.forEach((a) => {
+    if (activityProgramFilter !== "all" && a.programId !== activityProgramFilter) return;
+    if (days.includes(a.date)) weekly.add(a.memberId);
+  });
+  const pct = Math.round((weekly.size / population) * 100);
+  const isCurrentWeek = activityWeekStart === currentWeekStartKey();
+  summary.textContent =
+    `${weekly.size} of ${population} member${population === 1 ? "" : "s"} active ${isCurrentWeek ? "this week" : "that week"} (${pct}%)`;
+}
+
 function renderDashboard() {
   renderDashboardUnread();
+  renderActivityChart();
   document.getElementById("stat-total-members").textContent = ANALYTICS.totalMembers;
   document.getElementById("stat-active-pct").textContent = ANALYTICS.activeThisWeekPct + "%";
   document.getElementById("stat-completion-pct").textContent = ANALYTICS.avgCompletionPct + "%";
@@ -500,11 +592,14 @@ function populateProgramFilters() {
   const memberModalSelect = document.getElementById("member-modal-program");
   const memberFilterSelect = document.getElementById("member-program-filter");
   const challengeModalSelect = document.getElementById("challenge-modal-program");
+  const activityFilterSelect = document.getElementById("activity-program-filter");
+  activityFilterSelect.innerHTML = `<option value="all">All Programs</option>`;
   PROGRAMS.forEach((p) => {
     folderModalSelect.insertAdjacentHTML("beforeend", `<option value="${p.id}">${p.name}</option>`);
     memberModalSelect.insertAdjacentHTML("beforeend", `<option value="${p.id}">${p.name}</option>`);
     memberFilterSelect.insertAdjacentHTML("beforeend", `<option value="${p.id}">${p.name}</option>`);
     challengeModalSelect.insertAdjacentHTML("beforeend", `<option value="${p.id}">${p.name}</option>`);
+    activityFilterSelect.insertAdjacentHTML("beforeend", `<option value="${p.id}">${p.name}</option>`);
   });
 }
 
@@ -3496,6 +3591,25 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("library-back-btn").addEventListener("click", backToLibraryPrograms);
+
+  document.getElementById("activity-program-filter").addEventListener("change", (e) => {
+    activityProgramFilter = e.target.value;
+    renderActivityChart();
+  });
+  document.getElementById("activity-prev-week").addEventListener("click", () => {
+    activityWeekStart = shiftWeeks(activityWeekStart || currentWeekStartKey(), -1);
+    renderActivityChart();
+  });
+  document.getElementById("activity-next-week").addEventListener("click", () => {
+    const next = shiftWeeks(activityWeekStart || currentWeekStartKey(), 1);
+    if (next > currentWeekStartKey()) return;
+    activityWeekStart = next;
+    renderActivityChart();
+  });
+  document.getElementById("activity-this-week").addEventListener("click", () => {
+    activityWeekStart = currentWeekStartKey();
+    renderActivityChart();
+  });
 
   document.getElementById("settings-back-btn").addEventListener("click", showSettingsIndex);
   document.getElementById("settings-notes-save-btn").addEventListener("click", saveBlockNotesSettings);

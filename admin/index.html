@@ -95,6 +95,29 @@
         </div>
       </div>
 
+      <!-- How many distinct members trained each day of a given week
+           (2026-08-17). Counts members, not completions — two sessions from
+           one person is one active member, which is the number that answers
+           "is my base showing up". -->
+      <div class="panel activity-panel">
+        <div class="activity-panel-head">
+          <div>
+            <h2>Member Activity</h2>
+            <p class="activity-panel-sub" id="activity-week-label"></p>
+          </div>
+          <div class="activity-panel-controls">
+            <select id="activity-program-filter" class="activity-select"></select>
+            <div class="activity-week-nav">
+              <button class="btn-ghost-lg small" id="activity-prev-week">←</button>
+              <button class="btn-ghost-lg small" id="activity-this-week">This week</button>
+              <button class="btn-ghost-lg small" id="activity-next-week">→</button>
+            </div>
+          </div>
+        </div>
+        <div class="activity-chart" id="activity-chart"></div>
+        <p class="activity-summary" id="activity-summary"></p>
+      </div>
+
       <div class="dashboard-row">
         <div class="panel">
           <h2>Weekly Completions</h2>
