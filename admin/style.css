@@ -188,7 +188,6 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .admin-stat-num { font-family: 'Baloo 2', sans-serif; font-size: 30px; font-weight: 800; color: var(--blue); margin: 0; }
 .admin-stat-label { margin: 4px 0 0; font-size: 12px; font-weight: 700; color: var(--deepblue); }
 
-.dashboard-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
 .panel {
   background: white;
   border-radius: var(--radius-md);
@@ -322,20 +321,15 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .activity-col.is-future .activity-col-label { opacity: 0.45; }
 .activity-summary { margin: 14px 0 0; font-size: 12px; font-weight: 700; color: var(--deepblue); }
 
-.bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 140px; }
-.bar-chart .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
-.bar-chart .bar {
-  width: 100%;
-  background: linear-gradient(180deg, var(--blue), var(--deepblue));
-  border-radius: 6px 6px 0 0;
-}
-.bar-chart .bar-label { margin-top: 6px; font-size: 10px; color: var(--deepblue); font-weight: 700; }
-
 .top-circuits-list { display: flex; flex-direction: column; gap: 10px; }
 .top-circuit-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; }
 .top-circuit-row span:last-child { color: var(--deepblue); }
 
-.dashboard-row + .panel { margin-top: 16px; }
+/* Panels stack down the dashboard; this spaces any two that sit together,
+   replacing the old .dashboard-row + .panel rule from when Weekly Completions
+   and Top Workouts shared a two-column row. Margins collapse with the
+   margin-bottom on .unread-panel / .activity-panel, so no double gaps. */
+.panel + .panel { margin-top: 16px; }
 .activity-feed-list { display: flex; flex-direction: column; gap: 4px; max-height: 320px; overflow-y: auto; }
 .activity-feed-row {
   display: flex;
@@ -1247,7 +1241,6 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 
 @media (max-width: 900px) {
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
-  .dashboard-row { grid-template-columns: 1fr; }
   .builder-meta-grid { grid-template-columns: 1fr; }
 }
 

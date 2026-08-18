@@ -857,7 +857,6 @@ const ANALYTICS = {
   activeThisWeekPct: 68,
   avgCompletionPct: 74,
   avgStreak: 5.2,
-  weeklyCompletions: [120, 135, 128, 142, 150, 138, 160, 171],
   topCircuits: [
     { title: "Full Body Burn", completions: 189 },
     { title: "Core Crusher", completions: 162 },

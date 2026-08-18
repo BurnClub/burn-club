@@ -311,16 +311,6 @@ function renderDashboard() {
   document.getElementById("stat-completion-pct").textContent = ANALYTICS.avgCompletionPct + "%";
   document.getElementById("stat-avg-streak").textContent = ANALYTICS.avgStreak;
 
-  const max = Math.max(...ANALYTICS.weeklyCompletions);
-  document.getElementById("bar-chart").innerHTML = ANALYTICS.weeklyCompletions
-    .map((v, i) => `
-      <div class="bar-col">
-        <div class="bar" style="height:${(v / max) * 100}%"></div>
-        <span class="bar-label">W${i + 1}</span>
-      </div>
-    `)
-    .join("");
-
   document.getElementById("top-circuits-list").innerHTML = ANALYTICS.topCircuits
     .map((c) => `<div class="top-circuit-row"><span>${c.title}</span><span>${c.completions} completions</span></div>`)
     .join("");
