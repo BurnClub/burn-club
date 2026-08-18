@@ -236,6 +236,32 @@ function latestActivityFor(memberId) {
   return ACTIVITY_FEED.find((a) => a.memberId === memberId) || null;
 }
 
+// "Today" / "Yesterday" / "Aug 5" (2026-08-17, Chris wants the date rather
+// than which workout it was). Named days for the recent end because "Today"
+// answers the question faster than a date you have to compare against today's.
+function activityDateLabel(dateStr) {
+  if (!dateStr) return "";
+  const today = dateKey(new Date());
+  if (dateStr === today) return "Today";
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (dateStr === dateKey(yesterday)) return "Yesterday";
+  const d = parseDateKey(dateStr);
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString(undefined, sameYear
+    ? { month: "short", day: "numeric" }
+    : { month: "short", day: "numeric", year: "numeric" });
+}
+
+// Whole days between a date and today — the "12 days ago" under the date.
+function daysSince(dateStr) {
+  const then = parseDateKey(dateStr);
+  const now = new Date();
+  const a = new Date(then.getFullYear(), then.getMonth(), then.getDate());
+  const b = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((b - a) / 86400000);
+}
+
 // Roster search/filter state. Reset whenever a different group is opened, so
 // filters can't silently hide members of a group you've just arrived at.
 let groupRosterQuery = "";
@@ -332,7 +358,9 @@ function renderGroupRoster() {
         <td><strong>${m.name}</strong><br /><span class="library-sub">${m.email}</span></td>
         <td><span class="status-pill ${m.status === "active" ? "active" : "draft"}">${m.status}</span></td>
         <td>${m.streak} day${m.streak === 1 ? "" : "s"}</td>
-        <td>${last ? `${last.workoutTitle}<br /><span class="library-sub">${last.time}</span>` : `<span class="library-sub">No recent activity</span>`}</td>
+        <td>${last
+          ? `${activityDateLabel(last.date)}${daysSince(last.date) > 1 ? `<br /><span class="library-sub">${daysSince(last.date)} days ago</span>` : ""}`
+          : `<span class="library-sub">No recent activity</span>`}</td>
       </tr>
     `;
   }).join("") || `<tr><td colspan="4" style="text-align:center;color:var(--deepblue);padding:24px;">${members.length ? "No members match those filters." : "No members in this group yet."}</td></tr>`;

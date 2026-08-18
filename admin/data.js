@@ -764,7 +764,7 @@ const MEMBERS = [
   { id: "marcus-t", name: "Marcus T.", email: "marcus.t@example.com", program: "burn-club", streak: 8, memberSince: "Feb 2025", badge: "", status: "active", notes: "Prefers morning workouts.", challengePoints: 150, pointAdjustment: 0, habits: ["10,000 Steps", "25 Push-ups"] },
   { id: "jamie-r", name: "Jamie R.", email: "jamie.r@example.com", program: "burn-club", streak: 6, memberSince: "Mar 2025", badge: "", status: "active", notes: "", challengePoints: 110, pointAdjustment: 0, habits: ["100oz Water"] },
   { id: "chris-v", name: "Chris V.", email: "chris.v@example.com", program: "burn-club", streak: 5, memberSince: "Jan 2025", badge: "Founding Member", status: "active", notes: "Asked about modifying Sweat & Sculpt frequency — flagged in DMs.", challengePoints: 90, pointAdjustment: 0, habits: ["10,000 Steps", "100oz Water", "Outdoor Activity"] },
-  { id: "alicia-b", name: "Alicia B.", email: "alicia.b@example.com", program: "burn-club", streak: 4, memberSince: "Apr 2025", badge: "", status: "inactive", notes: "Paused membership — traveling for work through end of month.", challengePoints: 40, pointAdjustment: 0, habits: [] },
+  { id: "alicia-b", name: "Alicia B.", email: "alicia.b@example.com", program: "burn-club", streak: 0, memberSince: "Apr 2025", badge: "", status: "inactive", notes: "Paused membership — traveling for work through end of month.", challengePoints: 40, pointAdjustment: 0, habits: [] },
   // Mirrors the member app's Jordan profile (2026-08-17). Every member here
   // was on Burn Club, so Fit & Functional claimed a member it didn't have and
   // the new Program Access field had nothing to appear on. `access` is only
@@ -874,20 +874,36 @@ const COMMUNITY_POSTS = [
 // live feed of real member-app events, same no-cross-app-sync limitation
 // as everything else. Real member names are pulled from MEMBERS so
 // clicking a row into that member's profile is provable end-to-end.
-const ACTIVITY_FEED = [
-  { id: "a1", memberId: "jamie-r", memberName: "Jamie R.", workoutTitle: "Core Crusher", time: "4m ago", rpe: 7 },
-  { id: "a2", memberId: "priya-k", memberName: "Priya K.", workoutTitle: "Sweat & Sculpt", time: "18m ago", rpe: 9 },
-  { id: "a3", memberId: "marcus-t", memberName: "Marcus T.", workoutTitle: "Full Body Burn", time: "31m ago", rpe: 6 },
-  { id: "a4", memberId: "chris-v", memberName: "Chris V.", workoutTitle: "Core Crusher", time: "52m ago", rpe: 5 },
-  { id: "a5", memberId: "priya-k", memberName: "Priya K.", workoutTitle: "Full Body Stretch & Mobility", time: "1h ago", rpe: 3 },
-  { id: "a6", memberId: "jamie-r", memberName: "Jamie R.", workoutTitle: "10-Minute Ab Burn", time: "2h ago", rpe: 6 },
-  { id: "a7", memberId: "marcus-t", memberName: "Marcus T.", workoutTitle: "Sweat & Sculpt", time: "3h ago", rpe: 8 },
-  { id: "a8", memberId: "alicia-b", memberName: "Alicia B.", workoutTitle: "Full Body Burn", time: "5h ago", rpe: 7 },
-  { id: "a9", memberId: "chris-v", memberName: "Chris V.", workoutTitle: "Full Body Burn", time: "7h ago", rpe: 8 },
-  { id: "a10", memberId: "priya-k", memberName: "Priya K.", workoutTitle: "Core Crusher", time: "9h ago", rpe: 4 },
-  { id: "a11", memberId: "marcus-t", memberName: "Marcus T.", workoutTitle: "10-Minute Ab Burn", time: "Yesterday", rpe: 5 },
-  { id: "a12", memberId: "jamie-r", memberName: "Jamie R.", workoutTitle: "Full Body Burn", time: "Yesterday", rpe: 9 },
+// Ordered newest-first — latestActivityFor() takes the first match per member,
+// so the order is load-bearing, not cosmetic.
+//
+// `daysAgo` is the source of truth and `date` is derived from it at load, so
+// the feed stays anchored to today rather than drifting into the past as the
+// demo ages. In the real system these are timestamps on a completion record.
+const ACTIVITY_FEED_SEED = [
+  { id: "a1", memberId: "jamie-r", memberName: "Jamie R.", workoutTitle: "Core Crusher", time: "4m ago", daysAgo: 0, rpe: 7 },
+  { id: "a2", memberId: "priya-k", memberName: "Priya K.", workoutTitle: "Sweat & Sculpt", time: "18m ago", daysAgo: 0, rpe: 9 },
+  { id: "a3", memberId: "jamie-r", memberName: "Jamie R.", workoutTitle: "10-Minute Ab Burn", time: "2h ago", daysAgo: 0, rpe: 6 },
+  { id: "a4", memberId: "priya-k", memberName: "Priya K.", workoutTitle: "Full Body Stretch & Mobility", time: "5h ago", daysAgo: 0, rpe: 3 },
+  { id: "a5", memberId: "marcus-t", memberName: "Marcus T.", workoutTitle: "Full Body Burn", time: "Yesterday", daysAgo: 1, rpe: 6 },
+  { id: "a6", memberId: "chris-v", memberName: "Chris V.", workoutTitle: "Core Crusher", time: "Yesterday", daysAgo: 1, rpe: 5 },
+  { id: "a7", memberId: "marcus-t", memberName: "Marcus T.", workoutTitle: "Sweat & Sculpt", time: "Yesterday", daysAgo: 1, rpe: 8 },
+  { id: "a8", memberId: "priya-k", memberName: "Priya K.", workoutTitle: "Core Crusher", time: "2 days ago", daysAgo: 2, rpe: 4 },
+  { id: "a9", memberId: "chris-v", memberName: "Chris V.", workoutTitle: "Full Body Burn", time: "3 days ago", daysAgo: 3, rpe: 8 },
+  { id: "a10", memberId: "marcus-t", memberName: "Marcus T.", workoutTitle: "10-Minute Ab Burn", time: "4 days ago", daysAgo: 4, rpe: 5 },
+  { id: "a11", memberId: "jamie-r", memberName: "Jamie R.", workoutTitle: "Full Body Burn", time: "5 days ago", daysAgo: 5, rpe: 9 },
+  // Alicia's membership is paused while she travels, so a session hours ago
+  // contradicted her own record. Pushed back to match — and it's what makes
+  // the roster's date column worth reading, by showing who has gone quiet.
+  { id: "a12", memberId: "alicia-b", memberName: "Alicia B.", workoutTitle: "Full Body Burn", time: "12 days ago", daysAgo: 12, rpe: 7 },
 ];
+
+const ACTIVITY_FEED = ACTIVITY_FEED_SEED.map((a) => {
+  const d = new Date();
+  d.setDate(d.getDate() - a.daysAgo);
+  return { ...a, date: dateKey(d) };
+});
+
 
 const ANALYTICS = {
   totalMembers: 214,
