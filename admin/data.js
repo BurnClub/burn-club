@@ -841,6 +841,13 @@ const MESSAGES = [
   { id: "msg-4", conversationId: "group-burn-club", senderId: "staff", senderName: "Staff", isStaff: true, text: "New circuits are up for the week — 3 fresh ones plus a new stretch session! 🔥", time: "Sun 8:00 AM", read: true },
   { id: "msg-5", conversationId: "group-burn-club", senderId: "priya-k", senderName: "Priya K.", isStaff: false, text: "Sweat & Sculpt kicked my butt today 😅", time: "Sun 5:30 PM", read: true },
   { id: "msg-6", conversationId: "group-burn-club", senderId: "marcus-t", senderName: "Marcus T.", isStaff: false, text: "Same! Worth it though", time: "Sun 5:41 PM", read: false },
+  // Every group chat but Burn Club's was empty, which made the Groups
+  // section's chat panel look broken rather than quiet (2026-08-17).
+  { id: "msg-7", conversationId: "group-fit-functional", senderId: "staff", senderName: "Staff", isStaff: true, text: "Week 3 is live — the Gym variant swaps the DB press for barbell work.", time: "Mon 7:30 AM", read: true },
+  { id: "msg-8", conversationId: "group-fit-functional", senderId: "jordan-p", senderName: "Jordan P.", isStaff: false, text: "Perfect, I'll be at the gym Thursday. Can I do Week 3 Day 2 at home instead?", time: "Mon 12:15 PM", read: false },
+  { id: "msg-9", conversationId: "group-custom-founding-members", senderId: "staff", senderName: "Staff", isStaff: true, text: "Early access to the new benchmark this Friday — you three first, as always.", time: "Sun 4:00 PM", read: true },
+  { id: "msg-10", conversationId: "group-custom-founding-members", senderId: "priya-k", senderName: "Priya K.", isStaff: false, text: "Love it. Ready to beat my last Gauntlet score 🔥", time: "Sun 6:22 PM", read: false },
+  { id: "msg-11", conversationId: "group-custom-form-check", senderId: "staff", senderName: "Staff", isStaff: true, text: "Send your deadlift setup when you get a chance — happy to review before next week.", time: "Today 9:10 AM", read: true },
 ];
 
 const LIVE_MESSAGES_KEY = "burnClubLiveMessages";
