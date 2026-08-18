@@ -113,6 +113,7 @@ function memberKey(base) {
 // ---------------- Progress / completion history ----------------
 
 const COMPLETIONS_STORAGE_KEY = "burnclub-completions";
+const BENCHMARK_RESULTS_STORAGE_KEY = "burnclub-benchmark-results";
 // "previous-week" counts as a regular workout everywhere stats-wise — it's
 // the same kind of content, just left live an extra week.
 // Two buckets for the "This Week" calendar boxes (2026-08-07 redesign): a
@@ -155,6 +156,28 @@ function loadCompletions() {
 
 function saveCompletions() {
   localStorage.setItem(memberKey(COMPLETIONS_STORAGE_KEY), JSON.stringify(COMPLETIONS));
+}
+
+// Benchmark scores persist per member exactly like completions (2026-08-17).
+// They didn't until now — a retest score updated the Progress tab and then
+// vanished on reload, which defeats the point of a benchmark: the comparison
+// against your own first attempt only means anything if it accumulates.
+function loadBenchmarkResults() {
+  const stored = localStorage.getItem(memberKey(BENCHMARK_RESULTS_STORAGE_KEY));
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      // fall through and reseed
+    }
+  }
+  const seeded = buildSeedBenchmarkResults();
+  localStorage.setItem(memberKey(BENCHMARK_RESULTS_STORAGE_KEY), JSON.stringify(seeded));
+  return seeded;
+}
+
+function saveBenchmarkResults() {
+  localStorage.setItem(memberKey(BENCHMARK_RESULTS_STORAGE_KEY), JSON.stringify(BENCHMARK_RESULTS));
 }
 
 // Most recent completion of this specific workout, for the "✓ Completed"
@@ -736,6 +759,7 @@ function saveBenchmarkScore() {
     date: dateKey(new Date()),
     score,
   });
+  saveBenchmarkResults();
 
   document.getElementById("benchmark-score-saved").style.display = "";
   document.getElementById("benchmark-score-save-btn").style.display = "none";
@@ -2342,6 +2366,7 @@ function renderCircuitLists() {
 
 function init() {
   COMPLETIONS = loadCompletions();
+  BENCHMARK_RESULTS = loadBenchmarkResults();
   renderCircuitLists();
   renderHomeWeekSnapshot();
 

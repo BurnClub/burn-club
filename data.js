@@ -853,7 +853,12 @@ function buildSeedBenchmarkResults() {
   ];
 }
 
-const BENCHMARK_RESULTS = buildSeedBenchmarkResults();
+// Seed only — the live array is loaded per member from localStorage in
+// app.js (loadBenchmarkResults), the same way COMPLETIONS is. It was a plain
+// const built fresh on every load until 2026-08-17, which meant a member
+// could set a personal best, watch Progress update, and lose it the moment
+// they closed the app.
+let BENCHMARK_RESULTS = buildSeedBenchmarkResults();
 
 // ---------------- Wearable (faked — no real Apple/Garmin integration yet) ----------------
 // See project memory: HealthKit has no web API (native-only), Garmin needs a
