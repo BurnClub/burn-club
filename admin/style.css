@@ -526,6 +526,91 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .point-adjust-btn:hover { background: var(--blue); color: white; }
 
+/* ---------- PROGRAMS WORKSPACE + TREE (2026-08-19) ---------- */
+/* Two columns inside one view: the program tree, which never changes, and a
+   pane that swaps between the program cards, a program's folders/weeks, and
+   one folder's workouts. The tree sticks while the pane scrolls — .main-content
+   is the scroll container, so `top: 0` here is relative to that. */
+.workspace { display: flex; align-items: flex-start; gap: 24px; }
+.workspace-tree {
+  width: 226px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 12px 10px;
+  max-height: calc(100vh - 72px);
+  overflow-y: auto;
+}
+.workspace-pane { flex: 1; min-width: 0; }
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.tree-row:hover { background: var(--field-bg); }
+/* "current" marks the open program, "active" the row the pane is actually
+   showing — a program row is both when its own grid is up, and only the
+   first when you're inside one of its folders. */
+.tree-row.current { color: var(--blue); }
+.tree-row.active { background: var(--blue); color: white; }
+.tree-row.active:hover { background: var(--blue); }
+.tree-row.active .tree-count { color: rgba(255, 255, 255, 0.75); }
+
+.tree-all {
+  margin-bottom: 6px;
+  border-bottom: 2px solid var(--field-bg);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  padding-bottom: 11px;
+  color: var(--deepblue);
+}
+.tree-all.active { color: white; border-bottom-color: var(--blue); }
+
+.tree-node { margin-bottom: 2px; }
+.tree-program { font-family: 'Baloo 2', sans-serif; font-size: 14px; font-weight: 700; }
+.tree-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-count { flex-shrink: 0; font-size: 11px; font-weight: 800; color: var(--deepblue); }
+.tree-caret {
+  flex-shrink: 0;
+  width: 14px;
+  font-size: 10px;
+  color: var(--deepblue);
+  text-align: center;
+}
+.tree-caret:hover { color: var(--blue); }
+
+.tree-children { padding: 2px 0 6px 14px; border-left: 2px solid var(--field-bg); margin-left: 12px; }
+.tree-child { font-size: 12px; font-weight: 600; padding: 5px 8px; }
+/* Same colour language as the week cards in the grid beside it. */
+.tree-child.state-live, .tree-child.state-live .tree-count { color: #1a8a44; }
+.tree-child.state-undated, .tree-child.state-undated .tree-count { color: #c47f17; }
+.tree-child.active, .tree-child.active .tree-count,
+.tree-child.active.state-live, .tree-child.active.state-undated { color: white; }
+.tree-section-label {
+  margin: 8px 0 2px;
+  padding-left: 8px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--deepblue);
+}
+.tree-more { font-size: 12px; font-weight: 700; color: var(--deepblue); margin-top: 6px; }
+.tree-empty { margin: 4px 0 4px 8px; font-size: 11px; font-weight: 700; color: var(--deepblue); }
+
 /* ---------- CIRCUIT FOLDERS ---------- */
 .folder-pane { flex: 1; min-width: 0; }
 .folder-pane-title { font-family: 'Baloo 2', sans-serif; font-size: 18px; font-weight: 800; color: var(--ink); margin: 0 0 14px; }

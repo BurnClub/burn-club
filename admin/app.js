@@ -726,12 +726,7 @@ function renderPrograms() {
 
   document.getElementById("program-grid").innerHTML = visible.map((p) => {
     const isStructured = p.scheduleType === "structured";
-    // Structured programs don't use the live-folder model, so a circuit
-    // "belongs" to them just by living in one of their folders — not by
-    // being published to a live folder, which doesn't exist for these.
-    const circuitCount = isStructured
-      ? CIRCUITS.filter((c) => { const f = folderById(c.folderId); return f && f.program === p.id; }).length
-      : CIRCUITS.filter((c) => circuitProgramId(c) === p.id).length;
+    const circuitCount = programWorkoutCount(p);
     // Structured programs don't collect a "workouts per week" number up front
     // (there's no fixed cadence — it's whatever the day-by-day schedule ends
     // up holding), so compute it live from the actual schedule instead of a
@@ -773,6 +768,10 @@ function renderPrograms() {
   document.querySelectorAll("[data-archive-program]").forEach((btn) => {
     btn.addEventListener("click", () => toggleProgramArchived(btn.dataset.archiveProgram));
   });
+
+  // The tree lists the same programs, so it goes stale on exactly the same
+  // events — archiving, creating, renaming, saving a workout.
+  renderProgramTree();
 }
 
 // Archiving is reversible and destroys nothing — the program keeps its
@@ -951,9 +950,26 @@ function saveProgram() {
 let currentScope = null;
 let selectedCircuitIds = new Set();
 
-// Which entry is selected in the Circuits page's program side list — a
-// program id, or the literal string "general" for unassigned folders.
+// Which entry is selected in the program tree — a program id, or the literal
+// string "general" for unassigned folders.
 let selectedProgramScope = PROGRAMS.length ? PROGRAMS[0].id : "general";
+
+// Which pane of the Programs workspace is showing beside the tree: every
+// program as cards, one program's folders/weeks, or one folder's workouts.
+// Kept separate from selectedProgramScope so that scope stays a real program
+// even while the landing pane is up — renderFolderGrid() and the rolling
+// builder both read it, and they can be called from a save handler at any time.
+let programsPane = "landing";
+
+const PROGRAM_PANE_IDS = { landing: "programs-landing", grid: "folder-grid-view", detail: "folder-detail-view" };
+
+function showProgramsPane(name) {
+  programsPane = name;
+  Object.entries(PROGRAM_PANE_IDS).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = key === name ? "block" : "none";
+  });
+}
 
 function populateProgramFilters() {
   const folderModalSelect = document.getElementById("folder-modal-program");
@@ -977,6 +993,115 @@ function populateProgramFilters() {
 // Authoring-surface only. The Library used to render these too, in a
 // read-only mode, but it now has its own week menu and workout pane
 // (2026-08-15) — so there's one caller and no readonly variant.
+// ---------------- Program tree (2026-08-19) ----------------
+// The left column of the Programs workspace. Every program stays on screen at
+// all times, so moving from one to another is one click instead of a walk back
+// up through two pages. The tree holds no data of its own — its children are
+// the same folders and week groups the right-hand grid draws, from the same
+// two functions — so the two surfaces can't disagree about what a program
+// contains or what order its weeks come in.
+
+// Several programs can be open at once: selecting one expands it, and the
+// caret collapses it again without changing what the right pane is showing.
+const expandedTreePrograms = new Set();
+
+// The count on a program's row. Structured programs don't use the live-folder
+// model, so a workout belongs to one just by living in one of its folders.
+function programWorkoutCount(p) {
+  return p.scheduleType === "structured"
+    ? CIRCUITS.filter((c) => { const f = folderById(c.folderId); return f && f.program === p.id; }).length
+    : CIRCUITS.filter((c) => circuitProgramId(c) === p.id).length;
+}
+
+function treeChildHtml(label, count, attrs, active, state) {
+  return `
+    <div class="tree-row tree-child ${active ? "active" : ""} ${state ? `state-${state}` : ""}" ${attrs}>
+      <span class="tree-name">${label}</span>
+      <span class="tree-count">${count}</span>
+    </div>
+  `;
+}
+
+function folderTreeChildrenHtml(programId) {
+  const folders = orderedFoldersForScope(programId);
+  if (!folders.length) return `<p class="tree-empty">No folders yet</p>`;
+  return folders.map((f) => {
+    const count = CIRCUITS.filter((c) => c.folderId === f.id).length;
+    const active = programsPane === "detail" && currentScope && currentScope.type === "folder" && currentScope.id === f.id;
+    return treeChildHtml(f.name, count, `data-action="open-folder" data-folder-id="${f.id}"`, active, f.live ? "live" : "");
+  }).join("");
+}
+
+// Same bands as the week grid, and the same collapse — a rolling program is
+// one week richer every week, so a year in this is a 50-row list if the back
+// catalogue isn't folded away. rollingPastCollapsed is deliberately shared
+// with the grid: they're two views of one decision about what's worth showing.
+function rollingTreeChildrenHtml(programId) {
+  const { groups, live, upcoming, evergreen, undated, previous } = orderedWeekSections(programId);
+  if (!groups.length) return `<p class="tree-empty">No workouts yet</p>`;
+
+  const rows = (list) => list.map((g) => {
+    const active = programsPane === "detail" && currentScope && currentScope.type === "week"
+      && currentScope.programId === programId && currentScope.weekKey === g.key;
+    return treeChildHtml(g.name, g.circuits.length,
+      `data-action="open-week" data-program-id="${programId}" data-week-key="${g.key}"`, active, g.state);
+  }).join("");
+  const section = (label, list) => list.length ? `<p class="tree-section-label">${label}</p>${rows(list)}` : "";
+
+  return `
+    ${section("Live now", live)}
+    ${section("Upcoming", upcoming)}
+    ${section("Stretch & Core", evergreen)}
+    ${section("Needs a date", undated)}
+    ${previous.length ? `
+      <div class="tree-row tree-more" data-action="toggle-past-weeks">
+        <span class="tree-caret">${rollingPastCollapsed ? "▸" : "▾"}</span>
+        <span class="tree-name">Previous weeks</span>
+        <span class="tree-count">${previous.length}</span>
+      </div>
+      ${rollingPastCollapsed ? "" : rows(previous)}
+    ` : ""}
+  `;
+}
+
+function programTreeNodeHtml(p) {
+  const open = expandedTreePrograms.has(p.id);
+  const selected = programsPane !== "landing" && selectedProgramScope === p.id;
+  return `
+    <div class="tree-node">
+      <div class="tree-row tree-program ${selected ? "current" : ""} ${selected && programsPane === "grid" ? "active" : ""}"
+           data-action="tree-program" data-program-id="${p.id}">
+        <span class="tree-caret" data-action="tree-toggle" data-program-id="${p.id}">${open ? "▾" : "▸"}</span>
+        <span class="tree-name">${p.name}</span>
+        <span class="tree-count">${programWorkoutCount(p)}</span>
+      </div>
+      ${open ? `<div class="tree-children">${isRollingProgram(p.id) ? rollingTreeChildrenHtml(p.id) : folderTreeChildrenHtml(p.id)}</div>` : ""}
+    </div>
+  `;
+}
+
+// Archived programs are deliberately absent: the Library is where those live,
+// and this is the working surface (2026-08-15).
+function renderProgramTree() {
+  const host = document.getElementById("program-tree");
+  if (!host) return;
+  const programs = PROGRAMS.filter((p) => (p.status || "active") !== "archived");
+  host.innerHTML = programs.map(programTreeNodeHtml).join("")
+    || `<p class="tree-empty">No active programs</p>`;
+  const all = document.querySelector(".tree-row.tree-all");
+  if (all) all.classList.toggle("active", programsPane === "landing");
+}
+
+// The tree's top row. Selecting a program no longer replaces this page, so
+// this is what gets you back to the card grid of everything.
+function openAllPrograms() {
+  currentScope = null;
+  selectedCircuitIds.clear();
+  showView("view-programs");
+  showProgramsPane("landing");
+  renderPrograms();
+}
+
 function folderCardHtml(f) {
   const count = CIRCUITS.filter((c) => c.folderId === f.id).length;
   return `
@@ -1033,6 +1158,9 @@ function weekGroupCardHtml(g, programId) {
 }
 
 function renderFolderGrid() {
+  // The tree lists the same folders and weeks this grid does, so it redraws
+  // here rather than at each of the ~15 call sites that mutate one.
+  renderProgramTree();
   const scope = selectedProgramScope;
   const program = programById(scope);
   const entryName = scope === "general" ? "General (Unassigned)" : (program ? program.name : "");
@@ -1071,22 +1199,31 @@ let rollingPastCollapsed = true;
 // evergreen shelf, anything still needing a date, then history folded away.
 // Deliberately different from the Library's flat oldest-first menu — that reads
 // a history, this one runs a program.
-function rollingWeekGridHtml(programId) {
+// Split a rolling program's weeks into the bands the page shows them in.
+// Shared by the grid and the tree so the two can't order the same weeks
+// differently or disagree about which ones are folded away.
+function orderedWeekSections(programId) {
   const groups = weekGroupsForProgram(programId);
+  return {
+    groups,
+    live: groups.filter((g) => g.state === "live"),
+    // Soonest first: the next week you have to fill is the one that matters.
+    upcoming: groups.filter((g) => g.state === "scheduled").sort((a, b) => (a.key < b.key ? -1 : 1)),
+    evergreen: groups.filter((g) => g.state === "always"),
+    undated: groups.filter((g) => g.state === "undated"),
+    // "Last week" belongs here by Chris's grouping, but it's still published to
+    // members, so the header says so rather than letting the collapse imply it's
+    // retired. Newest first — recent history is what gets reused.
+    previous: groups.filter((g) => g.state === "last-week" || g.state === "past")
+      .sort((a, b) => (a.key < b.key ? 1 : -1)),
+  };
+}
+
+function rollingWeekGridHtml(programId) {
+  const { groups, live, upcoming, evergreen, undated, previous } = orderedWeekSections(programId);
   if (!groups.length) {
     return `<p style="color:var(--deepblue);font-weight:700;">No workouts yet. Click "+ New Workout" to add one — the date you give it decides the week it lands in.</p>`;
   }
-
-  const live = groups.filter((g) => g.state === "live");
-  // Soonest first: the next week you have to fill is the one that matters.
-  const upcoming = groups.filter((g) => g.state === "scheduled").sort((a, b) => (a.key < b.key ? -1 : 1));
-  const evergreen = groups.filter((g) => g.state === "always");
-  const undated = groups.filter((g) => g.state === "undated");
-  // "Last week" belongs here by Chris's grouping, but it's still published to
-  // members, so the header says so rather than letting the collapse imply it's
-  // retired. Newest first — recent history is what gets reused.
-  const previous = groups.filter((g) => g.state === "last-week" || g.state === "past")
-    .sort((a, b) => (a.key < b.key ? 1 : -1));
 
   const cards = (list) => list.map((g) => weekGroupCardHtml(g, programId)).join("");
   const section = (label, list, hint) => list.length ? `
@@ -1126,35 +1263,44 @@ function openProgramFolders(programId) {
   selectedProgramScope = programId;
   currentScope = null;
   selectedCircuitIds.clear();
-  showView("view-circuits", "view-programs");
-  document.getElementById("folder-detail-view").style.display = "none";
-  document.getElementById("folder-grid-view").style.display = "block";
+  expandedTreePrograms.add(programId);
+  showView("view-programs");
+  showProgramsPane("grid");
   renderFolderGrid();
 }
 
 function openFolder(folderId) {
+  // Reachable straight from the tree now, including from a program other than
+  // the one already open, so the scope follows the folder rather than assuming
+  // you drilled in from that program's own grid.
+  const folder = folderById(folderId);
+  if (folder) {
+    selectedProgramScope = folder.program || "general";
+    expandedTreePrograms.add(selectedProgramScope);
+  }
   currentScope = { type: "folder", id: folderId };
   selectedCircuitIds.clear();
-  document.getElementById("folder-grid-view").style.display = "none";
-  document.getElementById("folder-detail-view").style.display = "block";
+  showView("view-programs");
+  showProgramsPane("detail");
   renderScopeDetail();
 }
 
 // A rolling program's derived week group — the folder-detail view, scoped by
 // date instead of by folder id.
 function openWeek(programId, weekKey) {
+  selectedProgramScope = programId;
+  expandedTreePrograms.add(programId);
   currentScope = { type: "week", programId, weekKey };
   selectedCircuitIds.clear();
-  document.getElementById("folder-grid-view").style.display = "none";
-  document.getElementById("folder-detail-view").style.display = "block";
+  showView("view-programs");
+  showProgramsPane("detail");
   renderScopeDetail();
 }
 
 function backToFolders() {
   currentScope = null;
   selectedCircuitIds.clear();
-  document.getElementById("folder-detail-view").style.display = "none";
-  document.getElementById("folder-grid-view").style.display = "block";
+  showProgramsPane("grid");
   renderFolderGrid();
 }
 
@@ -1240,11 +1386,11 @@ function renderScheduleView() {
 // Entered from a Program card's "Manage Workouts" — shows every circuit that
 // belongs to the program (across all of its folders), not just one folder's.
 function openProgramDetail(programId) {
+  selectedProgramScope = programId;
   currentScope = { type: "program", id: programId };
   selectedCircuitIds.clear();
-  showView("view-circuits", "view-programs");
-  document.getElementById("folder-grid-view").style.display = "none";
-  document.getElementById("folder-detail-view").style.display = "block";
+  showView("view-programs");
+  showProgramsPane("detail");
   renderScopeDetail();
 }
 
@@ -1253,11 +1399,7 @@ function openProgramDetail(programId) {
 // circuits go back to the grid they came from (or the Library).
 function goBackFromDetail() {
   if (currentScope && currentScope.type === "program") {
-    currentScope = null;
-    selectedCircuitIds.clear();
-    document.getElementById("folder-detail-view").style.display = "none";
-    document.getElementById("folder-grid-view").style.display = "block";
-    showView("view-programs");
+    openAllPrograms();
   } else {
     backToFolders();
   }
@@ -1337,6 +1479,9 @@ function availabilityCellHtml(circuit) {
 }
 
 function renderScopeDetail() {
+  // Before the guard: the tree's counts move when workouts are added, deleted
+  // or copied out of the open folder, and some of those paths return early.
+  renderProgramTree();
   if (!currentScope) return;
   const isProgram = currentScope.type === "program";
   const isWeek = currentScope.type === "week";
@@ -1352,7 +1497,6 @@ function renderScopeDetail() {
     // don't print the state again underneath its own name.
     document.getElementById("folder-detail-badge").textContent =
       [program ? program.name : "", stateLabel === title ? "" : stateLabel].filter(Boolean).join(" · ");
-    document.getElementById("folder-back-btn").textContent = "← All Weeks";
     document.getElementById("new-circuit-btn").style.display = "";
     // A week isn't a thing you can rename — its name is its date.
     document.getElementById("folder-detail-edit-btn").style.display = "none";
@@ -1361,7 +1505,6 @@ function renderScopeDetail() {
     if (!program) return;
     document.getElementById("folder-detail-title").textContent = program.name;
     document.getElementById("folder-detail-badge").textContent = "All Workouts";
-    document.getElementById("folder-back-btn").textContent = "← All Programs";
     document.getElementById("new-circuit-btn").style.display = "none";
     document.getElementById("folder-detail-edit-btn").style.display = "none";
   } else {
@@ -1370,7 +1513,6 @@ function renderScopeDetail() {
     const program = programById(folder.program);
     document.getElementById("folder-detail-title").textContent = folder.name;
     document.getElementById("folder-detail-badge").textContent = program ? program.name : "General folder";
-    document.getElementById("folder-back-btn").textContent = "← All Folders";
     document.getElementById("new-circuit-btn").style.display = "";
     document.getElementById("folder-detail-edit-btn").style.display = folder.live ? "none" : "";
   }
@@ -2411,7 +2553,7 @@ function saveCircuit() {
   renderFolderGrid();
   renderPrograms();
   renderLibrary();
-  showView("view-circuits", "view-programs");
+  showView("view-programs");
 }
 
 // ---------------- Exercise Library ----------------
@@ -2929,6 +3071,22 @@ document.addEventListener("click", (e) => {
   if (action === "toggle-past-weeks") {
     rollingPastCollapsed = !rollingPastCollapsed;
     renderFolderGrid();
+    renderProgramTree();
+  }
+  if (action === "tree-all") {
+    openAllPrograms();
+  }
+  if (action === "tree-program") {
+    openProgramFolders(el.dataset.programId);
+  }
+  // Collapsing a program is only about the tree — it deliberately doesn't
+  // change what the right pane is showing, so you can fold away a program
+  // you're still working inside.
+  if (action === "tree-toggle") {
+    const id = el.dataset.programId;
+    if (expandedTreePrograms.has(id)) expandedTreePrograms.delete(id);
+    else expandedTreePrograms.add(id);
+    renderProgramTree();
   }
   if (action === "open-library-program") {
     openLibraryProgram(el.dataset.programId);
@@ -3979,11 +4137,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  document.getElementById("programs-back-btn").addEventListener("click", () => {
-    showView("view-programs");
-    renderPrograms();
-  });
-
   document.getElementById("library-search").addEventListener("input", (e) => {
     libraryQuery = e.target.value;
     renderLibrary();
@@ -4073,8 +4226,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("folder-modal-close-btn").addEventListener("click", closeFolderModal);
   document.getElementById("folder-modal-cancel-btn").addEventListener("click", closeFolderModal);
   document.getElementById("folder-modal-save-btn").addEventListener("click", saveNewFolder);
-  document.getElementById("folder-back-btn").addEventListener("click", goBackFromDetail);
-  document.getElementById("schedule-back-btn").addEventListener("click", () => showView("view-programs"));
+  document.getElementById("schedule-back-btn").addEventListener("click", () => {
+    if (currentScheduleProgramId) openProgramFolders(currentScheduleProgramId);
+    else openAllPrograms();
+  });
   document.getElementById("folder-detail-edit-btn").addEventListener("click", () => {
     if (currentScope && currentScope.type === "folder") openEditFolderModal(currentScope.id);
   });

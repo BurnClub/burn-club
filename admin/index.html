@@ -133,28 +133,105 @@
       </div>
     </section>
 
-    <!-- ---------- PROGRAMS ---------- -->
+    <!-- ---------- PROGRAMS + WORKOUTS (one workspace, 2026-08-19) ---------- -->
+    <!-- These used to be two views you drilled through: pick a program, land
+         on a page of folders, pick one, land on another page. Moving between
+         programs meant walking all the way back up. They're one workspace now
+         — a persistent program tree on the left, whatever you selected on the
+         right — so switching programs is one click from anywhere. The three
+         panes are the same three renders as before; only which one is showing
+         changes. -->
     <section class="view" id="view-programs" data-view-section>
-      <header class="view-header">
-        <div>
-          <p class="eyebrow">Offerings</p>
-          <h1>Programs</h1>
+      <div class="workspace">
+        <aside class="workspace-tree">
+          <button class="tree-row tree-all" data-action="tree-all">All Programs</button>
+          <div id="program-tree"></div>
+        </aside>
+
+        <div class="workspace-pane">
+          <!-- ---------- LANDING: every program as a card ---------- -->
+          <div id="programs-landing">
+            <header class="view-header">
+              <div>
+                <p class="eyebrow">Offerings</p>
+                <h1>Programs</h1>
+              </div>
+              <button class="btn-primary" id="new-program-btn">+ New Program</button>
+            </header>
+            <!-- Programs is the working surface: what's live now, and where new
+                 programs and workouts get made. Archiving a program moves it out
+                 of here entirely and into the Library, which is the archive — at
+                 four new eight-week programs every two months, keeping finished
+                 cycles on this page would make it unusable within a year
+                 (2026-08-15). Hence no "archived" pill: archived programs are
+                 deliberately unreachable from this view. -->
+            <div class="filter-pill-row" id="program-status-filter">
+              <button class="filter-pill active" data-program-status="active">Active</button>
+              <button class="filter-pill" data-program-status="draft">Draft</button>
+              <button class="filter-pill" data-program-status="all">All</button>
+            </div>
+            <div class="program-grid" id="program-grid"></div>
+          </div>
+
+          <!-- ---------- FOLDER GRID ---------- -->
+          <div id="folder-grid-view" style="display:none;">
+            <header class="view-header">
+              <div>
+                <p class="eyebrow" id="folder-grid-eyebrow">Program</p>
+                <h1 id="folder-pane-title">Program</h1>
+              </div>
+              <button class="btn-primary" id="new-folder-btn">+ New Folder</button>
+              <!-- Rolling programs have no folders to create, so the header
+                   offers the thing you actually came here to do. Which week the
+                   workout lands in is decided by the date you give it. -->
+              <button class="btn-primary" id="new-rolling-workout-btn" style="display:none;">+ New Workout</button>
+            </header>
+
+            <div class="folder-grid" id="folder-grid"></div>
+          </div>
+
+          <!-- ---------- FOLDER DETAIL ---------- -->
+          <div id="folder-detail-view" style="display:none;">
+            <header class="view-header">
+              <div>
+                <p class="eyebrow" id="folder-detail-badge">Program</p>
+                <div class="folder-detail-title-row">
+                  <h1 id="folder-detail-title">Folder</h1>
+                  <button class="folder-detail-edit-btn" id="folder-detail-edit-btn" title="Rename folder" style="display:none;">✎</button>
+                </div>
+              </div>
+              <button class="btn-primary" id="new-circuit-btn">+ New Workout</button>
+            </header>
+
+            <!-- Variant filter (2026-08-15). A week folder holds both variants of
+                 every session, so without this the table lists each workout twice
+                 with identical text and no way to tell them apart. -->
+            <div class="filter-pill-row" id="circuit-variant-filter" style="display:none;"></div>
+
+            <div class="bulk-bar" id="circuit-bulk-bar">
+              <span id="circuit-bulk-count">0 selected</span>
+              <div class="bulk-bar-actions">
+                <button class="btn-ghost-lg small" id="bulk-copy-btn">Copy to Folder</button>
+                <button class="btn-ghost-lg small" id="bulk-move-btn">Move to Folder</button>
+                <button class="btn-ghost-lg small btn-danger" id="bulk-delete-btn">Delete</button>
+              </div>
+            </div>
+
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="circuit-select-all" /></th>
+                  <th>Workout</th>
+                  <th id="circuit-table-where-col">Folder</th>
+                  <th>Blocks</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="circuit-table-body"></tbody>
+            </table>
+          </div>
         </div>
-        <button class="btn-primary" id="new-program-btn">+ New Program</button>
-      </header>
-      <!-- Programs is the working surface: what's live now, and where new
-           programs and workouts get made. Archiving a program moves it out
-           of here entirely and into the Library, which is the archive — at
-           four new eight-week programs every two months, keeping finished
-           cycles on this page would make it unusable within a year
-           (2026-08-15). Hence no "archived" pill: archived programs are
-           deliberately unreachable from this view. -->
-      <div class="filter-pill-row" id="program-status-filter">
-        <button class="filter-pill active" data-program-status="active">Active</button>
-        <button class="filter-pill" data-program-status="draft">Draft</button>
-        <button class="filter-pill" data-program-status="all">All</button>
       </div>
-      <div class="program-grid" id="program-grid"></div>
     </section>
 
     <!-- ---------- SCHEDULE (structured programs) ---------- -->
@@ -347,72 +424,6 @@
     </div>
 
     <!-- ---------- EXERCISE PICKER (used inside circuit builder) ---------- -->
-    <!-- ---------- CIRCUITS ---------- -->
-    <section class="view" id="view-circuits" data-view-section>
-      <!-- ---------- FOLDER GRID ---------- -->
-      <!-- Reached by opening a program (2026-08-15). The program side list
-           that used to sit here was navigating the same hierarchy Programs
-           already does — you're inside a program by the time you get here,
-           so it was showing you the way to somewhere you'd already arrived. -->
-      <div id="folder-grid-view">
-        <button class="folder-back-btn" id="programs-back-btn">← All Programs</button>
-        <header class="view-header">
-          <div>
-            <p class="eyebrow" id="folder-grid-eyebrow">Program</p>
-            <h1 id="folder-pane-title">Program</h1>
-          </div>
-          <button class="btn-primary" id="new-folder-btn">+ New Folder</button>
-          <!-- Rolling programs have no folders to create, so the header
-               offers the thing you actually came here to do. Which week the
-               workout lands in is decided by the date you give it. -->
-          <button class="btn-primary" id="new-rolling-workout-btn" style="display:none;">+ New Workout</button>
-        </header>
-
-        <div class="folder-grid" id="folder-grid"></div>
-      </div>
-
-      <!-- ---------- FOLDER DETAIL ---------- -->
-      <div id="folder-detail-view" style="display:none;">
-        <button class="folder-back-btn" id="folder-back-btn">← All Folders</button>
-        <header class="view-header">
-          <div>
-            <p class="eyebrow" id="folder-detail-badge">Program</p>
-            <div class="folder-detail-title-row">
-              <h1 id="folder-detail-title">Folder</h1>
-              <button class="folder-detail-edit-btn" id="folder-detail-edit-btn" title="Rename folder" style="display:none;">✎</button>
-            </div>
-          </div>
-          <button class="btn-primary" id="new-circuit-btn">+ New Workout</button>
-        </header>
-
-        <!-- Variant filter (2026-08-15). A week folder holds both variants of
-             every session, so without this the table lists each workout twice
-             with identical text and no way to tell them apart. -->
-        <div class="filter-pill-row" id="circuit-variant-filter" style="display:none;"></div>
-
-        <div class="bulk-bar" id="circuit-bulk-bar">
-          <span id="circuit-bulk-count">0 selected</span>
-          <div class="bulk-bar-actions">
-            <button class="btn-ghost-lg small" id="bulk-copy-btn">Copy to Folder</button>
-            <button class="btn-ghost-lg small" id="bulk-move-btn">Move to Folder</button>
-            <button class="btn-ghost-lg small btn-danger" id="bulk-delete-btn">Delete</button>
-          </div>
-        </div>
-
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th><input type="checkbox" id="circuit-select-all" /></th>
-              <th>Workout</th>
-              <th id="circuit-table-where-col">Folder</th>
-              <th>Blocks</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="circuit-table-body"></tbody>
-        </table>
-      </div>
-    </section>
 
     <!-- ---------- NEW / RENAME FOLDER (overlay) ---------- -->
     <div class="builder-overlay" id="folder-modal-overlay">
