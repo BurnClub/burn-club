@@ -608,6 +608,21 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   text-transform: uppercase;
   color: var(--deepblue);
 }
+/* An unread count where the plain count would go — the tree is where you find
+   out a group has messages waiting (2026-08-19). */
+.tree-unread-dot {
+  display: inline-block;
+  min-width: 16px;
+  padding: 1px 5px;
+  border-radius: 9px;
+  background: #e0435f;
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  text-align: center;
+}
+.tree-row.active .tree-unread-dot { background: white; color: var(--blue); }
+
 .tree-program.archived { opacity: 0.65; }
 .tree-program.archived:hover { opacity: 1; }
 .tree-more { font-size: 12px; font-weight: 700; color: var(--deepblue); margin-top: 6px; }

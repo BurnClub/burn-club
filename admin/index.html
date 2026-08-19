@@ -803,7 +803,17 @@
          is an attribute of a member, not a separate audience), plus custom
          hand-picked groups. The per-program group chats that already existed
          are these same groups; this is where they surface. -->
+    <!-- Same workspace shape as Programs and Library (2026-08-19). A group's
+         three parts — chat, activity, roster — used to stack on one page and
+         scroll; they're panes now, reached from the tree. -->
     <section class="view" id="view-groups" data-view-section>
+      <div class="workspace">
+        <aside class="workspace-tree">
+          <button class="tree-row tree-all" data-action="group-tree-all">All Groups</button>
+          <div id="group-tree"></div>
+        </aside>
+
+        <div class="workspace-pane">
       <div id="group-list-view">
         <header class="view-header">
           <div>
@@ -817,7 +827,6 @@
       </div>
 
       <div id="group-detail-view" style="display:none;">
-        <button class="folder-back-btn" id="group-back-btn">← All Groups</button>
         <header class="view-header">
           <div>
             <p class="eyebrow" id="group-detail-badge"></p>
@@ -833,6 +842,7 @@
 
         <!-- The chat lives here rather than sending you to Messages — a group
              and the conversation with it are the same thing (2026-08-17). -->
+        <div class="group-section" id="group-section-chat">
         <div class="panel">
           <h2>Group Chat</h2>
           <div class="group-chat-messages" id="group-chat-messages"></div>
@@ -842,13 +852,18 @@
           </form>
         </div>
 
+        </div>
+
+        <div class="group-section" id="group-section-activity" style="display:none;">
         <div class="panel">
           <h2>Recent Activity</h2>
           <div class="activity-feed-list" id="group-activity-feed"></div>
         </div>
+        </div>
 
-        <!-- Moved to the bottom per Chris, and given its own search/filters
-             since it's the part that gets long as a group grows. -->
+        <!-- Its own pane now, with the search/filters it grew when it lived at
+             the bottom of the page. -->
+        <div class="group-section" id="group-section-members" style="display:none;">
         <div class="panel">
           <h2>Member Activity</h2>
           <p class="activity-summary" id="group-activity-summary" style="margin: 0 0 14px;"></p>
@@ -871,6 +886,9 @@
             </table>
           </div>
           <p class="activity-summary" id="group-roster-count"></p>
+        </div>
+        </div>
+      </div>
         </div>
       </div>
     </section>

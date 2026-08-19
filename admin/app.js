@@ -185,10 +185,100 @@ function groupConversationId(group) {
 
 let selectedGroupId = null;
 
+// ---------------- Group tree (2026-08-19) ----------------
+// Third section to get the workspace treatment, and the first where the tree's
+// children aren't content — they're the three parts of a group page (chat,
+// activity, roster), which used to stack and scroll. Splitting them into panes
+// is what the tree buys here; being able to cross from one group to another
+// without going back is what it buys everywhere.
+
+const expandedGroups = new Set();
+
+// Which pane is up beside the tree, and which part of a group it's showing.
+let groupsPane = "list";
+let selectedGroupSection = "chat";
+
+const GROUP_SECTIONS = [
+  { key: "chat", label: "Chat" },
+  { key: "activity", label: "Activity" },
+  { key: "members", label: "Members" },
+];
+
+function showGroupsPane(name) {
+  groupsPane = name;
+  document.getElementById("group-list-view").style.display = name === "list" ? "block" : "none";
+  document.getElementById("group-detail-view").style.display = name === "detail" ? "block" : "none";
+}
+
+function showGroupSection(key) {
+  selectedGroupSection = key;
+  GROUP_SECTIONS.forEach((sec) => {
+    const el = document.getElementById("group-section-" + sec.key);
+    if (el) el.style.display = sec.key === key ? "block" : "none";
+  });
+}
+
+// The count beside each section, so the tree says what's in a pane before you
+// open it — an unread chat especially, which is the reason to come here at all.
+function groupSectionMeta(group, key) {
+  const members = groupMembers(group);
+  if (key === "members") return { count: members.length };
+  if (key === "chat") {
+    const msgs = conversationMessages(groupConversationId(group));
+    const unread = msgs.filter((m) => !m.isStaff && !m.read).length;
+    return { count: msgs.length, unread };
+  }
+  const memberIds = new Set(members.map((m) => m.id));
+  return { count: ACTIVITY_FEED.filter((a) => memberIds.has(a.memberId)).length };
+}
+
+function groupTreeNodeHtml(g) {
+  const open = expandedGroups.has(g.id);
+  const selected = groupsPane === "detail" && selectedGroupId === g.id;
+  const unread = groupSectionMeta(g, "chat").unread;
+  const children = GROUP_SECTIONS.map((sec) => {
+    const meta = groupSectionMeta(g, sec.key);
+    const active = selected && selectedGroupSection === sec.key;
+    return `
+      <div class="tree-row tree-child ${active ? "active" : ""}"
+           data-action="open-group-section" data-group-id="${g.id}" data-section="${sec.key}">
+        <span class="tree-name">${sec.label}</span>
+        <span class="tree-count">${meta.unread ? `<span class="tree-unread-dot">${meta.unread}</span>` : meta.count}</span>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="tree-node">
+      <div class="tree-row tree-program ${selected ? "current" : ""}" data-action="open-group" data-group-id="${g.id}">
+        <span class="tree-caret" data-action="group-tree-toggle" data-group-id="${g.id}">${open ? "▾" : "▸"}</span>
+        <span class="tree-name">${g.name}</span>
+        <span class="tree-count">${unread ? `<span class="tree-unread-dot">${unread}</span>` : groupMembers(g).length}</span>
+      </div>
+      ${open ? `<div class="tree-children">${children}</div>` : ""}
+    </div>
+  `;
+}
+
+// Program groups and custom groups are labelled apart because they behave
+// differently — a program group's membership can't be edited here, it follows
+// the program — and finding that out by clicking Edit and not seeing it is worse.
+function renderGroupTree() {
+  const host = document.getElementById("group-tree");
+  if (!host) return;
+  const section = (label, list) => list.length
+    ? `<p class="tree-section-label">${label}</p>${list.map(groupTreeNodeHtml).join("")}` : "";
+  host.innerHTML = section("Program groups", programGroups()) + section("Custom groups", customGroups())
+    || `<p class="tree-empty">No groups yet</p>`;
+  const all = document.querySelector("#view-groups .tree-all");
+  if (all) all.classList.toggle("active", groupsPane === "list");
+}
+
 // Name and member count only (2026-08-17, Chris) — the descriptions made every
 // card a paragraph and the list stopped being scannable. Plus the group's chat
 // state, since the chat is now part of what a group is.
 function renderGroupList() {
+  renderGroupTree();
   const groups = allGroups();
   document.getElementById("group-count").textContent =
     `${groups.length} group${groups.length === 1 ? "" : "s"}`;
@@ -213,18 +303,20 @@ function renderGroupList() {
   }).join("");
 }
 
-function openGroup(groupId) {
+// Landing on Chat: it's the part of a group that changes without you, so it's
+// the one worth seeing first.
+function openGroup(groupId, section) {
   selectedGroupId = groupId;
+  expandedGroups.add(groupId);
   resetGroupRosterControls();
-  document.getElementById("group-list-view").style.display = "none";
-  document.getElementById("group-detail-view").style.display = "block";
+  showGroupsPane("detail");
+  showGroupSection(section || "chat");
   renderGroupDetail();
 }
 
 function backToGroups() {
   selectedGroupId = null;
-  document.getElementById("group-detail-view").style.display = "none";
-  document.getElementById("group-list-view").style.display = "block";
+  showGroupsPane("list");
   renderGroupList();
 }
 
@@ -277,6 +369,7 @@ function resetGroupRosterControls() {
 }
 
 function renderGroupDetail() {
+  renderGroupTree();
   const group = groupById(selectedGroupId);
   if (!group) return backToGroups();
   const members = groupMembers(group);
@@ -3174,6 +3267,18 @@ document.addEventListener("click", (e) => {
   if (action === "open-unread") {
     openUnreadConversation(el.dataset.conversationId);
   }
+  if (action === "group-tree-all") {
+    backToGroups();
+  }
+  if (action === "group-tree-toggle") {
+    const id = el.dataset.groupId;
+    if (expandedGroups.has(id)) expandedGroups.delete(id);
+    else expandedGroups.add(id);
+    renderGroupTree();
+  }
+  if (action === "open-group-section") {
+    openGroup(el.dataset.groupId, el.dataset.section);
+  }
   if (action === "open-group") {
     openGroup(el.dataset.groupId);
   }
@@ -4237,7 +4342,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (btn.dataset.view === "view-library") renderLibrary();
       if (btn.dataset.view === "view-programs") renderPrograms();
       if (btn.dataset.view === "view-dashboard") renderDashboardUnread();
-      if (btn.dataset.view === "view-groups") { backToGroups(); }
+      // Preserves which group/section you were on, the way Programs and
+      // Library do — the tree makes where you are obvious, so being thrown
+      // back to the list on every nav click is just lost work.
+      if (btn.dataset.view === "view-groups") {
+        if (groupsPane === "detail" && groupById(selectedGroupId)) renderGroupDetail();
+        else backToGroups();
+      }
       if (btn.dataset.view === "view-messages") renderAdminConversationList();
       if (btn.dataset.view === "view-challenges") closeChallengeDetail();
       if (btn.dataset.view === "view-settings") showSettingsIndex();
@@ -4257,7 +4368,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("new-group-btn").addEventListener("click", () => openGroupModal(null));
-  document.getElementById("group-back-btn").addEventListener("click", backToGroups);
   document.getElementById("group-edit-btn").addEventListener("click", () => openGroupModal(selectedGroupId));
   document.getElementById("group-delete-btn").addEventListener("click", deleteGroup);
   document.getElementById("group-challenge-btn").addEventListener("click", openGroupChallengeModal);
