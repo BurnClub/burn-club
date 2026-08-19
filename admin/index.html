@@ -569,14 +569,11 @@
               <label>Focus
                 <input type="text" id="builder-focus" placeholder="e.g. Full Body" />
               </label>
-              <label>Difficulty
-                <select id="builder-difficulty">
-                  <option>Beginner</option>
-                  <option selected>Intermediate</option>
-                  <option>Advanced</option>
-                  <option>All Levels</option>
-                </select>
-              </label>
+              <!-- Difficulty is hidden for now (2026-08-19, Chris: "take out
+                   difficulty indicator for now") but still saved, so existing
+                   workouts keep theirs and putting the control back is a
+                   one-element change. -->
+              <input type="hidden" id="builder-difficulty" value="Intermediate" />
             </div>
             <label class="builder-desc-label">Description
               <textarea id="builder-desc" rows="2" placeholder="Short description shown to members"></textarea>
@@ -610,7 +607,13 @@
           <aside class="builder-library">
             <h3 class="builder-library-title">Exercise Library</h3>
             <input type="text" class="search-input" id="builder-library-search" placeholder="Search exercises..." />
-            <div class="filter-row" id="builder-library-filters"></div>
+            <!-- The body-part pills used to sit here permanently — a dozen of
+                 them, wrapping over three or four lines, above a list you
+                 actually came to read (2026-08-19). -->
+            <button class="btn-ghost-lg small builder-filter-toggle" id="builder-filter-btn">
+              Filters <span class="filter-count-badge" id="builder-filter-count" style="display:none;"></span>
+            </button>
+            <div class="filter-row" id="builder-library-filters" style="display:none;"></div>
             <p class="builder-hint" id="builder-library-hint"></p>
             <div class="builder-library-list" id="builder-library-list"></div>
           </aside>

@@ -1084,9 +1084,45 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 
 /* ---------- EXERCISE LIBRARY SIDEBAR (circuit builder) ---------- */
-.builder-panel-wide { width: 1020px; }
+/* Wider and taller than the other modals (2026-08-19, Chris: "way too much
+   scrolling, need to be able to see more at a glance"). This is the one panel
+   people work inside for minutes at a time rather than fill in and dismiss,
+   so it gets as much of the screen as it can take. */
+/* Two classes deliberately: plain `.builder-panel` is defined further down
+   this file with `width: 720px`, so a single-class selector here loses to it
+   on source order — which is why this panel has quietly been rendering at
+   720px, not the 1020px it was meant to be, since the sidebar was added. */
+.builder-panel.builder-panel-wide { width: 1320px; max-width: 96vw; max-height: 95vh; }
 .builder-content { display: flex; flex: 1; min-height: 0; overflow: hidden; }
-.builder-content .builder-body { flex: 1; min-width: 0; }
+.builder-content .builder-body { flex: 1; min-width: 0; padding: 16px 20px; }
+
+/* Density pass, scoped to this panel (2026-08-19). Chris wants the same
+   treatment app-wide, but that's its own conversation — nothing below leaks
+   past .builder-panel-wide. */
+.builder-panel-wide .builder-header { padding: 14px 20px; }
+.builder-panel-wide .builder-header h2 { font-size: 20px; }
+.builder-panel-wide .builder-footer { padding: 12px 20px; }
+.builder-panel-wide .builder-meta-grid { gap: 10px; margin-bottom: 10px; }
+.builder-panel-wide .builder-meta-grid label,
+.builder-panel-wide .builder-desc-label { font-size: 11px; gap: 3px; }
+.builder-panel-wide .builder-desc-label { margin-bottom: 12px; }
+.builder-panel-wide .builder-meta-grid input,
+.builder-panel-wide .builder-meta-grid select,
+.builder-panel-wide .builder-desc-label textarea { padding: 7px 9px; font-size: 13px; }
+.builder-panel-wide .builder-blocks { gap: 8px; }
+.builder-panel-wide .builder-block-card { padding: 11px 12px; }
+.builder-panel-wide .builder-block-top { gap: 8px; margin-bottom: 8px; }
+.builder-panel-wide .builder-block-top select,
+.builder-panel-wide .builder-block-top input,
+.builder-panel-wide .builder-field-row input,
+.builder-panel-wide .builder-ex-row input { padding: 6px 8px; font-size: 12px; }
+.builder-panel-wide .builder-field-row { gap: 8px; margin-bottom: 8px; }
+.builder-panel-wide .builder-field-row label { font-size: 10px; }
+.builder-panel-wide .builder-hint { font-size: 11px; margin: -4px 0 8px; }
+.builder-panel-wide .builder-blocks-header { margin-bottom: 8px; }
+.builder-panel-wide .builder-blocks-header h3 { font-size: 16px; }
+.builder-panel-wide .builder-library-card { padding: 8px 10px; font-size: 12px; }
+.builder-panel-wide .builder-library-list { gap: 4px; }
 .builder-library {
   width: 300px;
   flex-shrink: 0;
@@ -1099,8 +1135,10 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .builder-library-title { margin: 0 0 12px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink); }
 .builder-library .search-input { max-width: none; }
-.builder-library .filter-row { gap: 6px; margin: 12px 0 8px; }
-.builder-library .pill-filter { padding: 5px 10px; font-size: 11px; }
+.builder-library .filter-row { gap: 5px; margin: 8px 0; }
+.builder-library .pill-filter { padding: 4px 9px; font-size: 11px; }
+.builder-filter-toggle { margin: 8px 0 0; align-self: flex-start; }
+.builder-filter-toggle.active { border-color: var(--blue); color: var(--blue); }
 #builder-library-hint { margin: 0 0 10px; }
 #builder-library-hint .link-btn { background: none; border: none; color: var(--blue); font-weight: 800; cursor: pointer; text-decoration: underline; font-size: 11px; padding: 0; }
 .builder-library-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1; }
@@ -1205,25 +1243,10 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .builder-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--bg); }
 .builder-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
-.builder-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.builder-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 14px; }
 .builder-meta-grid label { font-size: 12px; font-weight: 700; color: var(--deepblue); display: flex; flex-direction: column; gap: 4px; }
 .builder-desc-label { font-size: 12px; font-weight: 700; color: var(--deepblue); display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px; }
 .builder-desc-label textarea { resize: vertical; font-family: 'Nunito', sans-serif; }
-/* Read-only "Before You Start" copy in the block editor (2026-08-12) —
-   derived from the block type, so it's shown for reference rather than
-   edited. Styled as quiet reference text, not a field. */
-.block-format-note-preview {
-  margin: 0;
-  padding: 10px 12px;
-  border-left: 3px solid var(--periwinkle);
-  background: var(--bg);
-  border-radius: 0 8px 8px 0;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.5;
-  color: var(--deepblue);
-}
-
 .builder-blocks-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .builder-blocks { display: flex; flex-direction: column; gap: 14px; }
 

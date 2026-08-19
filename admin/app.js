@@ -2339,9 +2339,6 @@ function renderBuilderBlocks() {
         <button class="remove-block-btn" data-action="remove-block" data-block-index="${i}">✕</button>
       </div>
       ${blockFieldRow(block, i)}
-      <div class="builder-desc-label">Before You Start <span class="modal-field-hint">(set automatically by block type — shown to members when this block starts)</span>
-        <p class="block-format-note-preview">${BLOCK_FORMAT_NOTES[block.type] || "No explainer defined for this block type yet."}</p>
-      </div>
     </div>
   `;
   }).join("") || `<p style="color:var(--deepblue);font-weight:700;font-size:13px;">No exercises yet — click "+ Add Exercise" to start building this workout.</p>`;
@@ -2953,11 +2950,29 @@ function clearActiveSlot() {
   renderBuilderLibraryList();
 }
 
+// Collapsed by default (2026-08-19). The pills are still the same pills —
+// they just don't hold a quarter of the sidebar open when nothing is filtered.
+let builderFiltersOpen = false;
+
 function renderBuilderLibraryFilters() {
   const cats = ["All", ...BODY_PART_TAGS];
   document.getElementById("builder-library-filters").innerHTML = cats
     .map((c) => `<button class="pill-filter ${c === builderLibraryCategory ? "active" : ""}" data-action="builder-library-category" data-cat="${c}">${c}</button>`)
     .join("");
+  document.getElementById("builder-library-filters").style.display = builderFiltersOpen ? "" : "none";
+
+  // The badge is what makes hiding them safe — an active filter has to stay
+  // visible, or an empty-looking list reads as a missing exercise.
+  const badge = document.getElementById("builder-filter-count");
+  const filtered = builderLibraryCategory !== "All";
+  badge.style.display = filtered ? "" : "none";
+  badge.textContent = filtered ? builderLibraryCategory : "";
+  document.getElementById("builder-filter-btn").classList.toggle("active", builderFiltersOpen || filtered);
+}
+
+function toggleBuilderFilters() {
+  builderFiltersOpen = !builderFiltersOpen;
+  renderBuilderLibraryFilters();
 }
 
 function renderBuilderLibraryList() {
@@ -3250,6 +3265,7 @@ document.addEventListener("click", (e) => {
     applyExerciseToWorkout(newEx);
   }
   if (action === "builder-library-category") {
+    builderFiltersOpen = false;
     builderLibraryCategory = el.dataset.cat;
     renderBuilderLibraryFilters();
     renderBuilderLibraryList();
@@ -4345,6 +4361,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("program-modal-close-btn").addEventListener("click", closeProgramModal);
   document.getElementById("program-modal-cancel-btn").addEventListener("click", closeProgramModal);
   document.getElementById("program-modal-save-btn").addEventListener("click", saveProgram);
+  document.getElementById("builder-filter-btn").addEventListener("click", toggleBuilderFilters);
   document.getElementById("builder-close-btn").addEventListener("click", closeBuilder);
   document.getElementById("builder-cancel-btn").addEventListener("click", closeBuilder);
   document.getElementById("builder-save-btn").addEventListener("click", saveCircuit);
