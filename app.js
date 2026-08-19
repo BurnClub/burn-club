@@ -1893,6 +1893,37 @@ const Player = {
 
   // Arms a timed phase without starting its countdown yet — lets the member see
   // what's coming (e.g. the AMRAP's exercise list) before committing to start it.
+  // One place every weight field reports to, so the value survives the
+  // re-renders each block type does between rounds/minutes.
+  noteWeight(name, raw) {
+    const val = String(raw).trim();
+    if (val) this.sessionWeights[name] = Number(val);
+    else delete this.sessionWeights[name];
+  },
+
+  // EMOM rotates exercises minute by minute, so it gets one field that follows
+  // the active exercise rather than a list of them. Only rebuilt when the
+  // exercise actually changes — updateClock() runs every second, and swapping
+  // the input each tick would wipe whatever was half-typed.
+  syncEmomWeightField(exerciseName) {
+    const wrap = document.getElementById("player-emom-weight");
+    const input = document.getElementById("player-emom-weight-input");
+    if (!exerciseTracksWeight(exerciseName)) {
+      wrap.style.display = "none";
+      this.emomWeightFor = null;
+      return;
+    }
+    wrap.style.display = "flex";
+    if (this.emomWeightFor === exerciseName) return;
+    this.emomWeightFor = exerciseName;
+    const last = lastWeightFor(exerciseName);
+    input.value = this.sessionWeights[exerciseName] || "";
+    input.placeholder = last ? `${last} last time` : "lbs";
+    // Assigning oninput (rather than addEventListener) replaces the previous
+    // exercise's handler instead of stacking another one on each rotation.
+    input.oninput = () => this.noteWeight(exerciseName, input.value);
+  },
+
   awaitStart() {
     document.getElementById("player-start-btn").style.display = "block";
     // Rounds shouldn't be addable before the clock is actually running — otherwise
@@ -1946,6 +1977,7 @@ const Player = {
       document.getElementById("player-sub-pill").textContent =
         `Minute ${Math.min(minute + 1, totalMinutes)} of ${totalMinutes} · ${ex.reps ? ex.reps + " reps" : ""}`;
       setPlayerExerciseTechnique(ex.name);
+      this.syncEmomWeightField(ex.name);
     } else {
       document.getElementById("player-clock").textContent = formatClock(this.remaining);
     }
@@ -1972,6 +2004,7 @@ const Player = {
     document.getElementById("player-total-clock").style.display = "none";
     document.getElementById("player-sets-list").style.display = "none";
     document.getElementById("player-superset-list").style.display = "none";
+    document.getElementById("player-emom-weight").style.display = "none";
     document.getElementById("player-video-label").textContent = "Demo Video Placeholder";
     document.getElementById("player-pause-btn").textContent = "Pause";
 
@@ -2047,11 +2080,7 @@ const Player = {
       // Held on the player, not the DOM, so it survives the re-render between
       // rounds and carries into the completion record.
       supersetListEl.querySelectorAll(".superset-weight-input").forEach((input) => {
-        input.addEventListener("input", () => {
-          const val = input.value.trim();
-          if (val) this.sessionWeights[input.dataset.exName] = Number(val);
-          else delete this.sessionWeights[input.dataset.exName];
-        });
+        input.addEventListener("input", () => this.noteWeight(input.dataset.exName, input.value));
       });
       document.getElementById("player-complete-set-btn").style.display = "block";
     }
@@ -2092,8 +2121,14 @@ const Player = {
       document.getElementById("player-center").style.display = "flex";
       document.getElementById("player-clock-label").textContent = "Time Remaining";
       document.getElementById("player-amrap-list").style.display = "block";
+      // Same inline weight fields as a superset (2026-08-18). The list is on
+      // screen before Start as well as during, so these can be filled in while
+      // setting up rather than against the clock.
       document.getElementById("player-amrap-list").innerHTML = phase.exercises
-        .map((e, i) => `
+        .map((e, i) => {
+          const tracks = exerciseTracksWeight(e.name);
+          const last = lastWeightFor(e.name);
+          return `
           <div class="amrap-row">
             <div class="amrap-row-left">
               <span class="amrap-order-num">${i + 1}</span>
@@ -2101,13 +2136,22 @@ const Player = {
             </div>
             <div class="amrap-row-right">
               ${e.reps ? `<span>${e.reps} reps</span>` : ""}
+              ${tracks ? `<input type="number" class="superset-weight-input" inputmode="numeric"
+                    data-ex-name="${e.name}"
+                    value="${this.sessionWeights[e.name] || ""}"
+                    placeholder="${last ? last : "lbs"}"
+                    title="${last ? `Last time: ${last} lbs` : "Weight used"}" />` : ""}
               <button class="amrap-play-btn" data-ex-name="${e.name}" title="Watch demo">▶</button>
             </div>
           </div>
-        `)
+        `;
+        })
         .join("");
       document.querySelectorAll(".amrap-play-btn").forEach((btn) => {
         btn.addEventListener("click", () => openExerciseVideo(btn.dataset.exName));
+      });
+      document.querySelectorAll("#player-amrap-list .superset-weight-input").forEach((input) => {
+        input.addEventListener("input", () => this.noteWeight(input.dataset.exName, input.value));
       });
       // Visibility of player-round-counter is handled by awaitStart()/beginPhaseTimer()
       // below — it should only appear once the clock is actually running.
@@ -2119,6 +2163,8 @@ const Player = {
 
     if (phase.kind === "emom") {
       document.getElementById("player-sub-pill").textContent = phase.progressLabel;
+      this.emomWeightFor = null;
+      this.syncEmomWeightField(phase.exercises[0].name);
       document.getElementById("player-video").style.display = "flex";
       document.getElementById("player-center").style.display = "flex";
       document.getElementById("player-clock-label").textContent = "This Minute";

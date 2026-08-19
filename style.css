@@ -1285,6 +1285,24 @@ h1, h2, h3 {
 /* The placeholder carries last session's number, so it should read as data
    rather than as greyed-out hint text. */
 .superset-weight-input::placeholder { color: var(--deepblue); opacity: 0.65; font-weight: 700; }
+
+/* EMOM's single field, centred under the clock — it belongs to whichever
+   exercise the current minute is on. */
+.player-emom-weight {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 4px 0 12px;
+}
+.player-emom-weight label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--deepblue);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.player-emom-weight .superset-weight-input { width: 92px; }
 .amrap-play-btn {
   width: 28px;
   height: 28px;

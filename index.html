@@ -288,6 +288,14 @@
 
         <div class="player-amrap-list" id="player-amrap-list"></div>
 
+        <!-- EMOM shows one exercise at a time, so it can't carry the inline
+             weight fields the list-based blocks do. This one field follows
+             whichever exercise the current minute is on (2026-08-18). -->
+        <div class="player-emom-weight" id="player-emom-weight" style="display:none;">
+          <label for="player-emom-weight-input">Weight used</label>
+          <input type="number" id="player-emom-weight-input" class="superset-weight-input" inputmode="numeric" />
+        </div>
+
         <!-- Superset: both exercises on one screen, video swapped for a
              per-exercise popup button (2026-08-07). Reuses the AMRAP row
              styling since the layout is identical. -->
@@ -295,7 +303,7 @@
 
         <!-- Straight Sets / Rep Ladder: every set for the block's one exercise
              on this one screen (2026-08-06), instead of a separate screen per
-             set. Weight field is UI-only for now, not saved. -->
+             set. Weight is recorded onto the completion as of 2026-08-18. -->
         <div class="player-sets-list" id="player-sets-list"></div>
 
         <div class="player-round-counter" id="player-round-counter">
