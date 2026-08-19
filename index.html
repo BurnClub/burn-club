@@ -343,6 +343,21 @@
         </div>
       </div>
 
+      <!-- ---------- SKIP CONFIRMATION (2026-08-18) ---------- -->
+      <!-- Skip is a single tap sitting next to Pause, and on an AMRAP or EMOM
+           it throws away the entire block. The clock keeps running behind this
+           on purpose — Chris asked for a confirmation, not a pause. -->
+      <div class="cardio-log-overlay" id="skip-confirm-overlay">
+        <div class="cardio-log-card skip-confirm-card">
+          <h2 class="cardio-log-title">Skip this?</h2>
+          <p class="block-notes-body" id="skip-confirm-body"></p>
+          <div class="skip-confirm-actions">
+            <button class="btn-ghost-lg" id="skip-confirm-cancel-btn">Keep Going</button>
+            <button class="btn-primary" id="skip-confirm-yes-btn">Skip</button>
+          </div>
+        </div>
+      </div>
+
       <!-- ---------- EXERCISE VIDEO OVERLAY (pops up over the player without pausing it) ---------- -->
       <div class="exercise-video-overlay" id="exercise-video-overlay">
         <div class="exercise-video-card">

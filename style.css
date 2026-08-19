@@ -1320,6 +1320,16 @@ h1, h2, h3 {
   cursor: pointer;
 }
 .player-back-btn:active { opacity: 0.6; }
+
+/* Skip confirmation. Two buttons side by side with Keep Going first, so the
+   thumb lands on carrying on rather than on the destructive one. */
+.skip-confirm-card { max-height: 100%; overflow-y: auto; }
+.skip-confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+.skip-confirm-actions button { flex: 1; }
 .amrap-play-btn {
   width: 28px;
   height: 28px;

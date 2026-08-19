@@ -1866,6 +1866,7 @@ const Player = {
 
   exit() {
     this.stop();
+    this.closeSkipConfirm();
     closeBlockNotes();
     showTab("tab-home");
   },
@@ -1956,6 +1957,44 @@ const Player = {
 
   renderBackBtn() {
     document.getElementById("player-back-btn").style.display = this.canGoBack() ? "block" : "none";
+  },
+
+  // ---- Skip confirmation (2026-08-18) ----
+  // Skip sits next to Pause and is one tap. On a work phase it costs the
+  // exercise; on an AMRAP or EMOM it discards the whole block, since those are
+  // a single phase each. Names what's actually being skipped rather than
+  // asking "are you sure?" about nothing in particular.
+  skipConfirmText() {
+    const phase = this.currentPhase();
+    if (!phase) return "";
+    switch (phase.kind) {
+      case "rest":
+        return `Skip the rest of this break and start ${phase.upNext} now?`;
+      case "amrap":
+      case "emom":
+        return `This skips the whole ${phase.blockLabel} block, not just part of it.`;
+      case "superset":
+        return `Skip this round of ${phase.exercises.length} exercises?`;
+      case "sets":
+        return `Skip the remaining sets of ${phase.exerciseName}?`;
+      default:
+        return `Skip ${phase.exerciseName} and move on?`;
+    }
+  },
+
+  requestSkip() {
+    if (!this.currentPhase()) return;
+    document.getElementById("skip-confirm-body").textContent = this.skipConfirmText();
+    document.getElementById("skip-confirm-overlay").classList.add("visible");
+  },
+
+  closeSkipConfirm() {
+    document.getElementById("skip-confirm-overlay").classList.remove("visible");
+  },
+
+  confirmSkip() {
+    this.closeSkipConfirm();
+    this.advance();
   },
 
   // Arms a timed phase without starting its countdown yet — lets the member see
@@ -2078,6 +2117,7 @@ const Player = {
     document.getElementById("player-superset-list").style.display = "none";
     document.getElementById("player-emom-weight").style.display = "none";
     document.getElementById("player-back-btn").style.display = "none";
+    this.closeSkipConfirm();
     document.getElementById("player-video-label").textContent = "Demo Video Placeholder";
     document.getElementById("player-pause-btn").textContent = "Pause";
 
@@ -3040,7 +3080,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("player-technique-toggle").classList.toggle("expanded");
     document.getElementById("player-technique-body").classList.toggle("expanded");
   });
-  document.getElementById("player-skip-btn").addEventListener("click", () => Player.advance());
+  document.getElementById("player-skip-btn").addEventListener("click", () => Player.requestSkip());
+  document.getElementById("skip-confirm-cancel-btn").addEventListener("click", () => Player.closeSkipConfirm());
+  document.getElementById("skip-confirm-yes-btn").addEventListener("click", () => Player.confirmSkip());
 
   const rpeSlider = document.getElementById("rpe-slider");
   rpeSlider.addEventListener("input", () => {
