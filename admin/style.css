@@ -608,6 +608,8 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   text-transform: uppercase;
   color: var(--deepblue);
 }
+.tree-program.archived { opacity: 0.65; }
+.tree-program.archived:hover { opacity: 1; }
 .tree-more { font-size: 12px; font-weight: 700; color: var(--deepblue); margin-top: 6px; }
 .tree-empty { margin: 4px 0 4px 8px; font-size: 11px; font-weight: 700; color: var(--deepblue); }
 
@@ -1420,44 +1422,8 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .library-program-card.archived { opacity: 0.7; }
 .library-program-card.archived:hover { opacity: 1; }
 
-/* Levels 2 and 3 — week menu left, selected week's workouts right. */
-.library-browser-body { display: flex; gap: 20px; align-items: flex-start; }
-.library-shelf-menu {
-  width: 220px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  background: white;
-  border-radius: var(--radius-md);
-  box-shadow: 0 4px 14px rgba(10,19,64,0.05);
-  padding: 10px;
-  /* The menu is the one part that grows forever — Burn Club adds a week every
-     week — so it scrolls on its own instead of stretching the page. */
-  max-height: 70vh;
-  overflow-y: auto;
-}
-.library-shelf-link {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  text-align: left;
-  background: none;
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  cursor: pointer;
-  font-family: 'Nunito', sans-serif;
-  color: var(--ink);
-  transition: background 0.12s;
-}
-.library-shelf-link:hover { background: var(--bg); }
-.library-shelf-link.active { background: var(--blue); }
-.library-shelf-link.active .library-shelf-name,
-.library-shelf-link.active .library-shelf-meta { color: white; }
-.library-shelf-name { font-weight: 800; font-size: 13px; }
-.library-shelf-meta { font-size: 11px; font-weight: 700; color: var(--deepblue); }
-
+/* The shelf pane is now the whole right side — the week menu it used to sit
+   beside became the library tree (2026-08-19). */
 .library-shelf-pane { flex: 1; min-width: 0; }
 .library-shelf-head {
   display: flex;

@@ -2553,7 +2553,13 @@ function saveCircuit() {
   renderFolderGrid();
   renderPrograms();
   renderLibrary();
-  showView("view-programs");
+  // Saving used to jump to the Programs workspace no matter where the builder
+  // was opened from, which meant editing an archived workout dropped you out
+  // of the Library and lost your place in it. Only go there if that's where
+  // you were (2026-08-19).
+  if (document.getElementById("view-programs").classList.contains("visible")) {
+    showView("view-programs");
+  }
 }
 
 // ---------------- Exercise Library ----------------
@@ -3091,10 +3097,26 @@ document.addEventListener("click", (e) => {
   if (action === "open-library-program") {
     openLibraryProgram(el.dataset.programId);
   }
+  // Reachable from any program's node in the tree, not just the open one.
   if (action === "open-library-shelf") {
+    clearLibrarySearch();
+    const programId = el.dataset.programId;
+    if (programId && programId !== libraryProgramId) {
+      libraryProgramId = programId;
+      expandedLibraryPrograms.add(programId);
+    }
     librarySelectedShelf = el.dataset.shelfKey;
     libraryVariantFilter = "all";
-    renderLibraryBrowser();
+    renderLibrary();
+  }
+  if (action === "library-tree-all") {
+    backToLibraryPrograms();
+  }
+  if (action === "library-tree-toggle") {
+    const id = el.dataset.programId;
+    if (expandedLibraryPrograms.has(id)) expandedLibraryPrograms.delete(id);
+    else expandedLibraryPrograms.add(id);
+    renderLibraryTree();
   }
   if (action === "library-variant") {
     libraryVariantFilter = el.dataset.variant;
@@ -3401,7 +3423,66 @@ let librarySelectedShelf = null;
 // whereas authoring starts scoped to one variant (Chris's call, 2026-08-15).
 let libraryVariantFilter = "all";
 
+
+// ---------------- Library tree (2026-08-19) ----------------
+// Same idea as the Programs tree, one level shallower in effort because
+// libraryProgramEntries() already flattens both program shapes into "a list of
+// shelves" — a structured program's folders and a rolling program's weeks
+// arrive here as the same thing, so the tree doesn't have to know which is
+// which. Archived programs are included: the archive is where they live.
+
+const expandedLibraryPrograms = new Set();
+
+function libraryTreeNodeHtml(entry) {
+  const open = expandedLibraryPrograms.has(entry.key);
+  const selected = libraryProgramId === entry.key && !libraryQuery.trim();
+  const workouts = entry.shelves.reduce((n, sh) => n + sh.circuits.length, 0);
+  const children = entry.shelves.map((sh) => {
+    const active = selected && librarySelectedShelf === sh.key;
+    return `
+      <div class="tree-row tree-child ${active ? "active" : ""} ${sh.state ? `state-${sh.state}` : ""}"
+           data-action="open-library-shelf" data-program-id="${entry.key}" data-shelf-key="${sh.key}">
+        <span class="tree-name">${sh.name}</span>
+        <span class="tree-count">${sh.circuits.length}</span>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="tree-node">
+      <div class="tree-row tree-program ${selected ? "current" : ""} ${entry.archived ? "archived" : ""}"
+           data-action="open-library-program" data-program-id="${entry.key}">
+        <span class="tree-caret" data-action="library-tree-toggle" data-program-id="${entry.key}">${open ? "▾" : "▸"}</span>
+        <span class="tree-name">${entry.name}</span>
+        <span class="tree-count">${workouts}</span>
+      </div>
+      ${open ? `<div class="tree-children">${children || `<p class="tree-empty">Empty</p>`}</div>` : ""}
+    </div>
+  `;
+}
+
+function renderLibraryTree() {
+  const host = document.getElementById("library-tree");
+  if (!host) return;
+  const entries = libraryProgramEntries();
+  host.innerHTML = entries.map(libraryTreeNodeHtml).join("")
+    || `<p class="tree-empty">Nothing archived yet</p>`;
+  const all = document.querySelector("#view-library .tree-all");
+  if (all) all.classList.toggle("active", libraryProgramId === null && !libraryQuery.trim());
+}
+
+// Selecting anything in the tree while a search is running would otherwise
+// land you on results rather than the shelf you clicked — the search box wins
+// over the drill-down by design, so clear it.
+function clearLibrarySearch() {
+  if (!libraryQuery) return;
+  libraryQuery = "";
+  const input = document.getElementById("library-search");
+  if (input) input.value = "";
+}
+
 function renderLibrary() {
+  renderLibraryTree();
   const q = libraryQuery.trim().toLowerCase();
   const searching = q.length > 0;
   const browsing = !searching && libraryProgramId !== null;
@@ -3538,9 +3619,11 @@ function renderLibraryPrograms() {
 }
 
 function openLibraryProgram(programId) {
+  clearLibrarySearch();
   libraryProgramId = programId;
   libraryVariantFilter = "all";
   librarySelectedShelf = defaultLibraryShelf(programId);
+  expandedLibraryPrograms.add(programId);
   renderLibrary();
 }
 
@@ -3556,6 +3639,7 @@ function defaultLibraryShelf(programId) {
 }
 
 function backToLibraryPrograms() {
+  clearLibrarySearch();
   libraryProgramId = null;
   librarySelectedShelf = null;
   renderLibrary();
@@ -3581,14 +3665,6 @@ function renderLibraryBrowser() {
     `${shelves.length} ${unit}${shelves.length === 1 ? "" : "s"} · ${workouts} workout${workouts === 1 ? "" : "s"}`;
   document.getElementById("library-count").textContent =
     `${entry.name} · ${workouts} workout${workouts === 1 ? "" : "s"}`;
-
-  document.getElementById("library-shelf-menu").innerHTML = shelves.map((s) => `
-    <button class="library-shelf-link ${s.key === librarySelectedShelf ? "active" : ""}"
-            data-action="open-library-shelf" data-shelf-key="${s.key}">
-      <span class="library-shelf-name">${s.name}</span>
-      <span class="library-shelf-meta">${s.circuits.length}${s.meta ? ` · ${s.meta}` : ""}</span>
-    </button>
-  `).join("");
 
   renderLibraryShelfPane();
 }
@@ -4141,8 +4217,6 @@ document.addEventListener("DOMContentLoaded", () => {
     libraryQuery = e.target.value;
     renderLibrary();
   });
-
-  document.getElementById("library-back-btn").addEventListener("click", backToLibraryPrograms);
 
   document.getElementById("new-group-btn").addEventListener("click", () => openGroupModal(null));
   document.getElementById("group-back-btn").addEventListener("click", backToGroups);

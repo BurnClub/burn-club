@@ -642,38 +642,44 @@
       </header>
       <input type="text" class="library-search" id="library-search" placeholder="Search every workout by name, focus or program…" autocomplete="off" />
 
-      <!-- Three levels, so no single screen grows without limit (2026-08-15,
-           Chris: "I see this getting to be very long, very quickly"). The
-           default screen is programs only — a list that grows by one every
-           couple of months. Weeks live one level in, as a left-hand menu, and
-           only the selected week's workouts ever render. Typing in the search
-           box cuts across all three and shows flat workout results, which is
-           the one thing a drill-down can't do. -->
-      <div id="library-programs"></div>
+      <!-- Same workspace shape as Programs (2026-08-19): the archive tree is
+           permanent on the left, so moving from one program's week to another
+           program's is one click. The bounded-screen rule that shaped this
+           section still holds (2026-08-15, Chris: "I see this getting to be
+           very long, very quickly") — only the selected shelf's workouts ever
+           render, and a program's shelves only exist in the tree while it's
+           expanded. Typing in the search box cuts across everything and shows
+           flat workout results, which is the one thing a tree can't do. -->
+      <div class="workspace">
+        <aside class="workspace-tree">
+          <button class="tree-row tree-all" data-action="library-tree-all">All Programs</button>
+          <div id="library-tree"></div>
+        </aside>
 
-      <div id="library-browser" style="display:none;">
-        <button class="folder-back-btn" id="library-back-btn">← All Programs</button>
-        <header class="view-header">
-          <div>
-            <p class="eyebrow" id="library-browser-eyebrow">Program</p>
-            <h1 id="library-browser-title">Program</h1>
+        <div class="workspace-pane">
+          <div id="library-programs"></div>
+
+          <div id="library-browser" style="display:none;">
+            <header class="view-header">
+              <div>
+                <p class="eyebrow" id="library-browser-eyebrow">Program</p>
+                <h1 id="library-browser-title">Program</h1>
+              </div>
+              <span class="library-group-count" id="library-browser-count"></span>
+            </header>
+            <div class="library-shelf-pane" id="library-shelf-pane"></div>
           </div>
-          <span class="library-group-count" id="library-browser-count"></span>
-        </header>
-        <div class="library-browser-body">
-          <nav class="library-shelf-menu" id="library-shelf-menu"></nav>
-          <div class="library-shelf-pane" id="library-shelf-pane"></div>
-        </div>
-      </div>
 
-      <div id="library-results" style="display:none;">
-        <div class="table-card">
-          <table class="admin-table">
-            <thead>
-              <tr><th>Workout</th><th>Program</th><th>Folder</th><th>Blocks</th><th></th></tr>
-            </thead>
-            <tbody id="library-table-body"></tbody>
-          </table>
+          <div id="library-results" style="display:none;">
+            <div class="table-card">
+              <table class="admin-table">
+                <thead>
+                  <tr><th>Workout</th><th>Program</th><th>Folder</th><th>Blocks</th><th></th></tr>
+                </thead>
+                <tbody id="library-table-body"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </section>
