@@ -1906,6 +1906,20 @@ function updateBuilderAvailabilityNote() {
   }[state] || "";
 }
 
+// Workouts in a structured program carry `category: "structured"`, which was
+// never one of the Type select's three options — so the field rendered blank
+// when editing one, and saving wrote that blank back, silently clearing the
+// category. The field is a rolling-program concept (it's what sorts a workout
+// into Circuit / Stretching / Ab & Core Burn for members), so structured
+// workouts hide it and keep their stored value instead (2026-08-19).
+let builderCategoryLocked = null;
+
+function setBuilderCategoryField(structured, value) {
+  builderCategoryLocked = structured ? (value || "structured") : null;
+  document.getElementById("builder-category-label").style.display = structured ? "none" : "";
+  if (!structured) document.getElementById("builder-category").value = value || "circuit";
+}
+
 function openBuilder(folderId) {
   editingCircuitId = null;
   // A brand-new workout isn't part of a variant pair yet — creating both
@@ -1922,7 +1936,7 @@ function openBuilder(folderId) {
     `Adding to: ${folder ? folder.name : "—"}${program ? " · " + program.name : ""}`;
   document.getElementById("builder-title").value = "";
   document.getElementById("builder-tag").value = "";
-  document.getElementById("builder-category").value = "circuit";
+  setBuilderCategoryField(!!program && program.scheduleType === "structured", null);
   document.getElementById("builder-focus").value = "";
   document.getElementById("builder-difficulty").value = "Intermediate";
   document.getElementById("builder-desc").value = "";
@@ -2127,7 +2141,7 @@ function openEditBuilder(circuitId) {
   });
   document.getElementById("builder-title").value = circuit.title;
   document.getElementById("builder-tag").value = circuit.tag;
-  document.getElementById("builder-category").value = circuit.category;
+  setBuilderCategoryField(isStructuredCircuit(circuit), circuit.category);
   document.getElementById("builder-focus").value = circuit.focus;
   document.getElementById("builder-difficulty").value = circuit.difficulty;
   document.getElementById("builder-desc").value = circuit.desc;
@@ -2526,7 +2540,7 @@ function saveCircuit() {
     folderId: builderFolderId,
     programId: builderProgramId,
     ...availability,
-    category: document.getElementById("builder-category").value,
+    category: builderCategoryLocked || document.getElementById("builder-category").value,
     tag: document.getElementById("builder-tag").value.trim() || "New",
     title,
     focus: document.getElementById("builder-focus").value.trim() || "Full Body",
@@ -2988,10 +3002,19 @@ function renderBuilderLibraryList() {
     ? `Filling an exercise slot — click one below. <button class="link-btn" data-action="cancel-slot-fill">Cancel</button>`
     : "Click an exercise to add it as a new station.";
 
+  // Every card carries a video slot (2026-08-19). It's a real thumbnail frame,
+  // not a placeholder box: the exercise's videoUrl decides which state it shows,
+  // and it's sized and positioned for the hover-to-preview Chris wants next, so
+  // adding that is a behaviour change rather than a layout one.
   let html = filtered.map((ex) => `
     <div class="builder-library-card" data-action="library-pick-exercise" data-ex-id="${ex.id}">
-      <span>${ex.name}</span>
-      <span class="status-pill">${ex.bodyParts.join(", ")}</span>
+      <span class="ex-card-video ${ex.videoUrl ? "has-video" : ""}" title="${ex.videoUrl ? "Video attached" : "No video yet — add one from the Exercises page"}">
+        ${ex.videoUrl ? "▶" : "🎬"}
+      </span>
+      <span class="ex-card-text">
+        <span class="ex-card-name">${ex.name}</span>
+        <span class="status-pill">${ex.bodyParts.join(", ")}</span>
+      </span>
     </div>
   `).join("");
 

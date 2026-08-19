@@ -1121,8 +1121,19 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-panel-wide .builder-hint { font-size: 11px; margin: -4px 0 8px; }
 .builder-panel-wide .builder-blocks-header { margin-bottom: 8px; }
 .builder-panel-wide .builder-blocks-header h3 { font-size: 16px; }
-.builder-panel-wide .builder-library-card { padding: 8px 10px; font-size: 12px; }
-.builder-panel-wide .builder-library-list { gap: 4px; }
+.builder-panel-wide .builder-library-card { padding: 7px 9px; font-size: 12px; }
+
+/* The library takes half the panel (2026-08-19, Chris: "the exercise library
+   needs to be half of the create a workout screen"). At ~650px the list stops
+   being a single narrow column and becomes a two-up grid, which is what makes
+   the extra width buy visible exercises rather than whitespace. */
+.builder-panel-wide .builder-library { width: 50%; }
+.builder-panel-wide .builder-library-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  align-content: start;
+  gap: 6px;
+}
 .builder-library {
   width: 300px;
   flex-shrink: 0;
@@ -1144,7 +1155,9 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-library-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1; }
 .builder-library-card {
   display: flex;
-  justify-content: space-between;
+  /* Was space-between, which pushed the body-part pill to the far edge — with
+     the video slot leading the card, the three parts read as one row instead. */
+  justify-content: flex-start;
   align-items: center;
   gap: 8px;
   background: white;
@@ -1156,6 +1169,33 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   border: 2px solid transparent;
 }
 .builder-library-card:hover { border-color: var(--periwinkle); }
+
+/* The video slot. Sized as a 16:9 thumbnail frame rather than an icon, so the
+   hover-to-preview step drops a <video> straight in without moving anything
+   around it. "has-video" is driven by the exercise's videoUrl. */
+.ex-card-video {
+  flex-shrink: 0;
+  width: 46px;
+  height: 26px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  background: var(--field-bg);
+  border: 1px dashed var(--periwinkle);
+  color: var(--deepblue);
+  opacity: 0.75;
+}
+.ex-card-video.has-video {
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: white;
+  opacity: 1;
+}
+.ex-card-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.ex-card-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.builder-library-card .ex-card-text .status-pill { align-self: flex-start; font-size: 9px; }
 .builder-library-card .status-pill { background: var(--bg); color: var(--deepblue); flex-shrink: 0; }
 
 /* ---------- CHOSEN EXERCISE (circuit builder) ---------- */
