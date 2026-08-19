@@ -1303,6 +1303,23 @@ h1, h2, h3 {
   letter-spacing: 0.5px;
 }
 .player-emom-weight .superset-weight-input { width: 92px; }
+
+/* Back button (2026-08-18). Deliberately understated and full-width above the
+   primary action — it should be findable the moment someone realises they
+   mis-tapped, without competing with Start or Mark Set Complete. */
+.player-back-btn {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 10px 0 4px;
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--deepblue);
+  cursor: pointer;
+}
+.player-back-btn:active { opacity: 0.6; }
 .amrap-play-btn {
   width: 28px;
   height: 28px;

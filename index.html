@@ -318,6 +318,13 @@
           <button class="btn-primary" id="player-skip-btn">Skip →</button>
         </div>
 
+        <!-- Sits outside player-controls on purpose (2026-08-18): those hide
+             the moment a phase is paused, and going back always pauses, so a
+             back button in that row would disappear exactly when you want to
+             press it again. Styled quietly — it's a correction, not a way to
+             move around the workout. -->
+        <button class="player-back-btn" id="player-back-btn" style="display:none;">← Back</button>
+
         <button class="btn-primary sticky-cta" id="player-start-btn" style="display:none;">Start</button>
         <button class="btn-primary sticky-cta" id="player-complete-set-btn">Mark Set Complete ✓</button>
       </section>

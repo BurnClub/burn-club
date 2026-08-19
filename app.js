@@ -1690,6 +1690,7 @@ const Player = {
     this.amrapRounds = 0;
     this.startedAt = Date.now();
     this.sessionWeights = {};
+    this.steppingBack = false;
     closeExerciseVideo();
     document.getElementById("bottom-nav").style.display = "none";
     showScreen("screen-player");
@@ -1891,6 +1892,72 @@ const Player = {
     return this.phases[this.index - 1].blockIndex !== this.currentPhase().blockIndex;
   },
 
+  // ---- Going back (2026-08-18) ----
+  // Until now nothing decremented index, so an accidental Skip left you either
+  // finishing from the wrong place or exiting and starting the whole workout
+  // over — losing weights entered, rounds counted and sets ticked off.
+  //
+  // EMOM is the odd one out. Its minutes aren't separate phases; the exercise
+  // is computed from how much time is left, so going back a minute means
+  // putting time back on the clock rather than moving between phases. That
+  // does make the block run longer than programmed, which is right — you're
+  // redoing a minute, so it should cost you one.
+
+  // Where a back press would land inside an EMOM: the top of the minute you're
+  // on, or — if you're already parked there — the top of the one before.
+  // Returns null when there's nothing left to rewind to.
+  emomBackTarget() {
+    const phase = this.currentPhase();
+    if (!phase || phase.kind !== "emom") return null;
+    const elapsed = phase.duration - this.remaining;
+    const minute = Math.floor(elapsed / phase.interval);
+    const atMinuteStart = elapsed % phase.interval === 0;
+    const target = atMinuteStart ? minute - 1 : minute;
+    return target >= 0 ? target : null;
+  },
+
+  canGoBack() {
+    if (this.emomBackTarget() !== null) return true;
+    return this.index > 0;
+  },
+
+  back() {
+    if (!this.canGoBack()) return;
+    this.stop();
+
+    const emomTarget = this.emomBackTarget();
+    if (emomTarget !== null) {
+      const phase = this.currentPhase();
+      this.remaining = phase.duration - emomTarget * phase.interval;
+      // Force the weight field to re-read whichever exercise that minute is,
+      // since syncEmomWeightField skips work when the name hasn't changed.
+      this.emomWeightFor = null;
+      this.updateClock();
+      this.pauseAfterBack();
+      return;
+    }
+
+    this.index--;
+    // Rewind rather than resume — you went back to redo the thing, so it
+    // should hand you the whole interval again.
+    this.steppingBack = true;
+    this.renderPhase();
+    this.steppingBack = false;
+  },
+
+  // Back always leaves the clock stopped, whatever the phase, so there's a
+  // beat to get set up before it runs again.
+  pauseAfterBack() {
+    document.getElementById("player-controls").style.display = "none";
+    document.getElementById("player-round-counter").style.display = "none";
+    this.awaitStart();
+    this.renderBackBtn();
+  },
+
+  renderBackBtn() {
+    document.getElementById("player-back-btn").style.display = this.canGoBack() ? "block" : "none";
+  },
+
   // Arms a timed phase without starting its countdown yet — lets the member see
   // what's coming (e.g. the AMRAP's exercise list) before committing to start it.
   // One place every weight field reports to, so the value survives the
@@ -1978,6 +2045,11 @@ const Player = {
         `Minute ${Math.min(minute + 1, totalMinutes)} of ${totalMinutes} · ${ex.reps ? ex.reps + " reps" : ""}`;
       setPlayerExerciseTechnique(ex.name);
       this.syncEmomWeightField(ex.name);
+      // Unlike every other phase, whether an EMOM can go back changes as the
+      // clock runs — there's nothing to rewind to in the first few seconds of
+      // minute one, and something to rewind to ever after. Every other kind
+      // depends only on the phase index, so renderPhase covers them.
+      this.renderBackBtn();
     } else {
       document.getElementById("player-clock").textContent = formatClock(this.remaining);
     }
@@ -2005,6 +2077,7 @@ const Player = {
     document.getElementById("player-sets-list").style.display = "none";
     document.getElementById("player-superset-list").style.display = "none";
     document.getElementById("player-emom-weight").style.display = "none";
+    document.getElementById("player-back-btn").style.display = "none";
     document.getElementById("player-video-label").textContent = "Demo Video Placeholder";
     document.getElementById("player-pause-btn").textContent = "Pause";
 
@@ -2012,7 +2085,7 @@ const Player = {
     // starts — reuses the same "new block" check as the Start-button gating below, so
     // a multi-round block doesn't repeat them every round, but a mixed workout (e.g.
     // AMRAP then EMOM) can show a different note when each new block begins.
-    if (this.isNewBlockStart() && phase.blockNotes) {
+    if (this.isNewBlockStart() && phase.blockNotes && !this.steppingBack) {
       openBlockNotes(phase.blockLabel, phase.blockNotes);
     }
 
@@ -2027,7 +2100,7 @@ const Player = {
       setPlayerExerciseTechnique(phase.kind === "work" ? phase.exerciseName : null);
       this.remaining = phase.duration;
       this.updateClock();
-      if (this.isNewBlockStart()) this.awaitStart(); else this.beginPhaseTimer();
+      if (this.isNewBlockStart() || this.steppingBack) this.awaitStart(); else this.beginPhaseTimer();
     }
 
     // The "set" phase kind that lived here is gone (2026-08-18) — it was the
@@ -2158,7 +2231,7 @@ const Player = {
       document.getElementById("round-count").textContent = this.amrapRounds;
       this.remaining = phase.duration;
       this.updateClock();
-      if (this.isNewBlockStart()) this.awaitStart(); else this.beginPhaseTimer();
+      if (this.isNewBlockStart() || this.steppingBack) this.awaitStart(); else this.beginPhaseTimer();
     }
 
     if (phase.kind === "emom") {
@@ -2171,8 +2244,10 @@ const Player = {
       document.getElementById("player-total-clock").style.display = "block";
       this.remaining = phase.duration;
       this.updateClock();
-      if (this.isNewBlockStart()) this.awaitStart(); else this.beginPhaseTimer();
+      if (this.isNewBlockStart() || this.steppingBack) this.awaitStart(); else this.beginPhaseTimer();
     }
+
+    this.renderBackBtn();
   },
 };
 
@@ -2946,6 +3021,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("player-exit-btn").addEventListener("click", () => Player.exit());
   document.getElementById("player-start-btn").addEventListener("click", () => Player.beginPhaseTimer());
+  document.getElementById("player-back-btn").addEventListener("click", () => Player.back());
   document.getElementById("exercise-video-close-btn").addEventListener("click", closeExerciseVideo);
   document.getElementById("block-notes-got-it-btn").addEventListener("click", closeBlockNotes);
 
