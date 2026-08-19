@@ -1121,7 +1121,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-panel-wide .builder-hint { font-size: 11px; margin: -4px 0 8px; }
 .builder-panel-wide .builder-blocks-header { margin-bottom: 8px; }
 .builder-panel-wide .builder-blocks-header h3 { font-size: 16px; }
-.builder-panel-wide .builder-library-card { padding: 7px 9px; font-size: 12px; }
+.builder-panel-wide .builder-library-card { padding: 6px; font-size: 12px; }
 
 /* The library takes half the panel (2026-08-19, Chris: "the exercise library
    needs to be half of the create a workout screen"). At ~650px the list stops
@@ -1130,9 +1130,9 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-panel-wide .builder-library { width: 50%; }
 .builder-panel-wide .builder-library-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-content: start;
-  gap: 6px;
+  gap: 8px;
 }
 .builder-library {
   width: 300px;
@@ -1153,19 +1153,19 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 #builder-library-hint { margin: 0 0 10px; }
 #builder-library-hint .link-btn { background: none; border: none; color: var(--blue); font-weight: 800; cursor: pointer; text-decoration: underline; font-size: 11px; padding: 0; }
 .builder-library-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1; }
+/* A thumbnail with a caption, not a row (2026-08-19): video across the full
+   width of the card, name underneath, nothing else. */
 .builder-library-card {
   display: flex;
-  /* Was space-between, which pushed the body-part pill to the far edge — with
-     the video slot leading the card, the three parts read as one row instead. */
-  justify-content: flex-start;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
   background: white;
   border-radius: var(--radius-sm);
-  padding: 10px 12px;
+  padding: 6px;
   cursor: pointer;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
   border: 2px solid transparent;
 }
 .builder-library-card:hover { border-color: var(--periwinkle); }
@@ -1174,18 +1174,17 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
    hover-to-preview step drops a <video> straight in without moving anything
    around it. "has-video" is driven by the exercise's videoUrl. */
 .ex-card-video {
-  flex-shrink: 0;
-  width: 46px;
-  height: 26px;
-  border-radius: 5px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 20px;
   background: var(--field-bg);
   border: 1px dashed var(--periwinkle);
   color: var(--deepblue);
-  opacity: 0.75;
+  opacity: 0.7;
 }
 .ex-card-video.has-video {
   background: var(--ink);
@@ -1193,9 +1192,19 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   color: white;
   opacity: 1;
 }
-.ex-card-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.ex-card-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.builder-library-card .ex-card-text .status-pill { align-self: flex-start; font-size: 9px; }
+/* Two lines, clamped — "Kettlebell Swings" wraps at this width and a card that
+   grew a line taller than its neighbours would break the row. */
+.ex-card-name {
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: center;
+  min-height: 27px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .builder-library-card .status-pill { background: var(--bg); color: var(--deepblue); flex-shrink: 0; }
 
 /* ---------- CHOSEN EXERCISE (circuit builder) ---------- */

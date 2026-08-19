@@ -3002,19 +3002,18 @@ function renderBuilderLibraryList() {
     ? `Filling an exercise slot — click one below. <button class="link-btn" data-action="cancel-slot-fill">Cancel</button>`
     : "Click an exercise to add it as a new station.";
 
-  // Every card carries a video slot (2026-08-19). It's a real thumbnail frame,
-  // not a placeholder box: the exercise's videoUrl decides which state it shows,
-  // and it's sized and positioned for the hover-to-preview Chris wants next, so
-  // adding that is a behaviour change rather than a layout one.
+  // Three to a row, each a near-full-width thumbnail with the name underneath
+  // (2026-08-19). Body-part tags are deliberately not on the card — they're
+  // what the Filters button is for, and on a card this size they competed with
+  // the one thing you're scanning for. The frame's videoUrl decides which state
+  // it shows, and it's sized and placed for the hover-to-preview Chris wants
+  // next, so adding that is a behaviour change rather than a layout one.
   let html = filtered.map((ex) => `
     <div class="builder-library-card" data-action="library-pick-exercise" data-ex-id="${ex.id}">
       <span class="ex-card-video ${ex.videoUrl ? "has-video" : ""}" title="${ex.videoUrl ? "Video attached" : "No video yet — add one from the Exercises page"}">
         ${ex.videoUrl ? "▶" : "🎬"}
       </span>
-      <span class="ex-card-text">
-        <span class="ex-card-name">${ex.name}</span>
-        <span class="status-pill">${ex.bodyParts.join(", ")}</span>
-      </span>
+      <span class="ex-card-name">${ex.name}</span>
     </div>
   `).join("");
 
