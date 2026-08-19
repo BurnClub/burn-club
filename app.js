@@ -193,7 +193,43 @@ function formatShortDate(key) {
   return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function logCompletion(circuit) {
+// ---------------- Weight used (2026-08-18) ----------------
+// Weight entry existed only on Straight Sets / Rep Ladders, and even there it
+// was written onto the row and thrown away at the end of the workout. Now it's
+// recorded on the completion and kept per exercise, so the next session can
+// show what you last lifted.
+
+const WEIGHTS_STORAGE_KEY = "burnclub-last-weights";
+
+function loadLastWeights() {
+  try {
+    return JSON.parse(localStorage.getItem(memberKey(WEIGHTS_STORAGE_KEY)) || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+
+function lastWeightFor(exerciseName) {
+  const w = LAST_WEIGHTS[exerciseName];
+  return w ? w.weight : null;
+}
+
+// Keyed by exercise name rather than id — the block schema stores names, and
+// an exercise renamed in the library shouldn't silently inherit another's
+// history.
+function recordWeights(weights) {
+  if (!weights) return;
+  const today = dateKey(new Date());
+  Object.entries(weights).forEach(([name, weight]) => {
+    if (!weight) return;
+    LAST_WEIGHTS[name] = { weight, date: today };
+  });
+  localStorage.setItem(memberKey(WEIGHTS_STORAGE_KEY), JSON.stringify(LAST_WEIGHTS));
+}
+
+let LAST_WEIGHTS = {};
+
+function logCompletion(circuit, weights) {
   const minutes = parseInt(circuit.meta, 10) || 20;
   const entry = {
     id: `local-${Date.now()}`,
@@ -208,9 +244,12 @@ function logCompletion(circuit) {
     caloriesBurned: estimateCalories(minutes),
     avgHeartRate: estimateHeartRate(),
     rpe: 5,
+    // What they lifted, per exercise. Empty for bodyweight-only sessions.
+    weights: weights && Object.keys(weights).length ? { ...weights } : null,
   };
   COMPLETIONS.push(entry);
   saveCompletions();
+  recordWeights(weights);
   return entry;
 }
 
@@ -1650,6 +1689,7 @@ const Player = {
     this.index = 0;
     this.amrapRounds = 0;
     this.startedAt = Date.now();
+    this.sessionWeights = {};
     closeExerciseVideo();
     document.getElementById("bottom-nav").style.display = "none";
     showScreen("screen-player");
@@ -1713,6 +1753,10 @@ const Player = {
     const weightInput = document.getElementById("rest-overlay-weight-input");
     const weightSaveBtn = document.getElementById("rest-overlay-weight-save-btn");
     weightInput.value = "";
+    // Shows what they lifted last time as the placeholder, so the number they
+    // need is usually a glance rather than a memory (2026-08-18).
+    const last = lastWeightFor(phase.exerciseName);
+    weightInput.placeholder = last ? `${last} lbs last time` : "lbs";
     weightSaveBtn.textContent = "Save";
     weightSaveBtn.disabled = false;
     weightField.style.display = exerciseTracksWeight(phase.exerciseName) ? "block" : "none";
@@ -1764,6 +1808,15 @@ const Player = {
       if (!repsEl.dataset.baseText) repsEl.dataset.baseText = repsEl.textContent;
       repsEl.textContent = `${repsEl.dataset.baseText} · ${weightVal} lbs`;
     }
+    // Was written onto the row and nowhere else until 2026-08-18. The heaviest
+    // set of the block is the one worth keeping — later sets are often drop
+    // sets, and taking the last one would record the lightest.
+    const phase = this.currentPhase();
+    const name = phase && phase.exerciseName;
+    if (name) {
+      const val = Number(weightVal);
+      this.sessionWeights[name] = Math.max(val, this.sessionWeights[name] || 0);
+    }
   },
 
   saveRestWeight() {
@@ -1786,7 +1839,7 @@ const Player = {
   },
 
   finish() {
-    const entry = logCompletion(this.circuit);
+    const entry = logCompletion(this.circuit, this.sessionWeights);
     currentCompletionEntry = entry;
     document.getElementById("workout-complete-text").textContent =
       `You completed all ${this.circuit.blocks.length} blocks of ${this.circuit.title}. 🔥`;
@@ -1959,8 +2012,17 @@ const Player = {
       setPlayerExerciseTechnique(null);
       const supersetListEl = document.getElementById("player-superset-list");
       supersetListEl.style.display = "flex";
+      // Weight goes inline here rather than in the rest popup the way Straight
+      // Sets does (2026-08-18). The reason weight moved off those rows was that
+      // Done started the rest clock, so typing a number competed with finishing
+      // the set. A superset has one Mark Set Complete at the end of the whole
+      // list, so filling these in as you pick each weight up isn't racing
+      // anything. Only shown for exercises flagged Track Weight Used.
       supersetListEl.innerHTML = phase.exercises
-        .map((e, i) => `
+        .map((e, i) => {
+          const tracks = exerciseTracksWeight(e.name);
+          const last = lastWeightFor(e.name);
+          return `
           <div class="amrap-row">
             <div class="amrap-row-left">
               <span class="amrap-order-num">${i + 1}</span>
@@ -1968,13 +2030,28 @@ const Player = {
             </div>
             <div class="amrap-row-right">
               ${e.reps ? `<span>${e.reps} reps</span>` : ""}
+              ${tracks ? `<input type="number" class="superset-weight-input" inputmode="numeric"
+                    data-ex-name="${e.name}"
+                    value="${this.sessionWeights[e.name] || ""}"
+                    placeholder="${last ? last : "lbs"}"
+                    title="${last ? `Last time: ${last} lbs` : "Weight used"}" />` : ""}
               <button class="amrap-play-btn" data-ex-name="${e.name}" title="Watch demo">▶</button>
             </div>
           </div>
-        `)
+        `;
+        })
         .join("");
       supersetListEl.querySelectorAll(".amrap-play-btn").forEach((btn) => {
         btn.addEventListener("click", () => openExerciseVideo(btn.dataset.exName));
+      });
+      // Held on the player, not the DOM, so it survives the re-render between
+      // rounds and carries into the completion record.
+      supersetListEl.querySelectorAll(".superset-weight-input").forEach((input) => {
+        input.addEventListener("input", () => {
+          const val = input.value.trim();
+          if (val) this.sessionWeights[input.dataset.exName] = Number(val);
+          else delete this.sessionWeights[input.dataset.exName];
+        });
       });
       document.getElementById("player-complete-set-btn").style.display = "block";
     }
@@ -2360,6 +2437,7 @@ function renderCircuitLists() {
 function init() {
   COMPLETIONS = loadCompletions();
   BENCHMARK_RESULTS = loadBenchmarkResults();
+  LAST_WEIGHTS = loadLastWeights();
   renderCircuitLists();
   renderHomeWeekSnapshot();
 
