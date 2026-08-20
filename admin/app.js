@@ -1613,7 +1613,14 @@ function renderScopeDetail() {
   renderCircuitVariantFilter();
   const rows = currentScopeCircuits();
 
-  document.getElementById("circuit-table-where-col").textContent = isWeek ? "Available" : "Folder";
+  // Inside one folder every row would print that folder's name, which is the
+   // same words the page title already says (2026-08-19). The column only earns
+  // its width where the value actually varies: a week shows availability, a
+  // whole program spans folders.
+  const showWhere = isWeek || isProgram;
+  const whereCol = document.getElementById("circuit-table-where-col");
+  whereCol.style.display = showWhere ? "" : "none";
+  whereCol.textContent = isWeek ? "Available" : "Folder";
 
   document.getElementById("circuit-table-body").innerHTML = rows.map((c) => {
     const folder = folderById(c.folderId);
@@ -1621,15 +1628,15 @@ function renderScopeDetail() {
     <tr>
       <td><input type="checkbox" class="select-item-checkbox" data-role="select-circuit" data-circuit-id="${c.id}" ${selectedCircuitIds.has(c.id) ? "checked" : ""} /></td>
       <td><strong>${c.title}</strong>${c.variant ? ` <span class="variant-pill variant-${c.variant}">${(PROGRAM_VARIANTS.find((v) => v.key === c.variant) || {}).label || c.variant}</span>` : ""}${c.category !== "circuit" && c.category !== "structured" ? ` <span class="status-pill">${categoryLabel(c.category)}</span>` : ""}${c.isBenchmark ? ` <span class="status-pill benchmark-pill">🏆 ${benchmarkById(c.benchmarkId)?.name || "Benchmark"}</span>` : ""}<br /><span style="color:var(--deepblue);font-weight:700;font-size:11px;">${c.focus} · ${c.difficulty}</span></td>
-      <td>${isWeek ? availabilityCellHtml(c) : (folder ? folder.name : "—")}</td>
-      <td>${c.blocks.length} blocks</td>
+      ${showWhere ? `<td>${isWeek ? availabilityCellHtml(c) : (folder ? folder.name : "—")}</td>` : ""}
+      <td class="col-tight">${c.blocks.length} blocks</td>
       <td>
         <button class="table-action-btn" data-edit-circuit="${c.id}">Edit</button>
         ${isStructuredCircuit(c) ? `<button class="table-action-btn" data-duplicate-circuit="${c.id}">Duplicate</button>` : ""}
       </td>
     </tr>
   `;
-  }).join("") || `<tr><td colspan="5" style="text-align:center;color:var(--deepblue);padding:24px;">No workouts ${isProgram ? "in this program" : isWeek ? "in this week" : "in this folder"}.${isProgram ? "" : ' Click "+ New Workout" to add one.'}</td></tr>`;
+  }).join("") || `<tr><td colspan="${showWhere ? 5 : 4}" style="text-align:center;color:var(--deepblue);padding:24px;">No workouts ${isProgram ? "in this program" : isWeek ? "in this week" : "in this folder"}.${isProgram ? "" : ' Click "+ New Workout" to add one.'}</td></tr>`;
 
   document.querySelectorAll("[data-edit-circuit]").forEach((btn) => {
     btn.addEventListener("click", () => openEditBuilder(btn.dataset.editCircuit));

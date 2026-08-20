@@ -166,7 +166,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 28px;
+  margin-bottom: 16px;
 }
 .eyebrow { margin: 0; color: var(--deepblue); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
 .view-header h1 { font-size: 28px; }
@@ -441,7 +441,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .status-pill.archived { background: #eee; color: #888; }
 
 /* ---------- FILTER PILLS (2026-08-15) ---------- */
-.filter-pill-row { display: flex; gap: 8px; margin-bottom: 20px; }
+.filter-pill-row { display: flex; gap: 8px; margin-bottom: 14px; }
 .filter-pill {
   background: white;
   border: 1px solid var(--periwinkle);
@@ -540,7 +540,9 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   background: white;
   border-radius: var(--radius-md);
   padding: 12px 10px;
-  max-height: calc(100vh - 72px);
+  /* Fills the column rather than ending wherever its contents do — a short
+     card floating in white space read as disconnected from the page. */
+  height: calc(100vh - 72px);
   overflow-y: auto;
 }
 .workspace-pane { flex: 1; min-width: 0; }
@@ -1346,14 +1348,24 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .admin-table { width: 100%; border-collapse: collapse; background: white; border-radius: var(--radius-md); overflow: hidden; box-shadow: 0 4px 14px rgba(10,19,64,0.05); }
 .admin-table th {
   text-align: left;
-  font-size: 11px;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--deepblue);
-  padding: 12px 16px;
+  padding: 8px 12px;
   border-bottom: 2px solid var(--bg);
 }
-.admin-table td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid var(--bg); font-weight: 600; }
+/* Rows were 83px tall for two lines of text (2026-08-19, Chris: "there is
+   just so much unused space... it makes things seem disconnected"). */
+.admin-table td { padding: 8px 12px; font-size: 13px; border-bottom: 1px solid var(--bg); font-weight: 600; line-height: 1.35; }
+/* The checkbox and the row actions only need what they occupy; without this
+   the table shares its width evenly and leaves gaps between the columns that
+   carry the actual content. */
+.admin-table th:first-child, .admin-table td:first-child { width: 34px; padding-right: 0; }
+.admin-table th:last-child, .admin-table td:last-child { width: 1%; white-space: nowrap; text-align: right; }
+/* Opt-in for any other column that should hug its content rather than take a
+   share of the table's width. */
+.admin-table .col-tight { width: 1%; white-space: nowrap; }
 .admin-table tr:last-child td { border-bottom: none; }
 .table-action-btn { background: none; border: none; color: var(--blue); font-weight: 800; cursor: pointer; font-size: 12px; }
 
