@@ -1126,6 +1126,10 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-panel-wide .builder-desc-label textarea { padding: 7px 9px; font-size: 13px; }
 .builder-panel-wide .builder-blocks { gap: 8px; }
 .builder-panel-wide .builder-block-card { padding: 11px 12px; }
+/* Video left, everything else in a column to its right. */
+.builder-block-body { display: flex; gap: 10px; align-items: stretch; }
+.builder-block-fields { flex: 1; min-width: 0; }
+.builder-block-fields > *:last-child { margin-bottom: 0; }
 .builder-panel-wide .builder-block-top { gap: 8px; margin-bottom: 8px; }
 .builder-panel-wide .builder-block-top select,
 .builder-panel-wide .builder-block-top input,
@@ -1187,28 +1191,33 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .builder-library-card:hover { border-color: var(--periwinkle); }
 
-/* The video slot. Sized as a 16:9 thumbnail frame rather than an icon, so the
-   hover-to-preview step drops a <video> straight in without moving anything
-   around it. "has-video" is driven by the exercise's videoUrl. */
-.ex-card-video {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: 6px;
+/* The video slot, in three sizes. Real thumbnail frames rather than icons, so
+   the hover-to-preview step drops a <video> straight in without moving
+   anything around it. "has-video" is driven by the exercise's videoUrl. */
+.ex-video-slot {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  border-radius: 6px;
   background: var(--field-bg);
   border: 1px dashed var(--periwinkle);
   color: var(--deepblue);
   opacity: 0.7;
 }
-.ex-card-video.has-video {
+.ex-video-slot.has-video {
   background: var(--ink);
   border: 1px solid var(--ink);
   color: white;
   opacity: 1;
 }
+/* Library card: full width of the card. */
+.ex-video-card { width: 100%; aspect-ratio: 16 / 9; font-size: 20px; }
+/* Workout block: down the left of the block's fields, stretching to whatever
+   height they come to rather than holding a fixed ratio — the point is to use
+   the empty left side of the panel (2026-08-19, Chris's screenshot). */
+.ex-video-block { width: 150px; flex-shrink: 0; align-self: stretch; min-height: 84px; font-size: 18px; }
+/* One exercise row inside a superset / AMRAP / EMOM. */
+.ex-video-row { width: 44px; height: 25px; flex-shrink: 0; font-size: 11px; }
 /* Two lines, clamped — "Kettlebell Swings" wraps at this width and a card that
    grew a line taller than its neighbours would break the row. */
 .ex-card-name {

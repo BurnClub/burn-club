@@ -2324,6 +2324,25 @@ function closeBuilder() {
   document.getElementById("builder-overlay").classList.remove("visible");
 }
 
+// One place decides what an exercise's video slot looks like — the library
+// card, the block panel and the exercise rows all call this, so they can't
+// drift apart and the hover-to-preview only has to be added once (2026-08-19).
+function exerciseVideoSlotHtml(name, variantClass) {
+  const ex = name ? EXERCISE_LIBRARY.find((e) => e.name === name) : null;
+  const has = !!(ex && ex.videoUrl);
+  const title = !name
+    ? "No exercise chosen yet"
+    : has ? `Video: ${name}` : `No video yet for ${name} — add one from the Exercises page`;
+  return `<span class="ex-video-slot ${variantClass} ${has ? "has-video" : ""}" title="${title}">${has ? "▶" : "🎬"}</span>`;
+}
+
+// straight and ladder hold exactly one exercise, so the block gets one video
+// panel down its left side. The others hold a list, so the video goes on each
+// row instead — there's no single exercise for the block to show.
+function blockHasOneExercise(block) {
+  return block.type === "straight" || block.type === "ladder";
+}
+
 function chosenExercisePill(name, i, ei) {
   const active = isActiveSlot(i, ei) ? " active-slot" : "";
   return `<div class="chosen-exercise ${name ? "" : "empty"}${active}" data-action="choose-exercise" data-block-index="${i}" data-ex-index="${ei}">${name || "+ Choose Exercise"}</div>`;
@@ -2347,6 +2366,7 @@ function blockFieldRow(block, i) {
         <div class="builder-ex-list">
           ${v.exercises.map((e, ei) => `
             <div class="builder-ex-row">
+              ${exerciseVideoSlotHtml(e.name, "ex-video-row")}
               ${chosenExercisePill(e.name, i, ei)}
               <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
             </div>
@@ -2363,6 +2383,7 @@ function blockFieldRow(block, i) {
         <div class="builder-ex-list">
           ${v.exercises.map((e, ei) => `
             <div class="builder-ex-row">
+              ${exerciseVideoSlotHtml(e.name, "ex-video-row")}
               ${chosenExercisePill(e.name, i, ei)}
               <input type="number" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />
               <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
@@ -2400,6 +2421,7 @@ function blockFieldRow(block, i) {
         <div class="builder-ex-list">
           ${v.exercises.map((e, ei) => `
             <div class="builder-ex-row">
+              ${exerciseVideoSlotHtml(e.name, "ex-video-row")}
               ${chosenExercisePill(e.name, i, ei)}
               <input type="number" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />
               <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
@@ -2417,6 +2439,7 @@ function blockFieldRow(block, i) {
         <div class="builder-ex-list">
           ${v.exercises.map((e, ei) => `
             <div class="builder-ex-row">
+              ${exerciseVideoSlotHtml(e.name, "ex-video-row")}
               ${chosenExercisePill(e.name, i, ei)}
               <input type="number" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />
               <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
@@ -2445,7 +2468,10 @@ function renderBuilderBlocks() {
         ${isCombined ? `<button class="btn-ghost-lg small" data-action="split-block" data-block-index="${i}">Split</button>` : ""}
         <button class="remove-block-btn" data-action="remove-block" data-block-index="${i}">✕</button>
       </div>
-      ${blockFieldRow(block, i)}
+      <div class="builder-block-body">
+        ${blockHasOneExercise(block) ? exerciseVideoSlotHtml(block.values.exerciseName, "ex-video-block") : ""}
+        <div class="builder-block-fields">${blockFieldRow(block, i)}</div>
+      </div>
     </div>
   `;
   }).join("") || `<p style="color:var(--deepblue);font-weight:700;font-size:13px;">No exercises yet — click "+ Add Exercise" to start building this workout.</p>`;
@@ -3103,9 +3129,7 @@ function renderBuilderLibraryList() {
   // next, so adding that is a behaviour change rather than a layout one.
   let html = filtered.map((ex) => `
     <div class="builder-library-card" data-action="library-pick-exercise" data-ex-id="${ex.id}">
-      <span class="ex-card-video ${ex.videoUrl ? "has-video" : ""}" title="${ex.videoUrl ? "Video attached" : "No video yet — add one from the Exercises page"}">
-        ${ex.videoUrl ? "▶" : "🎬"}
-      </span>
+      ${exerciseVideoSlotHtml(ex.name, "ex-video-card")}
       <span class="ex-card-name">${ex.name}</span>
     </div>
   `).join("");
