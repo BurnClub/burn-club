@@ -67,6 +67,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   cursor: pointer;
 }
 .btn-ghost-lg.small { padding: 6px 13px; font-size: 12px; }
+.btn-ghost-lg, .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
 
 /* ---------- LOGIN ---------- */
 .admin-login {
@@ -114,18 +115,37 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .sidebar-brand small { font-weight: 700; opacity: 0.6; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
 
 .sidebar-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+/* ---------- ICONS (2026-08-19) ---------- */
+/* One shared line-icon rule, matching the member app: 24-grid, no fill,
+   currentColor stroke, so an icon takes the colour of whatever it sits in
+   and there is never a second colour to keep in sync. Emoji were doing this
+   job before and rendered in whatever palette the OS chose. */
+.icon {
+  width: 1.15em;
+  height: 1.15em;
+  flex-shrink: 0;
+  display: block;
+  vertical-align: -0.2em;
+}
+
 .side-link {
   background: none;
   border: none;
   color: rgba(255,255,255,0.7);
   text-align: left;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   font-family: 'Nunito', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
+.side-link .icon { width: 17px; height: 17px; opacity: 0.85; }
+.side-link.active .icon { opacity: 1; }
+.side-link > span:not(.side-unread-badge) { flex: 1; }
 .side-link:hover { background: rgba(255,255,255,0.06); }
 .side-link.active { background: var(--blue); color: white; }
 .side-unread-badge {
@@ -145,7 +165,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 /* Settings sits beside Log Out at the bottom rather than in the main nav —
    it's configuration, not content (2026-08-12, Chris). */
 .sidebar-footer { display: flex; flex-direction: column; gap: 8px; }
-.sidebar-footer .sidebar-settings { padding: 10px; font-size: 13px; text-align: center; }
+.sidebar-footer .sidebar-settings { padding: 9px 12px; font-size: 13px; }
 .sidebar-logout {
   background: none;
   border: 1px solid rgba(255,255,255,0.2);
@@ -438,7 +458,8 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .status-pill.draft { background: var(--periwinkle); color: var(--blue); }
 .status-pill.upcoming { background: var(--yellow); color: #8a6400; }
 .status-pill.ended { background: #eee; color: #888; }
-.status-pill.benchmark-pill { background: var(--yellow); color: #8a6400; text-transform: none; }
+.status-pill.benchmark-pill { background: var(--yellow); color: #8a6400; text-transform: none; display: inline-flex; align-items: center; gap: 4px; }
+.status-pill .icon { width: 12px; height: 12px; }
 .status-pill.qualified { background: var(--yellow); color: #8a6400; }
 .status-pill.in-progress { background: var(--periwinkle); color: var(--blue); }
 .status-pill.archived { background: #eee; color: #888; }
@@ -780,6 +801,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 
 .folder-detail-title-row { display: flex; align-items: center; gap: 10px; }
+.folder-detail-edit-btn .icon { width: 15px; height: 15px; }
 .folder-detail-edit-btn {
   background: none;
   border: none;
@@ -1068,7 +1090,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .field-group.visible-group { background: #eef7ff; border: 1.5px solid #cfe6ff; }
 .field-group.staff-group { background: #fff6ec; border: 1.5px solid #ffe2bd; }
-.field-group-title { margin: 0 0 12px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink); }
+.field-group-title { margin: 0 0 12px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink); display: flex; align-items: center; gap: 7px; }
 #member-program-filter {
   border: 2px solid var(--periwinkle);
   border-radius: var(--radius-sm);
@@ -1283,12 +1305,14 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   opacity: 1;
 }
 /* Library card: full width of the card. */
-.ex-video-card { width: 100%; aspect-ratio: 16 / 9; font-size: 20px; }
+.ex-video-card { width: 100%; aspect-ratio: 16 / 9; }
+.ex-video-card .icon { width: 26px; height: 26px; }
 /* Everywhere inside a block — the straight-set panel and each row of a
    superset / AMRAP / EMOM — is the same small slot (2026-08-19). The larger
    panel it replaced made the block taller than the fields beside it, which
    was the opposite of the goal. */
-.ex-video-row { width: 44px; height: 25px; flex-shrink: 0; font-size: 11px; }
+.ex-video-row { width: 44px; height: 25px; flex-shrink: 0; }
+.ex-video-row .icon { width: 15px; height: 15px; }
 /* Two lines, clamped — "Kettlebell Swings" wraps at this width and a card that
    grew a line taller than its neighbours would break the row. */
 .ex-card-name {
@@ -1497,16 +1521,17 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .admin-conversation-row.active .conversation-preview,
 .admin-conversation-row.active .conversation-time { color: white; }
 .conversation-icon {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: var(--periwinkle);
+  color: var(--blue);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
   flex-shrink: 0;
 }
+.conversation-icon .icon { width: 17px; height: 17px; }
 .conversation-text { flex: 1; min-width: 0; }
 .conversation-name { margin: 0 0 3px; font-weight: 800; font-size: 13px; color: var(--ink); }
 .conversation-preview { margin: 0; font-size: 12px; color: var(--deepblue); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -6,6 +6,42 @@
 // data.js — the seed data needs them to compute availability dates relative
 // to today, and data.js loads first.
 
+// ---------------- Icons (2026-08-19) ----------------
+// Line icons, one colour, matching the member app's set: 24-grid, no fill,
+// currentColor stroke. Replaces the emoji the admin was using, which rendered
+// in whatever multicolour the OS felt like and never matched anything else on
+// the page. Sized by CSS, coloured by whatever they sit inside.
+
+const ICON_PATHS = {
+  dashboard: '<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/>',
+  programs: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  exercises: '<path d="M2 12h2M20 12h2M6 8v8M18 8v8M9 6v12M15 6v12M9 12h6"/>',
+  library: '<path d="M4 5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2z"/><path d="M8 3v18"/>',
+  members: '<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/>',
+  groups: '<circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="7" r="2.4"/><path d="M17 14c2.8.3 4.5 2.4 4.5 6"/>',
+  challenges: '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a4 4 0 0 0 3 3.9M17 6h3v1a4 4 0 0 1-3 3.9"/><path d="M12 14v4M8 20h8"/>',
+  community: '<circle cx="8" cy="9" r="3"/><circle cx="17" cy="9" r="2.6"/><path d="M2 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 14c3 0 5 1.9 5 5"/>',
+  messages: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>',
+  chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/>',
+  trophy: '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a4 4 0 0 0 3 3.9M17 6h3v1a4 4 0 0 1-3 3.9"/><path d="M12 14v4M8 20h8"/>',
+  video: '<rect x="2.5" y="6" width="13" height="12" rx="2"/><path d="M15.5 10.5L21.5 7v10l-6-3.5z"/>',
+  play: '<path d="M8 5.5v13l11-6.5z"/>',
+  eye: '<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/>',
+  lock: '<rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  flag: '<path d="M5 21V4"/><path d="M5 5h11l-1.6 3.5L16 12H5z"/>',
+  star: '<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.1 5.8-5.3-2.9-5.3 2.9 1.1-5.8L3.5 9.7l5.9-.8z"/>',
+  download: '<path d="M12 4v10"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/>',
+  upload: '<path d="M12 18V8"/><path d="M8 11l4-4 4 4"/><path d="M4 19h16"/>',
+  pencil: '<path d="M4 20h4L19 9a2.5 2.5 0 0 0-3.5-3.5L4 16z"/>',
+};
+
+function icon(name, cls) {
+  const paths = ICON_PATHS[name];
+  if (!paths) return "";
+  return `<svg class="icon ${cls || ""}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+}
+
 function formatClock(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
   const s = Math.floor(totalSeconds % 60);
@@ -295,7 +331,7 @@ function renderGroupList() {
           <p class="library-program-card-count">${members.length} member${members.length === 1 ? "" : "s"}</p>
         </div>
         <span class="group-card-chat ${unread ? "has-unread" : ""}">
-          <span class="group-card-chat-count">💬 ${msgs.length}</span>
+          <span class="group-card-chat-count">${icon("chat")} ${msgs.length}</span>
           ${unread ? `<span class="unread-row-count">${unread} new</span>` : ""}
         </span>
       </div>
@@ -656,7 +692,7 @@ function renderDashboardUnread() {
 
   document.getElementById("dashboard-unread-list").innerHTML = rows.map((r) => `
     <div class="unread-row" data-action="open-unread" data-conversation-id="${r.conv.id}">
-      <div class="conversation-icon">${r.conv.type === "group" ? "👥" : "💬"}</div>
+      <div class="conversation-icon">${r.conv.type === "group" ? icon("community") : icon("chat")}</div>
       <div class="unread-row-text">
         <p class="unread-row-name">
           ${conversationDisplayName(r.conv)}
@@ -1627,7 +1663,7 @@ function renderScopeDetail() {
     return `
     <tr>
       <td><input type="checkbox" class="select-item-checkbox" data-role="select-circuit" data-circuit-id="${c.id}" ${selectedCircuitIds.has(c.id) ? "checked" : ""} /></td>
-      <td><strong>${c.title}</strong>${c.variant ? ` <span class="variant-pill variant-${c.variant}">${(PROGRAM_VARIANTS.find((v) => v.key === c.variant) || {}).label || c.variant}</span>` : ""}${c.category !== "circuit" && c.category !== "structured" ? ` <span class="status-pill">${categoryLabel(c.category)}</span>` : ""}${c.isBenchmark ? ` <span class="status-pill benchmark-pill">🏆 ${benchmarkById(c.benchmarkId)?.name || "Benchmark"}</span>` : ""}<br /><span style="color:var(--deepblue);font-weight:700;font-size:11px;">${c.focus} · ${c.difficulty}</span></td>
+      <td><strong>${c.title}</strong>${c.variant ? ` <span class="variant-pill variant-${c.variant}">${(PROGRAM_VARIANTS.find((v) => v.key === c.variant) || {}).label || c.variant}</span>` : ""}${c.category !== "circuit" && c.category !== "structured" ? ` <span class="status-pill">${categoryLabel(c.category)}</span>` : ""}${c.isBenchmark ? ` <span class="status-pill benchmark-pill">${icon("trophy")} ${benchmarkById(c.benchmarkId)?.name || "Benchmark"}</span>` : ""}<br /><span style="color:var(--deepblue);font-weight:700;font-size:11px;">${c.focus} · ${c.difficulty}</span></td>
       ${showWhere ? `<td>${isWeek ? availabilityCellHtml(c) : (folder ? folder.name : "—")}</td>` : ""}
       <td class="col-tight">${c.blocks.length} blocks</td>
       <td>
@@ -2338,7 +2374,7 @@ function exerciseVideoSlotHtml(name, variantClass) {
   const title = !name
     ? "No exercise chosen yet"
     : has ? `Video: ${name}` : `No video yet for ${name} — add one from the Exercises page`;
-  return `<span class="ex-video-slot ${variantClass} ${has ? "has-video" : ""}" title="${title}">${has ? "▶" : "🎬"}</span>`;
+  return `<span class="ex-video-slot ${variantClass} ${has ? "has-video" : ""}" title="${title}">${icon(has ? "play" : "video")}</span>`;
 }
 
 // straight and ladder hold exactly one exercise, so the block gets one video
@@ -3466,7 +3502,7 @@ function renderAdminConversationList() {
     const p = preview(conv);
     return `
       <div class="admin-conversation-row ${conv.id === selectedConversationId ? "active" : ""}" data-action="open-admin-thread" data-conversation-id="${conv.id}">
-        <div class="conversation-icon">${conv.type === "group" ? "👥" : "💬"}</div>
+        <div class="conversation-icon">${conv.type === "group" ? icon("community") : icon("chat")}</div>
         <div class="conversation-text">
           <p class="conversation-name">${conversationDisplayName(conv)}</p>
           <p class="conversation-preview">${p.lastText}</p>
@@ -4314,7 +4350,7 @@ function renderPosts() {
     <div class="post-row ${p.flagged ? "flagged" : ""} ${p.featured ? "featured" : ""}">
       <div class="post-main">
         <p><span class="post-member">${p.member}</span> — ${p.content}</p>
-        <p class="post-meta">${p.time} · ${p.likes} likes ${p.flagged ? "· 🚩 Flagged" : ""} ${p.featured ? "· ⭐ Featured" : ""}</p>
+        <p class="post-meta">${p.time} · ${p.likes} likes ${p.flagged ? `· ${icon("flag")} Flagged` : ""} ${p.featured ? `· ${icon("star")} Featured` : ""}</p>
       </div>
       <div class="post-actions">
         <button class="btn-feature" data-post-action="feature" data-post-id="${p.id}">${p.featured ? "Unfeature" : "Feature"}</button>
