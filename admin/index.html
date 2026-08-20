@@ -596,10 +596,16 @@
               <h3>Exercises</h3>
               <button class="btn-ghost-lg small" data-action="add-new-item">+ Add Exercise</button>
             </div>
-            <p class="builder-hint">Each exercise starts as its own straight set. Check 2 or more to combine them into a superset, timed circuit, AMRAP, or EMOM.</p>
+            <p class="builder-hint">Each exercise starts as its own straight set. Check one to make it a rep ladder, or 2 or more to combine them into a superset, timed circuit, AMRAP, or EMOM.</p>
             <div class="combine-bar" id="combine-bar">
               <span id="combine-bar-count">2 selected</span>
-              <div class="combine-bar-actions">
+              <!-- One block selected: swap between the two single-exercise
+                   formats. This replaced the per-row type dropdown, which was
+                   a column on every row for a control used rarely. -->
+              <div class="combine-bar-actions" id="combine-bar-single" style="display:none;">
+                <button class="btn-ghost-lg small" data-action="convert-single" id="convert-single-btn" data-target-type="ladder">→ Rep Ladder</button>
+              </div>
+              <div class="combine-bar-actions" id="combine-bar-actions">
                 <button class="btn-ghost-lg small" data-action="combine" data-target-type="superset">→ Superset</button>
                 <button class="btn-ghost-lg small" data-action="combine" data-target-type="interval">→ Timed Circuit</button>
                 <button class="btn-ghost-lg small" data-action="combine" data-target-type="amrap">→ AMRAP</button>

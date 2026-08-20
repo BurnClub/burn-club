@@ -1182,9 +1182,11 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 /* The build area, set apart from the naming fields above it: real space, a
    rule, and a tint, so the two halves of the panel read as two things. */
 .builder-build-area {
-  margin-top: 26px;
-  padding-top: 18px;
-  border-top: 2px solid var(--periwinkle);
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  border: 1px solid var(--periwinkle);
 }
 .builder-panel-wide .builder-blocks-header { margin-bottom: 8px; }
 .builder-panel-wide .builder-blocks-header h3 { font-size: 16px; }
@@ -1194,10 +1196,10 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
    needs to be half of the create a workout screen"). At ~650px the list stops
    being a single narrow column and becomes a two-up grid, which is what makes
    the extra width buy visible exercises rather than whitespace. */
-.builder-panel-wide .builder-library { width: 50%; }
+.builder-panel-wide .builder-library { width: 58%; }
 .builder-panel-wide .builder-library-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-content: start;
   gap: 8px;
 }
@@ -1367,14 +1369,16 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .builder-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--bg); }
 .builder-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
-.builder-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 14px; }
+/* 140px, not 170: the left column narrowed when the library went to four
+   across, and at 170 the meta fields dropped to two rows again. */
+.builder-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 14px; }
 .builder-meta-grid label { font-size: 12px; font-weight: 700; color: var(--deepblue); display: flex; flex-direction: column; gap: 4px; }
 .builder-desc-label { font-size: 12px; font-weight: 700; color: var(--deepblue); display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px; }
 .builder-desc-label textarea { resize: vertical; font-family: 'Nunito', sans-serif; }
 .builder-blocks-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .builder-blocks { display: flex; flex-direction: column; gap: 14px; }
 
-.builder-block-card { background: var(--bg); border-radius: var(--radius-md); padding: 16px; }
+.builder-block-card { background: white; border: 1px solid var(--periwinkle); border-radius: var(--radius-md); padding: 16px; }
 .builder-block-top { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
 .builder-block-top select { border: 2px solid var(--periwinkle); border-radius: var(--radius-sm); padding: 8px 10px; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 13px; }
 .builder-block-top input[data-field="label"] { flex: 1; }

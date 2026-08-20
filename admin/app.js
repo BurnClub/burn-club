@@ -2284,7 +2284,7 @@ function convertBlockType(block, newType) {
 
 function combineSelected(targetType) {
   const selectedIndices = builderBlocks
-    .map((b, i) => (b.type === "straight" && b.selected ? i : -1))
+    .map((b, i) => (blockHasOneExercise(b) && b.selected ? i : -1))
     .filter((i) => i !== -1);
   if (selectedIndices.length < 2) return;
 
@@ -2427,10 +2427,12 @@ function renderBuilderBlocks() {
     return `
     <div class="builder-block-card">
       <div class="builder-block-top">
-        ${block.type === "straight" ? `<input type="checkbox" class="select-item-checkbox" data-role="select-item" data-block-index="${i}" ${block.selected ? "checked" : ""} title="Select to combine with other exercises" />` : ""}
-        <select data-block-index="${i}" data-role="block-type">
-          ${compatTypes.map((t) => `<option value="${t}" ${t === block.type ? "selected" : ""}>${blockTypeLabel(t)}</option>`).join("")}
-        </select>
+        ${blockHasOneExercise(block) ? `<input type="checkbox" class="select-item-checkbox" data-role="select-item" data-block-index="${i}" ${block.selected ? "checked" : ""} title="Select to change its format, or check two or more to combine them" />` : ""}
+        ${blockHasOneExercise(block) ? "" : `
+          <select data-block-index="${i}" data-role="block-type">
+            ${compatTypes.map((t) => `<option value="${t}" ${t === block.type ? "selected" : ""}>${blockTypeLabel(t)}</option>`).join("")}
+          </select>
+        `}
         ${blockTopFields(block, i)}
         ${isCombined ? `<button class="btn-ghost-lg small" data-action="split-block" data-block-index="${i}">Split</button>` : ""}
         <button class="remove-block-btn" data-action="remove-block" data-block-index="${i}">✕</button>
@@ -2446,15 +2448,47 @@ function renderBuilderBlocks() {
     : `Estimated duration: ~${estimateCircuitMinutes(builderBlocksToSchema())} min`;
 }
 
+// The bar is the only way to change a single-exercise block's format now
+// (2026-08-19, Chris): the per-row dropdown existed almost entirely to switch
+// straight sets to a rep ladder, and it cost a whole column of every row to do
+// it. Selecting one block offers that swap; selecting two or more combines
+// them, as before.
 function renderCombineBar() {
   const bar = document.getElementById("combine-bar");
-  const count = builderBlocks.filter((b) => b.type === "straight" && b.selected).length;
-  if (count >= 2) {
-    bar.style.display = "flex";
-    document.getElementById("combine-bar-count").textContent = `${count} selected`;
-  } else {
+  const selected = builderBlocks.filter((b) => blockHasOneExercise(b) && b.selected);
+  const single = document.getElementById("combine-bar-single");
+  const multi = document.getElementById("combine-bar-actions");
+
+  if (!selected.length) {
     bar.style.display = "none";
+    return;
   }
+  bar.style.display = "flex";
+  const one = selected.length === 1;
+  single.style.display = one ? "flex" : "none";
+  multi.style.display = one ? "none" : "flex";
+
+  if (one) {
+    const isLadder = selected[0].type === "ladder";
+    document.getElementById("combine-bar-count").textContent = isLadder ? "Rep ladder" : "Straight sets";
+    const btn = document.getElementById("convert-single-btn");
+    btn.textContent = isLadder ? "→ Straight Sets" : "→ Rep Ladder";
+    btn.dataset.targetType = isLadder ? "straight" : "ladder";
+  } else {
+    document.getElementById("combine-bar-count").textContent = `${selected.length} selected`;
+  }
+}
+
+// One selected block, swapped in place between the two single-exercise
+// formats. Keeps the exercise; the scheme and rest come from the new type's
+// defaults, which is the same thing the dropdown did.
+function convertSelectedSingle(targetType) {
+  const i = builderBlocks.findIndex((b) => blockHasOneExercise(b) && b.selected);
+  if (i === -1) return;
+  const converted = convertBlockType(builderBlocks[i], targetType);
+  converted.selected = true;
+  builderBlocks[i] = converted;
+  renderBuilderBlocks();
 }
 
 function builderBlocksToSchema() {
@@ -3342,6 +3376,9 @@ document.addEventListener("click", (e) => {
   }
   if (action === "combine") {
     combineSelected(el.dataset.targetType);
+  }
+  if (action === "convert-single") {
+    convertSelectedSingle(el.dataset.targetType);
   }
   if (action === "add-exercise") {
     const block = builderBlocks[bi];
