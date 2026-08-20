@@ -1126,10 +1126,38 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-panel-wide .builder-desc-label textarea { padding: 7px 9px; font-size: 13px; }
 .builder-panel-wide .builder-blocks { gap: 8px; }
 .builder-panel-wide .builder-block-card { padding: 11px 12px; }
-/* Video left, everything else in a column to its right. */
-.builder-block-body { display: flex; gap: 10px; align-items: stretch; }
+/* Video left, everything else to its right. */
+.builder-block-body { display: flex; gap: 8px; align-items: flex-end; }
 .builder-block-fields { flex: 1; min-width: 0; }
 .builder-block-fields > *:last-child { margin-bottom: 0; }
+
+/* A whole straight set on one line: chooser takes the slack, numbers stay
+   narrow and fixed. */
+.builder-inline-row { display: flex; align-items: flex-end; gap: 8px; }
+.builder-inline-row .inline-grow { flex: 1; min-width: 0; }
+.builder-inline-row .inline-field {
+  flex: 0 0 74px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--deepblue);
+}
+.builder-inline-row .inline-field.wide { flex: 0 0 130px; }
+.builder-inline-row .inline-field input {
+  width: 100%;
+  border: 2px solid var(--periwinkle);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+}
+/* .modal-field brings a 14px bottom margin and a taller box than the number
+   inputs beside it — both have to go, or the row is 76px tall and the fields
+   don't line up along the bottom. */
+.builder-inline-row .inline-grow { margin-bottom: 0; font-size: 10px; gap: 4px; }
+.builder-inline-row .chosen-exercise-lg { padding: 6px 8px; font-size: 12px; }
 .builder-panel-wide .builder-block-top { gap: 8px; margin-bottom: 8px; }
 .builder-panel-wide .builder-block-top select,
 .builder-panel-wide .builder-block-top input,
@@ -1212,11 +1240,10 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 /* Library card: full width of the card. */
 .ex-video-card { width: 100%; aspect-ratio: 16 / 9; font-size: 20px; }
-/* Workout block: down the left of the block's fields, stretching to whatever
-   height they come to rather than holding a fixed ratio — the point is to use
-   the empty left side of the panel (2026-08-19, Chris's screenshot). */
-.ex-video-block { width: 150px; flex-shrink: 0; align-self: stretch; min-height: 84px; font-size: 18px; }
-/* One exercise row inside a superset / AMRAP / EMOM. */
+/* Everywhere inside a block — the straight-set panel and each row of a
+   superset / AMRAP / EMOM — is the same small slot (2026-08-19). The larger
+   panel it replaced made the block taller than the fields beside it, which
+   was the opposite of the goal. */
 .ex-video-row { width: 44px; height: 25px; flex-shrink: 0; font-size: 11px; }
 /* Two lines, clamped — "Kettlebell Swings" wraps at this width and a card that
    grew a line taller than its neighbours would break the row. */

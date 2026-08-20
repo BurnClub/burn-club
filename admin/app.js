@@ -2392,25 +2392,29 @@ function blockFieldRow(block, i) {
         </div>
         <button class="btn-ghost-lg small" data-action="add-exercise" data-block-index="${i}">+ Add Exercise</button>
       `;
+    // One line: the exercise takes the slack, the three numbers are fixed and
+    // narrow (2026-08-19). A straight set is the most common block by far, so
+    // the height it used to take — a full-width chooser above a three-across
+    // field row — was most of the builder's length.
     case "straight":
       return `
-        <label class="modal-field">Exercise
-          <div class="chosen-exercise-lg ${v.exerciseName ? "" : "empty"}${isActiveSlot(i, null) ? " active-slot" : ""}" data-action="choose-exercise" data-block-index="${i}">${v.exerciseName || "+ Choose Exercise"}</div>
-        </label>
-        <div class="builder-field-row">
-          <label>Sets<input type="number" min="1" value="${v.sets}" data-block-index="${i}" data-field="sets" /></label>
-          <label>Reps<input type="number" min="1" value="${v.reps}" data-block-index="${i}" data-field="reps" /></label>
-          <label>Rest (sec)<input type="number" min="0" value="${v.rest}" data-block-index="${i}" data-field="rest" /></label>
+        <div class="builder-inline-row">
+          <label class="modal-field inline-grow">Exercise
+            <div class="chosen-exercise-lg ${v.exerciseName ? "" : "empty"}${isActiveSlot(i, null) ? " active-slot" : ""}" data-action="choose-exercise" data-block-index="${i}">${v.exerciseName || "+ Choose Exercise"}</div>
+          </label>
+          <label class="inline-field">Sets<input type="number" min="1" value="${v.sets}" data-block-index="${i}" data-field="sets" /></label>
+          <label class="inline-field">Reps<input type="number" min="1" value="${v.reps}" data-block-index="${i}" data-field="reps" /></label>
+          <label class="inline-field">Rest (s)<input type="number" min="0" value="${v.rest}" data-block-index="${i}" data-field="rest" /></label>
         </div>
       `;
     case "ladder":
       return `
-        <label class="modal-field">Exercise
-          <div class="chosen-exercise-lg ${v.exerciseName ? "" : "empty"}${isActiveSlot(i, null) ? " active-slot" : ""}" data-action="choose-exercise" data-block-index="${i}">${v.exerciseName || "+ Choose Exercise"}</div>
-        </label>
-        <div class="builder-field-row">
-          <label>Rep scheme (comma-sep)<input type="text" value="${v.scheme}" data-block-index="${i}" data-field="scheme" /></label>
-          <label>Rest (sec)<input type="number" min="0" value="${v.rest}" data-block-index="${i}" data-field="rest" /></label>
+        <div class="builder-inline-row">
+          <label class="modal-field inline-grow">Exercise
+            <div class="chosen-exercise-lg ${v.exerciseName ? "" : "empty"}${isActiveSlot(i, null) ? " active-slot" : ""}" data-action="choose-exercise" data-block-index="${i}">${v.exerciseName || "+ Choose Exercise"}</div>
+          </label>
+          <label class="inline-field wide">Rep scheme<input type="text" value="${v.scheme}" data-block-index="${i}" data-field="scheme" /></label>
+          <label class="inline-field">Rest (s)<input type="number" min="0" value="${v.rest}" data-block-index="${i}" data-field="rest" /></label>
         </div>
       `;
     case "amrap":
@@ -2469,7 +2473,7 @@ function renderBuilderBlocks() {
         <button class="remove-block-btn" data-action="remove-block" data-block-index="${i}">✕</button>
       </div>
       <div class="builder-block-body">
-        ${blockHasOneExercise(block) ? exerciseVideoSlotHtml(block.values.exerciseName, "ex-video-block") : ""}
+        ${blockHasOneExercise(block) ? exerciseVideoSlotHtml(block.values.exerciseName, "ex-video-row") : ""}
         <div class="builder-block-fields">${blockFieldRow(block, i)}</div>
       </div>
     </div>
