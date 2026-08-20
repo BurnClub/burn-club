@@ -1163,7 +1163,9 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-library .search-input { max-width: none; }
 .builder-library .filter-row { gap: 5px; margin: 8px 0; }
 .builder-library .pill-filter { padding: 4px 9px; font-size: 11px; }
-.builder-filter-toggle { margin: 8px 0 0; align-self: flex-start; }
+.builder-library-search-row { display: flex; align-items: center; gap: 8px; }
+.builder-library-search-row .search-input { flex: 1; min-width: 0; }
+.builder-filter-toggle { flex-shrink: 0; white-space: nowrap; }
 .builder-filter-toggle.active { border-color: var(--blue); color: var(--blue); }
 #builder-library-hint { margin: 0 0 10px; }
 #builder-library-hint .link-btn { background: none; border: none; color: var(--blue); font-weight: 800; cursor: pointer; text-decoration: underline; font-size: 11px; padding: 0; }
@@ -1211,10 +1213,12 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
    grew a line taller than its neighbours would break the row. */
 .ex-card-name {
   font-weight: 700;
-  font-size: 11px;
+  /* 25% up from 11px (2026-08-19). The two-line floor moves with it, or a
+     wrapping name would push its card taller than the rest of its row. */
+  font-size: 13.75px;
   line-height: 1.25;
   text-align: center;
-  min-height: 27px;
+  min-height: 34px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;

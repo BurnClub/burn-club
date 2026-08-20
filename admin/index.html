@@ -606,13 +606,17 @@
 
           <aside class="builder-library">
             <h3 class="builder-library-title">Exercise Library</h3>
-            <input type="text" class="search-input" id="builder-library-search" placeholder="Search exercises..." />
-            <!-- The body-part pills used to sit here permanently — a dozen of
-                 them, wrapping over three or four lines, above a list you
-                 actually came to read (2026-08-19). -->
-            <button class="btn-ghost-lg small builder-filter-toggle" id="builder-filter-btn">
-              Filters <span class="filter-count-badge" id="builder-filter-count" style="display:none;"></span>
-            </button>
+            <!-- The body-part pills used to sit below here permanently — a
+                 dozen of them, wrapping over three or four lines, above a list
+                 you actually came to read. Behind the button since 2026-08-19,
+                 and on the search line since later the same day, which is one
+                 more row of exercises. -->
+            <div class="builder-library-search-row">
+              <input type="text" class="search-input" id="builder-library-search" placeholder="Search exercises..." />
+              <button class="btn-ghost-lg small builder-filter-toggle" id="builder-filter-btn">
+                Filters <span class="filter-count-badge" id="builder-filter-count" style="display:none;"></span>
+              </button>
+            </div>
             <div class="filter-row" id="builder-library-filters" style="display:none;"></div>
             <p class="builder-hint" id="builder-library-hint"></p>
             <div class="builder-library-list" id="builder-library-list"></div>
