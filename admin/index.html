@@ -517,7 +517,10 @@
     <div class="builder-overlay" id="builder-overlay">
       <div class="builder-panel builder-panel-wide">
         <header class="builder-header">
-          <h2 id="builder-heading">New Workout</h2>
+          <!-- The workout's name is the heading (2026-08-19, Chris: "this is
+               the edit page so i dont need that info"). Editing it here means
+               the panel opens on the field you most often came to change. -->
+          <input type="text" id="builder-title" class="builder-title-input" placeholder="Name this workout" />
           <button class="player-exit" id="builder-close-btn">✕</button>
         </header>
 
@@ -531,7 +534,6 @@
             <div class="builder-variant-bar" id="builder-variant-bar" style="display:none;">
               <span class="builder-variant-label">Editing exercises for</span>
               <div class="filter-pill-row" id="builder-variant-pills"></div>
-              <span class="builder-variant-note">Structure and timing are shared across both</span>
             </div>
 
             <!-- Availability, rolling programs only (2026-08-15). This
@@ -553,21 +555,20 @@
               <p class="builder-availability-note" id="builder-availability-note"></p>
             </div>
             <div class="builder-meta-grid">
-              <label>Title
-                <input type="text" id="builder-title" placeholder="e.g. Full Body Burn" />
-              </label>
-              <label>Tag
-                <input type="text" id="builder-tag" placeholder="e.g. New, Cardio, Core" />
-              </label>
+              <!-- Tag and Focus are hidden but still saved, the same way
+                   Difficulty is (2026-08-19). Focus is now carried by the
+                   workout's name, and a tag adds nothing when you're already
+                   inside the folder that says what this is. Both still show in
+                   the member app, so existing values are preserved rather than
+                   dropped. -->
+              <input type="hidden" id="builder-tag" />
+              <input type="hidden" id="builder-focus" />
               <label id="builder-category-label">Type
                 <select id="builder-category">
                   <option value="circuit" selected>Circuit</option>
                   <option value="stretch">Stretching</option>
                   <option value="core-burn">Ab & Core Burn</option>
                 </select>
-              </label>
-              <label>Focus
-                <input type="text" id="builder-focus" placeholder="e.g. Full Body" />
               </label>
               <!-- Difficulty is hidden for now (2026-08-19, Chris: "take out
                    difficulty indicator for now") but still saved, so existing

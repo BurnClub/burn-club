@@ -1116,6 +1116,23 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
    past .builder-panel-wide. */
 .builder-panel-wide .builder-header { padding: 14px 20px; }
 .builder-panel-wide .builder-header h2 { font-size: 20px; }
+/* The title field reads as the panel's heading until you click into it. */
+.builder-title-input {
+  flex: 1;
+  min-width: 0;
+  margin-right: 12px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  padding: 4px 8px;
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.builder-title-input::placeholder { color: var(--deepblue); opacity: 0.55; }
+.builder-title-input:hover { border-color: var(--periwinkle); }
+.builder-title-input:focus { outline: none; border-color: var(--blue); background: var(--field-bg); }
 .builder-panel-wide .builder-footer { padding: 12px 20px; }
 .builder-panel-wide .builder-meta-grid { gap: 10px; margin-bottom: 10px; }
 .builder-panel-wide .builder-meta-grid label,

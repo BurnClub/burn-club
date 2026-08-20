@@ -2024,7 +2024,6 @@ function openBuilder(folderId) {
   const folder = folderById(folderId);
   const program = programById(folder ? folder.program : null);
   setBuilderAvailability(false);
-  document.getElementById("builder-heading").textContent = "New Workout";
   document.getElementById("builder-folder-label").textContent =
     `Adding to: ${folder ? folder.name : "—"}${program ? " · " + program.name : ""}`;
   document.getElementById("builder-title").value = "";
@@ -2222,7 +2221,6 @@ function openEditBuilder(circuitId) {
   builderProgramId = circuit.programId || null;
   const folder = folderById(circuit.folderId);
   const program = programById(circuitProgramId(circuit));
-  document.getElementById("builder-heading").textContent = "Edit Workout";
   document.getElementById("builder-folder-label").textContent = builderProgramId
     ? `Editing in: ${program ? program.name : "—"} · filed by its availability date`
     : `Editing in: ${folder ? folder.name : "—"}${program ? " · " + program.name : ""}`;
