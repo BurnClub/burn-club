@@ -542,16 +542,17 @@
                  here would mean a workout could publish itself because
                  someone didn't notice the field. -->
             <div class="builder-availability" id="builder-availability" style="display:none;">
-              <p class="builder-availability-title">Availability</p>
-              <label class="builder-availability-row">
-                <input type="radio" name="builder-availability-mode" value="dated" id="builder-availability-dated" />
-                <span>Available from</span>
-                <input type="date" id="builder-available-from" />
-              </label>
-              <label class="builder-availability-row">
-                <input type="radio" name="builder-availability-mode" value="always" id="builder-availability-always" />
-                <span>Stretch &amp; Core <em>— always available, never rotates out</em></span>
-              </label>
+              <div class="builder-availability-rows">
+                <label class="builder-availability-row">
+                  <input type="radio" name="builder-availability-mode" value="dated" id="builder-availability-dated" />
+                  <span>Available from</span>
+                  <input type="date" id="builder-available-from" />
+                </label>
+                <label class="builder-availability-row">
+                  <input type="radio" name="builder-availability-mode" value="always" id="builder-availability-always" />
+                  <span>Stretch &amp; Core <em>— always available</em></span>
+                </label>
+              </div>
               <p class="builder-availability-note" id="builder-availability-note"></p>
             </div>
             <div class="builder-meta-grid">
@@ -563,13 +564,6 @@
                    dropped. -->
               <input type="hidden" id="builder-tag" />
               <input type="hidden" id="builder-focus" />
-              <label id="builder-category-label">Type
-                <select id="builder-category">
-                  <option value="circuit" selected>Circuit</option>
-                  <option value="stretch">Stretching</option>
-                  <option value="core-burn">Ab & Core Burn</option>
-                </select>
-              </label>
               <!-- Difficulty is hidden for now (2026-08-19, Chris: "take out
                    difficulty indicator for now") but still saved, so existing
                    workouts keep theirs and putting the control back is a

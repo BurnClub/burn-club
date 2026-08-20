@@ -2042,18 +2042,30 @@ function updateBuilderAvailabilityNote() {
   }[state] || "";
 }
 
-// Workouts in a structured program carry `category: "structured"`, which was
-// never one of the Type select's three options — so the field rendered blank
-// when editing one, and saving wrote that blank back, silently clearing the
-// category. The field is a rolling-program concept (it's what sorts a workout
-// into Circuit / Stretching / Ab & Core Burn for members), so structured
-// workouts hide it and keep their stored value instead (2026-08-19).
+// Type is no longer a field at all (2026-08-19). Chris: "Is the type field
+// necessary? Are we not answering that question by selecting available from or
+// stretch and core?" He's right, and keeping both was worse than redundant —
+// they could disagree. An "always available" workout still typed Circuit
+// matches neither isEvergreen() nor a live week in the member app, so it would
+// have shown up nowhere at all.
+//
+// Structured programs keep their own "structured" category; everything else is
+// read off the availability choice at save time.
 let builderCategoryLocked = null;
+let builderPreviousCategory = null;
 
 function setBuilderCategoryField(structured, value) {
   builderCategoryLocked = structured ? (value || "structured") : null;
-  document.getElementById("builder-category-label").style.display = structured ? "none" : "";
-  if (!structured) document.getElementById("builder-category").value = value || "circuit";
+  builderPreviousCategory = value || null;
+}
+
+function derivedCircuitCategory(availability) {
+  if (builderCategoryLocked) return builderCategoryLocked;
+  if (!availability.always) return "circuit";
+  // stretch vs core-burn is a split the member app never acts on — both sit in
+  // STRETCH_CORE_CATEGORIES — and Chris carries the distinction in the name.
+  // Preserved where it already exists so nothing silently reclassifies.
+  return builderPreviousCategory === "core-burn" ? "core-burn" : "stretch";
 }
 
 function openBuilder(folderId) {
@@ -2698,7 +2710,7 @@ function saveCircuit() {
     folderId: builderFolderId,
     programId: builderProgramId,
     ...availability,
-    category: builderCategoryLocked || document.getElementById("builder-category").value,
+    category: derivedCircuitCategory(availability),
     tag: document.getElementById("builder-tag").value.trim() || "New",
     title,
     focus: document.getElementById("builder-focus").value.trim() || "Full Body",

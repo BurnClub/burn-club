@@ -756,13 +756,19 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 
 /* Builder availability block — the field that replaced the copy-into-a-
    live-folder publish step. */
+/* Half the height it was (2026-08-19, Chris). The "Availability" heading is
+   gone — two radios reading "Available from" and "Stretch & Core" say what the
+   box is for — and the rows sit on one line each. */
 .builder-availability {
-  border: 2px solid var(--periwinkle);
+  border: 1px solid var(--periwinkle);
   border-radius: var(--radius-sm);
-  padding: 14px 16px;
-  margin-bottom: 18px;
+  padding: 7px 10px;
+  margin-bottom: 10px;
   background: var(--field-bg);
 }
+/* Both choices on one line — they're two halves of a single question, and
+   stacking them was most of the box's height. */
+.builder-availability-rows { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .builder-availability-title {
   margin: 0 0 10px;
   font-size: 12px;
@@ -774,31 +780,33 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-availability-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 14px;
+  gap: 6px;
+  font-size: 12px;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
+.builder-availability-row > span { flex: 0 1 auto; white-space: nowrap; }
 .builder-availability-row input[type="radio"] { flex-shrink: 0; }
 /* Let the label text shrink and wrap inside itself rather than wrapping the
    whole span onto the line below its own radio button. */
 .builder-availability-row > span { flex: 1; min-width: 0; }
-.builder-availability-row em { font-weight: 600; font-style: normal; color: var(--deepblue); font-size: 12px; }
+.builder-availability-row em { font-weight: 600; font-style: normal; color: var(--deepblue); font-size: 11px; }
 .builder-availability-row input[type="date"] {
-  border: 2px solid var(--periwinkle);
+  border: 1px solid var(--periwinkle);
   border-radius: var(--radius-sm);
-  padding: 6px 10px;
+  padding: 4px 7px;
   font-family: 'Nunito', sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   background: white;
 }
 .builder-availability-note {
-  margin: 6px 0 0;
-  font-size: 12px;
+  margin: 4px 0 0;
+  font-size: 11px;
   font-weight: 700;
   color: var(--blue);
-  min-height: 16px;
+  /* No min-height: it reserved a blank line even with nothing to say. */
 }
+.builder-availability-note:empty { display: none; }
 
 .folder-detail-title-row { display: flex; align-items: center; gap: 10px; }
 .folder-detail-edit-btn .icon { width: 15px; height: 15px; }
