@@ -2343,118 +2343,81 @@ function blockHasOneExercise(block) {
   return block.type === "straight" || block.type === "ladder";
 }
 
+// The block label used to be a text field in the builder — Chris didn't want
+// to name every block (2026-08-19). Members still see a label on every block,
+// in the list and at the top of the player, so it's derived rather than
+// dropped: a single-exercise block is named by its exercise, everything else
+// by its format.
+function derivedBlockLabel(b) {
+  if (blockHasOneExercise(b)) return b.values.exerciseName || blockTypeLabel(b.type);
+  return blockTypeLabel(b.type);
+}
+
 function chosenExercisePill(name, i, ei) {
   const active = isActiveSlot(i, ei) ? " active-slot" : "";
   return `<div class="chosen-exercise ${name ? "" : "empty"}${active}" data-action="choose-exercise" data-block-index="${i}" data-ex-index="${ei}">${name || "+ Choose Exercise"}</div>`;
 }
 
-function blockFieldRow(block, i) {
+// Split in two (2026-08-19). The block's own fields — rounds, rest, duration,
+// and for a single-exercise block its exercise and numbers — now sit in the
+// header row where the name field used to be. What's left below is the
+// exercise list, which only the multi-exercise formats have. A straight set
+// therefore comes to exactly one line.
+function blockTopFields(block, i) {
   const v = block.values;
+  const num = (label, field, value, min, cls) =>
+    `<label class="inline-field ${cls || ""}">${label}<input type="number" min="${min}" value="${value}" data-block-index="${i}" data-field="${field}" /></label>`;
+  const chooser = () => `
+    ${exerciseVideoSlotHtml(v.exerciseName, "ex-video-row")}
+    <label class="modal-field inline-grow">Exercise
+      <div class="chosen-exercise-lg ${v.exerciseName ? "" : "empty"}${isActiveSlot(i, null) ? " active-slot" : ""}"
+           title="${v.exerciseName || ""}" data-action="choose-exercise" data-block-index="${i}">${v.exerciseName || "+ Choose Exercise"}</div>
+    </label>
+  `;
+
   switch (block.type) {
+    // Circuits are always timed (2026-08-18). The rep-based variant this
+    // toggle used to offer put one exercise per screen with a rest after
+    // every station — but Chris programs rep work as "all the exercises,
+    // then rest", which is exactly what a Superset already does.
     case "interval":
-      // Circuits are always timed (2026-08-18). The rep-based variant this
-      // toggle used to offer put one exercise per screen with a rest after
-      // every station — but Chris programs rep work as "all the exercises,
-      // then rest", which is exactly what a Superset already does. Superset
-      // is the classification for that, so this is one path instead of two.
-      return `
-        <div class="builder-field-row">
-          <label>Rounds<input type="number" min="1" value="${v.rounds}" data-block-index="${i}" data-field="rounds" /></label>
-          <label>Work (sec)<input type="number" min="1" value="${v.work}" data-block-index="${i}" data-field="work" /></label>
-          <label>Rest (sec)<input type="number" min="0" value="${v.rest}" data-block-index="${i}" data-field="rest" /></label>
-        </div>
-        <div class="builder-ex-list">
-          ${v.exercises.map((e, ei) => `
-            <div class="builder-ex-row">
-              ${exerciseVideoSlotHtml(e.name, "ex-video-row")}
-              ${chosenExercisePill(e.name, i, ei)}
-              <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
-            </div>
-          `).join("")}
-        </div>
-        <button class="btn-ghost-lg small" data-action="add-exercise" data-block-index="${i}">+ Add Station</button>
-      `;
+      return num("Rounds", "rounds", v.rounds, 1) + num("Work (s)", "work", v.work, 1) + num("Rest (s)", "rest", v.rest, 0);
     case "superset":
-      return `
-        <div class="builder-field-row">
-          <label>Rounds<input type="number" min="1" value="${v.rounds}" data-block-index="${i}" data-field="rounds" /></label>
-          <label>Rest between rounds (sec)<input type="number" min="0" value="${v.rest}" data-block-index="${i}" data-field="rest" /></label>
-        </div>
-        <div class="builder-ex-list">
-          ${v.exercises.map((e, ei) => `
-            <div class="builder-ex-row">
-              ${exerciseVideoSlotHtml(e.name, "ex-video-row")}
-              ${chosenExercisePill(e.name, i, ei)}
-              <input type="number" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />
-              <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
-            </div>
-          `).join("")}
-        </div>
-        <button class="btn-ghost-lg small" data-action="add-exercise" data-block-index="${i}">+ Add Exercise</button>
-      `;
-    // One line: the exercise takes the slack, the three numbers are fixed and
-    // narrow (2026-08-19). A straight set is the most common block by far, so
-    // the height it used to take — a full-width chooser above a three-across
-    // field row — was most of the builder's length.
+      return num("Rounds", "rounds", v.rounds, 1) + num("Rest (s)", "rest", v.rest, 0);
     case "straight":
-      return `
-        <div class="builder-inline-row">
-          <label class="modal-field inline-grow">Exercise
-            <div class="chosen-exercise-lg ${v.exerciseName ? "" : "empty"}${isActiveSlot(i, null) ? " active-slot" : ""}" data-action="choose-exercise" data-block-index="${i}">${v.exerciseName || "+ Choose Exercise"}</div>
-          </label>
-          <label class="inline-field">Sets<input type="number" min="1" value="${v.sets}" data-block-index="${i}" data-field="sets" /></label>
-          <label class="inline-field">Reps<input type="number" min="1" value="${v.reps}" data-block-index="${i}" data-field="reps" /></label>
-          <label class="inline-field">Rest (s)<input type="number" min="0" value="${v.rest}" data-block-index="${i}" data-field="rest" /></label>
-        </div>
-      `;
+      return chooser() + num("Sets", "sets", v.sets, 1) + num("Reps", "reps", v.reps, 1) + num("Rest (s)", "rest", v.rest, 0);
     case "ladder":
-      return `
-        <div class="builder-inline-row">
-          <label class="modal-field inline-grow">Exercise
-            <div class="chosen-exercise-lg ${v.exerciseName ? "" : "empty"}${isActiveSlot(i, null) ? " active-slot" : ""}" data-action="choose-exercise" data-block-index="${i}">${v.exerciseName || "+ Choose Exercise"}</div>
-          </label>
-          <label class="inline-field wide">Rep scheme<input type="text" value="${v.scheme}" data-block-index="${i}" data-field="scheme" /></label>
-          <label class="inline-field">Rest (s)<input type="number" min="0" value="${v.rest}" data-block-index="${i}" data-field="rest" /></label>
-        </div>
-      `;
+      return chooser()
+        + `<label class="inline-field wide">Rep scheme<input type="text" value="${v.scheme}" data-block-index="${i}" data-field="scheme" /></label>`
+        + num("Rest (s)", "rest", v.rest, 0);
     case "amrap":
-      return `
-        <div class="builder-field-row">
-          <label>Duration (min)<input type="number" min="1" value="${v.durationMin}" data-block-index="${i}" data-field="durationMin" /></label>
-        </div>
-        <div class="builder-ex-list">
-          ${v.exercises.map((e, ei) => `
-            <div class="builder-ex-row">
-              ${exerciseVideoSlotHtml(e.name, "ex-video-row")}
-              ${chosenExercisePill(e.name, i, ei)}
-              <input type="number" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />
-              <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
-            </div>
-          `).join("")}
-        </div>
-        <button class="btn-ghost-lg small" data-action="add-exercise" data-block-index="${i}">+ Add Exercise</button>
-      `;
+      return num("Duration (min)", "durationMin", v.durationMin, 1, "wide");
     case "emom":
-      return `
-        <div class="builder-field-row">
-          <label>Duration (min)<input type="number" min="1" value="${v.durationMin}" data-block-index="${i}" data-field="durationMin" /></label>
-          <label>Interval (sec)<input type="number" min="10" value="${v.intervalSec}" data-block-index="${i}" data-field="intervalSec" /></label>
-        </div>
-        <div class="builder-ex-list">
-          ${v.exercises.map((e, ei) => `
-            <div class="builder-ex-row">
-              ${exerciseVideoSlotHtml(e.name, "ex-video-row")}
-              ${chosenExercisePill(e.name, i, ei)}
-              <input type="number" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />
-              <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
-            </div>
-          `).join("")}
-        </div>
-        <button class="btn-ghost-lg small" data-action="add-exercise" data-block-index="${i}">+ Add Exercise</button>
-      `;
+      return num("Duration (min)", "durationMin", v.durationMin, 1, "wide") + num("Interval (s)", "intervalSec", v.intervalSec, 10);
     default:
       return "";
   }
+}
+
+// The exercise list, for the formats that hold more than one.
+function blockExerciseList(block, i) {
+  const v = block.values;
+  if (blockHasOneExercise(block)) return "";
+  const withReps = block.type !== "interval";
+  const addLabel = block.type === "interval" ? "+ Add Station" : "+ Add Exercise";
+  return `
+    <div class="builder-ex-list">
+      ${v.exercises.map((e, ei) => `
+        <div class="builder-ex-row">
+          ${exerciseVideoSlotHtml(e.name, "ex-video-row")}
+          ${chosenExercisePill(e.name, i, ei)}
+          ${withReps ? `<input type="number" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />` : ""}
+          <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
+        </div>
+      `).join("")}
+    </div>
+    <button class="btn-ghost-lg small" data-action="add-exercise" data-block-index="${i}">${addLabel}</button>
+  `;
 }
 
 function renderBuilderBlocks() {
@@ -2468,14 +2431,11 @@ function renderBuilderBlocks() {
         <select data-block-index="${i}" data-role="block-type">
           ${compatTypes.map((t) => `<option value="${t}" ${t === block.type ? "selected" : ""}>${blockTypeLabel(t)}</option>`).join("")}
         </select>
-        <input type="text" data-block-index="${i}" data-field="label" value="${block.values.label}" placeholder="Block label" />
+        ${blockTopFields(block, i)}
         ${isCombined ? `<button class="btn-ghost-lg small" data-action="split-block" data-block-index="${i}">Split</button>` : ""}
         <button class="remove-block-btn" data-action="remove-block" data-block-index="${i}">✕</button>
       </div>
-      <div class="builder-block-body">
-        ${blockHasOneExercise(block) ? exerciseVideoSlotHtml(block.values.exerciseName, "ex-video-row") : ""}
-        <div class="builder-block-fields">${blockFieldRow(block, i)}</div>
-      </div>
+      ${blockExerciseList(block, i)}
     </div>
   `;
   }).join("") || `<p style="color:var(--deepblue);font-weight:700;font-size:13px;">No exercises yet — click "+ Add Exercise" to start building this workout.</p>`;
@@ -2503,18 +2463,18 @@ function builderBlocksToSchema() {
     switch (b.type) {
       case "interval": {
         const exercises = v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name }));
-        return { type: "interval", label: v.label, timed: true, rounds: Number(v.rounds) || 1, work: Number(v.work) || 0, rest: Number(v.rest) || 0, exercises };
+        return { type: "interval", label: derivedBlockLabel(b), timed: true, rounds: Number(v.rounds) || 1, work: Number(v.work) || 0, rest: Number(v.rest) || 0, exercises };
       }
       case "superset":
-        return { type: "superset", label: v.label, rounds: Number(v.rounds) || 1, rest: Number(v.rest) || 0, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })) };
+        return { type: "superset", label: derivedBlockLabel(b), rounds: Number(v.rounds) || 1, rest: Number(v.rest) || 0, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })) };
       case "straight":
-        return { type: "straight", label: v.label, exercise: { name: v.exerciseName || "" }, sets: Number(v.sets) || 1, reps: Number(v.reps) || 0, rest: Number(v.rest) || 0 };
+        return { type: "straight", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "" }, sets: Number(v.sets) || 1, reps: Number(v.reps) || 0, rest: Number(v.rest) || 0 };
       case "ladder":
-        return { type: "ladder", label: v.label, exercise: { name: v.exerciseName || "" }, scheme: String(v.scheme).split(",").map((n) => Number(n.trim())).filter((n) => !isNaN(n)), rest: Number(v.rest) || 0 };
+        return { type: "ladder", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "" }, scheme: String(v.scheme).split(",").map((n) => Number(n.trim())).filter((n) => !isNaN(n)), rest: Number(v.rest) || 0 };
       case "amrap":
-        return { type: "amrap", label: v.label, duration: (Number(v.durationMin) || 1) * 60, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })) };
+        return { type: "amrap", label: derivedBlockLabel(b), duration: (Number(v.durationMin) || 1) * 60, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })) };
       case "emom":
-        return { type: "emom", label: v.label, duration: (Number(v.durationMin) || 1) * 60, interval: Number(v.intervalSec) || 60, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })) };
+        return { type: "emom", label: derivedBlockLabel(b), duration: (Number(v.durationMin) || 1) * 60, interval: Number(v.intervalSec) || 60, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })) };
       default:
         return null;
     }

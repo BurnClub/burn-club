@@ -1126,17 +1126,22 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-panel-wide .builder-desc-label textarea { padding: 7px 9px; font-size: 13px; }
 .builder-panel-wide .builder-blocks { gap: 8px; }
 .builder-panel-wide .builder-block-card { padding: 11px 12px; }
-/* Video left, everything else to its right. */
-.builder-block-body { display: flex; gap: 8px; align-items: flex-end; }
-.builder-block-fields { flex: 1; min-width: 0; }
-.builder-block-fields > *:last-child { margin-bottom: 0; }
+/* The header row carries the block's fields now that the name field is gone,
+   so it aligns along the bottom of the inputs rather than centring. */
+.builder-panel-wide .builder-block-top { align-items: flex-end; }
+.builder-panel-wide .builder-block-top > select { flex-shrink: 0; max-width: 108px; padding: 6px 4px; font-size: 11px; }
+.builder-panel-wide .builder-block-top .remove-block-btn,
+.builder-panel-wide .builder-block-top .select-item-checkbox,
+.builder-panel-wide .builder-block-top .btn-ghost-lg { flex-shrink: 0; margin-bottom: 4px; }
+.builder-panel-wide .builder-block-top .ex-video-row { margin-bottom: 4px; }
+/* Only a multi-exercise block still has anything below the header. */
+.builder-panel-wide .builder-block-top:last-child { margin-bottom: 0; }
 
-/* A whole straight set on one line: chooser takes the slack, numbers stay
-   narrow and fixed. */
-.builder-inline-row { display: flex; align-items: flex-end; gap: 8px; }
-.builder-inline-row .inline-grow { flex: 1; min-width: 0; }
-.builder-inline-row .inline-field {
-  flex: 0 0 74px;
+.builder-block-top .inline-grow { flex: 1; min-width: 0; }
+.builder-block-top .inline-field {
+  /* Narrow on purpose: every pixel here comes off the exercise name, which is
+     the one thing on the row worth reading in full. */
+  flex: 0 0 58px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1144,8 +1149,8 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   font-weight: 700;
   color: var(--deepblue);
 }
-.builder-inline-row .inline-field.wide { flex: 0 0 130px; }
-.builder-inline-row .inline-field input {
+.builder-block-top .inline-field.wide { flex: 0 0 112px; }
+.builder-block-top .inline-field input {
   width: 100%;
   border: 2px solid var(--periwinkle);
   border-radius: var(--radius-sm);
@@ -1156,9 +1161,17 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 /* .modal-field brings a 14px bottom margin and a taller box than the number
    inputs beside it — both have to go, or the row is 76px tall and the fields
    don't line up along the bottom. */
-.builder-inline-row .inline-grow { margin-bottom: 0; font-size: 10px; gap: 4px; }
-.builder-inline-row .chosen-exercise-lg { padding: 6px 8px; font-size: 12px; }
-.builder-panel-wide .builder-block-top { gap: 8px; margin-bottom: 8px; }
+.builder-block-top .inline-grow { margin-bottom: 0; font-size: 10px; gap: 4px; }
+/* Ellipsis rather than wrap: a long exercise name in a narrowed chooser would
+   otherwise take a second line and make its block twice as tall. */
+.builder-block-top .chosen-exercise-lg {
+  padding: 6px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.builder-panel-wide .builder-block-top { gap: 7px; margin-bottom: 8px; }
 .builder-panel-wide .builder-block-top select,
 .builder-panel-wide .builder-block-top input,
 .builder-panel-wide .builder-field-row input,
@@ -1166,6 +1179,13 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-panel-wide .builder-field-row { gap: 8px; margin-bottom: 8px; }
 .builder-panel-wide .builder-field-row label { font-size: 10px; }
 .builder-panel-wide .builder-hint { font-size: 11px; margin: -4px 0 8px; }
+/* The build area, set apart from the naming fields above it: real space, a
+   rule, and a tint, so the two halves of the panel read as two things. */
+.builder-build-area {
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 2px solid var(--periwinkle);
+}
 .builder-panel-wide .builder-blocks-header { margin-bottom: 8px; }
 .builder-panel-wide .builder-blocks-header h3 { font-size: 16px; }
 .builder-panel-wide .builder-library-card { padding: 6px; font-size: 12px; }
