@@ -562,21 +562,17 @@
               </div>
               <p class="builder-availability-note" id="builder-availability-note"></p>
             </div>
-            <div class="builder-meta-grid">
-              <!-- Tag and Focus are hidden but still saved, the same way
-                   Difficulty is (2026-08-19). Focus is now carried by the
-                   workout's name, and a tag adds nothing when you're already
-                   inside the folder that says what this is. Both still show in
-                   the member app, so existing values are preserved rather than
-                   dropped. -->
-              <input type="hidden" id="builder-tag" />
-              <input type="hidden" id="builder-focus" />
-              <!-- Difficulty is hidden for now (2026-08-19, Chris: "take out
-                   difficulty indicator for now") but still saved, so existing
-                   workouts keep theirs and putting the control back is a
-                   one-element change. -->
-              <input type="hidden" id="builder-difficulty" value="Intermediate" />
-            </div>
+            <!-- Tag, Focus and Difficulty are hidden but still saved
+                 (2026-08-19). Focus is carried by the workout's name and a tag
+                 adds nothing when you're already inside the folder that says
+                 what this is, but all three still show in the member app, so
+                 existing values are preserved rather than dropped. They used
+                 to sit in a .builder-meta-grid; once every visible field had
+                 left it, that wrapper was a zero-height div contributing a
+                 margin between the variant bar and Description. -->
+            <input type="hidden" id="builder-tag" />
+            <input type="hidden" id="builder-focus" />
+            <input type="hidden" id="builder-difficulty" value="Intermediate" />
             <div class="builder-desc-block">
               <div class="builder-desc-head"><span>Description</span></div>
               <textarea id="builder-desc" rows="2" placeholder="Short description shown to members"></textarea>

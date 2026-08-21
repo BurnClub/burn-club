@@ -31,7 +31,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   font-weight: 700;
   color: var(--deepblue);
 }
-.field input, .builder-meta-grid input, .builder-meta-grid select, .builder-desc-label textarea {
+.field input, .builder-desc-block textarea, .builder-desc-label textarea {
   border: 2px solid var(--periwinkle);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
@@ -41,7 +41,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   outline: none;
   width: 100%;
 }
-.field input:focus, .builder-meta-grid input:focus, .builder-meta-grid select:focus { border-color: var(--blue); }
+.field input:focus, .builder-desc-block textarea:focus { border-color: var(--blue); }
 
 .btn-primary {
   background: var(--blue);
@@ -1201,13 +1201,10 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-title-input:hover { border-color: var(--periwinkle); }
 .builder-title-input:focus { outline: none; border-color: var(--blue); background: var(--field-bg); }
 .builder-panel-wide .builder-footer { padding: 12px 20px; }
-.builder-panel-wide .builder-meta-grid { gap: 10px; margin-bottom: 10px; }
-.builder-panel-wide .builder-meta-grid label,
 .builder-panel-wide .builder-desc-label { font-size: 11px; gap: 3px; }
 .builder-panel-wide .builder-desc-label { margin-bottom: 12px; }
-.builder-panel-wide .builder-meta-grid input,
-.builder-panel-wide .builder-meta-grid select,
-.builder-panel-wide .builder-desc-label textarea { padding: 7px 9px; font-size: 13px; }
+.builder-panel-wide .builder-desc-label textarea,
+.builder-panel-wide .builder-desc-block textarea { padding: 7px 9px; font-size: 13px; }
 .builder-panel-wide .builder-blocks { gap: 8px; }
 .builder-panel-wide .builder-block-card { padding: 11px 12px; }
 /* The header row carries the block's fields now that the name field is gone,
@@ -1471,8 +1468,6 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
 /* 140px, not 170: the left column narrowed when the library went to four
    across, and at 170 the meta fields dropped to two rows again. */
-.builder-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 14px; }
-.builder-meta-grid label { font-size: 12px; font-weight: 700; color: var(--deepblue); display: flex; flex-direction: column; gap: 4px; }
 .builder-desc-label { font-size: 12px; font-weight: 700; color: var(--deepblue); display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px; }
 .builder-desc-label textarea { resize: vertical; font-family: 'Nunito', sans-serif; }
 .builder-blocks-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
@@ -1625,7 +1620,6 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 
 @media (max-width: 900px) {
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
-  .builder-meta-grid { grid-template-columns: 1fr; }
 }
 
 /* ---------- WORKOUT LIBRARY (2026-08-15) ---------- */
@@ -1704,11 +1698,11 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   flex-wrap: wrap;
   background: var(--field-bg);
   border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  margin-bottom: 18px;
+  padding: 7px 10px;
+  margin-bottom: 10px;
 }
 .builder-variant-bar .filter-pill-row { margin-bottom: 0; }
-.builder-variant-label { font-size: 13px; font-weight: 800; color: var(--ink); }
+.builder-variant-label { font-size: 12px; font-weight: 800; color: var(--ink); }
 .builder-variant-note { font-size: 12px; font-weight: 600; color: var(--deepblue); }
 
 /* ---------- VARIANT PILLS (2026-08-15) ---------- */
