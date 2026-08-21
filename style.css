@@ -1065,6 +1065,10 @@ h1, h2, h3 {
   position: relative;
   overflow: hidden;
 }
+/* Only the panel that knows which exercise it's showing invites a tap
+   (2026-08-19) — the one inside the popup itself is not clickable. */
+.player-video.is-playable { cursor: pointer; }
+.player-video.is-playable:active { transform: scale(0.99); }
 .player-video::after {
   content: "";
   position: absolute;

@@ -1659,6 +1659,26 @@ function closeExerciseVideo() {
   document.getElementById("exercise-video-overlay").classList.remove("visible");
 }
 
+// The kinds that show one exercise at a time — timed circuits, straight sets,
+// rep ladders and EMOM — have the persistent video panel rather than the
+// per-row play buttons a superset or AMRAP list gets. Until now that panel was
+// decoration: it couldn't be opened, and on a timed circuit it didn't even say
+// which exercise it was for (2026-08-19). Naming the exercise on the panel is
+// what makes it tappable — the overlay needs to know what to show.
+function setPlayerVideo(exerciseName) {
+  const panel = document.getElementById("player-video");
+  const label = document.getElementById("player-video-label");
+  if (!exerciseName) {
+    delete panel.dataset.exName;
+    panel.classList.remove("is-playable");
+    label.textContent = "Demo Video Placeholder";
+    return;
+  }
+  panel.dataset.exName = exerciseName;
+  panel.classList.add("is-playable");
+  label.textContent = `Demo Video — ${exerciseName}`;
+}
+
 // Whether the Straight Sets / Rep Ladder checklist shows a weight field for
 // this exercise — set per-exercise via the "Track Weight Used" checkbox in
 // the Exercise Library (admin), matched here by name since blocks reference
@@ -2079,7 +2099,7 @@ const Player = {
       document.getElementById("player-total-clock").textContent = `${formatClock(this.remaining)} total remaining`;
       const ex = phase.exercises[minute % phase.exercises.length];
       document.getElementById("player-exercise-name").textContent = ex.name;
-      document.getElementById("player-video-label").textContent = `Demo Video — ${ex.name}`;
+      setPlayerVideo(ex.name);
       document.getElementById("player-sub-pill").textContent =
         `Minute ${Math.min(minute + 1, totalMinutes)} of ${totalMinutes} · ${ex.reps ? ex.reps + " reps" : ""}`;
       setPlayerExerciseTechnique(ex.name);
@@ -2118,7 +2138,7 @@ const Player = {
     document.getElementById("player-emom-weight").style.display = "none";
     document.getElementById("player-back-btn").style.display = "none";
     this.closeSkipConfirm();
-    document.getElementById("player-video-label").textContent = "Demo Video Placeholder";
+    setPlayerVideo(null);
     document.getElementById("player-pause-btn").textContent = "Pause";
 
     // Staff-authored block notes (set per-block in admin) show once, when that block
@@ -2137,6 +2157,7 @@ const Player = {
       document.getElementById("player-center").style.display = "flex";
       document.getElementById("player-clock-label").textContent = phase.kind === "work" ? "Work" : "Rest";
       document.getElementById("player-video").style.display = phase.kind === "work" ? "flex" : "none";
+      setPlayerVideo(phase.kind === "work" ? phase.exerciseName : null);
       setPlayerExerciseTechnique(phase.kind === "work" ? phase.exerciseName : null);
       this.remaining = phase.duration;
       this.updateClock();
@@ -2203,7 +2224,7 @@ const Player = {
       document.getElementById("player-sub-pill").textContent =
         `${phase.sets.length} set${phase.sets.length === 1 ? "" : "s"}`;
       document.getElementById("player-video").style.display = "flex";
-      document.getElementById("player-video-label").textContent = `Demo Video — ${phase.exerciseName}`;
+      setPlayerVideo(phase.exerciseName);
       setPlayerExerciseTechnique(phase.exerciseName);
       this.setsChecked = phase.sets.map(() => false);
       const listEl = document.getElementById("player-sets-list");
@@ -3063,6 +3084,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("player-start-btn").addEventListener("click", () => Player.beginPhaseTimer());
   document.getElementById("player-back-btn").addEventListener("click", () => Player.back());
   document.getElementById("exercise-video-close-btn").addEventListener("click", closeExerciseVideo);
+  // Same contract as the per-row play buttons: opens over the running clock,
+  // closes independently, never pauses anything.
+  document.getElementById("player-video").addEventListener("click", () => {
+    const name = document.getElementById("player-video").dataset.exName;
+    if (name) openExerciseVideo(name);
+  });
   document.getElementById("block-notes-got-it-btn").addEventListener("click", closeBlockNotes);
 
   document.getElementById("cardio-log-btn").addEventListener("click", openCardioLogModal);
