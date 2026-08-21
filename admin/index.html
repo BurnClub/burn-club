@@ -521,6 +521,13 @@
                the edit page so i dont need that info"). Editing it here means
                the panel opens on the field you most often came to change. -->
           <input type="text" id="builder-title" class="builder-title-input" placeholder="Name this workout" />
+          <!-- Benchmark sits beside the name (2026-08-19, Chris). It's a
+               property of the workout as a whole, like its name, rather than
+               something that belongs among the fields. -->
+          <label class="tag-checkbox builder-header-benchmark">
+            <input type="checkbox" id="builder-is-benchmark" />
+            Benchmark <em>— retest workout, scores tracked over time</em>
+          </label>
           <button class="player-exit" id="builder-close-btn">✕</button>
         </header>
 
@@ -570,18 +577,8 @@
                    one-element change. -->
               <input type="hidden" id="builder-difficulty" value="Intermediate" />
             </div>
-            <!-- Benchmark rides on the Description label's line rather than
-                 taking a full-width row of its own (2026-08-19, Chris). It's
-                 off on almost every workout, so it was a row of height for a
-                 setting that is usually just "no". -->
             <div class="builder-desc-block">
-              <div class="builder-desc-head">
-                <span>Description</span>
-                <label class="tag-checkbox">
-                  <input type="checkbox" id="builder-is-benchmark" />
-                  Benchmark <em>— retest workout, scores tracked over time</em>
-                </label>
-              </div>
+              <div class="builder-desc-head"><span>Description</span></div>
               <textarea id="builder-desc" rows="2" placeholder="Short description shown to members"></textarea>
               <label class="builder-desc-label" id="builder-benchmark-select-wrap" style="display:none;">Which benchmark?
                 <select id="builder-benchmark-select"></select>
