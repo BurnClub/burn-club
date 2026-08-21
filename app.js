@@ -573,7 +573,10 @@ function renderHomeWeekSnapshot() {
   const pos = memberProgramPosition();
   const titleEl = document.getElementById("home-week-title");
   if (pos) {
-    if (titleEl) titleEl.textContent = pos.notStarted ? "Your Program" : `Week ${pos.week}`;
+    // Week and day together (2026-08-19, Chris) — the week says where they are
+    // in the plan, the day says where they are inside the week.
+    const dayOfWeek = pos.clampedDay - pos.weekFirstDay + 1;
+    if (titleEl) titleEl.textContent = pos.notStarted ? "Your Program" : `Week ${pos.week} · Day ${dayOfWeek}`;
     setWeekStat("home-week-circuits", pos.week, `of ${pos.totalWeeks} Weeks`);
     setWeekStat("home-week-stretch-core", `${pos.doneThisWeek}/${pos.scheduledThisWeek}`, "Done This Week");
     setWeekStat("home-week-cardio", `${pos.percentComplete}%`, "Program Complete");
@@ -1080,6 +1083,32 @@ function disconnectProvider() {
   renderHabitsSection();
 }
 
+// Same day last week, which is the comparison that holds a weekly training
+// rhythm still: a Monday against a Monday rather than against yesterday
+// (2026-08-19, Chris — "a +/- % relationship to the same day of the previous
+// week perhaps?"). Returns null when there's nothing to compare against, so a
+// brand-new member sees a clean number instead of a fake 0%.
+function dailyStatDelta(field, lowerIsBetter) {
+  const today = DAILY_STATS.find((d) => d.date === dateKey(new Date()));
+  const prior = new Date();
+  prior.setDate(prior.getDate() - 7);
+  const lastWeek = DAILY_STATS.find((d) => d.date === dateKey(prior));
+  if (!today || !lastWeek || !lastWeek[field]) return null;
+
+  const pct = Math.round(((today[field] - lastWeek[field]) / lastWeek[field]) * 100);
+  if (pct === 0) return { pct, text: "even", tone: "flat" };
+  // "Good" isn't the same as "up" for every metric — a resting heart rate
+  // falling is the improvement.
+  const good = lowerIsBetter ? pct < 0 : pct > 0;
+  return { pct, text: `${pct > 0 ? "+" : ""}${pct}%`, tone: good ? "up" : "down" };
+}
+
+function todayStatDeltaHtml(field, lowerIsBetter) {
+  const d = dailyStatDelta(field, lowerIsBetter);
+  if (!d) return "";
+  return `<span class="today-stat-delta tone-${d.tone}" title="vs. the same day last week">${d.text}</span>`;
+}
+
 function renderTodayStats() {
   const container = document.getElementById("today-stats-row");
   if (!container) return;
@@ -1089,9 +1118,9 @@ function renderTodayStats() {
   }
   const today = DAILY_STATS.find((d) => d.date === dateKey(new Date())) || { steps: 0, calories: 0, restingHR: 0 };
   container.innerHTML = `
-    <div class="today-stat"><span class="today-stat-icon">${ICON_STEPS}</span><div><p class="today-stat-num">${today.steps.toLocaleString()}</p><p class="today-stat-label">Steps Today</p></div></div>
-    <div class="today-stat"><span class="today-stat-icon">${ICON_FLAME}</span><div><p class="today-stat-num">${today.calories.toLocaleString()}</p><p class="today-stat-label">Calories Today</p></div></div>
-    <div class="today-stat"><span class="today-stat-icon">${ICON_HEART}</span><div><p class="today-stat-num">${today.restingHR}</p><p class="today-stat-label">Resting HR</p></div></div>
+    <div class="today-stat"><span class="today-stat-icon">${ICON_STEPS}</span><div><p class="today-stat-num">${today.steps.toLocaleString()}${todayStatDeltaHtml("steps", false)}</p><p class="today-stat-label">Steps Today</p></div></div>
+    <div class="today-stat"><span class="today-stat-icon">${ICON_FLAME}</span><div><p class="today-stat-num">${today.calories.toLocaleString()}${todayStatDeltaHtml("calories", false)}</p><p class="today-stat-label">Calories Today</p></div></div>
+    <div class="today-stat"><span class="today-stat-icon">${ICON_HEART}</span><div><p class="today-stat-num">${today.restingHR}${todayStatDeltaHtml("restingHR", true)}</p><p class="today-stat-label">Resting HR</p></div></div>
   `;
 }
 

@@ -330,6 +330,21 @@ h1, h2, h3 {
 .today-stat-icon { display: flex; color: var(--ink); }
 .today-stat-icon svg { width: 22px; height: 22px; display: block; }
 .today-stat-num { font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--ink); margin: 0; }
+/* Week-over-week movement, riding alongside the number rather than under it
+   (2026-08-19). Tone is "is this the good direction", not "is this up" — a
+   resting heart rate falling is the improvement. */
+.today-stat-delta {
+  margin-left: 5px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  vertical-align: 1px;
+}
+/* --green-dark/--pink-dark are gradient stops for card backgrounds, far too
+   pale for 10px text on white — these are their legible counterparts. */
+.today-stat-delta.tone-up { color: #2E8B57; }
+.today-stat-delta.tone-down { color: var(--danger); }
+.today-stat-delta.tone-flat { color: var(--subtext-color); }
 .today-stat-label { font-size: 10px; font-weight: var(--subtext-weight); color: var(--subtext-color); margin: 2px 0 0; }
 .wearable-prompt-card {
   background: var(--white);
