@@ -888,6 +888,45 @@ function buildSeedDailyStats() {
   return stats;
 }
 
+// ---------------- Daily Check-Ins (2026-08-19) ----------------
+// The journal's spine: two 1-10 scores plus an optional note, at most one per
+// day. Scores are the point — they're comparable, so they can be trended and
+// joined against training days; the note rides along for the things a number
+// can't hold.
+//
+// Seeded relative to today so the history view has something to read on a
+// fresh browser. Deliberately not random noise: the scores drift, dip midweek
+// and recover, so the correlations on the Progress tab show something a real
+// member's data plausibly would. Real entries come from the member.
+const CHECKIN_NOTES = [
+  "Slept badly, still got it done.",
+  "Legs felt heavy from the start.",
+  "Best I've felt in weeks.",
+  "Work stress is showing up in the gym.",
+  "Shoulder twinge on presses — went lighter.",
+  "Rest day. Needed it.",
+  "Energy back up after two easy days.",
+];
+
+function buildSeedCheckins() {
+  const out = [];
+  const today = new Date();
+  for (let daysAgo = 23; daysAgo >= 1; daysAgo--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - daysAgo);
+    // A slow upward drift with a weekly dip, so the read-back shows a shape
+    // rather than static.
+    const wave = Math.sin((daysAgo / 7) * Math.PI * 2);
+    const mental = Math.max(1, Math.min(10, Math.round(6.6 - wave * 1.5 + (daysAgo < 10 ? 0.6 : 0))));
+    const physical = Math.max(1, Math.min(10, Math.round(6.2 - wave * 1.8 + (daysAgo < 10 ? 0.5 : 0))));
+    // Most days carry no note — that's realistic, and it keeps the list from
+    // reading like a wall of text.
+    const note = daysAgo % 5 === 0 ? CHECKIN_NOTES[daysAgo % CHECKIN_NOTES.length] : "";
+    out.push({ date: dateKey(date), mental, physical, note, sharedAt: null });
+  }
+  return out;
+}
+
 // ---------------- Daily Habits ----------------
 // A curated menu (Chris's call, over fully-freeform) so habits stay
 // consistent across clients, plus "Other" as a custom escape hatch.

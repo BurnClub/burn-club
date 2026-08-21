@@ -2233,6 +2233,128 @@ h1, h2, h3 {
 .nav-icon svg { width: 23px; height: 23px; display: block; }
 .nav-btn.active { color: var(--blue); }
 
+/* ---------- DAILY CHECK-IN (2026-08-19) ---------- */
+.checkin-card { text-align: left; }
+.checkin-card .cardio-log-title { text-align: left; }
+.checkin-sub { margin: 2px 0 14px; font-size: 11px; font-weight: 700; color: var(--subtext-color); }
+.checkin-slider-block { margin-bottom: 14px; }
+.checkin-note-field { margin-bottom: 14px; }
+.checkin-note-field em { font-style: normal; font-weight: 600; color: var(--subtext-color); }
+.checkin-note-field textarea {
+  border: 2px solid var(--periwinkle);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  background: var(--field-bg);
+  resize: vertical;
+  width: 100%;
+}
+.checkin-note-field textarea:focus { outline: none; border-color: var(--blue); }
+/* Skipping has to be as easy as answering, or the prompt becomes a wall. */
+.checkin-skip-btn {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--subtext-color);
+  cursor: pointer;
+}
+/* Each slider is tinted to its series colour, so the thumb a member drags
+   matches the line they'll later read on the chart. accent-color does nothing
+   here — .rpe-slider draws its own track gradient and thumb border — so both
+   have to be overridden. -webkit- and -moz- stay in separate rules: an
+   unrecognised selector in a grouped list drops the whole rule. */
+.checkin-slider-mental { background: linear-gradient(90deg, var(--periwinkle), #788CE3); }
+.checkin-slider-mental::-webkit-slider-thumb { border-color: #788CE3; }
+.checkin-slider-mental::-moz-range-thumb { border-color: #788CE3; }
+.checkin-slider-physical { background: linear-gradient(90deg, #F7DAD6, #E0685E); }
+.checkin-slider-physical::-webkit-slider-thumb { border-color: #E0685E; }
+.checkin-slider-physical::-moz-range-thumb { border-color: #E0685E; }
+#checkin-mental-value { color: #788CE3; }
+#checkin-physical-value { color: #E0685E; }
+
+.checkin-done-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #2E8B57;
+  border: 2px solid var(--card-white);
+}
+
+.checkin-nudge {
+  display: block;
+  width: 100%;
+  margin: 4px 0 14px;
+  padding: 11px 14px;
+  background: var(--field-bg);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+.checkin-nudge span { color: var(--blue); font-weight: 800; }
+
+/* ---- read-back ---- */
+.checkin-insight {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--subtext-color);
+  line-height: 1.45;
+}
+.checkin-insight strong { color: var(--ink); font-weight: 800; }
+.checkin-empty { font-size: 12px; font-weight: 700; color: var(--deepblue); }
+
+/* Legend is always present for two series, and both lines are also labelled
+   at their last point — identity never rests on colour alone. */
+.checkin-legend { display: flex; gap: 14px; margin: 10px 0 4px; }
+.checkin-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--subtext-color);
+}
+.checkin-swatch { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.checkin-chart-svg { width: 100%; height: auto; display: block; }
+.checkin-grid { stroke: var(--periwinkle); stroke-width: 1; opacity: 0.5; }
+.checkin-axis-label { font-family: var(--font-body); font-size: 8px; font-weight: 700; fill: var(--subtext-color); }
+.checkin-axis-end { text-anchor: end; }
+/* Text wears text tokens; the coloured dot beside it carries identity. */
+.checkin-point-label { font-family: var(--font-body); font-size: 9px; font-weight: 800; fill: var(--ink); }
+
+.checkin-entry-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.checkin-entry { background: var(--field-bg); border-radius: var(--radius-sm); padding: 9px 12px; }
+.checkin-entry-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.checkin-entry-date { font-size: 12px; font-weight: 800; color: var(--ink); }
+.checkin-entry-scores { display: flex; gap: 10px; }
+.checkin-score { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 800; color: var(--ink); }
+.checkin-entry-note { margin: 6px 0 0; font-size: 12px; font-weight: 600; color: var(--subtext-color); line-height: 1.4; }
+.checkin-share-btn {
+  margin-top: 8px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--blue);
+  cursor: pointer;
+}
+.checkin-share-btn.shared { color: #2E8B57; cursor: default; }
+
 /* ---------- MESSAGING ---------- */
 .topbar-actions { display: flex; align-items: center; gap: 10px; }
 /* Blue background / white icon is the app-wide default (2026-08-11) — every

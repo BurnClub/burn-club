@@ -209,6 +209,298 @@ function loadLastWeights() {
   }
 }
 
+// ---------------- Daily Check-Ins (2026-08-19) ----------------
+// Private by default: this never syncs anywhere on its own. The member can
+// share a single entry into their coach thread by hand — see shareCheckin().
+// Per-member key like everything else member-owned.
+
+const CHECKIN_STORAGE_KEY = "burnclub-checkins";
+const CHECKIN_DISMISS_KEY = "burnclub-checkin-dismissed";
+let CHECKINS = [];
+
+function loadCheckins() {
+  const stored = localStorage.getItem(memberKey(CHECKIN_STORAGE_KEY));
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      // fall through and reseed
+    }
+  }
+  const seeded = buildSeedCheckins();
+  localStorage.setItem(memberKey(CHECKIN_STORAGE_KEY), JSON.stringify(seeded));
+  return seeded;
+}
+
+function saveCheckins() {
+  localStorage.setItem(memberKey(CHECKIN_STORAGE_KEY), JSON.stringify(CHECKINS));
+}
+
+function checkinFor(dateStr) {
+  return CHECKINS.find((c) => c.date === dateStr) || null;
+}
+
+function todaysCheckin() {
+  return checkinFor(dateKey(new Date()));
+}
+
+// One entry per day — checking in twice edits the day rather than stacking a
+// second row, so the trend has exactly one point per date.
+function saveCheckin({ mental, physical, note }) {
+  const date = dateKey(new Date());
+  const existing = checkinFor(date);
+  if (existing) {
+    Object.assign(existing, { mental, physical, note });
+  } else {
+    CHECKINS.push({ date, mental, physical, note, sharedAt: null });
+  }
+  CHECKINS.sort((a, b) => (a.date < b.date ? -1 : 1));
+  saveCheckins();
+}
+
+// Asked once a day at most. Dismissing is remembered for that day only, so
+// skipping today never turns the prompt off for good.
+function checkinPromptDismissedToday() {
+  return localStorage.getItem(memberKey(CHECKIN_DISMISS_KEY)) === dateKey(new Date());
+}
+
+function dismissCheckinPrompt() {
+  localStorage.setItem(memberKey(CHECKIN_DISMISS_KEY), dateKey(new Date()));
+}
+
+// ---- capture ---------------------------------------------------------------
+
+function openCheckinModal() {
+  const existing = todaysCheckin();
+  const mental = document.getElementById("checkin-mental");
+  const physical = document.getElementById("checkin-physical");
+  mental.value = existing ? existing.mental : 7;
+  physical.value = existing ? existing.physical : 7;
+  document.getElementById("checkin-mental-value").textContent = mental.value;
+  document.getElementById("checkin-physical-value").textContent = physical.value;
+  document.getElementById("checkin-note").value = existing ? existing.note || "" : "";
+  document.getElementById("checkin-title").textContent = existing ? "Update today's check-in" : "How are you today?";
+  document.getElementById("checkin-saved").style.display = "none";
+  // "Not now" is only meaningful on a fresh day — once there's an entry the
+  // button below is Done, not a dismissal.
+  document.getElementById("checkin-skip-btn").textContent = existing ? "Close" : "Not now";
+  document.getElementById("checkin-overlay").classList.add("visible");
+}
+
+function closeCheckinModal() {
+  document.getElementById("checkin-overlay").classList.remove("visible");
+}
+
+function saveCheckinForm() {
+  saveCheckin({
+    mental: Number(document.getElementById("checkin-mental").value),
+    physical: Number(document.getElementById("checkin-physical").value),
+    note: document.getElementById("checkin-note").value.trim(),
+  });
+  document.getElementById("checkin-saved").style.display = "block";
+  renderCheckinSection();
+  renderCheckinAffordances();
+  setTimeout(closeCheckinModal, 900);
+}
+
+// Asked on the first open of a day, and never again that day whether they
+// answered or dismissed it. Deliberately not blocking: it's an overlay with a
+// close button, not a gate in front of the app.
+function maybePromptCheckin() {
+  if (todaysCheckin() || checkinPromptDismissedToday()) return;
+  openCheckinModal();
+}
+
+// The dot on the Home icon, and the post-workout nudge, both just answer
+// "has today been logged yet".
+function renderCheckinAffordances() {
+  const done = !!todaysCheckin();
+  const dot = document.getElementById("checkin-done-dot");
+  if (dot) dot.style.display = done ? "block" : "none";
+  const nudge = document.getElementById("complete-checkin-nudge");
+  if (nudge) nudge.style.display = done ? "none" : "block";
+}
+
+// ---- read-back -------------------------------------------------------------
+
+const CHECKIN_SERIES = [
+  { key: "mental", label: "Mentally", color: "#788CE3" },
+  // Not the palette's --danger: that sits at 2.94:1 on white, just under the
+  // 3:1 floor. This is the same coral nudged until it passes (3.33:1), with
+  // CVD separation from the blue of 19.7 (target 8) — computed, not eyeballed.
+  { key: "physical", label: "Physically", color: "#E0685E" },
+];
+
+function recentCheckins(days) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - (days - 1));
+  const cutoffKey = dateKey(cutoff);
+  return CHECKINS.filter((c) => c.date >= cutoffKey).sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+// Consecutive days with an entry, counting back from today. Yesterday still
+// counts as alive — a streak shouldn't die because it's 9am.
+function checkinStreak() {
+  let streak = 0;
+  const cursor = new Date();
+  if (!todaysCheckin()) cursor.setDate(cursor.getDate() - 1);
+  while (checkinFor(dateKey(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+// The point of the whole feature: a score alone is a diary, a score joined to
+// training days says something the member couldn't otherwise see. Only shown
+// once there's enough of both kinds of day to mean anything.
+function checkinInsights() {
+  const out = [];
+  const window = recentCheckins(28);
+  const trainingDates = new Set(COMPLETIONS.map((c) => c.date));
+  const trained = window.filter((c) => trainingDates.has(c.date));
+  const rested = window.filter((c) => !trainingDates.has(c.date));
+  const avg = (list, key) => list.reduce((sum, c) => sum + c[key], 0) / list.length;
+
+  if (trained.length >= 3 && rested.length >= 3) {
+    const t = avg(trained, "physical"), r = avg(rested, "physical");
+    // 0.8 of a point, not 0.4: a 4% gap on a 1-10 scale is noise, and an
+    // insight that reports noise as a finding teaches people to ignore the
+    // ones that aren't.
+    const diff = Math.abs(t - r);
+    if (diff >= 0.8) {
+      out.push(`Physically you average <strong>${t.toFixed(1)}</strong> on days you train and <strong>${r.toFixed(1)}</strong> on days you don't.`);
+    }
+  }
+
+  const streak = checkinStreak();
+  if (streak >= 3) out.push(`<strong>${streak} days</strong> checked in a row.`);
+
+  const last7 = recentCheckins(7), prior = CHECKINS.filter((c) => {
+    const start = new Date(); start.setDate(start.getDate() - 13);
+    const end = new Date(); end.setDate(end.getDate() - 7);
+    return c.date >= dateKey(start) && c.date <= dateKey(end);
+  });
+  if (last7.length >= 3 && prior.length >= 3) {
+    const now = avg(last7, "mental"), before = avg(prior, "mental");
+    const delta = now - before;
+    if (Math.abs(delta) >= 0.8) {
+      out.push(`Mentally you're <strong>${delta > 0 ? "up" : "down"} ${Math.abs(delta).toFixed(1)}</strong> on last week.`);
+    }
+  }
+  return out;
+}
+
+// Two series on one 1-10 axis — the case where a shared axis is right, since
+// both measure the same thing on the same scale. Legend always (2 series), and
+// both are direct-labelled at their last point, so identity never rests on
+// colour alone. Markers only on that final point: 24 of them would be noise.
+function renderCheckinChart(entries) {
+  const host = document.getElementById("checkin-chart");
+  if (!host) return;
+  if (entries.length < 2) {
+    host.innerHTML = `<p class="checkin-empty">Check in a few days running and your trend shows up here.</p>`;
+    return;
+  }
+
+  const w = 300, h = 120, padL = 6, padR = 34, padT = 10, padB = 18;
+  const x = (i) => padL + (i / (entries.length - 1)) * (w - padL - padR);
+  const y = (v) => padT + (1 - (v - 1) / 9) * (h - padT - padB);
+
+  const gridHtml = [1, 5.5, 10].map((v) =>
+    `<line class="checkin-grid" x1="${padL}" x2="${w - padR}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" />`
+  ).join("");
+
+  const seriesHtml = CHECKIN_SERIES.map((s) => {
+    const d = entries.map((e, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(e[s.key]).toFixed(1)}`).join(" ");
+    const last = entries[entries.length - 1];
+    return `
+      <path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="${x(entries.length - 1).toFixed(1)}" cy="${y(last[s.key]).toFixed(1)}" r="4" fill="${s.color}" stroke="#fff" stroke-width="2" />
+      <text class="checkin-point-label" x="${(w - padR + 6).toFixed(1)}" y="${(y(last[s.key]) + 3.5).toFixed(1)}">${last[s.key]}</text>
+    `;
+  }).join("");
+
+  const first = formatShortDate(entries[0].date);
+  const lastDate = formatShortDate(entries[entries.length - 1].date);
+
+  host.innerHTML = `
+    <div class="checkin-legend">
+      ${CHECKIN_SERIES.map((s) => `<span class="checkin-legend-item"><span class="checkin-swatch" style="background:${s.color}"></span>${s.label}</span>`).join("")}
+    </div>
+    <svg class="checkin-chart-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Check-in scores over time">
+      ${gridHtml}
+      <text class="checkin-axis-label" x="${padL}" y="${h - 4}">${first}</text>
+      <text class="checkin-axis-label checkin-axis-end" x="${w - padR}" y="${h - 4}">${lastDate}</text>
+      ${seriesHtml}
+    </svg>
+  `;
+}
+
+function renderCheckinSection() {
+  const listEl = document.getElementById("checkin-entry-list");
+  if (!listEl) return;
+  const entries = recentCheckins(28);
+  renderCheckinChart(entries);
+
+  const insightsEl = document.getElementById("checkin-insights");
+  const insights = checkinInsights();
+  insightsEl.innerHTML = insights.length
+    ? insights.map((t) => `<p class="checkin-insight">${t}</p>`).join("")
+    : "";
+
+  // Newest first, and doubling as the chart's table view — every plotted point
+  // is readable here as a number, not only as a position on a line.
+  const recent = [...entries].reverse().slice(0, 10);
+  listEl.innerHTML = recent.length
+    ? recent.map((e) => `
+        <div class="checkin-entry">
+          <div class="checkin-entry-head">
+            <span class="checkin-entry-date">${formatShortDate(e.date)}</span>
+            <span class="checkin-entry-scores">
+              <span class="checkin-score"><span class="checkin-swatch" style="background:${CHECKIN_SERIES[0].color}"></span>${e.mental}</span>
+              <span class="checkin-score"><span class="checkin-swatch" style="background:${CHECKIN_SERIES[1].color}"></span>${e.physical}</span>
+            </span>
+          </div>
+          ${e.note ? `<p class="checkin-entry-note">${e.note}</p>` : ""}
+          <button class="checkin-share-btn${e.sharedAt ? " shared" : ""}" data-share-checkin="${e.date}">
+            ${e.sharedAt ? "✓ Sent to your coach" : "Send to coach"}
+          </button>
+        </div>
+      `).join("")
+    : `<p class="checkin-empty">No check-ins yet.</p>`;
+
+  listEl.querySelectorAll("[data-share-checkin]").forEach((btn) => {
+    btn.addEventListener("click", () => shareCheckin(btn.dataset.shareCheckin));
+  });
+}
+
+// The only way anything here leaves the member's phone, and it's one entry at
+// a time by hand. Goes into the existing coach DM thread, so staff see it as a
+// message rather than as a feed they can browse.
+function shareCheckin(dateStr) {
+  const entry = checkinFor(dateStr);
+  if (!entry || entry.sharedAt) return;
+  const lines = [
+    `Check-in — ${formatShortDate(entry.date)}`,
+    `Mentally ${entry.mental}/10 · Physically ${entry.physical}/10`,
+  ];
+  if (entry.note) lines.push(`"${entry.note}"`);
+  broadcastMessage({
+    id: "msg-" + Date.now(),
+    conversationId: `dm-${CURRENT_MEMBER.id}`,
+    senderId: CURRENT_MEMBER.id,
+    senderName: CURRENT_MEMBER.name,
+    isStaff: false,
+    text: lines.join("\n"),
+    time: "Just now",
+    read: true,
+  });
+  entry.sharedAt = dateKey(new Date());
+  saveCheckins();
+  renderCheckinSection();
+}
+
 function lastWeightFor(exerciseName) {
   const w = LAST_WEIGHTS[exerciseName];
   return w ? w.weight : null;
@@ -1598,6 +1890,8 @@ function showTab(tabId) {
   if (tabId === "tab-home" || tabId === "tab-circuits") renderCircuitLists();
   if (tabId === "tab-home") renderHomeWeekSnapshot();
   if (tabId === "tab-circuits" || tabId === "tab-home") renderCardioLog();
+  if (tabId === "tab-progress") renderCheckinSection();
+  if (tabId === "tab-home") renderCheckinAffordances();
   if (tabId === "tab-calendar") renderCalendarTab();
 
   document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"));
@@ -2719,6 +3013,7 @@ function renderCircuitLists() {
 
 function init() {
   COMPLETIONS = loadCompletions();
+  CHECKINS = loadCheckins();
   BENCHMARK_RESULTS = loadBenchmarkResults();
   LAST_WEIGHTS = loadLastWeights();
   renderCircuitLists();
@@ -2754,6 +3049,8 @@ function init() {
   document.getElementById("profile-program").textContent = CURRENT_MEMBER.program;
   document.getElementById("profile-member-since").textContent = CURRENT_MEMBER.memberSince;
   applyMemberProgramMode();
+  renderCheckinSection();
+  renderCheckinAffordances();
 }
 
 // One-time wiring for static elements that exist from page load and are
@@ -3150,14 +3447,17 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("login-form").addEventListener("submit", (e) => {
     e.preventDefault();
     showTab("tab-home");
+    maybePromptCheckin();
   });
 
   document.getElementById("guest-btn").addEventListener("click", () => {
     showTab("tab-home");
+    maybePromptCheckin();
   });
 
   document.getElementById("guest-ff-btn").addEventListener("click", () => {
     switchMemberProfile("jordan-p");
+    maybePromptCheckin();
   });
 
   document.querySelectorAll("[data-tab-target]").forEach((btn) => {
@@ -3177,6 +3477,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelectorAll("[data-action='open-messages']").forEach((btn) => {
     btn.addEventListener("click", openMessagesInbox);
+  });
+  document.querySelectorAll("[data-action='open-checkin']").forEach((btn) => {
+    btn.addEventListener("click", openCheckinModal);
   });
   document.getElementById("thread-back-btn").addEventListener("click", openMessagesInbox);
   document.getElementById("thread-composer").addEventListener("submit", (e) => {
@@ -3203,6 +3506,19 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("block-notes-got-it-btn").addEventListener("click", closeBlockNotes);
 
+  document.getElementById("checkin-close-btn").addEventListener("click", closeCheckinModal);
+  document.getElementById("checkin-save-btn").addEventListener("click", saveCheckinForm);
+  document.getElementById("checkin-skip-btn").addEventListener("click", () => {
+    if (!todaysCheckin()) dismissCheckinPrompt();
+    closeCheckinModal();
+  });
+  document.getElementById("complete-checkin-nudge").addEventListener("click", openCheckinModal);
+  ["mental", "physical"].forEach((k) => {
+    const slider = document.getElementById(`checkin-${k}`);
+    slider.addEventListener("input", () => {
+      document.getElementById(`checkin-${k}-value`).textContent = slider.value;
+    });
+  });
   document.getElementById("cardio-log-btn").addEventListener("click", openCardioLogModal);
   document.getElementById("cardio-log-close-btn").addEventListener("click", closeCardioLogModal);
   document.getElementById("cardio-log-save-btn").addEventListener("click", saveCardioLogForm);

@@ -46,6 +46,12 @@
             <h1 class="topbar-title" id="home-greeting-name">Chris</h1>
           </div>
           <div class="topbar-actions">
+            <!-- Shortcut for "log something now". The daily prompt comes to
+                 the member on its own; this is for the rest of the time. -->
+            <button class="msg-icon-btn" data-action="open-checkin" title="Daily check-in">
+              <span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M8 10h8M8 14h6"/></svg></span>
+              <span class="checkin-done-dot" id="checkin-done-dot" style="display:none;"></span>
+            </button>
             <button class="msg-icon-btn" data-action="open-messages"><span class="msg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
             <img class="avatar" src="assets/burn-club-logo.png" alt="" />
           </div>
@@ -381,6 +387,39 @@
       </div>
 
       <!-- ---------- CARDIO LOG OVERLAY (2026-08-09) ---------- -->
+      <!-- ---------- DAILY CHECK-IN (2026-08-19) ---------- -->
+      <!-- Under ten seconds and always skippable: two sliders and an optional
+           note. A prompt that feels like a form gets dismissed, and a
+           dismissed prompt teaches people to dismiss. -->
+      <div class="cardio-log-overlay" id="checkin-overlay">
+        <div class="cardio-log-card checkin-card">
+          <button class="player-exit" id="checkin-close-btn">✕</button>
+          <h2 class="cardio-log-title" id="checkin-title">How are you today?</h2>
+          <p class="checkin-sub" id="checkin-sub">Only you can see this.</p>
+
+          <div class="checkin-slider-block">
+            <label class="rpe-label" for="checkin-mental">Mentally <span id="checkin-mental-value">7</span>/10</label>
+            <input type="range" id="checkin-mental" class="rpe-slider checkin-slider-mental" min="1" max="10" step="1" value="7" />
+            <div class="rpe-scale-labels"><span>Drained</span><span>Sharp</span></div>
+          </div>
+
+          <div class="checkin-slider-block">
+            <label class="rpe-label" for="checkin-physical">Physically <span id="checkin-physical-value">7</span>/10</label>
+            <input type="range" id="checkin-physical" class="rpe-slider checkin-slider-physical" min="1" max="10" step="1" value="7" />
+            <div class="rpe-scale-labels"><span>Beat up</span><span>Strong</span></div>
+          </div>
+
+          <label class="field checkin-note-field">
+            <span id="checkin-note-prompt">Anything worth noting? <em>Optional</em></span>
+            <textarea id="checkin-note" rows="3" placeholder="Sleep, soreness, stress, a win…"></textarea>
+          </label>
+
+          <button class="btn-primary" id="checkin-save-btn">Save Check-In</button>
+          <button class="checkin-skip-btn" id="checkin-skip-btn">Not now</button>
+          <p class="cardio-log-saved" id="checkin-saved" style="display:none;">✓ Logged — see the trend in Progress.</p>
+        </div>
+      </div>
+
       <div class="cardio-log-overlay" id="cardio-log-overlay">
         <div class="cardio-log-card">
           <button class="player-exit" id="cardio-log-close-btn">✕</button>
@@ -465,6 +504,12 @@
             <input type="range" id="rpe-slider" class="rpe-slider" min="1" max="10" step="1" value="5" />
             <div class="rpe-scale-labels"><span>Easy</span><span>Max Effort</span></div>
           </div>
+          <!-- Only shows when today's check-in hasn't happened yet. RPE above
+               rates the session; this is about the day, so it asks rather than
+               duplicating that slider. -->
+          <button class="checkin-nudge" id="complete-checkin-nudge" style="display:none;">
+            How's the rest of you doing today? <span>Check in →</span>
+          </button>
           <button class="btn-primary" data-back="tab-progress">View Progress</button>
         </div>
       </section>
@@ -557,6 +602,16 @@
              shows %-change vs the full prior week/month/year. Moved below
              the donut per Chris's follow-up. -->
         <div id="stat-bubbles"></div>
+
+        <!-- Check-in history (2026-08-19). Lives in Progress because this is
+             longitudinal data, same shelf as benchmarks and the mix donut —
+             Profile is settings. -->
+        <div class="home-section-card card-white">
+          <h2 class="home-section-title">Check-Ins</h2>
+          <div id="checkin-insights"></div>
+          <div id="checkin-chart"></div>
+          <div class="checkin-entry-list" id="checkin-entry-list"></div>
+        </div>
 
         <div class="home-section-card card-blue">
           <h2 class="home-section-title">Benchmarks</h2>
