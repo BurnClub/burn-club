@@ -439,9 +439,54 @@ function renderDayCell(date, byDate, today) {
   return `<div class="${classes.join(" ")}" title="${title}">${date.getDate()}</div>`;
 }
 
+// Where a structured member is in their own program, all derived from their
+// personal startDate — nobody shares a calendar in a structured program
+// (2026-08-19). Returns null for rolling members and for anyone whose
+// program hasn't started or has finished, so callers can fall back.
+function memberProgramPosition() {
+  const m = CURRENT_MEMBER;
+  if (m.scheduleType !== "structured" || !m.startDate) return null;
+  const template = SCHEDULE_TEMPLATES[m.programId] || [];
+  if (!template.length) return null;
+
+  const day = daysBetween(m.startDate, dateKey(new Date())) + 1;
+  const totalDays = template.length;
+  const totalWeeks = Math.ceil(totalDays / 7);
+  // Clamped so a member who hasn't started, or who finished last month, still
+  // gets a sensible week to look at rather than "Week 0" or "Week 12 of 8".
+  const clampedDay = Math.min(Math.max(day, 1), totalDays);
+  const week = Math.ceil(clampedDay / 7);
+  const weekFirstDay = (week - 1) * 7 + 1;
+
+  const weekItems = template.filter((it) => it.type === "workout" && it.day >= weekFirstDay && it.day <= weekFirstDay + 6);
+  const dateForProgramDay = (pd) => {
+    const d = parseDateKey(m.startDate);
+    d.setDate(d.getDate() + (pd - 1));
+    return d;
+  };
+  const doneThisWeek = weekItems.filter((it) => completionForSlotOnDate(it.workoutId, dateKey(dateForProgramDay(it.day)))).length;
+
+  const allWorkouts = template.filter((it) => it.type === "workout");
+  const doneAll = allWorkouts.filter((it) => completionForSlotOnDate(it.workoutId, dateKey(dateForProgramDay(it.day)))).length;
+
+  return {
+    day, clampedDay, totalDays, week, totalWeeks, weekFirstDay,
+    weekStartDate: dateForProgramDay(weekFirstDay),
+    scheduledThisWeek: weekItems.length,
+    doneThisWeek,
+    percentComplete: allWorkouts.length ? Math.round((doneAll / allWorkouts.length) * 100) : 0,
+    notStarted: day < 1,
+    finished: day > totalDays,
+  };
+}
+
 function renderWeekGrid() {
   const today = new Date();
-  const start = startOfWeek(today);
+  // A structured member's strip follows their program week (days 8–14 of an
+  // 8-week plan), not Sun–Sat — otherwise it straddles two program weeks and
+  // disagrees with the "Week 2" language on every workout title.
+  const pos = memberProgramPosition();
+  const start = pos ? pos.weekStartDate : startOfWeek(today);
   const byDate = completionsByDate();
   let html = "";
   for (let i = 0; i < 7; i++) {
@@ -522,6 +567,23 @@ function renderHomeWeekSnapshot() {
   if (!grid) return;
   grid.innerHTML = renderWeekGrid();
 
+  // Structured members get program-shaped numbers instead. "Stretch & Core"
+  // and "Cardio Sessions" are Burn Club's content split — a Fit & Functional
+  // member has neither, so both sat at a permanent 0 (2026-08-19).
+  const pos = memberProgramPosition();
+  const titleEl = document.getElementById("home-week-title");
+  if (pos) {
+    if (titleEl) titleEl.textContent = pos.notStarted ? "Your Program" : `Week ${pos.week}`;
+    setWeekStat("home-week-circuits", pos.week, `of ${pos.totalWeeks} Weeks`);
+    setWeekStat("home-week-stretch-core", `${pos.doneThisWeek}/${pos.scheduledThisWeek}`, "Done This Week");
+    setWeekStat("home-week-cardio", `${pos.percentComplete}%`, "Program Complete");
+    return;
+  }
+  if (titleEl) titleEl.textContent = "This Week";
+  setWeekStat("home-week-circuits", null, "Workouts Done");
+  setWeekStat("home-week-stretch-core", null, "Stretch & Core");
+  setWeekStat("home-week-cardio", null, "Cardio Sessions");
+
   const items = completionsInRange("week");
   let circuits = 0, stretchCore = 0, cardio = 0;
   items.forEach((c) => {
@@ -533,6 +595,16 @@ function renderHomeWeekSnapshot() {
   document.getElementById("home-week-circuits").textContent = circuits;
   document.getElementById("home-week-stretch-core").textContent = stretchCore;
   document.getElementById("home-week-cardio").textContent = cardio;
+}
+
+// The three tiles are shared between both program shapes, so the label moves
+// with the number rather than being fixed in the markup.
+function setWeekStat(numId, value, label) {
+  const numEl = document.getElementById(numId);
+  if (!numEl) return;
+  if (value !== null) numEl.textContent = value;
+  const labelEl = numEl.parentElement.querySelector(".stat-label");
+  if (labelEl) labelEl.textContent = label;
 }
 
 // Donut, 4 categorical series in a fixed hue order (2026-08-11) — Workouts/
