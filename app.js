@@ -437,6 +437,8 @@ function renderCheckinChart(entries) {
   `;
 }
 
+let checkinListExpanded = false;
+
 function renderCheckinSection() {
   const listEl = document.getElementById("checkin-entry-list");
   if (!listEl) return;
@@ -449,9 +451,13 @@ function renderCheckinSection() {
     ? insights.map((t) => `<p class="checkin-insight">${t}</p>`).join("")
     : "";
 
-  // Newest first, and doubling as the chart's table view — every plotted point
-  // is readable here as a number, not only as a position on a line.
-  const recent = [...entries].reverse().slice(0, 10);
+  // Collapsed to the latest day by default (2026-08-19, Chris) — ten entries
+  // was most of the section's height. The chart and the insights stay put:
+  // they're the reason to open the section, and hiding them behind a tap would
+  // turn it back into a diary.
+  const all = [...entries].reverse().slice(0, 10);
+  const recent = checkinListExpanded ? all : all.slice(0, 1);
+  const hidden = all.length - recent.length;
   listEl.innerHTML = recent.length
     ? recent.map((e) => `
         <div class="checkin-entry">
@@ -469,6 +475,20 @@ function renderCheckinSection() {
         </div>
       `).join("")
     : `<p class="checkin-empty">No check-ins yet.</p>`;
+
+  // Only worth a toggle when there's something behind it.
+  if (hidden > 0 || checkinListExpanded) {
+    listEl.insertAdjacentHTML("beforeend", `
+      <button class="checkin-more-btn" id="checkin-more-btn">
+        ${checkinListExpanded ? "Show less" : `Show ${hidden} more`}
+        <span class="checkin-caret">${checkinListExpanded ? "\u25B4" : "\u25BE"}</span>
+      </button>
+    `);
+    listEl.querySelector("#checkin-more-btn").addEventListener("click", () => {
+      checkinListExpanded = !checkinListExpanded;
+      renderCheckinSection();
+    });
+  }
 
   listEl.querySelectorAll("[data-share-checkin]").forEach((btn) => {
     btn.addEventListener("click", () => shareCheckin(btn.dataset.shareCheckin));

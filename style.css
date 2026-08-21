@@ -2355,6 +2355,24 @@ h1, h2, h3 {
 }
 .checkin-share-btn.shared { color: #2E8B57; cursor: default; }
 
+.checkin-more-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 2px;
+  padding: 8px;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--blue);
+  cursor: pointer;
+}
+.checkin-caret { font-size: 10px; line-height: 1; }
+
 /* ---------- MESSAGING ---------- */
 .topbar-actions { display: flex; align-items: center; gap: 10px; }
 /* Blue background / white icon is the app-wide default (2026-08-11) — every
