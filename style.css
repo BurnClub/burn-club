@@ -1525,14 +1525,19 @@ h1, h2, h3 {
 /* Manual entry or a fake "sync" from a connected wearable — see the note
    above the HTML for how this feeds into COMPLETIONS/challenge points. */
 .cardio-log-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+/* A logged session is a record, not a third action (2026-08-19). The two
+   buttons under it are the actions — filled blue is primary, white-with-
+   outline is secondary — so this reads quieter than both: the same pale blue
+   the app's input fields use, flat, no shadow. It was --white (the brand
+   cream), which read as a stranded card. */
 .cardio-log-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--white);
-  padding: 10px 14px;
+  gap: 10px;
+  background: var(--field-bg);
+  padding: 9px 12px;
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
 .cardio-log-row-left { display: flex; flex-direction: column; }
 .cardio-log-activity { font-weight: 800; font-size: 13px; color: var(--ink); }
@@ -1543,7 +1548,9 @@ h1, h2, h3 {
   text-transform: uppercase;
   letter-spacing: 0.3px;
   color: var(--blue);
-  background: var(--periwinkle);
+  /* Was periwinkle, which sat almost on top of the row's new pale-blue
+     background — white separates it cleanly without adding a colour. */
+  background: var(--card-white);
   padding: 3px 8px;
   border-radius: 999px;
   flex-shrink: 0;
