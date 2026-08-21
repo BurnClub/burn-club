@@ -107,6 +107,10 @@
             <div class="buzz-list" id="home-community-feed"></div>
           </div>
         </div>
+
+        <!-- Structured members' Cardio Log lands here — see the note beside
+             the block itself in the Workouts tab. -->
+        <div id="home-cardio-slot"></div>
       </section>
 
       <!-- ---------- WORKOUTS ---------- -->
@@ -131,7 +135,12 @@
              and the calendar the same as any workout completion. No card
              (2026-08-10 revert); swapped above Stretch & Core Library per
              Chris's order request same day. -->
-        <div class="home-plain-section">
+        <!-- Lives here for rolling members and moves to Home for structured
+             ones, who have no Workouts tab at all (2026-08-19). Moved rather
+             than duplicated: one block, one set of ids, one set of listeners
+             — a second copy would need its own of each and would drift. -->
+        <div id="workouts-cardio-slot"></div>
+        <div class="home-plain-section" id="cardio-log-section">
           <h2 class="home-section-title">Cardio Log</h2>
           <div class="cardio-log-list" id="cardio-log-list"></div>
           <div class="cardio-log-actions">

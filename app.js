@@ -1597,7 +1597,7 @@ function showTab(tabId) {
   if (tabId === "tab-community") renderChallengeCard();
   if (tabId === "tab-home" || tabId === "tab-circuits") renderCircuitLists();
   if (tabId === "tab-home") renderHomeWeekSnapshot();
-  if (tabId === "tab-circuits") renderCardioLog();
+  if (tabId === "tab-circuits" || tabId === "tab-home") renderCardioLog();
   if (tabId === "tab-calendar") renderCalendarTab();
 
   document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"));
@@ -2812,6 +2812,16 @@ function applyMemberProgramMode() {
 
   document.getElementById("nav-workouts-btn").style.display = isStructured ? "none" : "";
   document.getElementById("nav-calendar-btn").style.display = isStructured ? "" : "none";
+
+  // Cardio logging was unreachable for structured members (2026-08-19): the
+  // block sits in the Workouts tab, which they don't have — while "Cardio
+  // Sessions" was being counted on their Home. The block moves to Home for
+  // them rather than being copied there, so there's still one of everything.
+  // Moving a node keeps its listeners, so nothing needs rebinding.
+  const cardio = document.getElementById("cardio-log-section");
+  const slot = document.getElementById(isStructured ? "home-cardio-slot" : "workouts-cardio-slot");
+  if (cardio && slot && cardio.parentElement !== slot.parentElement) slot.after(cardio);
+  renderCardioLog();
 
   document.getElementById("calendar-program-label").textContent = CURRENT_MEMBER.program;
   if (isStructured) renderCalendarTab();
