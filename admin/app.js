@@ -2452,12 +2452,19 @@ function blockTopFields(block, i) {
   }
 }
 
+// Sits in the header beside Split, rather than on a line of its own under
+// the list — that line was costing every combined block ~40px (2026-08-19).
+function blockAddExerciseBtn(block, i) {
+  if (blockHasOneExercise(block)) return "";
+  const label = block.type === "interval" ? "+ Station" : "+ Exercise";
+  return `<button class="btn-ghost-lg small" data-action="add-exercise" data-block-index="${i}">${label}</button>`;
+}
+
 // The exercise list, for the formats that hold more than one.
 function blockExerciseList(block, i) {
   const v = block.values;
   if (blockHasOneExercise(block)) return "";
   const withReps = block.type !== "interval";
-  const addLabel = block.type === "interval" ? "+ Add Station" : "+ Add Exercise";
   return `
     <div class="builder-ex-list">
       ${v.exercises.map((e, ei) => `
@@ -2469,7 +2476,6 @@ function blockExerciseList(block, i) {
         </div>
       `).join("")}
     </div>
-    <button class="btn-ghost-lg small" data-action="add-exercise" data-block-index="${i}">${addLabel}</button>
   `;
 }
 
@@ -2487,6 +2493,7 @@ function renderBuilderBlocks() {
           </select>
         `}
         ${blockTopFields(block, i)}
+        ${blockAddExerciseBtn(block, i)}
         ${isCombined ? `<button class="btn-ghost-lg small" data-action="split-block" data-block-index="${i}">Split</button>` : ""}
         <button class="remove-block-btn" data-action="remove-block" data-block-index="${i}">✕</button>
       </div>

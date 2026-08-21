@@ -1227,7 +1227,11 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-panel-wide .builder-block-top select,
 .builder-panel-wide .builder-block-top input,
 .builder-panel-wide .builder-field-row input,
-.builder-panel-wide .builder-ex-row input { padding: 6px 8px; font-size: 12px; }
+.builder-panel-wide .builder-ex-row input { padding: 5px 8px; font-size: 12px; }
+/* The exercise pills in a combined block, matching the single-exercise row. */
+.builder-panel-wide .builder-ex-row .chosen-exercise { padding: 5px 8px; font-size: 12px; }
+.builder-panel-wide .builder-ex-row .remove-ex-btn { font-size: 14px; line-height: 1; }
+.builder-panel-wide .builder-ex-list { margin-top: 6px; }
 .builder-panel-wide .builder-field-row { gap: 8px; margin-bottom: 8px; }
 .builder-panel-wide .builder-field-row label { font-size: 10px; }
 .builder-panel-wide .builder-hint { font-size: 11px; margin: -4px 0 8px; }
@@ -1452,11 +1456,12 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-field-row label { font-size: 11px; font-weight: 700; color: var(--deepblue); display: flex; flex-direction: column; gap: 4px; }
 .builder-field-row input { border: 2px solid var(--periwinkle); border-radius: var(--radius-sm); padding: 8px 10px; font-family: 'Nunito', sans-serif; font-size: 13px; }
 
-.builder-ex-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
-.builder-ex-row { display: flex; gap: 8px; align-items: center; }
+.builder-ex-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 0; }
+.builder-ex-row { display: flex; gap: 6px; align-items: center; }
 .builder-ex-row input { border: 2px solid var(--periwinkle); border-radius: var(--radius-sm); padding: 7px 10px; font-family: 'Nunito', sans-serif; font-size: 13px; }
 .builder-ex-row input[data-exfield="name"] { flex: 2; }
-.builder-ex-row input[data-exfield="reps"] { flex: 1; }
+/* Reps is a two-digit number, not a field that deserves a third of the row. */
+.builder-ex-row input[data-exfield="reps"] { flex: 0 0 58px; }
 
 .builder-footer { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-top: 1px solid var(--bg); }
 .builder-est { font-size: 12px; font-weight: 700; color: var(--deepblue); }
