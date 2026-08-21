@@ -534,13 +534,23 @@
         <div class="builder-content">
           <div class="builder-body">
             <p class="builder-hint" id="builder-folder-label">Adding to: —</p>
-            <!-- Variant switcher (2026-08-15). Only shown for programs with
-                 Home/Gym variants. The session's structure — title, focus,
-                 block types, sets, reps, rounds, rest — is shared, so editing
-                 it here applies to both. Only the exercise choices differ. -->
-            <div class="builder-variant-bar" id="builder-variant-bar" style="display:none;">
-              <span class="builder-variant-label">Editing exercises for</span>
-              <div class="filter-pill-row" id="builder-variant-pills"></div>
+            <!-- One line: the variant switcher shrinks to its own content and
+                 Tag takes the space it used to leave empty (2026-08-19). Tag
+                 lives in the wrapper rather than inside the switcher, because
+                 the switcher hides itself for programs without Home/Gym
+                 variants and Tag has to stay put. -->
+            <div class="builder-topline">
+              <!-- Variant switcher (2026-08-15). Only shown for programs with
+                   Home/Gym variants. The session's structure — title, focus,
+                   block types, sets, reps, rounds, rest — is shared, so editing
+                   it here applies to both. Only the exercise choices differ. -->
+              <div class="builder-variant-bar" id="builder-variant-bar" style="display:none;">
+                <span class="builder-variant-label">Editing exercises for</span>
+                <div class="filter-pill-row" id="builder-variant-pills"></div>
+              </div>
+              <label class="builder-tag-field">Tag
+                <input type="text" id="builder-tag" placeholder="e.g. New, Cardio, Core — shown on the member's workout card" />
+              </label>
             </div>
 
             <!-- Availability, rolling programs only (2026-08-15). This
@@ -562,15 +572,11 @@
               </div>
               <p class="builder-availability-note" id="builder-availability-note"></p>
             </div>
-            <!-- Tag, Focus and Difficulty are hidden but still saved
-                 (2026-08-19). Focus is carried by the workout's name and a tag
-                 adds nothing when you're already inside the folder that says
-                 what this is, but all three still show in the member app, so
-                 existing values are preserved rather than dropped. They used
-                 to sit in a .builder-meta-grid; once every visible field had
-                 left it, that wrapper was a zero-height div contributing a
-                 margin between the variant bar and Description. -->
-            <input type="hidden" id="builder-tag" />
+            <!-- Focus and Difficulty stay hidden but are still saved
+                 (2026-08-19). Focus is carried by the workout's name, and both
+                 still render in the member app, so existing values are
+                 preserved rather than dropped. Tag came back as a real field
+                 above, once the builder had room for it again. -->
             <input type="hidden" id="builder-focus" />
             <input type="hidden" id="builder-difficulty" value="Intermediate" />
             <div class="builder-desc-block">

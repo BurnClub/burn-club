@@ -1691,16 +1691,41 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .library-shelf-pane .admin-table td:first-child strong { margin-right: 6px; }
 
 /* ---------- BUILDER VARIANT SWITCHER (2026-08-15) ---------- */
+/* The switcher and Tag share one line; the switcher no longer stretches to
+   the full width, so the space it used to leave empty is Tag's. */
+.builder-topline { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .builder-variant-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
+  flex: 0 0 auto;
   background: var(--field-bg);
   border-radius: var(--radius-sm);
   padding: 7px 10px;
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
+.builder-tag-field {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--deepblue);
+}
+.builder-tag-field input {
+  flex: 1;
+  min-width: 0;
+  border: 2px solid var(--periwinkle);
+  border-radius: var(--radius-sm);
+  padding: 6px 9px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  background: var(--field-bg);
+}
+.builder-tag-field input:focus { outline: none; border-color: var(--blue); }
 .builder-variant-bar .filter-pill-row { margin-bottom: 0; }
 .builder-variant-label { font-size: 12px; font-weight: 800; color: var(--ink); }
 .builder-variant-note { font-size: 12px; font-weight: 600; color: var(--deepblue); }
