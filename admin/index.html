@@ -570,17 +570,23 @@
                    one-element change. -->
               <input type="hidden" id="builder-difficulty" value="Intermediate" />
             </div>
-            <label class="builder-desc-label">Description
+            <!-- Benchmark rides on the Description label's line rather than
+                 taking a full-width row of its own (2026-08-19, Chris). It's
+                 off on almost every workout, so it was a row of height for a
+                 setting that is usually just "no". -->
+            <div class="builder-desc-block">
+              <div class="builder-desc-head">
+                <span>Description</span>
+                <label class="tag-checkbox">
+                  <input type="checkbox" id="builder-is-benchmark" />
+                  Benchmark <em>— retest workout, scores tracked over time</em>
+                </label>
+              </div>
               <textarea id="builder-desc" rows="2" placeholder="Short description shown to members"></textarea>
-            </label>
-
-            <label class="tag-checkbox">
-              <input type="checkbox" id="builder-is-benchmark" />
-              This is a Benchmark (retest workout — scores get tracked over time)
-            </label>
-            <label class="builder-desc-label" id="builder-benchmark-select-wrap" style="display:none;">Which benchmark?
-              <select id="builder-benchmark-select"></select>
-            </label>
+              <label class="builder-desc-label" id="builder-benchmark-select-wrap" style="display:none;">Which benchmark?
+                <select id="builder-benchmark-select"></select>
+              </label>
+            </div>
 
             <!-- Everything below here is the workout itself, as opposed to the
                  naming and description fields above it (2026-08-19, Chris:

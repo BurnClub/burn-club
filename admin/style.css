@@ -1053,6 +1053,27 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   cursor: pointer;
 }
 .tag-checkbox input { margin: 0; accent-color: var(--blue); }
+.tag-checkbox em { font-weight: 600; font-style: normal; color: var(--deepblue); }
+
+/* Description, with the Benchmark toggle sharing its label line. */
+.builder-desc-block { margin-bottom: 12px; }
+.builder-desc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--deepblue);
+}
+.builder-desc-head .tag-checkbox { border-width: 1px; padding: 3px 10px; font-size: 11px; }
+.builder-desc-block textarea {
+  width: 100%;
+  resize: vertical;
+  font-family: 'Nunito', sans-serif;
+}
+.builder-desc-block #builder-benchmark-select-wrap { margin: 8px 0 0; }
 
 .modal-desc {
   font-size: 13px;
