@@ -2244,6 +2244,16 @@ const Player = {
   phases: [],
   index: 0,
   remaining: 0,
+  // The clock's source of truth is a wall-clock deadline, not `remaining`
+  // (2026-08-21). `remaining` is still what everything else reads, but it is
+  // now *computed* from this each tick rather than decremented by one.
+  // A decrementing counter silently loses however long the OS stops firing
+  // timers for, which on a backgrounded tab is the whole time you were away:
+  // a 5s stall cost 4s of clock and never came back. Deriving it from
+  // Date.now() means throttling can delay the repaint but can't change the
+  // number it repaints to.
+  deadlineAt: null,
+  lastShownRemaining: null,
   intervalId: null,
   paused: false,
   amrapRounds: 0,
@@ -2252,6 +2262,7 @@ const Player = {
   notesShownFor: new Set(),
   restIntervalId: null,
   restRemaining: 0,
+  restDeadlineAt: null,
   restSetIndex: null,
   restIsLastSet: false,
 
@@ -2261,6 +2272,8 @@ const Player = {
     this.index = 0;
     this.amrapRounds = 0;
     this.startedAt = Date.now();
+    this.deadlineAt = null;
+    this.lastShownRemaining = null;
     this.sessionWeights = {};
     this.cardioChoice = null;
     this.cardioMinutes = 0;
@@ -2274,9 +2287,22 @@ const Player = {
   },
 
   stop() {
-    if (this.intervalId) clearInterval(this.intervalId);
+    // Settle `remaining` off the deadline before the interval dies, so a pause
+    // (or an advance that reads `remaining` on the way out, like the cardio
+    // banking below) sees the true figure and not the last tick's. Guarded on
+    // intervalId because stop() also runs when no clock is going, and
+    // deadlineAt would still be holding a previous phase's value.
+    if (this.intervalId) {
+      this.syncRemaining();
+      clearInterval(this.intervalId);
+    }
     this.intervalId = null;
     this.dismissRestOverlay();
+  },
+
+  syncRemaining() {
+    if (this.deadlineAt === null) return;
+    this.remaining = Math.round((this.deadlineAt - Date.now()) / 1000);
   },
 
   currentPhase() {
@@ -2361,15 +2387,21 @@ const Player = {
       upNextEl.textContent = `Up next: ${phase.exerciseName}`;
       skipBtn.textContent = "Skip Rest →";
       this.restRemaining = phase.restDuration;
+      this.restDeadlineAt = Date.now() + phase.restDuration * 1000;
       clockEl.textContent = formatClock(this.restRemaining);
+      // Deadline-derived for the same reason as the phase clock above —
+      // rest that quietly stops counting while the member reads a text is
+      // rest they never actually took.
       this.restIntervalId = setInterval(() => {
-        this.restRemaining--;
-        if (this.restRemaining <= 0) {
+        const left = Math.round((this.restDeadlineAt - Date.now()) / 1000);
+        if (left <= 0) {
           this.dismissRestOverlay();
           return;
         }
+        if (left === this.restRemaining) return;
+        this.restRemaining = left;
         clockEl.textContent = formatClock(this.restRemaining);
-      }, 1000);
+      }, 250);
     }
 
     document.getElementById("rest-timer-overlay").classList.add("visible");
@@ -2415,6 +2447,7 @@ const Player = {
   dismissRestOverlay() {
     if (this.restIntervalId) clearInterval(this.restIntervalId);
     this.restIntervalId = null;
+    this.restDeadlineAt = null;
     document.getElementById("rest-timer-overlay").classList.remove("visible");
     this.applyWeightToRow();
     this.restSetIndex = null;
@@ -2645,14 +2678,29 @@ const Player = {
 
   runTimer() {
     this.stop();
+    // Anchored to whatever `remaining` currently holds, which is what makes
+    // pause/resume and the EMOM rewind work unchanged: they set `remaining`
+    // and the next runTimer() turns it back into a deadline.
+    this.deadlineAt = Date.now() + this.remaining * 1000;
+    this.lastShownRemaining = null;
+    // 250ms, not 1000ms. The tick is only a repaint trigger now, so a short
+    // one costs nothing and means a tab returning from the background shows
+    // the corrected time immediately rather than up to a second later.
+    // updateClock still only runs when the whole second changes.
     this.intervalId = setInterval(() => {
-      this.remaining -= 1;
+      this.syncRemaining();
       if (this.remaining <= 0) {
+        // Exactly one phase, even if the member was away long enough to
+        // outlast several. Advancing lands on the next phase with a full
+        // fresh clock; cascading through everything they missed would be
+        // worse. Revisit alongside the resume-after-kill decision.
         this.advance();
         return;
       }
+      if (this.remaining === this.lastShownRemaining) return;
+      this.lastShownRemaining = this.remaining;
       this.updateClock();
-    }, 1000);
+    }, 250);
   },
 
   // For EMOM, the big clock shows time left in the *current minute* (resetting to
