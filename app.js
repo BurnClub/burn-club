@@ -2254,6 +2254,71 @@ function onEnterApp() {
 
 // ---------------- Workout player engine ----------------
 
+// A set that asks for more than one thing — reps *then* a hold, and later a
+// weight drop — gets a screen to itself, laid out like a superset round
+// (2026-08-23, Chris). The reason isn't only that one set at a time is
+// calmer: a single row can't express *order*. "12 reps | 20s hold | Done"
+// puts three controls side by side and never says the reps come first, so
+// nothing stopped a member starting the hold before they'd lifted anything.
+// A list of numbered segments does say it.
+//
+// One action is still one row in the old checklist — a plain 3x12, or a
+// hold-only set, has no sequence to communicate and would only cost three
+// screens instead of one.
+function setIsCompound(set) {
+  return !!(set.reps && set.hold);
+}
+
+function compoundSegments(block, set) {
+  const segments = [];
+  if (set.reps) segments.push({ kind: "reps", name: block.exercise.name, reps: set.reps });
+  if (set.hold) {
+    segments.push({
+      kind: "hold",
+      // Falls back to the parent lift. `holdExercise` lets the hold point at
+      // its own library entry for video and cues — a hold coaches differently
+      // from the rep — while the set still logs as one exercise, so weight
+      // history and PRs don't split in two.
+      name: block.holdExercise || block.exercise.name,
+      seconds: set.hold,
+    });
+  }
+  return segments;
+}
+
+function pushSetPhases(phases, blockMeta, block, sets) {
+  if (!sets.some(setIsCompound)) {
+    phases.push({
+      ...blockMeta,
+      kind: "sets",
+      exerciseName: block.exercise.name,
+      sets,
+      restDuration: block.rest,
+    });
+    return;
+  }
+  sets.forEach((set, i) => {
+    phases.push({
+      ...blockMeta,
+      kind: "compound",
+      exerciseName: block.exercise.name,
+      segments: compoundSegments(block, set),
+      progressLabel: `Set ${set.num} of ${sets.length}`,
+    });
+    // A real rest phase between sets rather than the popup the checklist
+    // uses, matching how a superset rests between rounds.
+    if (i !== sets.length - 1) {
+      phases.push({
+        ...blockMeta,
+        kind: "rest",
+        duration: block.rest,
+        upNext: block.exercise.name,
+        progressLabel: `Set ${set.num} of ${sets.length}`,
+      });
+    }
+  });
+}
+
 function buildPhaseQueue(circuit) {
   const phases = [];
   const totalBlocks = circuit.blocks.length;
@@ -2345,24 +2410,12 @@ function buildPhaseQueue(circuit) {
     if (block.type === "straight") {
       const sets = [];
       for (let i = 1; i <= block.sets; i++) sets.push({ num: i, reps: block.reps, hold: block.hold });
-      phases.push({
-        ...blockMeta,
-        kind: "sets",
-        exerciseName: block.exercise.name,
-        sets,
-        restDuration: block.rest,
-      });
+      pushSetPhases(phases, blockMeta, block, sets);
     }
 
     if (block.type === "ladder") {
       const sets = block.scheme.map((reps, i) => ({ num: i + 1, reps, hold: block.hold }));
-      phases.push({
-        ...blockMeta,
-        kind: "sets",
-        exerciseName: block.exercise.name,
-        sets,
-        restDuration: block.rest,
-      });
+      pushSetPhases(phases, blockMeta, block, sets);
     }
 
     if (block.type === "amrap") {
@@ -2601,9 +2654,15 @@ const Player = {
     this.updateClock();
     if (running) {
       this.beginPhaseTimer();
-    } else {
+    } else if (phase.duration) {
       document.getElementById("player-controls").style.display = "none";
       this.awaitStart();
+      this.renderBackBtn();
+    } else {
+      // No clock on this phase (sets, superset, compound), so there's nothing
+      // for Start to start. renderPhase() has already put up the right
+      // control — the checklist or Mark Set Complete — and offering Start
+      // beside it would run a timer against an undefined duration.
       this.renderBackBtn();
     }
     this.persist();
@@ -3240,6 +3299,55 @@ const Player = {
         btn.addEventListener("click", () => this.toggleSetChecked(Number(btn.dataset.setIndex)));
       });
       wireHoldButtons(listEl);
+    }
+
+    // One set of a compound block: numbered segments in the order they're
+    // done, one Mark Set Complete for the whole set. Same shape as a superset
+    // round, deliberately — it's the same idea (several actions, one unit of
+    // work) and a second visual language for it would earn nothing.
+    if (phase.kind === "compound") {
+      document.getElementById("player-exercise-name").textContent = phase.exerciseName;
+      document.getElementById("player-sub-pill").textContent = phase.progressLabel;
+      // Unlike a superset, every segment here is the same lift, so the big
+      // video panel still has one clear subject and is worth keeping.
+      document.getElementById("player-video").style.display = "flex";
+      setPlayerVideo(phase.exerciseName);
+      setPlayerExerciseTechnique(phase.exerciseName);
+      const listEl = document.getElementById("player-superset-list");
+      listEl.style.display = "flex";
+      listEl.innerHTML = phase.segments.map((seg, i) => {
+        const tracks = seg.kind === "reps" && exerciseTracksWeight(seg.name);
+        const last = tracks ? lastWeightFor(seg.name) : null;
+        // Only when the hold has its own library entry — a play button that
+        // opens the video already filling the panel above is just noise.
+        const ownVideo = seg.kind === "hold" && seg.name !== phase.exerciseName;
+        return `
+          <div class="amrap-row">
+            <div class="amrap-row-left">
+              <span class="amrap-order-num">${i + 1}</span>
+              <span>${seg.name}</span>
+            </div>
+            <div class="amrap-row-right">
+              ${seg.kind === "reps" ? `<span>${seg.reps} reps</span>` : ""}
+              ${seg.kind === "hold" ? holdBtnHtml(seg.seconds) : ""}
+              ${tracks ? `<input type="number" class="superset-weight-input" inputmode="numeric"
+                    data-ex-name="${seg.name}"
+                    value="${this.sessionWeights[seg.name] || ""}"
+                    placeholder="${last ? last : "lbs"}"
+                    title="${last ? `Last time: ${last} lbs` : "Weight used"}" />` : ""}
+              ${ownVideo ? `<button class="amrap-play-btn" data-ex-name="${seg.name}" title="Watch demo">▶</button>` : ""}
+            </div>
+          </div>
+        `;
+      }).join("");
+      listEl.querySelectorAll(".amrap-play-btn").forEach((btn) => {
+        btn.addEventListener("click", () => openExerciseVideo(btn.dataset.exName));
+      });
+      listEl.querySelectorAll(".superset-weight-input").forEach((input) => {
+        input.addEventListener("input", () => this.noteWeight(input.dataset.exName, input.value));
+      });
+      wireHoldButtons(listEl);
+      document.getElementById("player-complete-set-btn").style.display = "block";
     }
 
     if (phase.kind === "amrap") {
