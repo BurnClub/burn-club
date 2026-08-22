@@ -2373,6 +2373,27 @@ h1, h2, h3 {
 }
 .checkin-caret { font-size: 10px; line-height: 1; }
 
+/* ---------- CARDIO CHOICE BLOCK (2026-08-19) ---------- */
+.player-cardio-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.cardio-pick-btn {
+  background: var(--field-bg);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+}
+.cardio-pick-btn.active { background: var(--blue); border-color: var(--blue); color: white; }
+
 /* ---------- PERSONAL BESTS (2026-08-19) ---------- */
 .pr-row {
   display: flex;

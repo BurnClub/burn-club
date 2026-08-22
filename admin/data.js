@@ -430,6 +430,7 @@ const BLOCK_FORMAT_NOTES = {
   emom: "EMOM stands for Every Minute On the Minute. At the top of each minute, complete the listed reps for that minute's exercise, then rest with whatever time is left before the next minute starts. Move to the next exercise each time a new minute begins, cycling back to the first once you've gone through them all. The faster you finish your reps, the more rest you bank before the next round.",
   straight: "Straight sets — complete all the reps for one set, then rest before starting the next. Take the full rest between sets; it's there so each set can be as strong as the one before it. Log the weight you used as you go so you have it to build on next time.",
   ladder: "A ladder works through a changing rep count each set instead of the same number every time. Complete the reps shown for the set you're on, rest, then move to the next number in the sequence. Let the weight stay honest to the rep count rather than forcing the same load the whole way through.",
+  "cardio-choice": "Cardio, your choice — pick whatever you'll actually do: walk, run, bike, or the stair stepper. The clock runs for the prescribed time; hold a steady effort you could keep up for the whole block rather than going out hard and fading. When it's done, log what you picked so it lands in your cardio log.",
 };
 
 // The built-in wording, kept aside before any saved overrides are applied —

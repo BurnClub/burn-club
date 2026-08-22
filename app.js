@@ -1967,6 +1967,7 @@ function blockTypeLabel(type) {
     ladder: "Rep Ladder",
     amrap: "AMRAP",
     emom: "EMOM",
+    "cardio-choice": "Cardio — Your Choice",
   }[type] || type;
 }
 
@@ -2080,6 +2081,18 @@ function buildPhaseQueue(circuit) {
     // actually gets; keyed on type alone it would promise a clock it hasn't got.
     const noteKey = isRepBased ? "superset" : block.type;
     const blockMeta = { blockLabel: block.label, blockIndex, totalBlocks, blockType: block.type, blockNotes: BLOCK_FORMAT_NOTES[noteKey] || "" };
+
+    // Holds no exercises — the member picks the activity when they get there
+    // (2026-08-19). One timed phase, so it reads as part of the session rather
+    // than homework, and the total session clock stays honest.
+    if (block.type === "cardio-choice") {
+      phases.push({
+        ...blockMeta,
+        kind: "cardio-choice",
+        duration: block.duration,
+        progressLabel: `${Math.round(block.duration / 60)} minutes, your pick`,
+      });
+    }
 
     if (block.type === "interval" && !isRepBased) {
       for (let round = 1; round <= block.rounds; round++) {
@@ -2248,6 +2261,8 @@ const Player = {
     this.amrapRounds = 0;
     this.startedAt = Date.now();
     this.sessionWeights = {};
+    this.cardioChoice = null;
+    this.cardioMinutes = 0;
     this.steppingBack = false;
     closeExerciseVideo();
     document.getElementById("bottom-nav").style.display = "none";
@@ -2266,6 +2281,12 @@ const Player = {
   },
 
   advance() {
+    // Bank the cardio time as its phase ends — counting it at finish() would
+    // credit the full block to someone who skipped straight past it.
+    const leaving = this.currentPhase();
+    if (leaving && leaving.kind === "cardio-choice" && this.cardioChoice) {
+      this.cardioMinutes += leaving.duration - Math.max(0, this.remaining);
+    }
     this.stop();
     this.index++;
     if (this.index >= this.phases.length) {
@@ -2403,6 +2424,11 @@ const Player = {
     const prs = newPersonalBests(this.sessionWeights);
     const entry = logCompletion(this.circuit, this.sessionWeights);
     renderPRBanner(prs);
+    // The cardio block is part of the workout, but the minutes belong in the
+    // cardio log too — otherwise they'd be buried inside a structured-workout
+    // completion and never reach the mix donut or the cardio count
+    // (2026-08-19). Logged only if they actually did it.
+    this.logCardioBlock();
     currentCompletionEntry = entry;
     document.getElementById("workout-complete-text").textContent =
       `You completed all ${this.circuit.blocks.length} blocks of ${this.circuit.title}. 🔥`;
@@ -2656,6 +2682,35 @@ const Player = {
     }
   },
 
+  // Which activity they picked, per cardio block. Held on the player like
+  // sessionWeights so it survives re-renders and rides into the completion.
+  // Called on finish. A member who skipped the block, or never picked an
+  // activity, records nothing rather than a guess.
+  logCardioBlock() {
+    if (!this.cardioMinutes || !this.cardioChoice) return;
+    logCardioActivity({
+      activityType: this.cardioChoice,
+      distanceValue: 0,
+      minutes: Math.round(this.cardioMinutes / 60),
+      source: "workout",
+    });
+    renderCardioLog();
+  },
+
+  renderCardioPicker() {
+    const host = document.getElementById("player-cardio-picker");
+    const chosen = this.cardioChoice;
+    host.innerHTML = CARDIO_ACTIVITY_TYPES.map((t) => `
+      <button class="cardio-pick-btn${chosen === t.id ? " active" : ""}" data-cardio-pick="${t.id}">${t.id}</button>
+    `).join("");
+    host.querySelectorAll("[data-cardio-pick]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this.cardioChoice = btn.dataset.cardioPick;
+        this.renderCardioPicker();
+      });
+    });
+  },
+
   renderPhase() {
     const phase = this.currentPhase();
     this.paused = false;
@@ -2678,6 +2733,7 @@ const Player = {
     document.getElementById("player-sets-list").style.display = "none";
     document.getElementById("player-superset-list").style.display = "none";
     document.getElementById("player-emom-weight").style.display = "none";
+    document.getElementById("player-cardio-picker").style.display = "none";
     document.getElementById("player-back-btn").style.display = "none";
     this.closeSkipConfirm();
     setPlayerVideo(null);
@@ -2832,6 +2888,21 @@ const Player = {
       // Visibility of player-round-counter is handled by awaitStart()/beginPhaseTimer()
       // below — it should only appear once the clock is actually running.
       document.getElementById("round-count").textContent = this.amrapRounds;
+      this.remaining = phase.duration;
+      this.updateClock();
+      if (this.isNewBlockStart() || this.steppingBack) this.awaitStart(); else this.beginPhaseTimer();
+    }
+
+    if (phase.kind === "cardio-choice") {
+      document.getElementById("player-exercise-name").textContent = "Cardio — Your Choice";
+      document.getElementById("player-sub-pill").textContent = phase.progressLabel;
+      document.getElementById("player-video").style.display = "none";
+      setPlayerVideo(null);
+      setPlayerExerciseTechnique(null);
+      document.getElementById("player-center").style.display = "flex";
+      document.getElementById("player-clock-label").textContent = "Cardio";
+      document.getElementById("player-cardio-picker").style.display = "flex";
+      this.renderCardioPicker();
       this.remaining = phase.duration;
       this.updateClock();
       if (this.isNewBlockStart() || this.steppingBack) this.awaitStart(); else this.beginPhaseTimer();

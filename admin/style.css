@@ -1215,6 +1215,16 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-panel-wide .builder-block-top .select-item-checkbox,
 .builder-panel-wide .builder-block-top .btn-ghost-lg { flex-shrink: 0; margin-bottom: 4px; }
 .builder-panel-wide .builder-block-top .ex-video-row { margin-bottom: 4px; }
+/* A cardio block has no type dropdown to name it — nothing else on the row
+   would say what it is. */
+.block-static-type {
+  flex-shrink: 0;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--blue);
+  white-space: nowrap;
+}
 /* Only a multi-exercise block still has anything below the header. */
 .builder-panel-wide .builder-block-top:last-child { margin-bottom: 0; }
 
