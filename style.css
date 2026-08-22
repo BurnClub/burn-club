@@ -7,7 +7,14 @@
   --deepblue: #5C7A99;
   --ink: #17243F;
   --yellow: #E6B400;
-  --white: #F7F3E6;
+  /* Was cream #F7F3E6 until 2026-08-21 — Chris: "forget this cream color;
+     I don't want to see it any more." Retired app-wide by changing the
+     value here rather than editing the 11 surfaces that reference it.
+     #F2F5FD sits the same distance off pure white as the cream did
+     (1.09:1 vs 1.11:1), so every card keeps the weight it had and only
+     the hue moves warm -> cool. The name stays --white; it now actually
+     describes the value. */
+  --white: #F2F5FD;
   --card-white: #FFFFFF;
   --bg: #FFFFFF;
   --danger: #E8746A;
@@ -1366,11 +1373,17 @@ h1, h2, h3 {
 
 /* ---------- STRAIGHT SETS / REP LADDER CHECKLIST (2026-08-06) ---------- */
 .player-sets-list { display: none; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+/* Light-blue card (2026-08-21) — was the cream --white tile. Chris's spec:
+   "White circles with dark text for the numbering, keep the black for the
+   reps and make the done box and text white." Periwinkle rather than a
+   paler blue on purpose: the white circle and white Done box have to read
+   as white ON something, and --field-bg/--alice are too close to the
+   screen's own white for either to show up. */
 .player-set-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--white);
+  background: var(--periwinkle);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
   box-shadow: 0 4px 12px rgba(23,36,63,0.05);
@@ -1382,8 +1395,8 @@ h1, h2, h3 {
   height: 26px;
   min-width: 26px;
   border-radius: 50%;
-  background: var(--periwinkle);
-  color: var(--blue);
+  background: #FFFFFF;
+  color: var(--ink);
   font-weight: 800;
   font-family: var(--font-heading);
   font-size: 13px;
@@ -1395,11 +1408,14 @@ h1, h2, h3 {
 /* Done button replaces the old checkbox + inline weight field (2026-08-07) —
    weight moved into the rest popup, see the note above toggleSetChecked in
    app.js. */
+/* White filled box, not white text on the card: white label on periwinkle
+   measures 1.48:1, which is unreadable, so the white is the box and the
+   label is --ink at 15.4:1 — same treatment as the numbering circles. */
 .set-row-done-btn {
-  border: 2px solid var(--periwinkle);
+  border: 2px solid #FFFFFF;
   border-radius: var(--radius-sm);
-  background: none;
-  color: var(--blue);
+  background: #FFFFFF;
+  color: var(--ink);
   font-weight: 800;
   font-size: 12px;
   padding: 8px 14px;
@@ -1407,10 +1423,13 @@ h1, h2, h3 {
   flex-shrink: 0;
   font-family: inherit;
 }
+/* Completed state moved off --blue fill (2026-08-21): blue on the new
+   periwinkle card is 2.13:1 and goes muddy under the row's 0.55 opacity.
+   Ink fill is 10.4:1 against the card and still reads once faded. */
 .player-set-row.done .set-row-done-btn {
-  background: var(--blue);
-  border-color: var(--blue);
-  color: white;
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #FFFFFF;
 }
 
 /* Rest timer pops up over the checklist between sets instead of a full
