@@ -2080,7 +2080,7 @@ function buildPhaseQueue(circuit) {
     // A rep-based leftover takes the superset note, since that's the screen it
     // actually gets; keyed on type alone it would promise a clock it hasn't got.
     const noteKey = isRepBased ? "superset" : block.type;
-    const blockMeta = { blockLabel: block.label, blockIndex, totalBlocks, blockType: block.type, blockNotes: BLOCK_FORMAT_NOTES[noteKey] || "" };
+    const blockMeta = { blockLabel: block.label, blockIndex, totalBlocks, blockType: block.type, noteKey, blockNotes: BLOCK_FORMAT_NOTES[noteKey] || "" };
 
     // Holds no exercises — the member picks the activity when they get there
     // (2026-08-19). One timed phase, so it reads as part of the session rather
@@ -2249,6 +2249,7 @@ const Player = {
   amrapRounds: 0,
   startedAt: null,
   setsChecked: [],
+  notesShownFor: new Set(),
   restIntervalId: null,
   restRemaining: 0,
   restSetIndex: null,
@@ -2263,6 +2264,8 @@ const Player = {
     this.sessionWeights = {};
     this.cardioChoice = null;
     this.cardioMinutes = 0;
+    // Reset per workout, so the explainers come back for the next session.
+    this.notesShownFor = new Set();
     this.steppingBack = false;
     closeExerciseVideo();
     document.getElementById("bottom-nav").style.display = "none";
@@ -2739,11 +2742,18 @@ const Player = {
     setPlayerVideo(null);
     document.getElementById("player-pause-btn").textContent = "Pause";
 
-    // Staff-authored block notes (set per-block in admin) show once, when that block
-    // starts — reuses the same "new block" check as the Start-button gating below, so
-    // a multi-round block doesn't repeat them every round, but a mixed workout (e.g.
-    // AMRAP then EMOM) can show a different note when each new block begins.
-    if (this.isNewBlockStart() && phase.blockNotes && !this.steppingBack) {
+    // The explainer describes a *format*, so it shows once per format per
+    // workout — not once per block (2026-08-19, Chris). Three straight-set
+    // blocks used to mean the same paragraph three times, and identical
+    // popups teach members to dismiss popups unread, which costs the reading
+    // of the first one and of a genuinely different format later in the same
+    // session. Per workout rather than ever: the knowledge decays, and a new
+    // session is the right place to re-teach it.
+    if (this.isNewBlockStart() && phase.blockNotes && !this.steppingBack && !this.notesShownFor.has(phase.noteKey)) {
+      // Keyed on the note shown rather than the block type: a legacy rep-based
+      // interval borrows the superset explainer, and keying on type would show
+      // the same paragraph twice.
+      this.notesShownFor.add(phase.noteKey);
       openBlockNotes(phase.blockLabel, phase.blockNotes);
     }
 
