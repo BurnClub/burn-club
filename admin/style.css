@@ -1229,17 +1229,22 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 
 .builder-block-top .inline-grow { flex: 1; min-width: 0; }
 .builder-block-top .inline-field {
-  /* Narrow on purpose: every pixel here comes off the exercise name, which is
-     the one thing on the row worth reading in full. */
-  flex: 0 0 58px;
+  /* Sized to its content rather than a fixed 58px (2026-08-22). The boxes are
+     now sized per field by how many digits they can actually hold, and the
+     column hugs whichever is wider — the box or its label. Every pixel saved
+     here goes to the exercise name, which is the one thing on the row worth
+     reading in full. */
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 4px;
   font-size: 10px;
   font-weight: 700;
   color: var(--deepblue);
+  white-space: nowrap;
 }
 .builder-block-top .inline-field.wide { flex: 0 0 112px; }
+.builder-block-top .inline-field.wide input { width: 100%; }
 .builder-block-top .inline-field input {
   width: 100%;
   border: 2px solid var(--periwinkle);
@@ -1248,6 +1253,24 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   font-family: 'Nunito', sans-serif;
   font-size: 12px;
 }
+/* Number spinners are dropped on these: they overlay the right-hand side of
+   the box, which at these widths would sit on top of the digits. Typing is the
+   interaction here, not nudging. */
+.builder-block-top .inline-field input[type="number"] {
+  -moz-appearance: textfield;
+}
+.builder-block-top .inline-field input[type="number"]::-webkit-outer-spin-button,
+.builder-block-top .inline-field input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Two digits is the whole range for these — Chris: sets and reps never go
+   above 2, rest never above 3. */
+.builder-block-top .inline-field input[data-field="sets"],
+.builder-block-top .inline-field input[data-field="reps"],
+.builder-block-top .inline-field input[data-field="rounds"] { width: 36px; }
+.builder-block-top .inline-field input[data-field="rest"],
+.builder-block-top .inline-field input[data-field="work"] { width: 44px; }
 /* .modal-field brings a 14px bottom margin and a taller box than the number
    inputs beside it — both have to go, or the row is 76px tall and the fields
    don't line up along the bottom. */
