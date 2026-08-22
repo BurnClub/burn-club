@@ -1990,6 +1990,12 @@ function startHoldTimer(btn) {
       btn.classList.remove("running");
       btn.classList.add("done");
       btn.textContent = `✓ ${seconds}s`;
+      // A hold-only set has no Done button, so the clock finishing is what
+      // completes the set — same path as tapping Done, so the tick, the rest
+      // popup and the weight prompt all behave identically.
+      if (btn.dataset.autoSetIndex !== undefined) {
+        Player.toggleSetChecked(Number(btn.dataset.autoSetIndex));
+      }
       return;
     }
     btn.textContent = `${left}s`;
@@ -2009,10 +2015,14 @@ function clearHoldTimers() {
 
 // `mode` of "start" is for a hold-only prescription, where the row's own text
 // already says how long it is and repeating it on the button is noise.
-function holdBtnHtml(seconds, mode) {
+// `autoSetIndex` marks a hold that IS the set rather than an addition to it:
+// finishing the clock finishes the set, so there's no Done button beside it
+// and the timer running out has to do Done's job (2026-08-22, Chris).
+function holdBtnHtml(seconds, mode, autoSetIndex) {
   if (!seconds) return "";
   const label = mode === "start" ? "Start" : `${seconds}s hold`;
-  return `<button class="hold-btn" data-hold-seconds="${seconds}" data-idle-label="${label}" title="Static hold — tap to start">${label}</button>`;
+  const auto = autoSetIndex === undefined ? "" : ` data-auto-set-index="${autoSetIndex}"`;
+  return `<button class="hold-btn" data-hold-seconds="${seconds}" data-idle-label="${label}"${auto} title="Static hold — tap to start">${label}</button>`;
 }
 
 function wireHoldButtons(root) {
@@ -3222,8 +3232,8 @@ const Player = {
         <div class="player-set-row" data-set-index="${i}">
           <span class="set-row-num">${s.num}</span>
           <span class="set-row-reps">${s.reps ? `${s.reps} reps` : holdLabel(s.hold)}</span>
-          ${s.reps ? holdBtnHtml(s.hold) : holdBtnHtml(s.hold, "start")}
-          <button class="set-row-done-btn" data-set-index="${i}">Done</button>
+          ${s.reps ? holdBtnHtml(s.hold) : holdBtnHtml(s.hold, "start", i)}
+          ${s.reps || !s.hold ? `<button class="set-row-done-btn" data-set-index="${i}">Done</button>` : ""}
         </div>
       `).join("");
       listEl.querySelectorAll(".set-row-done-btn").forEach((btn) => {
