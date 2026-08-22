@@ -2157,7 +2157,7 @@ function schemaBlockToBuilderBlock(block) {
           label: block.label,
           rounds: block.rounds,
           rest: block.rest,
-          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps })),
+          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps, hold: e.hold })),
         },
       };
     case "straight":
@@ -2169,6 +2169,7 @@ function schemaBlockToBuilderBlock(block) {
           exerciseId: exerciseIdByName(block.exercise.name),
           sets: block.sets,
           reps: block.reps,
+          hold: block.hold,
           rest: block.rest,
         },
         selected: false,
@@ -2190,7 +2191,7 @@ function schemaBlockToBuilderBlock(block) {
         values: {
           label: block.label,
           durationMin: Math.round(block.duration / 60),
-          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps })),
+          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps, hold: e.hold })),
         },
       };
     case "emom":
@@ -2200,7 +2201,7 @@ function schemaBlockToBuilderBlock(block) {
           label: block.label,
           durationMin: Math.round(block.duration / 60),
           intervalSec: block.interval,
-          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps })),
+          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps, hold: e.hold })),
         },
       };
     default:
@@ -2451,7 +2452,8 @@ function blockTopFields(block, i) {
     case "superset":
       return num("Rounds", "rounds", v.rounds, 1) + num("Rest (s)", "rest", v.rest, 0);
     case "straight":
-      return chooser() + num("Sets", "sets", v.sets, 1) + num("Reps", "reps", v.reps, 1) + num("Rest (s)", "rest", v.rest, 0);
+      return chooser() + num("Sets", "sets", v.sets, 1) + num("Reps", "reps", v.reps, 1)
+        + num("Hold (s)", "hold", v.hold || "", 0) + num("Rest (s)", "rest", v.rest, 0);
     case "ladder":
       return chooser()
         + `<label class="inline-field wide">Rep scheme<input type="text" value="${v.scheme}" data-block-index="${i}" data-field="scheme" /></label>`
@@ -2480,6 +2482,12 @@ function blockExerciseList(block, i) {
   const v = block.values;
   if (blockHasOneExercise(block) || blockIsCardioChoice(block)) return "";
   const withReps = block.type !== "interval";
+  // Hold sits alongside Reps rather than being its own exercise: a static hold
+  // is the same movement held at the end position, so splitting it into a
+  // second library entry means two videos, two sets of technique notes and two
+  // weight histories for one lift (2026-08-21). Blank/0 means no hold, which
+  // is why every workout built before this still opens unchanged.
+  const withHold = withReps;
   return `
     <div class="builder-ex-list">
       ${v.exercises.map((e, ei) => `
@@ -2487,6 +2495,7 @@ function blockExerciseList(block, i) {
           ${exerciseVideoSlotHtml(e.name, "ex-video-row")}
           ${chosenExercisePill(e.name, i, ei)}
           ${withReps ? `<input type="number" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />` : ""}
+          ${withHold ? `<input type="number" class="hold-input" min="0" placeholder="Hold (s)" title="Static hold in seconds — leave blank for none" value="${e.hold || ""}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="hold" />` : ""}
           <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
         </div>
       `).join("")}
@@ -2567,6 +2576,15 @@ function convertSelectedSingle(targetType) {
   renderBuilderBlocks();
 }
 
+// `hold` is omitted entirely when unset rather than written as 0, so a block
+// nobody touched serialises byte-identically to how it did before holds
+// existed — which is what keeps this additive.
+function exerciseWithHold(e) {
+  const out = { name: e.name, reps: Number(e.reps) || 0 };
+  if (Number(e.hold)) out.hold = Number(e.hold);
+  return out;
+}
+
 function builderBlocksToSchema() {
   return builderBlocks.map((b) => {
     const v = b.values;
@@ -2576,17 +2594,17 @@ function builderBlocksToSchema() {
         return { type: "interval", label: derivedBlockLabel(b), timed: true, rounds: Number(v.rounds) || 1, work: Number(v.work) || 0, rest: Number(v.rest) || 0, exercises };
       }
       case "superset":
-        return { type: "superset", label: derivedBlockLabel(b), rounds: Number(v.rounds) || 1, rest: Number(v.rest) || 0, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })) };
+        return { type: "superset", label: derivedBlockLabel(b), rounds: Number(v.rounds) || 1, rest: Number(v.rest) || 0, exercises: v.exercises.filter((e) => e.name.trim()).map(exerciseWithHold) };
       case "straight":
-        return { type: "straight", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "" }, sets: Number(v.sets) || 1, reps: Number(v.reps) || 0, rest: Number(v.rest) || 0 };
+        return { type: "straight", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "" }, sets: Number(v.sets) || 1, reps: Number(v.reps) || 0, rest: Number(v.rest) || 0, ...(Number(v.hold) ? { hold: Number(v.hold) } : {}) };
       case "ladder":
         return { type: "ladder", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "" }, scheme: String(v.scheme).split(",").map((n) => Number(n.trim())).filter((n) => !isNaN(n)), rest: Number(v.rest) || 0 };
       case "cardio-choice":
         return { type: "cardio-choice", label: derivedBlockLabel(b), duration: (Number(v.durationMin) || 1) * 60 };
       case "amrap":
-        return { type: "amrap", label: derivedBlockLabel(b), duration: (Number(v.durationMin) || 1) * 60, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })) };
+        return { type: "amrap", label: derivedBlockLabel(b), duration: (Number(v.durationMin) || 1) * 60, exercises: v.exercises.filter((e) => e.name.trim()).map(exerciseWithHold) };
       case "emom":
-        return { type: "emom", label: derivedBlockLabel(b), duration: (Number(v.durationMin) || 1) * 60, interval: Number(v.intervalSec) || 60, exercises: v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name, reps: Number(e.reps) || 0 })) };
+        return { type: "emom", label: derivedBlockLabel(b), duration: (Number(v.durationMin) || 1) * 60, interval: Number(v.intervalSec) || 60, exercises: v.exercises.filter((e) => e.name.trim()).map(exerciseWithHold) };
       default:
         return null;
     }

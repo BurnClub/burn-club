@@ -2648,3 +2648,53 @@ h1, h2, h3 {
    their own the way they appear to in the overlays that wrap them in .field. */
 #resume-overlay .btn-primary { width: 100%; display: block; }
 .resume-secondary { width: 100%; margin-top: 10px; }
+
+/* Static hold (2026-08-21). Sits inline on the exercise/set row rather than
+   taking the screen the way an interval block does — 20 seconds doesn't
+   justify a screen swap, and mid-superset it would be jarring. Three states:
+   idle (tap to start), running (counting), done. */
+.hold-btn {
+  border: 2px solid var(--blue);
+  border-radius: 999px;
+  background: none;
+  color: var(--blue);
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 12px;
+  padding: 5px 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+  min-width: 74px;
+  text-align: center;
+}
+.hold-btn.running {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #FFFFFF;
+}
+.hold-btn.done {
+  background: none;
+  border-color: var(--periwinkle);
+  color: var(--deepblue);
+  cursor: default;
+}
+/* On the straight-sets row the card is already periwinkle, so an outline in
+   --blue reads muddy against it (2.13:1). White box, ink label — the same
+   treatment the Done button next to it gets. */
+.player-set-row .hold-btn {
+  border-color: #FFFFFF;
+  background: #FFFFFF;
+  color: var(--ink);
+}
+.player-set-row .hold-btn.running {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #FFFFFF;
+}
+.player-set-row .hold-btn.done {
+  background: none;
+  border-color: #FFFFFF;
+  color: var(--ink);
+  opacity: 0.7;
+}

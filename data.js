@@ -123,6 +123,20 @@ function ffPickRotating(pool, week, count) {
 // Emits two workouts per slot — one per variant. Both carry `slotId`, which
 // is what the schedule points at, so a single schedule serves home, gym and
 // combo members alike.
+// Which lifts get a static hold programmed with them, and for how long
+// (2026-08-21). A hold is a modifier on the exercise, not an exercise of its
+// own — same movement, held at the end position — so it lives here as seconds
+// against a name rather than as a second library entry.
+// Isometric exercises are deliberately absent: a Plank Hold IS the hold, so
+// "10 reps + 30s hold" reads as nonsense. These are lifts where reps-then-hold
+// is what you'd actually program, which is the case the modifier is for.
+const FF_STATIC_HOLDS = {
+  "Goblet Squats": 20,
+  "Walking Lunges": 15,
+  "Kettlebell Swings": 20,
+  "Push Press": 15,
+};
+
 function buildFitFunctionalCircuits() {
   const circuits = [];
   let colorIndex = 0;
@@ -145,7 +159,10 @@ function buildFitFunctionalCircuits() {
           meta: `${20 + sets * 2} min · ${area.label} · ${difficulty}`,
           color,
           desc: `Week ${week} strength session focused on ${area.label.toLowerCase()}.`,
-          blocks: names.map((name) => ({ type: "straight", label: name, exercise: { name }, sets, reps: 10, rest: 45 })),
+          blocks: names.map((name) => ({
+            type: "straight", label: name, exercise: { name }, sets, reps: 10, rest: 45,
+            ...(FF_STATIC_HOLDS[name] ? { hold: FF_STATIC_HOLDS[name] } : {}),
+          })),
         });
       });
     });
@@ -293,7 +310,7 @@ const CIRCUITS = [
         rest: 30,
         exercises: [
           { name: "Kettlebell Swings", reps: 15 },
-          { name: "Walking Lunges", reps: 12 },
+          { name: "Walking Lunges", reps: 12, hold: 20 },
         ],
       },
     ],

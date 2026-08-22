@@ -1959,6 +1959,68 @@ function formatClock(totalSeconds) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+// ---------------- Static holds ----------------
+// A hold is a modifier on an exercise, not an exercise of its own: one extra
+// optional field (`hold`, in seconds) on a superset/AMRAP exercise entry, or
+// on a straight-sets block where it applies to every set. Purely additive —
+// anything saved before this has no `hold` and renders exactly as it did.
+// Drop sets will land as a sibling field on the same entry rather than an
+// overloaded "add-on" object, so the two never have to know about each other.
+
+function holdLabel(seconds) {
+  return `${seconds}s hold`;
+}
+
+// Tap to start, nothing to dismiss — during a hold their hands are on the
+// weight, so the one interaction has to happen before they're set, not after.
+// Deadline-driven like every other clock in the player (see runTimer): a hold
+// that quietly stops counting when the screen sleeps is worse than no timer.
+function startHoldTimer(btn) {
+  if (btn.dataset.running === "1" || btn.dataset.done === "1") return;
+  const seconds = Number(btn.dataset.holdSeconds);
+  const endsAt = Date.now() + seconds * 1000;
+  btn.dataset.running = "1";
+  btn.classList.add("running");
+  const tick = () => {
+    const left = Math.round((endsAt - Date.now()) / 1000);
+    if (left <= 0) {
+      clearInterval(id);
+      btn.dataset.running = "0";
+      btn.dataset.done = "1";
+      btn.classList.remove("running");
+      btn.classList.add("done");
+      btn.textContent = `✓ ${seconds}s`;
+      return;
+    }
+    btn.textContent = `${left}s`;
+  };
+  tick();
+  const id = setInterval(tick, 250);
+  holdTimerIds.push(id);
+}
+
+// Cleared whenever the player leaves a phase — a hold left running on a row
+// that no longer exists would tick against a detached element forever.
+let holdTimerIds = [];
+function clearHoldTimers() {
+  holdTimerIds.forEach(clearInterval);
+  holdTimerIds = [];
+}
+
+// `mode` of "start" is for a hold-only prescription, where the row's own text
+// already says how long it is and repeating it on the button is noise.
+function holdBtnHtml(seconds, mode) {
+  if (!seconds) return "";
+  const label = mode === "start" ? "Start" : `${seconds}s hold`;
+  return `<button class="hold-btn" data-hold-seconds="${seconds}" data-idle-label="${label}" title="Static hold — tap to start">${label}</button>`;
+}
+
+function wireHoldButtons(root) {
+  root.querySelectorAll(".hold-btn").forEach((btn) => {
+    btn.addEventListener("click", () => startHoldTimer(btn));
+  });
+}
+
 function blockTypeLabel(type) {
   return {
     interval: "Circuit",
@@ -1991,8 +2053,12 @@ function blockSummaryLine(block) {
 }
 
 function blockExerciseNames(block) {
-  if (block.exercise) return [block.exercise.name];
-  if (block.exercises) return block.exercises.map((e) => e.name + (e.reps ? ` (${e.reps} reps)` : ""));
+  // The hold belongs on this line rather than as its own bullet — a separate
+  // bullet is exactly the "two exercises" reading the modifier exists to
+  // avoid (2026-08-21).
+  const suffix = (hold) => (hold ? ` + ${holdLabel(hold)}` : "");
+  if (block.exercise) return [block.exercise.name + suffix(block.hold)];
+  if (block.exercises) return block.exercises.map((e) => e.name + (e.reps ? ` (${e.reps} reps)` : "") + suffix(e.hold));
   return [];
 }
 
@@ -2268,7 +2334,7 @@ function buildPhaseQueue(circuit) {
     // instead of a full screen change, with no rest after the last set.
     if (block.type === "straight") {
       const sets = [];
-      for (let i = 1; i <= block.sets; i++) sets.push({ num: i, reps: block.reps });
+      for (let i = 1; i <= block.sets; i++) sets.push({ num: i, reps: block.reps, hold: block.hold });
       phases.push({
         ...blockMeta,
         kind: "sets",
@@ -2279,7 +2345,7 @@ function buildPhaseQueue(circuit) {
     }
 
     if (block.type === "ladder") {
-      const sets = block.scheme.map((reps, i) => ({ num: i + 1, reps }));
+      const sets = block.scheme.map((reps, i) => ({ num: i + 1, reps, hold: block.hold }));
       phases.push({
         ...blockMeta,
         kind: "sets",
@@ -3023,6 +3089,7 @@ const Player = {
   renderPhase() {
     const phase = this.currentPhase();
     this.paused = false;
+    clearHoldTimers();
 
     document.getElementById("player-block-label").textContent = phase.blockLabel;
     document.getElementById("player-progress-text").textContent =
@@ -3111,6 +3178,7 @@ const Player = {
             </div>
             <div class="amrap-row-right">
               ${e.reps ? `<span>${e.reps} reps</span>` : ""}
+              ${holdBtnHtml(e.hold)}
               ${tracks ? `<input type="number" class="superset-weight-input" inputmode="numeric"
                     data-ex-name="${e.name}"
                     value="${this.sessionWeights[e.name] || ""}"
@@ -3125,6 +3193,7 @@ const Player = {
       supersetListEl.querySelectorAll(".amrap-play-btn").forEach((btn) => {
         btn.addEventListener("click", () => openExerciseVideo(btn.dataset.exName));
       });
+      wireHoldButtons(supersetListEl);
       // Held on the player, not the DOM, so it survives the re-render between
       // rounds and carries into the completion record.
       supersetListEl.querySelectorAll(".superset-weight-input").forEach((input) => {
@@ -3152,13 +3221,15 @@ const Player = {
       listEl.innerHTML = phase.sets.map((s, i) => `
         <div class="player-set-row" data-set-index="${i}">
           <span class="set-row-num">${s.num}</span>
-          <span class="set-row-reps">${s.reps} reps</span>
+          <span class="set-row-reps">${s.reps ? `${s.reps} reps` : holdLabel(s.hold)}</span>
+          ${s.reps ? holdBtnHtml(s.hold) : holdBtnHtml(s.hold, "start")}
           <button class="set-row-done-btn" data-set-index="${i}">Done</button>
         </div>
       `).join("");
       listEl.querySelectorAll(".set-row-done-btn").forEach((btn) => {
         btn.addEventListener("click", () => this.toggleSetChecked(Number(btn.dataset.setIndex)));
       });
+      wireHoldButtons(listEl);
     }
 
     if (phase.kind === "amrap") {
@@ -3184,6 +3255,7 @@ const Player = {
             </div>
             <div class="amrap-row-right">
               ${e.reps ? `<span>${e.reps} reps</span>` : ""}
+              ${holdBtnHtml(e.hold)}
               ${tracks ? `<input type="number" class="superset-weight-input" inputmode="numeric"
                     data-ex-name="${e.name}"
                     value="${this.sessionWeights[e.name] || ""}"
@@ -3201,6 +3273,7 @@ const Player = {
       document.querySelectorAll("#player-amrap-list .superset-weight-input").forEach((input) => {
         input.addEventListener("input", () => this.noteWeight(input.dataset.exName, input.value));
       });
+      wireHoldButtons(document.getElementById("player-amrap-list"));
       // Visibility of player-round-counter is handled by awaitStart()/beginPhaseTimer()
       // below — it should only appear once the clock is actually running.
       document.getElementById("round-count").textContent = this.amrapRounds;

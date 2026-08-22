@@ -1497,8 +1497,17 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-ex-row { display: flex; gap: 6px; align-items: center; }
 .builder-ex-row input { border: 2px solid var(--periwinkle); border-radius: var(--radius-sm); padding: 7px 10px; font-family: 'Nunito', sans-serif; font-size: 13px; }
 .builder-ex-row input[data-exfield="name"] { flex: 2; }
+/* A flex item defaults to min-width:auto, and an input's intrinsic minimum is
+   its `size` attribute — 20 characters, ~156px. That floor silently outranked
+   the flex-basis below, so the "Reps is two digits" rule has never actually
+   taken effect since it was written. min-width:0 lets both fields honour it.
+   (2026-08-21, found while adding Hold, which had the same symptom.) */
+.builder-ex-row input { min-width: 0; }
 /* Reps is a two-digit number, not a field that deserves a third of the row. */
 .builder-ex-row input[data-exfield="reps"] { flex: 0 0 58px; }
+/* Hold is optional and usually empty, so it stays narrow and doesn't compete
+   with Reps for attention — the placeholder is what tells you what it is. */
+.builder-ex-row input[data-exfield="hold"] { flex: 0 0 76px; }
 
 .builder-footer { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-top: 1px solid var(--bg); }
 .builder-est { font-size: 12px; font-weight: 700; color: var(--deepblue); }
