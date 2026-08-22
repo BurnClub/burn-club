@@ -1214,7 +1214,6 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-panel-wide .builder-block-top .remove-block-btn,
 .builder-panel-wide .builder-block-top .select-item-checkbox,
 .builder-panel-wide .builder-block-top .btn-ghost-lg { flex-shrink: 0; margin-bottom: 4px; }
-.builder-panel-wide .builder-block-top .ex-video-row { margin-bottom: 4px; }
 /* A cardio block has no type dropdown to name it — nothing else on the row
    would say what it is. */
 .block-static-type {
@@ -1362,8 +1361,6 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
    superset / AMRAP / EMOM — is the same small slot (2026-08-19). The larger
    panel it replaced made the block taller than the fields beside it, which
    was the opposite of the goal. */
-.ex-video-row { width: 44px; height: 25px; flex-shrink: 0; }
-.ex-video-row .icon { width: 15px; height: 15px; }
 /* Two lines, clamped — "Kettlebell Swings" wraps at this width and a card that
    grew a line taller than its neighbours would break the row. */
 .ex-card-name {

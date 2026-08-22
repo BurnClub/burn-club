@@ -2406,9 +2406,12 @@ function exerciseVideoSlotHtml(name, variantClass) {
   return `<span class="ex-video-slot ${variantClass} ${has ? "has-video" : ""}" title="${title}">${icon(has ? "play" : "video")}</span>`;
 }
 
-// straight and ladder hold exactly one exercise, so the block gets one video
-// panel down its left side. The others hold a list, so the video goes on each
-// row instead — there's no single exercise for the block to show.
+// straight and ladder hold exactly one exercise; the others hold a list. Drives
+// which controls a block gets — the selection checkbox, the exercise chooser vs.
+// a per-row list, and where a static hold's line hangs.
+// (The video thumbnails these rows used to carry came out 2026-08-22, Chris:
+// once an exercise is in a workout the icon earns nothing and costs the name
+// the width it needs. The library picker on the right still shows them.)
 function blockHasOneExercise(block) {
   return block.type === "straight" || block.type === "ladder";
 }
@@ -2438,7 +2441,6 @@ function blockTopFields(block, i) {
   const num = (label, field, value, min, cls) =>
     `<label class="inline-field ${cls || ""}">${label}<input type="number" min="${min}" value="${value}" data-block-index="${i}" data-field="${field}" /></label>`;
   const chooser = () => `
-    ${exerciseVideoSlotHtml(v.exerciseName, "ex-video-row")}
     <label class="modal-field inline-grow">Exercise
       <div class="chosen-exercise-lg ${v.exerciseName ? "" : "empty"}${isActiveSlot(i, null) ? " active-slot" : ""}"
            title="${v.exerciseName || ""}" data-action="choose-exercise" data-block-index="${i}">${v.exerciseName || "+ Choose Exercise"}</div>
@@ -2488,7 +2490,6 @@ function blockExerciseList(block, i) {
     <div class="builder-ex-list">
       ${v.exercises.map((e, ei) => `
         <div class="builder-ex-row">
-          ${exerciseVideoSlotHtml(e.name, "ex-video-row")}
           ${chosenExercisePill(e.name, i, ei)}
           ${withReps ? `<input type="number" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />` : ""}
           <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
