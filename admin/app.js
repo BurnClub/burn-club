@@ -2376,6 +2376,30 @@ function combineSelected(targetType) {
   renderBuilderBlocks();
 }
 
+// A static hold is a superset of one lift with itself: the reps, then the
+// hold (2026-08-23, Chris). Building it that way means the member app has a
+// single screen for "several actions, one set" instead of a bespoke one, and
+// the hold row is then editable, removable and re-orderable like any other.
+// 20s is the starting point because that's the length Chris quoted, not a rule.
+function addHoldToSelected() {
+  const i = builderBlocks.findIndex((b) => blockHasOneExercise(b) && b.selected);
+  if (i === -1) return;
+  const v = builderBlocks[i].values;
+  const fresh = defaultBlockValues("superset");
+  fresh.label = v.exerciseName || blockTypeLabel("superset");
+  fresh.rest = v.rest;
+  fresh.rounds = Number(v.sets) || 3;
+  fresh.exercises = [
+    { name: v.exerciseName, exerciseId: v.exerciseId, reps: Number(v.reps) || 10 },
+    // Same exercise by default. Point it at a dedicated "... Static Hold"
+    // library entry if you want the hold to have its own video and cues —
+    // it logs no weight either way, so nothing splits.
+    { name: v.exerciseName, exerciseId: v.exerciseId, reps: 0, hold: 20 },
+  ];
+  builderBlocks[i] = { type: "superset", values: fresh };
+  renderBuilderBlocks();
+}
+
 function splitBlock(bi) {
   const block = builderBlocks[bi];
   if (!block.values.exercises) return;
@@ -2491,35 +2515,11 @@ function blockExerciseList(block, i) {
       ${v.exercises.map((e, ei) => `
         <div class="builder-ex-row">
           ${chosenExercisePill(e.name, i, ei)}
-          ${withReps ? `<input type="number" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />` : ""}
+          ${withReps && !e.hold ? `<input type="number" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />` : ""}
+          ${e.hold ? `<span class="row-hold-tag">hold</span><input type="number" min="1" placeholder="secs" title="Static hold, in seconds" value="${e.hold}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="hold" />` : ""}
           <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
         </div>
-        ${holdRowHtml(e.hold, i, ei)}
       `).join("")}
-    </div>
-  `;
-}
-
-// A hold gets its own line under the exercise it belongs to rather than another
-// field on the row (2026-08-22, Chris: "there is currently too many things
-// sitting on that one line"). Added from the selection bar the same way a rep
-// ladder is, so the row itself gains nothing.
-//
-// There's no "+ Add Hold" affordance on a row inside a multi-exercise block on
-// purpose — that would put the control back on the row. Holds are added while
-// the exercise is still its own block and carry through Combine; to add one
-// afterwards, Split the block, add it, and recombine.
-function holdRowHtml(hold, blockIndex, exIndex) {
-  if (!hold) return "";
-  const exAttr = exIndex === null || exIndex === undefined ? "" : ` data-ex-index="${exIndex}"`;
-  const fieldAttr = exIndex === null || exIndex === undefined ? ` data-field="hold"` : ` data-exfield="hold"`;
-  return `
-    <div class="builder-hold-row">
-      <span class="builder-hold-arrow">&#8627;</span>
-      <span class="builder-hold-label">Static hold</span>
-      <input type="number" min="1" value="${hold}" data-block-index="${blockIndex}"${exAttr}${fieldAttr} />
-      <span class="builder-hold-unit">sec</span>
-      <button class="remove-ex-btn" data-action="remove-hold" data-block-index="${blockIndex}"${exAttr} title="Remove hold">&#10005;</button>
     </div>
   `;
 }
@@ -2543,7 +2543,6 @@ function renderBuilderBlocks() {
         ${isCombined ? `<button class="btn-ghost-lg small" data-action="split-block" data-block-index="${i}">Split</button>` : ""}
         <button class="remove-block-btn" data-action="remove-block" data-block-index="${i}">✕</button>
       </div>
-      ${blockHasOneExercise(block) ? holdRowHtml(block.values.hold, i) : ""}
       ${blockExerciseList(block, i)}
     </div>
   `;
@@ -2581,11 +2580,7 @@ function renderCombineBar() {
     const btn = document.getElementById("convert-single-btn");
     btn.textContent = isLadder ? "→ Straight Sets" : "→ Rep Ladder";
     btn.dataset.targetType = isLadder ? "straight" : "ladder";
-    // Same bar as the rep-ladder swap, for the same reason: it's an occasional
-    // choice about one exercise, so it belongs on the selection it applies to
-    // rather than as a permanent column on every row.
-    const holdBtn = document.getElementById("toggle-hold-btn");
-    holdBtn.textContent = selected[0].values.hold ? "Remove Hold" : "+ Add Hold";
+
   } else {
     document.getElementById("combine-bar-count").textContent = `${selected.length} selected`;
   }
@@ -2612,6 +2607,12 @@ function exerciseWithHold(e) {
   return out;
 }
 
+// A hold row has no exercise name of its own to filter on when it's the same
+// lift, so rows are kept if they have a name OR a hold.
+function isRealExerciseRow(e) {
+  return !!(e.name && e.name.trim());
+}
+
 function builderBlocksToSchema() {
   return builderBlocks.map((b) => {
     const v = b.values;
@@ -2623,7 +2624,7 @@ function builderBlocksToSchema() {
       case "superset":
         return { type: "superset", label: derivedBlockLabel(b), rounds: Number(v.rounds) || 1, rest: Number(v.rest) || 0, exercises: v.exercises.filter((e) => e.name.trim()).map(exerciseWithHold) };
       case "straight":
-        return { type: "straight", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "" }, sets: Number(v.sets) || 1, reps: Number(v.reps) || 0, rest: Number(v.rest) || 0, ...(Number(v.hold) ? { hold: Number(v.hold) } : {}) };
+        return { type: "straight", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "" }, sets: Number(v.sets) || 1, reps: Number(v.reps) || 0, rest: Number(v.rest) || 0 };
       case "ladder":
         return { type: "ladder", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "" }, scheme: String(v.scheme).split(",").map((n) => Number(n.trim())).filter((n) => !isNaN(n)), rest: Number(v.rest) || 0 };
       case "cardio-choice":
@@ -3507,20 +3508,8 @@ document.addEventListener("click", (e) => {
   if (action === "convert-single") {
     convertSelectedSingle(el.dataset.targetType);
   }
-  if (action === "toggle-hold") {
-    const blk = builderBlocks.find((b) => blockHasOneExercise(b) && b.selected);
-    if (blk) {
-      // 20s is the default because that's the length Chris quoted for the case
-      // this was built for; it's an editable starting point, not a rule.
-      blk.values.hold = blk.values.hold ? 0 : 20;
-      renderBuilderBlocks();
-    }
-  }
-  if (action === "remove-hold") {
-    const exRaw = el.dataset.exIndex;
-    if (exRaw === undefined) builderBlocks[bi].values.hold = 0;
-    else builderBlocks[bi].values.exercises[Number(exRaw)].hold = 0;
-    renderBuilderBlocks();
+  if (action === "add-hold") {
+    addHoldToSelected();
   }
   if (action === "add-exercise") {
     const block = builderBlocks[bi];

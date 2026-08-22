@@ -1525,27 +1525,18 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-ex-row input { min-width: 0; }
 /* Reps is a two-digit number, not a field that deserves a third of the row. */
 .builder-ex-row input[data-exfield="reps"] { flex: 0 0 58px; }
-/* The hold's own line, under the exercise it belongs to (2026-08-22). Indented
-   and lighter than the row above so it reads as attached to that exercise
-   rather than as another exercise. */
-.builder-hold-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 4px 0 0 34px;
+/* Seconds on a hold row, sized like the Reps field it replaces. The tag is
+   what tells the two rows of a reps-then-hold pair apart — without it they're
+   the same exercise name and a bare number, and nothing says which is which. */
+.builder-ex-row input[data-exfield="hold"] { flex: 0 0 58px; }
+.row-hold-tag {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--blue);
 }
-.builder-hold-arrow { color: var(--deepblue); font-size: 13px; opacity: 0.7; }
-.builder-hold-label { font-size: 12px; font-weight: 700; color: var(--deepblue); }
-.builder-hold-row input {
-  flex: 0 0 58px;
-  min-width: 0;
-  border: 2px solid var(--periwinkle);
-  border-radius: var(--radius-sm);
-  padding: 5px 8px;
-  font-family: 'Nunito', sans-serif;
-  font-size: 12px;
-}
-.builder-hold-unit { font-size: 12px; font-weight: 700; color: var(--deepblue); }
 
 .builder-footer { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-top: 1px solid var(--bg); }
 .builder-est { font-size: 12px; font-weight: 700; color: var(--deepblue); }
