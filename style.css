@@ -2373,6 +2373,46 @@ h1, h2, h3 {
 }
 .checkin-caret { font-size: 10px; line-height: 1; }
 
+/* ---------- PERSONAL BESTS (2026-08-19) ---------- */
+.pr-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--field-bg);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.pr-row-left { min-width: 0; }
+.pr-exercise { display: block; font-size: 13px; font-weight: 800; color: var(--ink); }
+.pr-meta { display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--subtext-color); }
+.pr-row-right { text-align: right; flex-shrink: 0; }
+.pr-weight { font-family: var(--font-heading); font-size: 19px; font-weight: 800; color: var(--ink); }
+.pr-unit { font-family: var(--font-body); font-size: 10px; font-weight: 700; color: var(--subtext-color); margin-left: 3px; }
+.pr-delta { display: block; font-size: 10px; font-weight: 800; color: #2E8B57; }
+
+/* The completion-screen banner. Yellow rather than the app's blue: this is a
+   moment, and it should not read as another panel. */
+.pr-banner {
+  background: var(--lime);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  text-align: left;
+}
+.pr-banner-title {
+  margin: 0 0 6px;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.pr-banner-line { margin: 0; font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.5; }
+.pr-banner-line span { font-weight: 600; opacity: 0.65; }
+
 /* ---------- MESSAGING ---------- */
 .topbar-actions { display: flex; align-items: center; gap: 10px; }
 /* Blue background / white icon is the app-wide default (2026-08-11) — every

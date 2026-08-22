@@ -209,6 +209,125 @@ function loadLastWeights() {
   }
 }
 
+// ---------------- Personal bests (2026-08-19) ----------------
+// Derived, never stored. Every completion has carried its own `weights` map
+// since weight tracking landed, so the lifting history already exists on the
+// completion record — LAST_WEIGHTS only ever cached the most recent value for
+// prefilling the input, it was never the history. Nothing here needs a new
+// store or a migration; it reads what's already kept.
+//
+// Weight only, not weight x reps: the app records what was lifted, not how
+// many times, so "best" here means heaviest ever used. A true 1RM would need
+// reps captured per set.
+
+function weightHistoryFor(name) {
+  return COMPLETIONS
+    .filter((c) => c.weights && c.weights[name])
+    .map((c) => ({ weight: Number(c.weights[name]), date: c.date }))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+// The heaviest lift for one exercise, plus what it beat — a best with nothing
+// to compare against is just a number.
+function personalBestFor(name) {
+  const history = weightHistoryFor(name);
+  if (!history.length) return null;
+  let best = history[0];
+  let previous = null;
+  history.forEach((entry) => {
+    if (entry.weight > best.weight) {
+      previous = best;
+      best = entry;
+    }
+  });
+  return { name, best: best.weight, date: best.date, previous: previous ? previous.weight : null, sessions: history.length };
+}
+
+// Ordered by how recently the best was set, so a lift moving this month sits
+// above one that peaked in March.
+function personalBests() {
+  const names = new Set();
+  COMPLETIONS.forEach((c) => {
+    if (c.weights) Object.keys(c.weights).forEach((n) => names.add(n));
+  });
+  return [...names]
+    .map(personalBestFor)
+    .filter(Boolean)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+// Called before the completion is written, so "previous best" doesn't include
+// the session being logged. Returns only genuine improvements.
+function newPersonalBests(weights) {
+  if (!weights) return [];
+  return Object.entries(weights).reduce((out, [name, weight]) => {
+    const current = personalBestFor(name);
+    const w = Number(weight);
+    if (!current) {
+      // A first-ever entry isn't a PR to celebrate — there's nothing beaten.
+      return out;
+    }
+    if (w > current.best) out.push({ name, weight: w, previous: current.best });
+    return out;
+  }, []);
+}
+
+let prListExpanded = false;
+
+function renderPersonalBests() {
+  const host = document.getElementById("pr-list");
+  if (!host) return;
+  const all = personalBests();
+  if (!all.length) {
+    host.innerHTML = `<p class="checkin-empty">Log a weight during a workout and your bests show up here.</p>`;
+    return;
+  }
+  const shown = prListExpanded ? all : all.slice(0, 3);
+  const hidden = all.length - shown.length;
+
+  host.innerHTML = shown.map((pr) => `
+    <div class="pr-row">
+      <div class="pr-row-left">
+        <span class="pr-exercise">${pr.name}</span>
+        <span class="pr-meta">${formatShortDate(pr.date)} · ${pr.sessions} session${pr.sessions === 1 ? "" : "s"} logged</span>
+      </div>
+      <div class="pr-row-right">
+        <span class="pr-weight">${pr.best}<span class="pr-unit">lbs</span></span>
+        ${pr.previous ? `<span class="pr-delta">+${pr.best - pr.previous} on previous</span>` : ""}
+      </div>
+    </div>
+  `).join("");
+
+  if (hidden > 0 || prListExpanded) {
+    host.insertAdjacentHTML("beforeend", `
+      <button class="checkin-more-btn" id="pr-more-btn">
+        ${prListExpanded ? "Show less" : `Show ${hidden} more`}
+        <span class="checkin-caret">${prListExpanded ? "\u25B4" : "\u25BE"}</span>
+      </button>
+    `);
+    host.querySelector("#pr-more-btn").addEventListener("click", () => {
+      prListExpanded = !prListExpanded;
+      renderPersonalBests();
+    });
+  }
+}
+
+// The moment worth catching: shown on the completion screen when a weight just
+// beat the previous best, rather than leaving it to be discovered in Progress.
+function renderPRBanner(prs) {
+  const el = document.getElementById("pr-banner");
+  if (!el) return;
+  if (!prs || !prs.length) {
+    el.style.display = "none";
+    return;
+  }
+  el.style.display = "block";
+  el.innerHTML = `
+    <p class="pr-banner-title">${prs.length === 1 ? "New personal best" : `${prs.length} new personal bests`}</p>
+    ${prs.map((p) => `<p class="pr-banner-line"><strong>${p.name}</strong> ${p.weight} lbs <span>&middot; beat ${p.previous}</span></p>`).join("")}
+  `;
+}
+
 // ---------------- Daily Check-Ins (2026-08-19) ----------------
 // Private by default: this never syncs anywhere on its own. The member can
 // share a single entry into their coach thread by hand — see shareCheckin().
@@ -1910,7 +2029,7 @@ function showTab(tabId) {
   if (tabId === "tab-home" || tabId === "tab-circuits") renderCircuitLists();
   if (tabId === "tab-home") renderHomeWeekSnapshot();
   if (tabId === "tab-circuits" || tabId === "tab-home") renderCardioLog();
-  if (tabId === "tab-progress") renderCheckinSection();
+  if (tabId === "tab-progress") { renderCheckinSection(); renderPersonalBests(); }
   if (tabId === "tab-home") renderCheckinAffordances();
   if (tabId === "tab-calendar") renderCalendarTab();
 
@@ -2275,7 +2394,11 @@ const Player = {
   },
 
   finish() {
+    // Before logCompletion, deliberately: once this session is written its own
+    // weights are part of the history and nothing can look like a PR.
+    const prs = newPersonalBests(this.sessionWeights);
     const entry = logCompletion(this.circuit, this.sessionWeights);
+    renderPRBanner(prs);
     currentCompletionEntry = entry;
     document.getElementById("workout-complete-text").textContent =
       `You completed all ${this.circuit.blocks.length} blocks of ${this.circuit.title}. 🔥`;
@@ -3070,6 +3193,7 @@ function init() {
   document.getElementById("profile-member-since").textContent = CURRENT_MEMBER.memberSince;
   applyMemberProgramMode();
   renderCheckinSection();
+  renderPersonalBests();
   renderCheckinAffordances();
 }
 

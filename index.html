@@ -499,6 +499,10 @@
             <button class="btn-primary small" id="benchmark-score-save-btn">Save Score</button>
             <p class="benchmark-score-saved" id="benchmark-score-saved" style="display:none;">✓ Score saved — check Progress to see your history.</p>
           </div>
+          <!-- Only rendered when a weight in this session beat the previous
+               best. The Progress list is where you go looking; this is the
+               moment you'd otherwise miss. -->
+          <div class="pr-banner" id="pr-banner" style="display:none;"></div>
           <div class="rpe-section">
             <label class="rpe-label" for="rpe-slider">How hard did that feel? <span id="rpe-value">5</span>/10</label>
             <input type="range" id="rpe-slider" class="rpe-slider" min="1" max="10" step="1" value="5" />
@@ -611,6 +615,11 @@
           <div id="checkin-insights"></div>
           <div id="checkin-chart"></div>
           <div class="checkin-entry-list" id="checkin-entry-list"></div>
+        </div>
+
+        <div class="home-section-card card-white">
+          <h2 class="home-section-title">Personal Bests</h2>
+          <div id="pr-list"></div>
         </div>
 
         <div class="home-section-card card-blue">

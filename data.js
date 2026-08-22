@@ -718,6 +718,44 @@ function estimateRpe() {
   return 4 + Math.floor(Math.random() * 5); // 4-8, a plausible "moderate to hard" spread
 }
 
+// ---------------- Seeded lifting history (2026-08-19) ----------------
+// Completions have carried a `weights` map since weight tracking landed, but
+// the seeded history predates it, so a fresh browser had no lifting history to
+// derive personal bests from. This fabricates one: a handful of tracked lifts
+// with slow progressive overload, a plateau, and the occasional backoff week —
+// so the PR list shows a real shape rather than one number per lift. Real
+// entries come from what the member types during a workout.
+const SEED_LIFTS = [
+  { name: "Barbell Bench Press", base: 135, gainPerWeek: 2.5 },
+  { name: "Barbell Back Squat", base: 185, gainPerWeek: 3.5 },
+  { name: "Barbell Deadlift", base: 205, gainPerWeek: 4 },
+  { name: "Overhead Press", base: 75, gainPerWeek: 1.5 },
+  { name: "Dumbbell Rows", base: 45, gainPerWeek: 1 },
+];
+
+// Weights land on roughly half of sessions — nobody barbells every day — and
+// are rounded to 5lb plates, which is what a real log looks like.
+function seedWeightsForDay(daysAgo) {
+  const weeksAgo = daysAgo / 7;
+  const out = {};
+  SEED_LIFTS.forEach((lift, i) => {
+    // Each lift on its own cadence. None of these periods is 7 or a multiple
+    // of it on purpose: a 7-day cadence lands on the same weekday every time,
+    // and the loop below skips Sundays as rest days — so a lift on a 7-day
+    // period whose offset happens to fall on Sunday never gets logged at all.
+    // That is exactly what happened to the squat.
+    const period = [5, 6, 8, 9, 11][i];
+    if ((daysAgo + i * 2) % period !== 0) return;
+    // A long plateau around three months back, so the history isn't a
+    // straight line and "best" doesn't simply mean "most recent".
+    const plateau = weeksAgo > 10 && weeksAgo < 16 ? -lift.gainPerWeek * 2 : 0;
+    const drift = lift.base + Math.max(0, (52 - weeksAgo)) * lift.gainPerWeek / 4 + plateau;
+    const jitter = ((daysAgo * 7 + i * 13) % 3) * 5;
+    out[lift.name] = Math.max(lift.base, Math.round((drift - jitter) / 5) * 5);
+  });
+  return Object.keys(out).length ? out : null;
+}
+
 function buildSeedCompletions() {
   const pool = CIRCUITS.map((c) => ({
     workoutId: c.id,
@@ -750,6 +788,7 @@ function buildSeedCompletions() {
       caloriesBurned: estimateCalories(pick.minutes),
       avgHeartRate: estimateHeartRate(),
       rpe: estimateRpe(),
+      weights: seedWeightsForDay(daysAgo),
     });
   }
 
@@ -805,6 +844,7 @@ function buildSeedCompletionsForStructured(member) {
       caloriesBurned: estimateCalories(minutes),
       avgHeartRate: estimateHeartRate(),
       rpe: estimateRpe(),
+      weights: seedWeightsForDay(todayProgramDay - item.day),
     });
   });
 
