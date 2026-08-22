@@ -617,6 +617,11 @@
           <div class="checkin-entry-list" id="checkin-entry-list"></div>
         </div>
 
+        <!-- PLACEMENT IS PROVISIONAL (2026-08-19). Chris wants Personal Bests
+             somewhere other than Progress but hasn't decided where — it sits
+             here for now. Moving it is markup-only: renderPersonalBests()
+             just fills #pr-list, and the section derives everything from
+             COMPLETIONS, so it has no dependency on the tab it lives in. -->
         <div class="home-section-card card-white">
           <h2 class="home-section-title">Personal Bests</h2>
           <div id="pr-list"></div>

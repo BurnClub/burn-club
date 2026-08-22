@@ -274,6 +274,10 @@ function newPersonalBests(weights) {
 
 let prListExpanded = false;
 
+// Renders into whatever element carries id="pr-list" — deliberately not tied
+// to the Progress tab, since its placement there is provisional (2026-08-19,
+// Chris: wants it elsewhere, hasn't decided where). Moving the section is a
+// markup change only.
 function renderPersonalBests() {
   const host = document.getElementById("pr-list");
   if (!host) return;
