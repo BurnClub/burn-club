@@ -242,6 +242,19 @@
         </div>
       </div>
 
+      <!-- Resume / abandoned-session prompt (2026-08-21). One overlay serves
+           both outcomes — the body text and buttons are swapped in by
+           maybeOfferResume(), since they're the same decision seen from two
+           sides of the 2-hour window. -->
+      <div class="cardio-log-overlay" id="resume-overlay">
+        <div class="cardio-log-card">
+          <h2 class="cardio-log-title" id="resume-title">Resume workout?</h2>
+          <p class="resume-body" id="resume-body"></p>
+          <button class="btn-primary" id="resume-primary-btn">Resume</button>
+          <button class="btn-ghost-lg resume-secondary" id="resume-secondary-btn">Discard</button>
+        </div>
+      </div>
+
       <!-- ---------- CIRCUIT DETAIL ---------- -->
       <section class="screen" id="screen-detail" data-screen>
         <header class="detail-header">

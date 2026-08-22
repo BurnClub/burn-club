@@ -2059,6 +2059,123 @@ function openCircuit(id) {
   showScreen("screen-detail");
 }
 
+// ---------------- In-progress session (resume) ----------------
+// Written continuously while the player runs and read on the way back in.
+// Deliberately NOT a "pause on exit" handler: iOS can kill the app without
+// running one, which is exactly the abandonment case this has to cover. So
+// nothing is decided on the way out — we record what was true, and the
+// decision happens on return, where it always gets to run.
+
+const IN_PROGRESS_STORAGE_KEY = "burnclub-in-progress";
+// Two hours (Chris, 2026-08-21): long enough that a phone call or a school
+// run doesn't kill the session, short enough that you're never offered
+// yesterday's workout over breakfast.
+const RESUME_WINDOW_MS = 2 * 60 * 60 * 1000;
+// How often the heartbeat refreshes lastSeenAt. Non-timed blocks have no tick
+// of their own to piggyback on, so without this a straight-sets session would
+// look "left" at whenever the last set was ticked.
+const IN_PROGRESS_HEARTBEAT_MS = 15000;
+
+function loadInProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(memberKey(IN_PROGRESS_STORAGE_KEY))) || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function clearInProgress() {
+  localStorage.removeItem(memberKey(IN_PROGRESS_STORAGE_KEY));
+}
+
+// How many whole blocks were finished before the phase they stopped on.
+// Phases carry their own blockIndex, so the block they're partway through is
+// simply the count of the ones behind it.
+function blocksCompletedAt(phases, index) {
+  if (index >= phases.length) return phases.length ? phases[phases.length - 1].blockIndex + 1 : 0;
+  return phases[index].blockIndex;
+}
+
+// Logs an abandoned session for the blocks that were actually finished, so a
+// member who got two-thirds through and never came back still has it on their
+// record and their coach still sees it. Reuses logCompletion so the entry is
+// shaped like any other and reaches the same stats.
+function logPartialCompletion(circuit, rec, blocksDone) {
+  const partial = {
+    ...circuit,
+    title: `${circuit.title} (partial)`,
+    // Pro-rated from the blocks completed rather than wall time — they were
+    // away for hours, so the elapsed clock is meaningless here.
+    meta: `${Math.max(1, Math.round((parseInt(circuit.meta, 10) || 20) * blocksDone / circuit.blocks.length))} min`,
+  };
+  return logCompletion(partial, rec.sessionWeights || {});
+}
+
+function showResumeOverlay({ title, body, primary, secondary, onPrimary, onSecondary }) {
+  document.getElementById("resume-title").textContent = title;
+  document.getElementById("resume-body").textContent = body;
+  const primaryBtn = document.getElementById("resume-primary-btn");
+  const secondaryBtn = document.getElementById("resume-secondary-btn");
+  primaryBtn.textContent = primary;
+  secondaryBtn.textContent = secondary;
+  // onclick, not addEventListener: this overlay is reused for both outcomes
+  // and can be raised more than once per page load, so handlers have to
+  // replace rather than stack.
+  primaryBtn.onclick = () => { document.getElementById("resume-overlay").classList.remove("visible"); onPrimary(); };
+  secondaryBtn.onclick = () => { document.getElementById("resume-overlay").classList.remove("visible"); onSecondary(); };
+  document.getElementById("resume-overlay").classList.add("visible");
+}
+
+function maybeOfferResume() {
+  const rec = loadInProgress();
+  if (!rec) return false;
+  const circuit = CIRCUITS.find((c) => c.id === rec.circuitId);
+  // The workout could have been unpublished or the member moved programs
+  // while they were away — nothing to resume into, so drop it quietly.
+  if (!circuit) { clearInProgress(); return false; }
+
+  const phases = buildPhaseQueue(circuit);
+  const blocksDone = blocksCompletedAt(phases, rec.index);
+  const away = Date.now() - (rec.lastSeenAt || 0);
+
+  if (away <= RESUME_WINDOW_MS) {
+    showResumeOverlay({
+      title: "Resume workout?",
+      body: `You were partway through ${circuit.title} — block ${Math.min(blocksDone + 1, circuit.blocks.length)} of ${circuit.blocks.length}.`,
+      primary: "Resume",
+      secondary: "Start over",
+      onPrimary: () => Player.resume(circuit, rec),
+      onSecondary: () => { clearInProgress(); openCircuit(circuit.id); },
+    });
+    return true;
+  }
+
+  // Past the window it isn't the same session any more. Anything with real
+  // work behind it is worth keeping; anything else just goes.
+  if (blocksDone < 1) { clearInProgress(); return false; }
+  showResumeOverlay({
+    title: "Unfinished workout",
+    body: `You finished ${blocksDone} of ${circuit.blocks.length} blocks of ${circuit.title} earlier, then left. Want it logged as a partial workout?`,
+    primary: "Log as partial",
+    secondary: "Discard",
+    onPrimary: () => {
+      logPartialCompletion(circuit, rec, blocksDone);
+      clearInProgress();
+      init();
+      showTab("tab-home");
+    },
+    onSecondary: () => { clearInProgress(); },
+  });
+  return true;
+}
+
+// An unfinished workout outranks the daily check-in nudge — it's the more
+// urgent of the two, and stacking both modals would bury one behind the other.
+function onEnterApp() {
+  if (maybeOfferResume()) return;
+  maybePromptCheckin();
+}
+
 // ---------------- Workout player engine ----------------
 
 function buildPhaseQueue(circuit) {
@@ -2254,6 +2371,7 @@ const Player = {
   // number it repaints to.
   deadlineAt: null,
   lastShownRemaining: null,
+  heartbeatId: null,
   intervalId: null,
   paused: false,
   amrapRounds: 0,
@@ -2284,6 +2402,7 @@ const Player = {
     document.getElementById("bottom-nav").style.display = "none";
     showScreen("screen-player");
     this.renderPhase();
+    this.startHeartbeat();
   },
 
   stop() {
@@ -2303,6 +2422,131 @@ const Player = {
   syncRemaining() {
     if (this.deadlineAt === null) return;
     this.remaining = Math.round((this.deadlineAt - Date.now()) / 1000);
+  },
+
+  // Snapshot for the resume path. Cheap enough to call on every state change;
+  // the heartbeat below covers the stretches where nothing changes (a member
+  // resting between straight sets, say) so lastSeenAt stays honest.
+  persist() {
+    if (!this.circuit || this.index >= this.phases.length) return;
+    const awaitingStart = document.getElementById("player-start-btn").style.display === "block";
+    localStorage.setItem(memberKey(IN_PROGRESS_STORAGE_KEY), JSON.stringify({
+      circuitId: this.circuit.id,
+      index: this.index,
+      kind: this.currentPhase().kind,
+      // Only meaningful while a clock is actually running — awaiting Start or
+      // paused, `remaining` is the truth and the deadline is stale.
+      deadlineAt: this.intervalId ? this.deadlineAt : null,
+      remaining: this.remaining,
+      paused: this.paused,
+      awaitingStart,
+      startedAt: this.startedAt,
+      lastSeenAt: Date.now(),
+      amrapRounds: this.amrapRounds,
+      sessionWeights: this.sessionWeights,
+      setsChecked: this.setsChecked,
+      cardioChoice: this.cardioChoice,
+      cardioMinutes: this.cardioMinutes,
+      notesShownFor: [...this.notesShownFor],
+    }));
+  },
+
+  startHeartbeat() {
+    this.stopHeartbeat();
+    this.heartbeatId = setInterval(() => this.persist(), IN_PROGRESS_HEARTBEAT_MS);
+  },
+
+  stopHeartbeat() {
+    if (this.heartbeatId) clearInterval(this.heartbeatId);
+    this.heartbeatId = null;
+  },
+
+  // Rebuilds the player from a stored record. How the clock comes back is the
+  // only part that varies by format, and it's the whole policy in one place:
+  //   AMRAP     — never stopped. Its clock is the workout, so it's read
+  //               straight off the stored deadline and may already be spent.
+  //   EMOM      — back to the top of the minute they were in, exactly where
+  //               the Back button would land them.
+  //   everything else — the phase they were on, from the top, full clock.
+  // Anything that was already waiting on Start (or paused) stays that way.
+  resume(circuit, rec) {
+    this.circuit = circuit;
+    this.phases = buildPhaseQueue(circuit);
+    this.index = Math.min(rec.index, this.phases.length - 1);
+    this.amrapRounds = rec.amrapRounds || 0;
+    this.startedAt = rec.startedAt || Date.now();
+    this.sessionWeights = rec.sessionWeights || {};
+    this.cardioChoice = rec.cardioChoice || null;
+    this.cardioMinutes = rec.cardioMinutes || 0;
+    this.notesShownFor = new Set(rec.notesShownFor || []);
+    this.steppingBack = false;
+    this.paused = false;
+    closeExerciseVideo();
+    document.getElementById("bottom-nav").style.display = "none";
+    showScreen("screen-player");
+
+    const phase = this.currentPhase();
+    const liveClock = !rec.awaitingStart && !rec.paused && rec.deadlineAt;
+
+    if (liveClock && phase.kind === "amrap") {
+      this.remaining = Math.round((rec.deadlineAt - Date.now()) / 1000);
+      if (this.remaining <= 0) {
+        // The cap ran out while they were away. The rounds they logged still
+        // count; the block is simply over.
+        this.renderPhase();
+        this.advance();
+        this.startHeartbeat();
+        return;
+      }
+      this.resumeInto(phase, this.remaining, true);
+    } else if (liveClock && phase.kind === "emom") {
+      // Measured at lastSeenAt, not now. The whole point of the EMOM rule is
+      // that the clock did NOT run while they were away, so counting to the
+      // present would charge them for the absence and drop them minutes
+      // further into the block than they ever got.
+      const elapsed = phase.duration - Math.round((rec.deadlineAt - rec.lastSeenAt) / 1000);
+      const minute = Math.max(0, Math.floor(elapsed / phase.interval));
+      this.resumeInto(phase, phase.duration - minute * phase.interval, false);
+    } else if (liveClock) {
+      this.resumeInto(phase, phase.duration, false);
+    } else {
+      this.resumeInto(phase, rec.remaining || phase.duration, false);
+    }
+    this.restoreSetTicks(rec.setsChecked);
+    this.startHeartbeat();
+  },
+
+  // renderPhase() decides the clock and the Start button for itself, so
+  // resuming re-runs it and then overrides both.
+  resumeInto(phase, remaining, running) {
+    this.renderPhase();
+    this.stop();
+    this.remaining = remaining;
+    this.updateClock();
+    if (running) {
+      this.beginPhaseTimer();
+    } else {
+      document.getElementById("player-controls").style.display = "none";
+      this.awaitStart();
+      this.renderBackBtn();
+    }
+    this.persist();
+  },
+
+  // Set ticks are DOM state that renderPhase() rebuilds empty, so they have to
+  // be re-applied after it. Only the visual half — showSetPopup isn't called,
+  // since a resumed member shouldn't land in a rest popup they didn't trigger.
+  restoreSetTicks(saved) {
+    if (!Array.isArray(saved) || this.currentPhase().kind !== "sets") return;
+    this.setsChecked = saved.slice();
+    saved.forEach((checked, i) => {
+      if (!checked) return;
+      const row = document.querySelector(`.player-set-row[data-set-index="${i}"]`);
+      if (!row) return;
+      row.classList.add("done");
+      const btn = row.querySelector(".set-row-done-btn");
+      if (btn) { btn.textContent = "✓ Done"; btn.disabled = true; }
+    });
   },
 
   currentPhase() {
@@ -2351,6 +2595,7 @@ const Player = {
     }
     const phase = this.currentPhase();
     const isLastSet = this.setsChecked.every(Boolean);
+    this.persist();
     this.showSetPopup(setIndex, phase, isLastSet);
   },
 
@@ -2455,6 +2700,8 @@ const Player = {
   },
 
   finish() {
+    this.stopHeartbeat();
+    clearInProgress();
     // Before logCompletion, deliberately: once this session is written its own
     // weights are part of the history and nothing can look like a PR.
     const prs = newPersonalBests(this.sessionWeights);
@@ -2489,6 +2736,11 @@ const Player = {
   },
 
   exit() {
+    this.stopHeartbeat();
+    // Tapping the X is a deliberate quit, and that has always discarded.
+    // The partial-log offer is for the abandonment case only -- see
+    // maybeOfferResume().
+    clearInProgress();
     this.stop();
     this.closeSkipConfirm();
     closeBlockNotes();
@@ -2507,6 +2759,7 @@ const Player = {
       document.getElementById("player-pause-btn").textContent = "Resume";
       this.stop();
     }
+    this.persist();
   },
 
   // True only for the first phase of a block (including the very first phase of the
@@ -2629,6 +2882,7 @@ const Player = {
     const val = String(raw).trim();
     if (val) this.sessionWeights[name] = Number(val);
     else delete this.sessionWeights[name];
+    this.persist();
   },
 
   // EMOM rotates exercises minute by minute, so it gets one field that follows
@@ -2683,6 +2937,9 @@ const Player = {
     // and the next runTimer() turns it back into a deadline.
     this.deadlineAt = Date.now() + this.remaining * 1000;
     this.lastShownRemaining = null;
+    // Persisted after the deadline is set, not before -- the stored record has
+    // to carry the deadline the clock is actually running to.
+    setTimeout(() => this.persist(), 0);
     // 250ms, not 1000ms. The tick is only a repaint trigger now, so a short
     // one costs nothing and means a tab returning from the background shows
     // the corrected time immediately rather than up to a second later.
@@ -2758,6 +3015,7 @@ const Player = {
       btn.addEventListener("click", () => {
         this.cardioChoice = btn.dataset.cardioPick;
         this.renderCardioPicker();
+        this.persist();
       });
     });
   },
@@ -2980,8 +3238,16 @@ const Player = {
     }
 
     this.renderBackBtn();
+    this.persist();
   },
 };
+
+// Best-effort exact leave time. When it fires we learn precisely when they
+// went away; when it doesn't (the OS killing the app outright) the 15s
+// heartbeat has already left a recent enough lastSeenAt to decide on.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") Player.persist();
+});
 
 // ---------------- Messaging ----------------
 
@@ -3724,17 +3990,17 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("login-form").addEventListener("submit", (e) => {
     e.preventDefault();
     showTab("tab-home");
-    maybePromptCheckin();
+    onEnterApp();
   });
 
   document.getElementById("guest-btn").addEventListener("click", () => {
     showTab("tab-home");
-    maybePromptCheckin();
+    onEnterApp();
   });
 
   document.getElementById("guest-ff-btn").addEventListener("click", () => {
     switchMemberProfile("jordan-p");
-    maybePromptCheckin();
+    onEnterApp();
   });
 
   document.querySelectorAll("[data-tab-target]").forEach((btn) => {
@@ -3842,10 +4108,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("round-plus-btn").addEventListener("click", () => {
     Player.amrapRounds++;
     document.getElementById("round-count").textContent = Player.amrapRounds;
+    Player.persist();
   });
   document.getElementById("round-minus-btn").addEventListener("click", () => {
     Player.amrapRounds = Math.max(0, Player.amrapRounds - 1);
     document.getElementById("round-count").textContent = Player.amrapRounds;
+    Player.persist();
   });
 
   document.getElementById("logout-btn").addEventListener("click", () => {

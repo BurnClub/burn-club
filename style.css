@@ -2633,3 +2633,18 @@ h1, h2, h3 {
   }
   .app { border-radius: 0; }
 }
+
+/* Resume prompt (2026-08-21). Reuses .cardio-log-overlay/.cardio-log-card for
+   the scrim and panel; only the body copy and the second button need styling
+   the other overlays don't already provide. */
+.resume-body {
+  margin: 0 0 20px;
+  font-size: 14px;
+  font-weight: var(--text-weight);
+  color: var(--text-color);
+  line-height: 1.5;
+}
+/* The card is a plain block, not a flex column, so buttons don't stretch on
+   their own the way they appear to in the overlays that wrap them in .field. */
+#resume-overlay .btn-primary { width: 100%; display: block; }
+.resume-secondary { width: 100%; margin-top: 10px; }
