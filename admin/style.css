@@ -1798,3 +1798,29 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 /* Combo access — deliberately neither of the two variant colours, since it
    means "both" rather than a third kind of workout. */
 .variant-pill.variant-combo { background: #dff5e3; color: #1a8a44; }
+
+/* Drag to reorder (2026-08-23). The handle is the only grab point — see the
+   note above dragStart in app.js for why the card isn't draggable itself. */
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  cursor: grab;
+  color: var(--deepblue);
+  /* Faint enough to stay out of the way, solid enough to find. 0.45 was the
+     first try and disappeared against the card. */
+  opacity: 0.6;
+  padding: 2px;
+  border-radius: 4px;
+}
+.drag-handle:hover { opacity: 1; background: var(--field-bg); }
+.drag-handle:active { cursor: grabbing; }
+.drag-handle .icon { width: 16px; height: 16px; }
+.builder-block-card.dragging,
+.builder-ex-row.dragging { opacity: 0.4; }
+/* The insertion line, drawn on the item you're hovering rather than as a
+   separate placeholder element — no layout shift while dragging. */
+.builder-block-card.drop-before,
+.builder-ex-row.drop-before { box-shadow: 0 -3px 0 -1px var(--blue); }
+.builder-block-card.drop-after,
+.builder-ex-row.drop-after { box-shadow: 0 3px 0 -1px var(--blue); }

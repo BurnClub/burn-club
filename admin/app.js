@@ -34,6 +34,7 @@ const ICON_PATHS = {
   download: '<path d="M12 4v10"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/>',
   upload: '<path d="M12 18V8"/><path d="M8 11l4-4 4 4"/><path d="M4 19h16"/>',
   pencil: '<path d="M4 20h4L19 9a2.5 2.5 0 0 0-3.5-3.5L4 16z"/>',
+  grip: '<path d="M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01"/>',
 };
 
 function icon(name, cls) {
@@ -2520,7 +2521,8 @@ function blockExerciseList(block, i) {
   return `
     <div class="builder-ex-list">
       ${v.exercises.map((e, ei) => `
-        <div class="builder-ex-row">
+        <div class="builder-ex-row" data-block-index="${i}" data-ex-index="${ei}">
+          <span class="drag-handle" data-drag="exercise" data-block-index="${i}" data-ex-index="${ei}" title="Drag to reorder">${icon("grip")}</span>
           ${chosenExercisePill(e.name, i, ei)}
           ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
           ${withReps && !e.hold ? `<input type="number" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />` : ""}
@@ -2537,8 +2539,9 @@ function renderBuilderBlocks() {
     const compatTypes = compatibleTypesFor(block);
     const isCombined = compatTypes.includes("superset");
     return `
-    <div class="builder-block-card">
+    <div class="builder-block-card" data-block-index="${i}">
       <div class="builder-block-top">
+        <span class="drag-handle" data-drag="block" data-block-index="${i}" title="Drag to reorder">${icon("grip")}</span>
         ${blockHasOneExercise(block) ? `<input type="checkbox" class="select-item-checkbox" data-role="select-item" data-block-index="${i}" ${block.selected ? "checked" : ""} title="Select to change its format, or check two or more to combine them" />` : ""}
         ${blockHasOneExercise(block) || blockIsCardioChoice(block) ? "" : `
           <select data-block-index="${i}" data-role="block-type">
@@ -2567,6 +2570,112 @@ function renderBuilderBlocks() {
 // straight sets to a rep ladder, and it cost a whole column of every row to do
 // it. Selecting one block offers that swap; selecting two or more combines
 // them, as before.
+// ---------------- Drag to reorder (2026-08-23) ----------------
+// Chris: "if i need to change the order, id rather not need to delete and
+// re-add the exercise." Two levels, because in this builder an exercise
+// usually *is* a block: whole blocks reorder within the workout, and rows
+// reorder within a multi-exercise block.
+//
+// Only the handle is draggable, not the card. Making the card draggable
+// breaks text selection and drag-to-select inside its own number inputs, so
+// the handle flips draggable on for the duration of the gesture and off again
+// after — the standard way round it.
+//
+// Rows only move within their own block. Dragging an exercise from one
+// superset into another is a different operation with different consequences
+// (rounds, rest and format all belong to the block it lands in), and silently
+// allowing it would make a misplaced drop destructive.
+let dragState = null;
+
+function clearDropMarkers() {
+  document.querySelectorAll(".drop-before, .drop-after").forEach((el) => {
+    el.classList.remove("drop-before", "drop-after");
+  });
+}
+
+function moveItem(list, from, to) {
+  if (from === to || from < 0 || to < 0) return;
+  const [item] = list.splice(from, 1);
+  list.splice(to, 0, item);
+}
+
+document.addEventListener("mousedown", (e) => {
+  const handle = e.target.closest(".drag-handle");
+  if (!handle) return;
+  // The draggable element has to be the card/row itself so the browser's own
+  // drag image is the whole thing rather than just the grip dots.
+  const item = handle.closest(handle.dataset.drag === "block" ? ".builder-block-card" : ".builder-ex-row");
+  if (item) item.draggable = true;
+});
+
+document.addEventListener("dragstart", (e) => {
+  const item = e.target.closest(".builder-block-card, .builder-ex-row");
+  if (!item || !item.draggable) return;
+  const isRow = item.classList.contains("builder-ex-row");
+  dragState = {
+    type: isRow ? "exercise" : "block",
+    blockIndex: Number(item.dataset.blockIndex),
+    exIndex: isRow ? Number(item.dataset.exIndex) : null,
+  };
+  item.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+  // Firefox won't start a drag without data set on the transfer.
+  e.dataTransfer.setData("text/plain", "");
+});
+
+document.addEventListener("dragover", (e) => {
+  if (!dragState) return;
+  const selector = dragState.type === "block" ? ".builder-block-card" : ".builder-ex-row";
+  const over = e.target.closest(selector);
+  if (!over) return;
+  if (dragState.type === "exercise" && Number(over.dataset.blockIndex) !== dragState.blockIndex) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  clearDropMarkers();
+  // Which half of the target you're over decides whether it lands above or
+  // below it — the usual sortable-list behaviour.
+  const box = over.getBoundingClientRect();
+  const after = e.clientY > box.top + box.height / 2;
+  over.classList.add(after ? "drop-after" : "drop-before");
+});
+
+document.addEventListener("drop", (e) => {
+  if (!dragState) return;
+  const selector = dragState.type === "block" ? ".builder-block-card" : ".builder-ex-row";
+  const over = e.target.closest(selector);
+  clearDropMarkers();
+  if (!over) return;
+  e.preventDefault();
+
+  const box = over.getBoundingClientRect();
+  const after = e.clientY > box.top + box.height / 2;
+
+  if (dragState.type === "block") {
+    const from = dragState.blockIndex;
+    let to = Number(over.dataset.blockIndex) + (after ? 1 : 0);
+    // Removing the item first shifts everything after it down one.
+    if (from < to) to -= 1;
+    moveItem(builderBlocks, from, to);
+  } else {
+    if (Number(over.dataset.blockIndex) !== dragState.blockIndex) return;
+    const list = builderBlocks[dragState.blockIndex].values.exercises;
+    const from = dragState.exIndex;
+    let to = Number(over.dataset.exIndex) + (after ? 1 : 0);
+    if (from < to) to -= 1;
+    moveItem(list, from, to);
+  }
+  dragState = null;
+  renderBuilderBlocks();
+});
+
+document.addEventListener("dragend", () => {
+  clearDropMarkers();
+  document.querySelectorAll(".dragging").forEach((el) => el.classList.remove("dragging"));
+  // Handed back so the card is inert again until the next grab.
+  document.querySelectorAll("[draggable=true]").forEach((el) => { el.draggable = false; });
+  dragState = null;
+});
+
 function renderCombineBar() {
   const bar = document.getElementById("combine-bar");
   const selected = builderBlocks.filter((b) => blockHasOneExercise(b) && b.selected);
