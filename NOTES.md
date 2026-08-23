@@ -52,6 +52,24 @@ syncs them.
 - **Check-in / journal on the staff app** — built on the member side only;
   it was always meant to exist on both.
 
+## Agreed, not yet built
+
+- **End of a structured program.** When a member finishes their eight weeks
+  they need a screen telling them to get in touch about rescheduling or
+  another program (Chris, 2026-08-23). Right now the schedule simply runs out.
+  This decides whether `start_date` stays a single field or becomes a history
+  of enrolments — see `import/README.md`.
+
+- **Offline.** Wanted, but deliberately *not* first: the current platform has
+  no offline support and no member has ever complained, which is better
+  evidence than a hunch. The rule is therefore don't build it now, don't
+  foreclose it — the app should store the day's content and queue completions
+  in a way that offline can be switched on later without a rewrite.
+
+- **Free-trial Burn Club program**, to hand App Review as a working demo
+  account. It needs to be a real member record on a real program, not a
+  special case, or it won't exercise what a reviewer is checking.
+
 ## Decisions still open
 
 - **Personal Bests placement.** Chris wants it somewhere other than the
