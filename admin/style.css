@@ -1176,7 +1176,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
    720px, not the 1020px it was meant to be, since the sidebar was added. */
 .builder-panel.builder-panel-wide { width: 1320px; max-width: 96vw; max-height: 95vh; }
 .builder-content { display: flex; flex: 1; min-height: 0; overflow: hidden; }
-.builder-content .builder-body { flex: 1; min-width: 0; padding: 16px 20px; }
+.builder-content .builder-body { flex: 1; min-width: 0; padding: 16px 14px; }
 
 /* Density pass, scoped to this panel (2026-08-19). Chris wants the same
    treatment app-wide, but that's its own conversation — nothing below leaks
@@ -1206,7 +1206,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-panel-wide .builder-desc-label textarea,
 .builder-panel-wide .builder-desc-block textarea { padding: 7px 9px; font-size: 13px; }
 .builder-panel-wide .builder-blocks { gap: 8px; }
-.builder-panel-wide .builder-block-card { padding: 11px 12px; }
+.builder-panel-wide .builder-block-card { padding: 10px; }
 /* The header row carries the block's fields now that the name field is gone,
    so it aligns along the bottom of the inputs rather than centring. */
 .builder-panel-wide .builder-block-top { align-items: flex-end; }
@@ -1298,12 +1298,15 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-panel-wide .builder-hint { font-size: 11px; margin: -4px 0 8px; }
 /* The build area, set apart from the naming fields above it: real space, a
    rule, and a tint, so the two halves of the panel read as two things. */
+/* Was a bordered, tinted, padded box (2026-08-23, Chris: "too much empty
+   space here"). A card inside a card inside a panel meant three nested
+   insets eating horizontal room before an exercise row even started. Now
+   just a rule separating it from the fields above — the separation was the
+   only job the box was doing. */
 .builder-build-area {
-  margin-top: 24px;
-  padding: 16px;
-  border-radius: var(--radius-md);
-  background: var(--bg);
-  border: 1px solid var(--periwinkle);
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--periwinkle);
 }
 .builder-panel-wide .builder-blocks-header { margin-bottom: 8px; }
 .builder-panel-wide .builder-blocks-header h3 { font-size: 16px; }
