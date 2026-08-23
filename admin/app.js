@@ -2600,11 +2600,16 @@ function moveItem(list, from, to) {
 }
 
 document.addEventListener("mousedown", (e) => {
-  const handle = e.target.closest(".drag-handle");
-  if (!handle) return;
-  // The draggable element has to be the card/row itself so the browser's own
-  // drag image is the whole thing rather than just the grip dots.
-  const item = handle.closest(handle.dataset.drag === "block" ? ".builder-block-card" : ".builder-ex-row");
+  // Anywhere on the row starts a drag, not just the grip (2026-08-23). The
+  // grip alone was wrong: the exercise name is a plain <div>, so grabbing the
+  // obvious thing — the name — started a *text selection* drag instead, which
+  // looks identical to a real drag except it can never be dropped. The grip
+  // stays as the visible affordance; it just isn't the only handle any more.
+  //
+  // Form controls are excluded because they need the press for themselves:
+  // click-and-drag inside a number field is how you select its digits.
+  if (e.target.closest("input, textarea, select, button")) return;
+  const item = e.target.closest(".builder-ex-row, .builder-block-card");
   if (item) item.draggable = true;
 });
 
@@ -2639,16 +2644,11 @@ document.addEventListener("dragover", (e) => {
   over.classList.add(after ? "drop-after" : "drop-before");
 });
 
-document.addEventListener("drop", (e) => {
-  if (!dragState) return;
-  const selector = dragState.type === "block" ? ".builder-block-card" : ".builder-ex-row";
-  const over = e.target.closest(selector);
-  clearDropMarkers();
-  if (!over) return;
-  e.preventDefault();
-
+// Returns true if it moved something.
+function completeDrop(over, clientY) {
+  if (!dragState || !over) return false;
   const box = over.getBoundingClientRect();
-  const after = e.clientY > box.top + box.height / 2;
+  const after = clientY > box.top + box.height / 2;
 
   if (dragState.type === "block") {
     const from = dragState.blockIndex;
@@ -2657,18 +2657,55 @@ document.addEventListener("drop", (e) => {
     if (from < to) to -= 1;
     moveItem(builderBlocks, from, to);
   } else {
-    if (Number(over.dataset.blockIndex) !== dragState.blockIndex) return;
+    if (Number(over.dataset.blockIndex) !== dragState.blockIndex) return false;
     const list = builderBlocks[dragState.blockIndex].values.exercises;
     const from = dragState.exIndex;
     let to = Number(over.dataset.exIndex) + (after ? 1 : 0);
     if (from < to) to -= 1;
     moveItem(list, from, to);
   }
+  return true;
+}
+
+let dropHandled = false;
+
+document.addEventListener("drop", (e) => {
+  if (!dragState) return;
+  const selector = dragState.type === "block" ? ".builder-block-card" : ".builder-ex-row";
+  const over = e.target.closest(selector);
+  clearDropMarkers();
+  if (!over) return;
+  e.preventDefault();
+  const moved = completeDrop(over, e.clientY);
+  dropHandled = true;
   dragState = null;
-  renderBuilderBlocks();
+  if (moved) renderBuilderBlocks();
 });
 
-document.addEventListener("dragend", () => {
+document.addEventListener("dragend", (e) => {
+  // Fallback. A drop only fires if the browser's "drop allowed" state has
+  // settled, which needs preventDefault on the *last* dragover before the
+  // release — and dragover fires on a cadence, not on every pixel. A quick
+  // flick can therefore end in dragend with no drop at all, which reads as
+  // the drag silently doing nothing. dragend always fires, so the move is
+  // finished here from the release coordinates instead.
+  if (!dropHandled && dragState) {
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const selector = dragState.type === "block" ? ".builder-block-card" : ".builder-ex-row";
+    const over = el && el.closest ? el.closest(selector) : null;
+    // Only when released over a real target — dragging off the list and
+    // letting go still means "cancel".
+    if (over && completeDrop(over, e.clientY)) {
+      dragState = null;
+      clearDropMarkers();
+      document.querySelectorAll(".dragging").forEach((x) => x.classList.remove("dragging"));
+      document.querySelectorAll("[draggable=true]").forEach((x) => { x.draggable = false; });
+      renderBuilderBlocks();
+      dropHandled = false;
+      return;
+    }
+  }
+  dropHandled = false;
   clearDropMarkers();
   document.querySelectorAll(".dragging").forEach((el) => el.classList.remove("dragging"));
   // Handed back so the card is inert again until the next grab.

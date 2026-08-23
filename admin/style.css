@@ -1827,3 +1827,12 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-ex-row.drop-before { box-shadow: 0 -3px 0 -1px var(--blue); }
 .builder-block-card.drop-after,
 .builder-ex-row.drop-after { box-shadow: 0 3px 0 -1px var(--blue); }
+
+/* Text inside a row isn't selectable, so a press on the exercise name starts a
+   drag rather than a selection (2026-08-23). Without this the name — the most
+   obvious thing to grab — begins a text drag that can never be dropped, which
+   reads to the user as the drag being broken. Inputs opt back in; selecting
+   digits in a number field is how you edit them. */
+.builder-ex-row, .builder-block-card { user-select: none; }
+.builder-ex-row input, .builder-block-card input,
+.builder-ex-row textarea, .builder-block-card textarea { user-select: text; }
