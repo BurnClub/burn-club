@@ -2698,3 +2698,19 @@ h1, h2, h3 {
   color: var(--ink);
   opacity: 0.7;
 }
+
+/* Marks the second row of a compound set as the drop (2026-08-23). Without it
+   a reps-then-drop pair is the same exercise name twice with two rep counts
+   and nothing saying to strip weight off between them. */
+.row-seg-tag {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--blue);
+  border: 1.5px solid var(--periwinkle);
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  white-space: nowrap;
+}

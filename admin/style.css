@@ -1526,10 +1526,11 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 /* Reps is a two-digit number, not a field that deserves a third of the row. */
 .builder-ex-row input[data-exfield="reps"] { flex: 0 0 58px; }
 /* Seconds on a hold row, sized like the Reps field it replaces. The tag is
-   what tells the two rows of a reps-then-hold pair apart — without it they're
-   the same exercise name and a bare number, and nothing says which is which. */
+   what tells the rows of a compound set apart — without it a reps-then-hold
+   or reps-then-drop pair is the same exercise name twice against a bare
+   number, with nothing saying which is which. */
 .builder-ex-row input[data-exfield="hold"] { flex: 0 0 58px; }
-.row-hold-tag {
+.row-seg-tag {
   flex: 0 0 auto;
   font-size: 10px;
   font-weight: 800;

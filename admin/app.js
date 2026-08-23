@@ -2157,7 +2157,7 @@ function schemaBlockToBuilderBlock(block) {
           label: block.label,
           rounds: block.rounds,
           rest: block.rest,
-          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps, hold: e.hold })),
+          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps, hold: e.hold, drop: e.drop })),
         },
       };
     case "straight":
@@ -2191,7 +2191,7 @@ function schemaBlockToBuilderBlock(block) {
         values: {
           label: block.label,
           durationMin: Math.round(block.duration / 60),
-          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps, hold: e.hold })),
+          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps, hold: e.hold, drop: e.drop })),
         },
       };
     case "emom":
@@ -2201,7 +2201,7 @@ function schemaBlockToBuilderBlock(block) {
           label: block.label,
           durationMin: Math.round(block.duration / 60),
           intervalSec: block.interval,
-          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps, hold: e.hold })),
+          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps, hold: e.hold, drop: e.drop })),
         },
       };
     default:
@@ -2360,7 +2360,7 @@ function combineSelected(targetType) {
     // Carries the hold across. Adding one before combining is the documented
     // way to get a hold onto an exercise inside a superset, so dropping it
     // here would break the only route there is.
-    return { name: v.exerciseName, exerciseId: v.exerciseId, reps: v.reps || 10, ...(v.hold ? { hold: v.hold } : {}) };
+    return { name: v.exerciseName, exerciseId: v.exerciseId, reps: v.reps || 10, ...(v.hold ? { hold: v.hold } : {}), ...(v.drop ? { drop: true } : {}) };
   });
 
   const fresh = defaultBlockValues(targetType);
@@ -2381,20 +2381,27 @@ function combineSelected(targetType) {
 // single screen for "several actions, one set" instead of a bespoke one, and
 // the hold row is then editable, removable and re-orderable like any other.
 // 20s is the starting point because that's the length Chris quoted, not a rule.
-function addHoldToSelected() {
+function addSegmentToSelected(kind) {
   const i = builderBlocks.findIndex((b) => blockHasOneExercise(b) && b.selected);
   if (i === -1) return;
   const v = builderBlocks[i].values;
+  const reps = Number(v.reps) || 10;
   const fresh = defaultBlockValues("superset");
   fresh.label = v.exerciseName || blockTypeLabel("superset");
   fresh.rest = v.rest;
   fresh.rounds = Number(v.sets) || 3;
+  // Same exercise by default in both cases. Point the second row at a
+  // dedicated library entry ("... Static Hold") if you want it to carry its
+  // own video and cues — neither row logs weight, so nothing splits.
+  const second = kind === "hold"
+    ? { name: v.exerciseName, exerciseId: v.exerciseId, reps: 0, hold: 20 }
+    // A drop is the same lift again at a lighter load. No weight field on it
+    // (Chris, 2026-08-23: "it will always be less than the first set anyway"),
+    // so the row carries only its rep target.
+    : { name: v.exerciseName, exerciseId: v.exerciseId, reps, drop: true };
   fresh.exercises = [
-    { name: v.exerciseName, exerciseId: v.exerciseId, reps: Number(v.reps) || 10 },
-    // Same exercise by default. Point it at a dedicated "... Static Hold"
-    // library entry if you want the hold to have its own video and cues —
-    // it logs no weight either way, so nothing splits.
-    { name: v.exerciseName, exerciseId: v.exerciseId, reps: 0, hold: 20 },
+    { name: v.exerciseName, exerciseId: v.exerciseId, reps },
+    second,
   ];
   builderBlocks[i] = { type: "superset", values: fresh };
   renderBuilderBlocks();
@@ -2515,8 +2522,9 @@ function blockExerciseList(block, i) {
       ${v.exercises.map((e, ei) => `
         <div class="builder-ex-row">
           ${chosenExercisePill(e.name, i, ei)}
+          ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
           ${withReps && !e.hold ? `<input type="number" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />` : ""}
-          ${e.hold ? `<span class="row-hold-tag">hold</span><input type="number" min="1" placeholder="secs" title="Static hold, in seconds" value="${e.hold}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="hold" />` : ""}
+          ${e.hold ? `<span class="row-seg-tag">hold</span><input type="number" min="1" placeholder="secs" title="Static hold, in seconds" value="${e.hold}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="hold" />` : ""}
           <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
         </div>
       `).join("")}
@@ -2604,6 +2612,7 @@ function convertSelectedSingle(targetType) {
 function exerciseWithHold(e) {
   const out = { name: e.name, reps: Number(e.reps) || 0 };
   if (Number(e.hold)) out.hold = Number(e.hold);
+  if (e.drop) out.drop = true;
   return out;
 }
 
@@ -3509,7 +3518,10 @@ document.addEventListener("click", (e) => {
     convertSelectedSingle(el.dataset.targetType);
   }
   if (action === "add-hold") {
-    addHoldToSelected();
+    addSegmentToSelected("hold");
+  }
+  if (action === "add-drop") {
+    addSegmentToSelected("drop");
   }
   if (action === "add-exercise") {
     const block = builderBlocks[bi];

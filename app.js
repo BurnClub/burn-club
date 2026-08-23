@@ -3227,16 +3227,19 @@ const Player = {
       // anything. Only shown for exercises flagged Track Weight Used.
       supersetListEl.innerHTML = phase.exercises
         .map((e, i) => {
-          // A hold is held at whatever the lift was just done at, so it gets
+          // Neither a hold nor a drop takes a weight field: a hold is held at
+          // whatever the lift was just done at, and a drop is always lighter
+          // than the set before it (Chris, 2026-08-23). Both behave like
           // no weight field of its own (2026-08-23, Chris) -- same as a
           // bodyweight movement. Drop-set segments will work the same way.
-          const tracks = !e.hold && exerciseTracksWeight(e.name);
+          const tracks = !e.hold && !e.drop && exerciseTracksWeight(e.name);
           const last = tracks ? lastWeightFor(e.name) : null;
           return `
           <div class="amrap-row">
             <div class="amrap-row-left">
               <span class="amrap-order-num">${i + 1}</span>
               <span>${e.name}</span>
+              ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
             </div>
             <div class="amrap-row-right">
               ${e.reps ? `<span>${e.reps} reps</span>` : ""}
@@ -3307,16 +3310,19 @@ const Player = {
       // setting up rather than against the clock.
       document.getElementById("player-amrap-list").innerHTML = phase.exercises
         .map((e, i) => {
-          // A hold is held at whatever the lift was just done at, so it gets
+          // Neither a hold nor a drop takes a weight field: a hold is held at
+          // whatever the lift was just done at, and a drop is always lighter
+          // than the set before it (Chris, 2026-08-23). Both behave like
           // no weight field of its own (2026-08-23, Chris) -- same as a
           // bodyweight movement. Drop-set segments will work the same way.
-          const tracks = !e.hold && exerciseTracksWeight(e.name);
+          const tracks = !e.hold && !e.drop && exerciseTracksWeight(e.name);
           const last = tracks ? lastWeightFor(e.name) : null;
           return `
           <div class="amrap-row">
             <div class="amrap-row-left">
               <span class="amrap-order-num">${i + 1}</span>
               <span>${e.name}</span>
+              ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
             </div>
             <div class="amrap-row-right">
               ${e.reps ? `<span>${e.reps} reps</span>` : ""}
