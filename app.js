@@ -1953,6 +1953,22 @@ function setPlayerExerciseTechnique(exerciseName) {
   }
 }
 
+// Reps under the exercise name. Kept in one place because the name's bottom
+// margin changes depending on whether reps are showing — set one without the
+// other and the spacing goes wrong.
+function setPlayerExerciseReps(reps) {
+  const el = document.getElementById("player-exercise-reps");
+  const nameEl = document.getElementById("player-exercise-name");
+  if (!reps) {
+    el.style.display = "none";
+    nameEl.classList.remove("has-reps");
+    return;
+  }
+  el.textContent = `${reps} reps`;
+  el.style.display = "block";
+  nameEl.classList.add("has-reps");
+}
+
 function formatClock(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
   const s = Math.floor(totalSeconds % 60);
@@ -3098,7 +3114,8 @@ const Player = {
       document.getElementById("player-exercise-name").textContent = ex.name;
       setPlayerVideo(ex.name);
       document.getElementById("player-sub-pill").textContent =
-        `Minute ${Math.min(minute + 1, totalMinutes)} of ${totalMinutes} · ${ex.reps ? ex.reps + " reps" : ""}`;
+        `Minute ${Math.min(minute + 1, totalMinutes)} of ${totalMinutes}`;
+      setPlayerExerciseReps(ex.reps);
       setPlayerExerciseTechnique(ex.name);
       this.syncEmomWeightField(ex.name);
       // Unlike every other phase, whether an EMOM can go back changes as the
@@ -3165,6 +3182,7 @@ const Player = {
     document.getElementById("player-superset-list").style.display = "none";
     document.getElementById("player-emom-weight").style.display = "none";
     document.getElementById("player-cardio-picker").style.display = "none";
+    setPlayerExerciseReps(null);
     document.getElementById("player-back-btn").style.display = "none";
     this.closeSkipConfirm();
     setPlayerVideo(null);

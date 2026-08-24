@@ -1121,6 +1121,18 @@ h1, h2, h3 {
   text-align: center;
   margin: 0 0 14px;
 }
+/* Sits under the name and, when shown, takes over the name's bottom margin so
+   the pair reads as one unit rather than two stacked lines. Big enough to
+   catch at a glance mid-set — the whole reason it moved off the sub-pill. */
+.player-exercise-name.has-reps { margin-bottom: 2px; }
+.player-exercise-reps {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--blue);
+  text-align: center;
+  margin: 0 0 14px;
+}
 /* Margin adjusted for its new spot right under the progress bar, above the
    video (2026-08-11) — minimal top gap so it reads as attached to the
    progress bar, not floating independently. Bottom gap halved same session
