@@ -2727,17 +2727,16 @@ h1, h2, h3 {
   white-space: nowrap;
 }
 
-/* ---------- SUPERSET LIST: ONE CARD, NOT LOOSE ROWS (2026-08-23) ----------
+/* ---------- SUPERSET / AMRAP LIST: ONE CARD (2026-08-23) ----------
    Chris: "add the light blue bounding box that surrounds both exercises,
-   using the same dividing line to separate them." Brings the superset screen
-   into line with the straight-sets checklist, which has been a periwinkle
-   card since 2026-08-21 — the two screens were doing the same job in two
-   visual languages.
+   using the same dividing line to separate them... we can do a better job at
+   making it look more uniform." The straight-sets checklist has been a
+   periwinkle card since 2026-08-21; these two were still loose rows on white.
 
-   Scoped to #player-superset-list, not the .player-amrap-list class it shares
-   with the AMRAP screen. AMRAP sits under a large clock and gets its weight
-   from that; boxing it too is a separate call. */
-#player-superset-list {
+   Written against the shared .player-amrap-list class rather than each list's
+   id, so the superset and AMRAP screens can't drift apart again — which is
+   the actual point of the change. */
+.player-amrap-list {
   background: var(--periwinkle);
   border-radius: var(--radius-sm);
   padding: 2px 14px;
@@ -2746,26 +2745,26 @@ h1, h2, h3 {
   gap: 0;
   box-shadow: 0 4px 12px rgba(23,36,63,0.05);
 }
-/* The divider was periwinkle, which is now the colour of the box behind it —
+/* The divider was periwinkle, which is now the colour of the card behind it —
    it would have vanished entirely. White keeps it, and matches the circles
    and pills sitting on the same card. */
-#player-superset-list .amrap-row:not(:last-child)::after { background: #FFFFFF; }
+.player-amrap-list .amrap-row:not(:last-child)::after { background: #FFFFFF; }
 /* Blue numerals on periwinkle measure 2.13:1. Ink is 10.4:1, and matches the
    numbering on the straight-sets card. */
-#player-superset-list .amrap-order-num { color: var(--ink); }
+.player-amrap-list .amrap-order-num { color: var(--ink); }
 /* Same reason the Done button went white-on-ink over there: a blue outline on
    a periwinkle card goes muddy. */
-#player-superset-list .hold-btn {
+.player-amrap-list .hold-btn {
   border-color: #FFFFFF;
   background: #FFFFFF;
   color: var(--ink);
 }
-#player-superset-list .hold-btn.running {
+.player-amrap-list .hold-btn.running {
   background: var(--ink);
   border-color: var(--ink);
   color: #FFFFFF;
 }
-#player-superset-list .hold-btn.done {
+.player-amrap-list .hold-btn.done {
   background: none;
   border-color: #FFFFFF;
   color: var(--ink);
@@ -2773,6 +2772,6 @@ h1, h2, h3 {
 }
 /* Periwinkle borders are invisible against the card, so the white fill has to
    define these on its own. */
-#player-superset-list .superset-weight-input { border-color: #FFFFFF; }
-#player-superset-list .row-seg-tag { border-color: #FFFFFF; color: var(--ink); }
-#player-superset-list .amrap-play-btn { color: var(--ink); }
+.player-amrap-list .superset-weight-input { border-color: #FFFFFF; }
+.player-amrap-list .row-seg-tag { border-color: #FFFFFF; color: var(--ink); }
+.player-amrap-list .amrap-play-btn { color: var(--ink); }
