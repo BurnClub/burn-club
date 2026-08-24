@@ -2036,9 +2036,15 @@ function clearHoldTimers() {
 // and the timer running out has to do Done's job (2026-08-22, Chris).
 function holdBtnHtml(seconds, mode, autoSetIndex) {
   if (!seconds) return "";
-  const label = mode === "start" ? "Start" : `${seconds}s hold`;
+  // The triangle is doing real work (2026-08-23, Chris: "what's the best way
+  // to signal the member that the 20s Hold is actually a button"). The card
+  // carries a label pill (DROP) and a control pill (the hold) side by side,
+  // and nothing said which was which. The triangle is the one mark that
+  // unambiguously means "this starts something", and it's already the app's
+  // vocabulary for exactly that on the video button.
+  const label = mode === "start" ? "▶ Start" : `▶ ${seconds}s hold`;
   const auto = autoSetIndex === undefined ? "" : ` data-auto-set-index="${autoSetIndex}"`;
-  return `<button class="hold-btn" data-hold-seconds="${seconds}" data-idle-label="${label}"${auto} title="Static hold — tap to start">${label}</button>`;
+  return `<button class="hold-btn" data-hold-seconds="${seconds}"${auto} title="Static hold — tap to start">${label}</button>`;
 }
 
 function wireHoldButtons(root) {
@@ -3254,20 +3260,22 @@ const Player = {
           const last = tracks ? lastWeightFor(e.name) : null;
           return `
           <div class="amrap-row">
-            <div class="amrap-row-left">
-              <span class="amrap-order-num">${i + 1}</span>
-              <span>${e.name}</span>
-              ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
+            <div class="amrap-row-line1">
+              <div class="amrap-row-left">
+                <span class="amrap-order-num">${i + 1}</span>
+                <span class="amrap-ex-name">${e.name}</span>
+                ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
+              </div>
+              <button class="amrap-play-btn" data-ex-name="${e.name}" title="Watch demo">▶</button>
             </div>
-            <div class="amrap-row-right">
-              ${e.reps ? `<span>${e.reps} reps</span>` : ""}
-              ${holdBtnHtml(e.hold)}
+            <div class="amrap-row-line2">
+              ${e.reps ? `<span class="amrap-reps">${e.reps} reps</span>` : ""}
               ${tracks ? `<input type="number" class="superset-weight-input" inputmode="numeric"
                     data-ex-name="${e.name}"
                     value="${this.sessionWeights[e.name] || ""}"
-                    placeholder="${last ? last : "lbs"}"
+                    placeholder="${last ? last + " lb" : "add weight"}"
                     title="${last ? `Last time: ${last} lbs` : "Weight used"}" />` : ""}
-              <button class="amrap-play-btn" data-ex-name="${e.name}" title="Watch demo">▶</button>
+              ${holdBtnHtml(e.hold)}
             </div>
           </div>
         `;
@@ -3337,20 +3345,22 @@ const Player = {
           const last = tracks ? lastWeightFor(e.name) : null;
           return `
           <div class="amrap-row">
-            <div class="amrap-row-left">
-              <span class="amrap-order-num">${i + 1}</span>
-              <span>${e.name}</span>
-              ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
+            <div class="amrap-row-line1">
+              <div class="amrap-row-left">
+                <span class="amrap-order-num">${i + 1}</span>
+                <span class="amrap-ex-name">${e.name}</span>
+                ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
+              </div>
+              <button class="amrap-play-btn" data-ex-name="${e.name}" title="Watch demo">▶</button>
             </div>
-            <div class="amrap-row-right">
-              ${e.reps ? `<span>${e.reps} reps</span>` : ""}
-              ${holdBtnHtml(e.hold)}
+            <div class="amrap-row-line2">
+              ${e.reps ? `<span class="amrap-reps">${e.reps} reps</span>` : ""}
               ${tracks ? `<input type="number" class="superset-weight-input" inputmode="numeric"
                     data-ex-name="${e.name}"
                     value="${this.sessionWeights[e.name] || ""}"
-                    placeholder="${last ? last : "lbs"}"
+                    placeholder="${last ? last + " lb" : "add weight"}"
                     title="${last ? `Last time: ${last} lbs` : "Weight used"}" />` : ""}
-              <button class="amrap-play-btn" data-ex-name="${e.name}" title="Watch demo">▶</button>
+              ${holdBtnHtml(e.hold)}
             </div>
           </div>
         `;

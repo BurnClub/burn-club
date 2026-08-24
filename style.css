@@ -2775,3 +2775,60 @@ h1, h2, h3 {
 .player-amrap-list .superset-weight-input { border-color: #FFFFFF; }
 .player-amrap-list .row-seg-tag { border-color: #FFFFFF; color: var(--ink); }
 .player-amrap-list .amrap-play-btn { color: var(--ink); }
+
+/* ---------- TWO-LINE EXERCISE ROW (2026-08-23) ----------
+   Chris: the row was "much too busy" — order number, name, reps, weight and
+   play button all competing on one line at the same visual weight. The name
+   now owns the first line and everything about the set drops to the second,
+   which also means a long name ("Glute Bridge Static Hold") no longer
+   truncates. Superset and AMRAP only: a straight-sets row is per *set*, not
+   per exercise, so it carries no name or weight to move. */
+.amrap-row { flex-direction: column; align-items: stretch; gap: 3px; }
+.amrap-row-line1 {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.amrap-row-line2 {
+  display: flex; align-items: center; gap: 10px;
+  /* Indented to the name above it — 22px circle + 10px gap — so the set
+     details read as belonging to that exercise rather than as a new row. */
+  padding-left: 32px;
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 26px;
+}
+/* Size carries the hierarchy here, not weight: the app asks for
+   font-weight 800 in 85 places and neither Barlow Condensed nor Inter loads
+   an 800, so 700 and 800 render identically. 16.5px is Chris's +10% on the
+   15px the mockup used. */
+.amrap-ex-name {
+  font-size: 16.5px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.amrap-reps { white-space: nowrap; font-weight: 500; }
+/* Weight reads as text until you tap it — it was a permanent bordered input
+   sitting in a row you spend most of your time just reading. Same field, same
+   wiring; the box only appears when it's actually being used, which doubles
+   as the focus state. */
+.amrap-row-line2 .superset-weight-input {
+  /* Wide enough for the "add weight" placeholder, which clipped at 76px. The
+     field is transparent at rest, so the extra width costs nothing visually. */
+  width: 94px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--deepblue);
+  font-weight: 500;
+  text-align: left;
+  padding: 3px 4px;
+}
+.amrap-row-line2 .superset-weight-input:focus {
+  border-color: #FFFFFF;
+  background: #FFFFFF;
+  color: var(--ink);
+  text-align: center;
+}
+/* Pressable, so it can't be mistaken for the flat DROP tag beside it. */
+.hold-btn { box-shadow: 0 1px 3px rgba(23, 36, 63, 0.18); }
+.hold-btn.done { box-shadow: none; }
