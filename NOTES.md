@@ -54,14 +54,6 @@ syncs them.
 
 ## Agreed, not yet built
 
-- **What "finished" should mean.** The completion card triggers on the
-  calendar — past your last programmed day — not on how much you actually
-  did. A member who bought the program and trained twice still gets "You
-  finished Fit & Functional, 2/48". Honest, but the wrong tone. Worth
-  deciding whether a low completion rate should change the wording.
-  This decides whether `start_date` stays a single field or becomes a history
-  of enrolments — see `import/README.md`.
-
 - **Offline.** Wanted, but deliberately *not* first: the current platform has
   no offline support and no member has ever complained, which is better
   evidence than a hunch. The rule is therefore don't build it now, don't
@@ -73,6 +65,25 @@ syncs them.
   special case, or it won't exercise what a reviewer is checking.
 
 ## Decisions still open
+
+- **The completion card stays open for revision** (Chris, 2026-08-23). Two
+  separate things to settle on it:
+
+  1. **What "finished" should mean.** It triggers on the calendar — past your
+     last programmed day — not on how much you actually did. A member who
+     bought the program and trained twice still gets "You finished Fit &
+     Functional, 2/48". Honest, but the wrong tone. Does a low completion
+     rate change the wording, and below what line?
+  2. **The copy itself.** "Message your coach" and "Ask about repeating this
+     program, or what to move on to next" are first drafts. This is the one
+     screen in the app whose whole job is to start a conversation, so the
+     words are the feature — worth Chris writing them himself rather than
+     inheriting mine.
+
+- **Does a finished program end, or re-enrol?** If members repeat a program
+  or move to another, `start_date` stops being one field and becomes a
+  history of enrolments. Decide before members are imported — see
+  `import/README.md`.
 
 - **Personal Bests placement.** Chris wants it somewhere other than the
   Progress tab but hasn't decided where. Its current spot is provisional.
