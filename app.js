@@ -909,9 +909,12 @@ function memberProgramPosition() {
     weekStartDate: dateForProgramDay(weekFirstDay),
     scheduledThisWeek: weekItems.length,
     doneThisWeek,
+    totalWorkouts: allWorkouts.length,
+    doneAll,
     percentComplete: allWorkouts.length ? Math.round((doneAll / allWorkouts.length) * 100) : 0,
     notStarted: day < 1,
     finished: day > totalDays,
+    endDate: dateForProgramDay(totalDays),
   };
 }
 
@@ -997,9 +1000,39 @@ function renderYearChart() {
 // than made per-program, since Chris wanted the number to be unambiguous
 // (2026-08-13).
 
+// A finished programme replaces the week snapshot instead of sitting beside
+// it (2026-08-23). The snapshot clamps to the last week, so without this a
+// member who finished in May still sees "Week 8 · Day 7" and "0/6 Done This
+// Week" — an active week they look like they're failing, forever.
+function renderProgramComplete(pos) {
+  const card = document.getElementById("program-complete");
+  const snapshot = document.getElementById("home-week-snapshot");
+  if (!card || !snapshot) return false;
+  const done = !!(pos && pos.finished);
+  card.style.display = done ? "block" : "none";
+  snapshot.style.display = done ? "none" : "";
+  if (!done) return false;
+
+  document.getElementById("program-complete-title").textContent =
+    `You finished ${CURRENT_MEMBER.program}`;
+  // Year included deliberately: this can be read months or years after the
+  // fact, and "Aug 23" alone is ambiguous once a year has turned over.
+  const ended = pos.endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  document.getElementById("program-complete-sub").textContent =
+    `${pos.totalWeeks} weeks, finished ${ended}.`;
+  document.getElementById("pc-weeks").textContent = pos.totalWeeks;
+  // Their real total across the whole plan, not the current week's — the
+  // week-scoped numbers are exactly what made the old screen read as failure.
+  document.getElementById("pc-workouts").textContent = `${pos.doneAll}/${pos.totalWorkouts}`;
+  document.getElementById("pc-percent").textContent = `${pos.percentComplete}%`;
+  return true;
+}
+
 function renderHomeWeekSnapshot() {
   const grid = document.getElementById("home-week-grid");
   if (!grid) return;
+  const finishedPos = memberProgramPosition();
+  if (renderProgramComplete(finishedPos)) return;
   grid.innerHTML = renderWeekGrid();
 
   // Structured members get program-shaped numbers instead. "Stretch & Core"
@@ -3677,6 +3710,13 @@ function renderUpcomingWorkoutCard({ circuit, date }) {
 
 function renderHomeUpcomingWorkouts() {
   const upcoming = upcomingScheduledWorkouts(3);
+  const card = document.getElementById("home-circuit-list").closest(".home-section-card");
+  const pos = memberProgramPosition();
+  // Once the programme is over this card has nothing to say, and "you're all
+  // caught up" sitting under a completion card reads as a shrug. The
+  // completion card is what answers "what now" (2026-08-23).
+  if (card) card.style.display = pos && pos.finished ? "none" : "";
+  if (pos && pos.finished) return;
   document.getElementById("home-workouts-title").textContent = "Upcoming Workouts";
   document.getElementById("home-circuit-list").innerHTML = upcoming.length
     ? upcoming.map(renderUpcomingWorkoutCard).join("")
@@ -3684,6 +3724,13 @@ function renderHomeUpcomingWorkouts() {
 }
 
 function renderCircuitLists() {
+  // Reset before either branch runs. renderHomeUpcomingWorkouts() hides this
+  // card for a finished programme, and only the structured branch calls it —
+  // so without this, the hidden state survived into a rolling member's Home
+  // and their workout list vanished.
+  const listCard = document.getElementById("home-circuit-list").closest(".home-section-card");
+  if (listCard) listCard.style.display = "";
+
   // Structured members get their own schedule-driven section instead of the
   // rolling program's weekly list.
   if (CURRENT_MEMBER.scheduleType === "structured") {
@@ -3774,6 +3821,12 @@ function init() {
 // profile switch — harmless for a popup open, but it made "Add to
 // Calendar" save the same session twice (2026-08-12).
 function wireStaticControls() {
+  // Straight into the staff thread rather than the inbox — the whole point of
+  // the card is to start that conversation, and the inbox is one more step
+  // between the member and it.
+  document.getElementById("program-complete-cta").addEventListener("click", () => {
+    openThread(`dm-${CURRENT_MEMBER.id}`);
+  });
   document.getElementById("edit-email-btn").addEventListener("click", editEmail);
 
   document.getElementById("calendar-add-btn").addEventListener("click", openCalendarAddPopup);

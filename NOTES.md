@@ -54,9 +54,11 @@ syncs them.
 
 ## Agreed, not yet built
 
-- **End of a structured program.** When a member finishes their eight weeks
-  they need a screen telling them to get in touch about rescheduling or
-  another program (Chris, 2026-08-23). Right now the schedule simply runs out.
+- **What "finished" should mean.** The completion card triggers on the
+  calendar — past your last programmed day — not on how much you actually
+  did. A member who bought the program and trained twice still gets "You
+  finished Fit & Functional, 2/48". Honest, but the wrong tone. Worth
+  deciding whether a low completion rate should change the wording.
   This decides whether `start_date` stays a single field or becomes a history
   of enrolments — see `import/README.md`.
 
@@ -76,8 +78,6 @@ syncs them.
   Progress tab but hasn't decided where. Its current spot is provisional.
 - **Check-in feature** is paused pending partner feedback. Not a thread to
   push on unprompted.
-- **Drop sets.** Designed for but not built — they'll be a sibling field on
-  the exercise entry alongside `hold`, not an overloaded "add-on" object.
 - **Exiting mid-workout via the ✕ still discards.** An *abandoned* session
   now offers to log a partial; a deliberate quit doesn't. Slightly
   inconsistent, and left alone rather than redesigned unasked.

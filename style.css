@@ -2832,3 +2832,46 @@ h1, h2, h3 {
 /* Pressable, so it can't be mistaken for the flat DROP tag beside it. */
 .hold-btn { box-shadow: 0 1px 3px rgba(23, 36, 63, 0.18); }
 .hold-btn.done { box-shadow: none; }
+
+/* ---------- PROGRAM COMPLETE (2026-08-23) ----------
+   Shown instead of the week snapshot once a structured member is past their
+   last programmed day. Deliberately warmer than the snapshot it replaces —
+   this is the one moment in the app that's purely congratulatory, and the
+   numbers on it are whole-programme totals rather than the week-scoped ones
+   that made the old screen read as failure. */
+.program-complete {
+  background: linear-gradient(160deg, var(--blue), var(--blue-dark));
+  border-radius: var(--radius-lg);
+  padding: 22px 20px 20px;
+  margin-bottom: 20px;
+  color: #FFFFFF;
+  text-align: center;
+}
+.program-complete-eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.program-complete-title {
+  font-family: var(--font-heading);
+  font-size: 30px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  line-height: 1.05;
+}
+.program-complete-sub { margin: 0 0 18px; font-size: 13px; font-weight: 600; opacity: 0.9; }
+/* The shared stat grid assumes dark text on a light ground; on this card
+   everything is white, so both tiers are overridden rather than inherited. */
+.program-complete-stats { margin-bottom: 18px; }
+.program-complete-stats .stat-num { color: #FFFFFF; }
+.program-complete-stats .stat-label { color: #FFFFFF; opacity: 0.8; }
+.program-complete-cta {
+  width: 100%;
+  background: #FFFFFF;
+  color: var(--ink);
+  box-shadow: none;
+}
+.program-complete-note { margin: 10px 0 0; font-size: 12px; font-weight: 600; opacity: 0.85; }

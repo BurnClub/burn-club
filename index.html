@@ -61,6 +61,33 @@
         <!-- Copied from the Progress tab's Week calendar per Chris's request —
              week-only (no Month/Year toggle), and deliberately NOT wrapped in
              a .home-section-card: sits straight on the white page backdrop. -->
+        <!-- Programme finished (2026-08-23). Replaces the week snapshot rather
+             than sitting alongside it: the snapshot clamps to the final week,
+             so a member who finished months ago was being shown "Week 8 · Day 7"
+             with "0/6 Done This Week" and "0% Program Complete" — an active
+             week they appear to be failing. -->
+        <div class="program-complete" id="program-complete" style="display:none;">
+          <p class="program-complete-eyebrow">Program complete</p>
+          <h2 class="program-complete-title" id="program-complete-title">You finished Fit &amp; Functional</h2>
+          <p class="program-complete-sub" id="program-complete-sub"></p>
+          <div class="stats-plain-grid program-complete-stats">
+            <div class="stat-item">
+              <p class="stat-num" id="pc-weeks">0</p>
+              <p class="stat-label">Weeks</p>
+            </div>
+            <div class="stat-item">
+              <p class="stat-num" id="pc-workouts">0</p>
+              <p class="stat-label">Workouts Done</p>
+            </div>
+            <div class="stat-item">
+              <p class="stat-num" id="pc-percent">0%</p>
+              <p class="stat-label">Of The Plan</p>
+            </div>
+          </div>
+          <button class="btn-primary program-complete-cta" id="program-complete-cta">Message your coach</button>
+          <p class="program-complete-note">Ask about repeating this program, or what to move on to next.</p>
+        </div>
+
         <div class="home-week-snapshot" id="home-week-snapshot">
           <h2 class="home-section-title" id="home-week-title">This Week</h2>
           <div class="calendar-grid" id="home-week-grid"></div>
