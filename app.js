@@ -1715,7 +1715,7 @@ function renderHabitsSection() {
         <button class="habit-row ${checked ? "checked" : ""}" data-toggle-habit="${h.id}">
           <span class="habit-checkbox">${checked ? "✓" : ""}</span>
           <span class="habit-label">${h.label}</span>
-          ${h.auto ? `<span class="habit-auto-tag"><span class="habit-auto-icon">${ICON_LINK}</span>Auto</span>` : ""}
+          ${h.auto && WEARABLE.provider ? `<span class="habit-auto-tag"><span class="habit-auto-icon">${ICON_LINK}</span>Auto</span>` : ""}
         </button>
       `;
     }).join("");
