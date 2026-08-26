@@ -44,7 +44,7 @@ function renderCircuitCard(c) {
     <button class="circuit-card color-${c.color}${completion ? " completed" : ""}" data-open-circuit="${c.id}">
       <span class="circuit-bg-icon">${CIRCUIT_ICONS[circuitIconKey(c)]}</span>
       <div class="circuit-card-top">
-        <h3>${c.title}</h3>
+        <h3>${esc(c.title)}</h3>
         ${completion
           ? `<div class="circuit-completed-mark"><span class="circuit-check">✓</span><span class="circuit-completed-date">${formatShortDate(completion.date)}</span></div>`
           : `<span class="circuit-tag">${c.tag}</span>`}
@@ -69,7 +69,7 @@ function renderHomeBuzzRow(f) {
     <div class="buzz-row">
       <span class="buzz-dot"></span>
       <div class="buzz-text">
-        <p><strong>${f.name}</strong> ${f.action}</p>
+        <p><strong>${esc(f.name)}</strong> ${esc(f.action)}</p>
         <p class="buzz-time">${f.time}</p>
       </div>
     </div>
@@ -80,7 +80,7 @@ function renderLeaderRow(l) {
   return `
     <div class="leader-row ${l.me ? "me" : ""}">
       <span class="leader-rank">#${l.rank}</span>
-      <span class="leader-name">${l.name}</span>
+      <span class="leader-name">${esc(l.name)}</span>
       <span class="leader-stat">${l.stat}</span>
     </div>
   `;
@@ -95,7 +95,7 @@ function renderCompactCircuitRow(c) {
   const completion = mostRecentCompletion(c.id);
   return `
     <button class="circuit-row-compact${completion ? " completed" : ""}" data-open-circuit="${c.id}">
-      <span>${c.title}</span>
+      <span>${esc(c.title)}</span>
     </button>
   `;
 }
@@ -199,6 +199,26 @@ function showToast(message) {
   el.classList.add("visible");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove("visible"), 2600);
+}
+
+// Everything a coach types — exercise names, workout titles, custom habit
+// labels — reaches the screen through innerHTML template strings, unescaped
+// (2026-08-23). Two real consequences, both found by probing rather than by
+// anything visibly going wrong:
+//   * a double quote ends the attribute it sits in. `Farmer's Carry 20" Box`
+//     silently broke the weight field's data-ex-name, so weight logged
+//     against that exercise went nowhere and the member's history just never
+//     filled in.
+//   * angle brackets render as markup. `Squat <b>Heavy</b>` came out bold.
+// Escaping at the interpolation site rather than on the data keeps what's
+// stored true to what was typed.
+function esc(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function formatShortDate(key) {
@@ -305,7 +325,7 @@ function renderPersonalBests() {
   host.innerHTML = shown.map((pr) => `
     <div class="pr-row">
       <div class="pr-row-left">
-        <span class="pr-exercise">${pr.name}</span>
+        <span class="pr-exercise">${esc(pr.name)}</span>
         <span class="pr-meta">${formatShortDate(pr.date)} · ${pr.sessions} session${pr.sessions === 1 ? "" : "s"} logged</span>
       </div>
       <div class="pr-row-right">
@@ -341,7 +361,7 @@ function renderPRBanner(prs) {
   el.style.display = "block";
   el.innerHTML = `
     <p class="pr-banner-title">${prs.length === 1 ? "New personal best" : `${prs.length} new personal bests`}</p>
-    ${prs.map((p) => `<p class="pr-banner-line"><strong>${p.name}</strong> ${p.weight} lbs <span>&middot; beat ${p.previous}</span></p>`).join("")}
+    ${prs.map((p) => `<p class="pr-banner-line"><strong>${esc(p.name)}</strong> ${p.weight} lbs <span>&middot; beat ${p.previous}</span></p>`).join("")}
   `;
 }
 
@@ -1294,8 +1314,8 @@ function formatBenchmarkDelta(benchmark, beginning, best) {
 function renderBenchmarkCard(benchmark) {
   const results = benchmarkResults(benchmark.id);
   const nameBlock = `
-    <p class="benchmark-name">${benchmark.name}</p>
-    <p class="benchmark-subtitle">${benchmark.subtitle}</p>
+    <p class="benchmark-name">${esc(benchmark.name)}</p>
+    <p class="benchmark-subtitle">${esc(benchmark.subtitle)}</p>
   `;
 
   if (results.length === 0) {
@@ -1496,7 +1516,7 @@ function renderChallengeCard() {
   container.innerHTML = `
     <div class="challenge-card">
       <p class="challenge-eyebrow">Current Challenge</p>
-      <h2 class="challenge-name">${challenge.name}</h2>
+      <h2 class="challenge-name">${esc(challenge.name)}</h2>
       <div class="challenge-points-row">
         <span class="challenge-points-num">${myPoints}</span>
         <span class="challenge-points-label">/ ${challenge.thresholdPoints} pts</span>
@@ -1761,7 +1781,7 @@ function renderHabitsSection() {
       return `
         <button class="habit-row ${checked ? "checked" : ""}" data-toggle-habit="${h.id}">
           <span class="habit-checkbox">${checked ? "✓" : ""}</span>
-          <span class="habit-label">${h.label}</span>
+          <span class="habit-label">${esc(h.label)}</span>
           ${h.auto && WEARABLE.provider ? `<span class="habit-auto-tag"><span class="habit-auto-icon">${ICON_LINK}</span>Auto</span>` : ""}
         </button>
       `;
@@ -1797,7 +1817,7 @@ function renderHabitManager() {
   const rowsHtml = MY_HABITS.length
     ? MY_HABITS.map((h) => `
         <div class="wearable-row">
-          <p class="wearable-name">${h.label}</p>
+          <p class="wearable-name">${esc(h.label)}</p>
           <button class="habit-remove-btn" data-remove-habit="${h.id}">✕</button>
         </div>
       `).join("")
@@ -2176,14 +2196,14 @@ function blockExerciseNames(block) {
 
 function renderBlockSummaryCard(block, index) {
   const exercises = blockExerciseNames(block)
-    .map((name) => `<li>${name}</li>`)
+    .map((name) => `<li>${esc(name)}</li>`)
     .join("");
   return `
     <div class="block-card">
       <div class="block-card-top">
         <span class="block-num">${index + 1}</span>
         <div>
-          <p class="block-name">${block.label}</p>
+          <p class="block-name">${esc(block.label)}</p>
           <p class="block-type-tag">${blockTypeLabel(block.type)}</p>
         </div>
       </div>
@@ -3355,15 +3375,15 @@ const Player = {
             <div class="amrap-row-line1">
               <div class="amrap-row-left">
                 <span class="amrap-order-num">${i + 1}</span>
-                <span class="amrap-ex-name">${e.name}</span>
+                <span class="amrap-ex-name">${esc(e.name)}</span>
                 ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
               </div>
-              <button class="amrap-play-btn" data-ex-name="${e.name}" title="Watch demo">▶</button>
+              <button class="amrap-play-btn" data-ex-name="${esc(e.name)}" title="Watch demo">▶</button>
             </div>
             <div class="amrap-row-line2">
               ${e.reps ? `<span class="amrap-reps">${e.reps} reps</span>` : ""}
               ${tracks ? `<input type="number" class="superset-weight-input" inputmode="numeric"
-                    data-ex-name="${e.name}"
+                    data-ex-name="${esc(e.name)}"
                     value="${this.sessionWeights[e.name] || ""}"
                     placeholder="${last ? last + " lb" : "add weight"}"
                     title="${last ? `Last time: ${last} lbs` : "Weight used"}" />` : ""}
@@ -3440,15 +3460,15 @@ const Player = {
             <div class="amrap-row-line1">
               <div class="amrap-row-left">
                 <span class="amrap-order-num">${i + 1}</span>
-                <span class="amrap-ex-name">${e.name}</span>
+                <span class="amrap-ex-name">${esc(e.name)}</span>
                 ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
               </div>
-              <button class="amrap-play-btn" data-ex-name="${e.name}" title="Watch demo">▶</button>
+              <button class="amrap-play-btn" data-ex-name="${esc(e.name)}" title="Watch demo">▶</button>
             </div>
             <div class="amrap-row-line2">
               ${e.reps ? `<span class="amrap-reps">${e.reps} reps</span>` : ""}
               ${tracks ? `<input type="number" class="superset-weight-input" inputmode="numeric"
-                    data-ex-name="${e.name}"
+                    data-ex-name="${esc(e.name)}"
                     value="${this.sessionWeights[e.name] || ""}"
                     placeholder="${last ? last + " lb" : "add weight"}"
                     title="${last ? `Last time: ${last} lbs` : "Weight used"}" />` : ""}
@@ -3559,8 +3579,8 @@ function renderConversationRow(conv) {
     <div class="conversation-row conversation-row-${conv.type}" data-open-thread="${conv.id}">
       <div class="conversation-icon">${CONVERSATION_ICON_SVG[conv.type] || CONVERSATION_ICON_SVG.dm}</div>
       <div class="conversation-text">
-        <p class="conversation-name">${conv.name}</p>
-        <p class="conversation-preview">${preview.lastText}</p>
+        <p class="conversation-name">${esc(conv.name)}</p>
+        <p class="conversation-preview">${esc(preview.lastText)}</p>
       </div>
       <div class="conversation-meta">
         <span class="conversation-time">${preview.lastTime}</span>
@@ -3591,8 +3611,8 @@ function renderMessageBubble(m, isGroup) {
   return `
     <div class="msg-bubble-row ${fromMe ? "from-me" : ""}">
       <div class="msg-bubble">
-        ${isGroup && !fromMe ? `<p class="msg-sender">${m.senderName}</p>` : ""}
-        <p>${m.text}</p>
+        ${isGroup && !fromMe ? `<p class="msg-sender">${esc(m.senderName)}</p>` : ""}
+        <p>${esc(m.text)}</p>
         <span class="msg-time">${m.time}</span>
       </div>
     </div>
@@ -3731,6 +3751,13 @@ function upcomingDayLabel(date) {
 function upcomingScheduledWorkouts(limit) {
   const member = CURRENT_MEMBER;
   const template = SCHEDULE_TEMPLATES[member.programId] || [];
+  // A structured member with no start date is a data error, not a state the
+  // app should have to render — but it used to reach daysBetween() as
+  // undefined and throw inside init(), so their Home never drew at all
+  // (2026-08-23). Degrade to "nothing scheduled" instead. The admin's
+  // validation report is where this gets surfaced to the coach; the member's
+  // app just shouldn't die of it.
+  if (!member.startDate) return [];
   const today = new Date();
   const todayProgramDay = daysBetween(member.startDate, dateKey(today)) + 1;
   const out = [];
@@ -4191,6 +4218,13 @@ function saveScheduledCardio() {
 function renderCalendarDayRow(date, member, template) {
   const today = new Date();
   const isToday = dateKey(date) === dateKey(today);
+  // Same guard as upcomingScheduledWorkouts — see the note there.
+  if (!member.startDate) {
+    return `<div class="calendar-day-row${isToday ? " today" : ""}">
+      <span class="calendar-day-label">${formatShortDate(dateKey(date))}</span>
+      <span class="calendar-item-label calendar-item-muted">No program start date set</span>
+    </div>`;
+  }
   const programDay = daysBetween(member.startDate, dateKey(date)) + 1;
   const item = template.find((d) => d.day === programDay);
 
