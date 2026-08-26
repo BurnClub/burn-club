@@ -1878,3 +1878,68 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-ex-row, .builder-block-card { user-select: none; }
 .builder-ex-row input, .builder-block-card input,
 .builder-ex-row textarea, .builder-block-card textarea { user-select: text; }
+
+/* ---------- CHALLENGE TEAMS (2026-08-24) ---------- */
+.challenge-teams { margin-bottom: 28px; }
+.challenge-teams-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 12px;
+}
+.challenge-teams-head h2 { font-size: 18px; margin: 0; }
+.challenge-teams-actions { display: flex; align-items: center; gap: 12px; }
+.challenge-teams-note { font-size: 12px; font-weight: 700; color: var(--deepblue); }
+.challenge-section-title { font-size: 18px; margin: 0 0 12px; }
+.team-standings {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+.team-card {
+  border: 1px solid var(--periwinkle);
+  border-top: 3px solid var(--team-colour);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  background: white;
+}
+.team-card-head { display: flex; align-items: center; gap: 8px; }
+.team-card-head h3 { margin: 0; font-size: 16px; flex: 1; min-width: 0; }
+.team-rank { font-size: 12px; font-weight: 800; color: var(--deepblue); }
+.team-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--team-colour); flex-shrink: 0;
+}
+.team-total { font-size: 15px; font-weight: 800; color: var(--ink); }
+.team-gap { margin: 4px 0 10px; font-size: 12px; font-weight: 700; color: var(--deepblue); }
+.team-members { display: flex; flex-direction: column; gap: 6px; }
+.team-member {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: 13px; font-weight: 700;
+}
+.team-member span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team-member select {
+  border: 2px solid var(--periwinkle); border-radius: var(--radius-sm);
+  padding: 3px 6px; font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700;
+  flex-shrink: 0;
+}
+.team-empty { font-size: 13px; color: var(--deepblue); margin: 0; }
+.team-count-field {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700; color: var(--deepblue);
+}
+.team-count-field input {
+  width: 46px; border: 2px solid var(--periwinkle); border-radius: var(--radius-sm);
+  padding: 5px 6px; font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 700;
+  text-align: center; -moz-appearance: textfield;
+}
+.team-count-field input::-webkit-outer-spin-button,
+.team-count-field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+/* The name is editable in place — it looks like the heading it replaced until
+   you click into it. */
+.team-name-input {
+  flex: 1; min-width: 0;
+  border: 2px solid transparent; background: none;
+  border-radius: var(--radius-sm); padding: 3px 6px;
+  font-family: 'Baloo 2', cursive; font-size: 16px; font-weight: 700; color: var(--ink);
+}
+.team-name-input:hover { border-color: var(--periwinkle); }
+.team-name-input:focus { border-color: var(--blue); background: white; outline: none; }

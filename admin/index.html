@@ -994,6 +994,25 @@
           </div>
           <button class="btn-ghost-lg" id="challenge-edit-btn">Edit Challenge</button>
         </header>
+
+        <!-- Teams (2026-08-24). Drawn per challenge and managed here rather
+             than on the member profile: a team only exists while its challenge
+             does, and next month everyone is redrawn. -->
+        <section class="challenge-teams" id="challenge-teams">
+          <div class="challenge-teams-head">
+            <h2>Teams</h2>
+            <div class="challenge-teams-actions">
+              <span class="challenge-teams-note" id="challenge-teams-note"></span>
+              <label class="team-count-field">Teams
+                <input type="number" id="team-count" min="2" max="8" value="4" />
+              </label>
+              <button class="btn-ghost-lg small" data-action="draw-teams">Draw Teams</button>
+            </div>
+          </div>
+          <div class="team-standings" id="team-standings"></div>
+        </section>
+
+        <h2 class="challenge-section-title">Individual Standings</h2>
         <table class="admin-table">
           <thead>
             <tr>

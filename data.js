@@ -667,6 +667,23 @@ const CHALLENGES = [
   },
 ];
 
+// Teams for the current challenge, bridged over from the admin the same way
+// workouts are (2026-08-24). Seeded so the demo has something to show; the
+// live copy replaces it when the coach draws. Same same-browser limitation as
+// every other bridge here.
+const LIVE_TEAMS_KEY = "burnClubLiveChallengeTeams";
+let CHALLENGE_TEAMS = [
+  { id: "t-red", name: "Red", color: "#E0685E", memberIds: ["priya-k", "marcus-t"], memberNames: ["Priya K.", "Marcus T."] },
+  { id: "t-blue", name: "Blue", color: "#788CE3", memberIds: ["jamie-r", "alicia-b"], memberNames: ["Jamie R.", "Alicia B."] },
+  { id: "t-green", name: "Green", color: "#13673F", memberIds: ["chris-v"], memberNames: ["Chris V."] },
+  { id: "t-gold", name: "Gold", color: "#E6B400", memberIds: ["jordan-p"], memberNames: ["Jordan P."] },
+];
+
+// Seeded team totals, same honesty caveat as CHALLENGE_LEADERBOARD: only the
+// current member's own points are real. A team's score is its members' points
+// added up, so a real backend would compute all of them.
+const SEEDED_TEAM_POINTS = { "priya-k": 205, "marcus-t": 150, "jamie-r": 110, "alicia-b": 40, "chris-v": 0, "jordan-p": 0 };
+
 const CHALLENGE_LEADERBOARD = [
   { name: "Priya K.", points: 205 },
   { name: "Marcus T.", points: 150 },

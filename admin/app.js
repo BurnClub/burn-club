@@ -37,6 +37,19 @@ const ICON_PATHS = {
   grip: '<path d="M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01"/>',
 };
 
+// Same helper as the member app's (2026-08-24). Hand-duplicated, like every
+// other shape these two apps share. The member side got this last night after
+// a double quote in an exercise name silently broke weight tracking; the admin
+// has the identical exposure and this is the start of closing it.
+function esc(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function icon(name, cls) {
   const paths = ICON_PATHS[name];
   if (!paths) return "";
@@ -2882,6 +2895,28 @@ function syncCircuitToMemberApp(circuit) {
   localStorage.setItem(LIVE_CIRCUITS_KEY, JSON.stringify(next));
 }
 
+// Teams over the same same-origin localStorage bridge every other shared shape
+// uses (2026-08-24). Only what the member needs to see: which team they're on,
+// its name, and who else is on it. Same limitation as the rest of the bridge —
+// it reaches a member app running in this browser, and a real backend is what
+// makes it reach a phone.
+const LIVE_TEAMS_KEY = "burnClubLiveChallengeTeams";
+
+function syncChallengeTeamsToMemberApp() {
+  const payload = CHALLENGES
+    .filter((c) => teamsOf(c).length)
+    .map((c) => ({
+      challengeId: c.id,
+      teams: teamsOf(c).map((t) => ({
+        id: t.id,
+        name: t.name,
+        memberIds: (t.memberIds || []).slice(),
+        memberNames: (t.memberIds || []).map((id) => (memberById(id) || {}).name).filter(Boolean),
+      })),
+    }));
+  localStorage.setItem(LIVE_TEAMS_KEY, JSON.stringify(payload));
+}
+
 // Drop a workout from the bridge — used when its date changes such that the
 // stored copy would be stale, and when it's deleted outright.
 function unsyncCircuitFromMemberApp(circuitId) {
@@ -3470,8 +3505,33 @@ document.addEventListener("input", (e) => {
   }
 });
 
+document.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.dataset.action !== "rename-team") return;
+  const challenge = challengeById(selectedChallengeId);
+  const team = challenge && teamsOf(challenge).find((x) => x.id === t.dataset.teamId);
+  if (!team) return;
+  // Deliberately not re-rendering here — that would blow away the input the
+  // coach is typing in. The name is stored; the cards redraw on the next
+  // action that needs them.
+  team.name = t.value;
+  syncChallengeTeamsToMemberApp();
+});
+
 document.addEventListener("change", (e) => {
   const t = e.target;
+  if (t.dataset.action === "move-team") {
+    const challenge = challengeById(selectedChallengeId);
+    if (challenge) {
+      // Points follow the member: their score is computed from their own
+      // completions, so moving them recomputes both teams on the next render
+      // rather than transferring a stored number.
+      moveMemberToTeam(challenge, t.dataset.memberId, t.value);
+      syncChallengeTeamsToMemberApp();
+      renderChallengeStandings();
+    }
+    return;
+  }
   if (t.dataset.role === "block-type") {
     const bi = Number(t.dataset.blockIndex);
     builderBlocks[bi] = convertBlockType(builderBlocks[bi], t.value);
@@ -3666,6 +3726,15 @@ document.addEventListener("click", (e) => {
   }
   if (action === "convert-single") {
     convertSelectedSingle(el.dataset.targetType);
+  }
+  if (action === "draw-teams") {
+    const challenge = challengeById(selectedChallengeId);
+    if (challenge) {
+      const wanted = Number(document.getElementById("team-count").value) || 4;
+      challenge.teams = drawTeams(challenge, wanted);
+      syncChallengeTeamsToMemberApp();
+      renderChallengeStandings();
+    }
   }
   if (action === "add-hold") {
     addSegmentToSelected("hold");
@@ -4465,6 +4534,144 @@ function challengeStandings(challenge) {
     .sort((a, b) => b.total - a.total);
 }
 
+// ---------------- Challenge teams (2026-08-24) ----------------
+// Drawn fresh per challenge. Chris's goal is community rather than rivalry:
+// "changing teams allows them to be introduced to more people". So the draw
+// actively avoids repeating last challenge's pairings where it can — a plain
+// shuffle will happily sit the same four people together three months running,
+// which is the one outcome that defeats the point.
+
+function teamsOf(challenge) {
+  return challenge.teams || [];
+}
+
+function teamOfMember(challenge, memberId) {
+  return teamsOf(challenge).find((t) => (t.memberIds || []).includes(memberId)) || null;
+}
+
+// Sum, not average (Chris): every workout adds to the pile and nothing a
+// member does can drag their team down. That only stays fair while teams are
+// the same size, which is what the draw and joinSmallestTeam() protect.
+function teamStandings(challenge) {
+  const scored = challengeStandings(challenge);
+  const byMember = new Map(scored.map((s) => [s.member.id, s.total]));
+  return teamsOf(challenge)
+    .map((t) => {
+      const members = (t.memberIds || []).map((id) => memberById(id)).filter(Boolean);
+      return {
+        team: t,
+        members,
+        total: members.reduce((sum, m) => sum + (byMember.get(m.id) || 0), 0),
+      };
+    })
+    .sort((a, b) => b.total - a.total);
+}
+
+// How often each pair has already been teamed up, across every challenge that
+// has teams. Used to bias the draw away from repeats.
+function pastPairCounts(excludeChallengeId) {
+  const counts = new Map();
+  const key = (a, b) => [a, b].sort().join("|");
+  CHALLENGES.forEach((c) => {
+    if (c.id === excludeChallengeId) return;
+    teamsOf(c).forEach((t) => {
+      const ids = t.memberIds || [];
+      for (let i = 0; i < ids.length; i++) {
+        for (let j = i + 1; j < ids.length; j++) {
+          const k = key(ids[i], ids[j]);
+          counts.set(k, (counts.get(k) || 0) + 1);
+        }
+      }
+    });
+  });
+  return { counts, key };
+}
+
+function drawTeams(challenge, teamCount) {
+  const members = challengeStandings(challenge).map((s) => s.member);
+  const count = Math.max(2, Math.min(teamCount || 4, MAX_TEAMS, members.length || 2));
+  // Existing names are kept across a redraw so Chris doesn't lose his edits
+  // every time he reshuffles.
+  const existing = teamsOf(challenge);
+  const names = Array.from({ length: count }, (_, i) =>
+    (existing[i] && existing[i].name) || DEFAULT_TEAM_NAMES[i % DEFAULT_TEAM_NAMES.length]);
+  const teams = names.map((name, i) => ({ id: `t-${i}-${Date.now()}`, name, color: TEAM_PALETTE[i % TEAM_PALETTE.length], memberIds: [] }));
+  if (!members.length) return teams;
+
+  const { counts, key } = pastPairCounts(challenge.id);
+  const past = (a, b) => counts.get(key(a, b)) || 0;
+
+  const teamCost = (list) => {
+    let c = 0;
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) c += past(list[i], list[j]);
+    }
+    return c;
+  };
+
+  // Shuffle into balanced teams, then swap members across teams whenever it
+  // lowers the number of already-met pairs. Swapping (rather than moving)
+  // keeps sizes exactly as the shuffle left them, which is what makes summed
+  // scoring fair.
+  const attempt = () => {
+    const pool = members.map((m) => m.id);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const t = names.map((name, i) => ({ id: `t-${i}-${Date.now()}`, name, color: TEAM_PALETTE[i % TEAM_PALETTE.length], memberIds: [] }));
+    pool.forEach((id, i) => t[i % count].memberIds.push(id));
+    for (let pass = 0; pass < 30; pass++) {
+      let improved = false;
+      for (let a = 0; a < t.length; a++) {
+        for (let b = a + 1; b < t.length; b++) {
+          const A = t[a].memberIds;
+          const B = t[b].memberIds;
+          for (let i = 0; i < A.length; i++) {
+            for (let j = 0; j < B.length; j++) {
+              const before = teamCost(A) + teamCost(B);
+              [A[i], B[j]] = [B[j], A[i]];
+              if (teamCost(A) + teamCost(B) < before) improved = true;
+              else [A[i], B[j]] = [B[j], A[i]];
+            }
+          }
+        }
+      }
+      if (!improved) break;
+    }
+    return t;
+  };
+
+  // One climb is enough. Twelve restarts from different shuffles were tried
+  // and returned the identical repeat rate every month at twelve times the
+  // cost — because the climb isn't getting stuck, it's hitting the floor.
+  //
+  // The floor is real and worth knowing when reading these numbers: with four
+  // teams of ten, a new team can draw at most two or three members from each
+  // of last month's four teams, which forces C(3,2)+C(3,2)+C(2,2)+C(2,2) = 8
+  // repeated pairs per team, 32 of 180 overall. 18% in month two is optimal,
+  // not a shortfall. It climbs from there as the roster's possible pairings
+  // get used up — which is the goal being reached, not the draw failing.
+  return attempt();
+}
+
+// A member who joins after the draw goes to the smallest team, so sizes stay
+// honest without the coach having to think about it.
+function joinSmallestTeam(challenge, memberId) {
+  const teams = teamsOf(challenge);
+  if (!teams.length || teamOfMember(challenge, memberId)) return;
+  teams.reduce((a, b) => ((a.memberIds || []).length <= (b.memberIds || []).length ? a : b))
+    .memberIds.push(memberId);
+}
+
+function moveMemberToTeam(challenge, memberId, teamId) {
+  teamsOf(challenge).forEach((t) => {
+    t.memberIds = (t.memberIds || []).filter((id) => id !== memberId);
+  });
+  const target = teamsOf(challenge).find((t) => t.id === teamId);
+  if (target) target.memberIds.push(memberId);
+}
+
 function renderChallenges() {
   document.getElementById("challenge-grid").innerHTML = CHALLENGES.map((c) => {
     const program = c.programId === "all" ? null : programById(c.programId);
@@ -4488,9 +4695,54 @@ function renderChallenges() {
   }).join("") || `<p style="color:var(--deepblue);">No challenges yet — create one to get started.</p>`;
 }
 
+function renderTeamStandings() {
+  const challenge = challengeById(selectedChallengeId);
+  const wrap = document.getElementById("team-standings");
+  const note = document.getElementById("challenge-teams-note");
+  if (!challenge || !wrap) return;
+  const standings = teamStandings(challenge);
+  if (!standings.length) {
+    note.textContent = "No teams drawn yet.";
+    wrap.innerHTML = `<p class="team-empty">Draw teams to split everyone in this challenge into four sides. Scoring is the same — a team's score is its members' points added up.</p>`;
+    return;
+  }
+  const leader = standings[0].total;
+  const countField = document.getElementById("team-count");
+  if (countField && document.activeElement !== countField) countField.value = standings.length;
+  note.textContent = `${standings.length} teams · redraw replaces the current split`;
+  wrap.innerHTML = standings.map((row, i) => {
+    const colour = row.team.color || "#788CE3";
+    const behind = leader - row.total;
+    return `
+      <div class="team-card" style="--team-colour:${colour}">
+        <div class="team-card-head">
+          <span class="team-rank">#${i + 1}</span>
+          <span class="team-dot"></span>
+          <input class="team-name-input" value="${esc(row.team.name)}"
+                 data-action="rename-team" data-team-id="${esc(row.team.id)}"
+                 aria-label="Team name" />
+          <span class="team-total">${row.total} pts</span>
+        </div>
+        <p class="team-gap">${i === 0 ? "Leading" : `${behind} pts behind`} · ${row.members.length} member${row.members.length === 1 ? "" : "s"}</p>
+        <div class="team-members">
+          ${row.members.map((m) => `
+            <div class="team-member">
+              <span>${esc(m.name)}</span>
+              <select data-action="move-team" data-member-id="${esc(m.id)}">
+                ${teamsOf(challenge).map((t) => `<option value="${esc(t.id)}" ${t.id === row.team.id ? "selected" : ""}>${esc(t.name)}</option>`).join("")}
+              </select>
+            </div>
+          `).join("") || `<p class="team-empty">No members.</p>`}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
 function renderChallengeStandings() {
   const challenge = challengeById(selectedChallengeId);
   if (!challenge) return;
+  renderTeamStandings();
   const program = challenge.programId === "all" ? null : programById(challenge.programId);
   document.getElementById("challenge-detail-program").textContent = program ? program.name : "All Programs";
   document.getElementById("challenge-detail-title").textContent = challenge.name;

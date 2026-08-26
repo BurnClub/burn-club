@@ -782,6 +782,14 @@ const MEMBERS = [
 // Point-based, threshold challenges (not first-past-the-post): any member who
 // reaches thresholdPoints qualifies for the reward. programId is either a
 // specific program's id or "all" for every program at once.
+// Teams are a property of the challenge, not of the member (2026-08-24,
+// Chris). The point isn't team identity — it's that a fresh draw each month
+// keeps introducing members to people they haven't trained alongside. So
+// there's no team field on a profile: a team exists while its challenge does,
+// and next month everyone is redrawn.
+//
+// `teams` is absent until the coach draws them, so a challenge can exist
+// without being a team challenge at all.
 const CHALLENGES = [
   {
     id: "summer-sweat-2026",
@@ -792,8 +800,21 @@ const CHALLENGES = [
     pointsPerWorkout: 5,
     thresholdPoints: 200,
     reward: "Entered to win free Burn Club merch",
+    teams: [
+      { id: "t-red", name: "Red", color: "#E0685E", memberIds: ["priya-k", "marcus-t"] },
+      { id: "t-blue", name: "Blue", color: "#788CE3", memberIds: ["jamie-r", "alicia-b"] },
+      { id: "t-green", name: "Green", color: "#13673F", memberIds: ["chris-v"] },
+      { id: "t-gold", name: "Gold", color: "#E6B400", memberIds: ["jordan-p"] },
+    ],
   },
 ];
+
+// Colour comes from the palette by position and is stored on the team, not
+// derived from its name (2026-08-24) — names are Chris's to edit, so keying
+// colour off them would have a rename silently change a team's colour.
+const TEAM_PALETTE = ["#E0685E", "#788CE3", "#13673F", "#E6B400", "#A78BFA", "#F0A6CA", "#37FF8B", "#5C7A99"];
+const DEFAULT_TEAM_NAMES = ["Red", "Blue", "Green", "Gold", "Purple", "Pink", "Mint", "Slate"];
+const MAX_TEAMS = TEAM_PALETTE.length;
 
 // ---------------- Messaging ----------------
 // Messages sent here (or in the member/staff apps) are bridged live via

@@ -1490,6 +1490,55 @@ function challengeLevels(standings) {
 
 let challengeLeaderboardExpanded = false;
 
+// A team's score is its members' points added up. Only the current member's
+// points are real here — everyone else's come from the seeded table, same
+// limitation as the individual leaderboard. A backend computes all of them.
+function teamStandings(challenge) {
+  const myPoints = challengePointsForMember(challenge);
+  return CHALLENGE_TEAMS.map((t) => ({
+    team: t,
+    mine: (t.memberIds || []).includes(CURRENT_MEMBER.id),
+    total: (t.memberIds || []).reduce((sum, id) =>
+      sum + (id === CURRENT_MEMBER.id ? myPoints : (SEEDED_TEAM_POINTS[id] || 0)), 0),
+  })).sort((a, b) => b.total - a.total);
+}
+
+function renderTeamChallengeCard() {
+  const container = document.getElementById("team-challenge-card");
+  if (!container) return;
+  const challenge = currentChallenge();
+  const team = myChallengeTeam();
+  if (!challenge || !team || !CHALLENGE_TEAMS.length) {
+    container.innerHTML = "";
+    container.style.display = "none";
+    return;
+  }
+  container.style.display = "block";
+  const standings = teamStandings(challenge);
+  const myIndex = standings.findIndex((s) => s.mine);
+  const mine = standings[myIndex];
+  const ahead = myIndex > 0 ? standings[myIndex - 1] : null;
+  const myPoints = challengePointsForMember(challenge);
+
+  container.innerHTML = `
+    <div class="team-challenge" style="--team-colour:${esc(team.color || "#788CE3")}">
+      <div class="team-challenge-head">
+        <span class="team-challenge-dot"></span>
+        <h3>${esc(team.name)}</h3>
+        <span class="team-challenge-rank">#${myIndex + 1} of ${standings.length}</span>
+      </div>
+      <p class="team-challenge-total">${mine.total}<span> team pts</span></p>
+      <p class="team-challenge-gap">${ahead
+        ? `${ahead.total - mine.total} pts behind ${esc(ahead.team.name)}`
+        : "Your team is in front"}</p>
+      <p class="team-challenge-mine">You've put in ${myPoints} of them.</p>
+      <div class="team-challenge-mates">
+        ${(team.memberNames || []).map((n) => `<span class="team-mate">${esc(n)}</span>`).join("")}
+      </div>
+    </div>
+  `;
+}
+
 function renderChallengeCard() {
   const container = document.getElementById("challenge-card");
   const challenge = currentChallenge();
@@ -1553,6 +1602,7 @@ function renderChallengeCard() {
   document.getElementById("challenge-leaderboard-toggle").addEventListener("click", () => {
     challengeLeaderboardExpanded = !challengeLeaderboardExpanded;
     renderChallengeCard();
+  renderTeamChallengeCard();
   });
 }
 
@@ -2229,6 +2279,7 @@ function showTab(tabId) {
   document.getElementById(tabId).classList.add("visible");
   if (tabId === "tab-progress") renderProgressTab();
   if (tabId === "tab-community") renderChallengeCard();
+  renderTeamChallengeCard();
   if (tabId === "tab-home" || tabId === "tab-circuits") renderCircuitLists();
   if (tabId === "tab-home") renderHomeWeekSnapshot();
   if (tabId === "tab-circuits" || tabId === "tab-home") renderCardioLog();
@@ -3540,10 +3591,24 @@ document.addEventListener("visibilitychange", () => {
 // is what makes the live message bridge below actually land in the same
 // thread on all three sides instead of three disconnected copies.
 let CONVERSATIONS = [];
+// The team a member is on for the active challenge, or null. Teams belong to
+// the challenge rather than the member, so this is a lookup, not a field.
+function myChallengeTeam() {
+  if (!currentChallenge()) return null;
+  return CHALLENGE_TEAMS.find((t) => (t.memberIds || []).includes(CURRENT_MEMBER.id)) || null;
+}
+
 function memberConversations() {
   const list = [{ id: `dm-${CURRENT_MEMBER.id}`, type: "dm", name: "Burn Club Staff" }];
   if (CURRENT_MEMBER.programId) {
     list.push({ id: `group-${CURRENT_MEMBER.programId}`, type: "group", name: `${CURRENT_MEMBER.program} Group Chat` });
+  }
+  // Only while the challenge is running. Four new chats a month would be
+  // forty-eight dead ones a year sitting in the inbox, so a team chat appears
+  // with its challenge and goes when it ends (2026-08-24).
+  const team = myChallengeTeam();
+  if (team) {
+    list.push({ id: `group-team-${team.id}`, type: "group", name: `${team.name} Team Chat` });
   }
   return list;
 }
@@ -3858,7 +3923,23 @@ function renderCircuitLists() {
   });
 }
 
+// Picks up whatever the admin last drew. Falls back to the seeded teams if
+// nothing has been bridged, so the demo isn't empty.
+function loadChallengeTeams() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(LIVE_TEAMS_KEY) || "null");
+    if (!Array.isArray(stored) || !stored.length) return;
+    const challenge = currentChallenge();
+    const forChallenge = challenge && stored.find((s) => s.challengeId === challenge.id);
+    const entry = forChallenge || stored[0];
+    if (entry && Array.isArray(entry.teams) && entry.teams.length) CHALLENGE_TEAMS = entry.teams;
+  } catch (e) {
+    // Keep the seeded teams rather than blanking the section.
+  }
+}
+
 function init() {
+  loadChallengeTeams();
   COMPLETIONS = loadCompletions();
   CHECKINS = loadCheckins();
   BENCHMARK_RESULTS = loadBenchmarkResults();

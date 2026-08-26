@@ -2919,3 +2919,42 @@ h1, h2, h3 {
   .toast { transition: opacity 0.22s ease; transform: none; }
   .toast.visible { transform: none; }
 }
+
+/* ---------- TEAM CHALLENGE (2026-08-24) ----------
+   Sits under the individual challenge card. Deliberately shows the team's
+   position and the gap to the team ahead, and never ranks teammates against
+   each other — an individual ranking is the thing members said wasn't
+   motivating, and a team score is what lets someone's effort count without
+   their name sitting in a league table. */
+.team-challenge {
+  background: var(--card-white);
+  border-radius: var(--radius-lg);
+  border-left: 5px solid var(--team-colour);
+  padding: 16px 18px;
+  margin-top: 12px;
+  box-shadow: 0 4px 12px rgba(23, 36, 63, 0.05);
+}
+.team-challenge-head { display: flex; align-items: center; gap: 8px; }
+.team-challenge-head h3 {
+  margin: 0; flex: 1; min-width: 0;
+  font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.team-challenge-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--team-colour); flex-shrink: 0;
+}
+.team-challenge-rank { font-size: 12px; font-weight: 800; color: var(--deepblue); flex-shrink: 0; }
+.team-challenge-total {
+  margin: 8px 0 2px;
+  font-family: var(--font-heading); font-size: 34px; font-weight: 800; color: var(--ink);
+  line-height: 1;
+}
+.team-challenge-total span { font-size: 13px; font-weight: 700; color: var(--deepblue); margin-left: 6px; }
+.team-challenge-gap { margin: 0 0 2px; font-size: 13px; font-weight: 700; color: var(--blue); }
+.team-challenge-mine { margin: 0 0 12px; font-size: 12px; font-weight: 600; color: var(--deepblue); }
+.team-challenge-mates { display: flex; flex-wrap: wrap; gap: 6px; }
+.team-mate {
+  font-size: 11px; font-weight: 700; color: var(--ink);
+  background: var(--field-bg); border-radius: 999px; padding: 3px 10px;
+}
