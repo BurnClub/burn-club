@@ -1017,6 +1017,29 @@ function renderYearChart() {
 // it (2026-08-23). The snapshot clamps to the last week, so without this a
 // member who finished in May still sees "Week 8 · Day 7" and "0/6 Done This
 // Week" — an active week they look like they're failing, forever.
+// Longest run of consecutive days with any completion, inside the programme's
+// own window. Not currentStreak(), which is anchored to today and would read
+// 0 for anyone who finished a while ago.
+function longestStreakBetween(startKey, endKey) {
+  const days = [...new Set(COMPLETIONS.map((c) => c.date))]
+    .filter((d) => d >= startKey && d <= endKey)
+    .sort();
+  let best = 0, run = 0, prev = null;
+  days.forEach((d) => {
+    run = prev && daysBetween(prev, d) === 1 ? run + 1 : 1;
+    prev = d;
+    if (run > best) best = run;
+  });
+  return best;
+}
+
+function formatTrainingTime(totalMinutes) {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (!h) return `${m}m`;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+
 function renderProgramComplete(pos) {
   const card = document.getElementById("program-complete");
   const snapshot = document.getElementById("home-week-snapshot");
@@ -1026,18 +1049,29 @@ function renderProgramComplete(pos) {
   snapshot.style.display = done ? "none" : "";
   if (!done) return false;
 
+  // "Your 8 weeks are up", not "You finished" (Chris, 2026-08-23). The card
+  // fires on the calendar, not on effort, so a member who trained twice would
+  // have been congratulated for finishing. A neutral headline lets their own
+  // numbers below say how it actually went — one code path, and no threshold
+  // to argue about.
   document.getElementById("program-complete-title").textContent =
-    `You finished ${CURRENT_MEMBER.program}`;
+    `Your ${pos.totalWeeks} weeks are up`;
   // Year included deliberately: this can be read months or years after the
   // fact, and "Aug 23" alone is ambiguous once a year has turned over.
   const ended = pos.endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   document.getElementById("program-complete-sub").textContent =
-    `${pos.totalWeeks} weeks, finished ${ended}.`;
-  document.getElementById("pc-weeks").textContent = pos.totalWeeks;
-  // Their real total across the whole plan, not the current week's — the
-  // week-scoped numbers are exactly what made the old screen read as failure.
+    `${CURRENT_MEMBER.program}, finished ${ended}.`;
+
+  // Three stats that each say something different. The old set repeated
+  // itself: "8 Weeks" was already in the sentence above, and "63% of the
+  // plan" is "30/48" a second time.
+  const startKey = CURRENT_MEMBER.startDate;
+  const endKey = dateKey(pos.endDate);
+  const inProgram = COMPLETIONS.filter((c) => c.date >= startKey && c.date <= endKey);
+  const minutes = inProgram.reduce((sum, c) => sum + (c.minutes || 0), 0);
   document.getElementById("pc-workouts").textContent = `${pos.doneAll}/${pos.totalWorkouts}`;
-  document.getElementById("pc-percent").textContent = `${pos.percentComplete}%`;
+  document.getElementById("pc-time").textContent = formatTrainingTime(minutes);
+  document.getElementById("pc-streak").textContent = longestStreakBetween(startKey, endKey);
   return true;
 }
 
