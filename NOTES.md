@@ -64,6 +64,15 @@ syncs them.
   account. It needs to be a real member record on a real program, not a
   special case, or it won't exercise what a reviewer is checking.
 
+## Settled — don't revisit
+
+- **Exercise names stay as they are.** Long names were a layout problem and
+  have been fixed as one; they are not a naming problem. In particular, a lot
+  of exercises with "Static Hold" in the name are *standalone exercises*, not
+  candidates for the hold modifier (Chris, 2026-08-23). The modifier exists
+  for reps-then-hold on the same movement; an exercise that is only a hold
+  keeps its own library entry and its own name. Don't propose a bulk rename.
+
 ## Decisions still open
 
 - **The completion card stays open for revision** (Chris, 2026-08-23). Two
