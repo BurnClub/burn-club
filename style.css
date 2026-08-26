@@ -1284,7 +1284,11 @@ h1, h2, h3 {
   height: 1px;
   background: var(--periwinkle);
 }
-.amrap-row-left { display: flex; align-items: center; gap: 10px; }
+/* min-width: 0 is load-bearing (2026-08-23). A flex item defaults to
+   min-width: auto, so this refused to shrink below its content: a 51-char
+   exercise name ran off the card, off the phone, and shoved the row's video
+   button off-screen entirely — the ellipsis below never got a chance to fire. */
+.amrap-row-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .amrap-order-num {
   width: 22px;
   height: 22px;
@@ -2800,12 +2804,22 @@ h1, h2, h3 {
    font-weight 800 in 85 places and neither Barlow Condensed nor Inter loads
    an 800, so 700 and 800 render identically. 16.5px is Chris's +10% on the
    15px the mockup used. */
+/* Two lines, then ellipsis. Chris's longest real exercise is 51 characters
+   ("Sumo DB Squat Static Hold w/ Alternating Calf Raise") — 419px at this
+   size against ~270px of row, so one line was never going to hold it, and
+   truncating at 34 characters loses the half that says what the movement is.
+   Two lines fit it comfortably; the clamp stops a pathological name from
+   growing the card without limit. */
 .amrap-ex-name {
   font-size: 16.5px;
   font-weight: 700;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.2;
 }
 .amrap-reps { white-space: nowrap; font-weight: 500; }
 /* Weight reads as text until you tap it — it was a permanent bordered input

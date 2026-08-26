@@ -2460,7 +2460,11 @@ function derivedBlockLabel(b) {
 
 function chosenExercisePill(name, i, ei) {
   const active = isActiveSlot(i, ei) ? " active-slot" : "";
-  return `<div class="chosen-exercise ${name ? "" : "empty"}${active}" data-action="choose-exercise" data-block-index="${i}" data-ex-index="${ei}">${name || "+ Choose Exercise"}</div>`;
+  // title, so a name too long for the pill is still readable on hover — the
+  // single-exercise chooser has had one; these row pills hadn't. Chris has
+  // real workouts with 20-30 character names, and this is a desktop tool, so
+  // hover is a real answer here in a way it wouldn't be on the member app.
+  return `<div class="chosen-exercise ${name ? "" : "empty"}${active}" title="${name || ""}" data-action="choose-exercise" data-block-index="${i}" data-ex-index="${ei}">${name || "+ Choose Exercise"}</div>`;
 }
 
 // Split in two (2026-08-19). The block's own fields — rounds, rest, duration,
