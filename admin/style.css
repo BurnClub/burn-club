@@ -1175,8 +1175,19 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
    on source order — which is why this panel has quietly been rendering at
    720px, not the 1020px it was meant to be, since the sidebar was added. */
 .builder-panel.builder-panel-wide { width: 1320px; max-width: 96vw; max-height: 95vh; }
-.builder-content { display: flex; flex: 1; min-height: 0; overflow: hidden; }
-.builder-content .builder-body { flex: 1; min-width: 0; padding: 16px 14px; }
+/* overflow-x: auto, not hidden (2026-08-23). Both columns now have a floor,
+   so on a window too narrow for both the panel scrolls sideways instead of
+   silently clipping whichever one loses — previously the content past the
+   edge was simply gone. */
+.builder-content { display: flex; flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden; }
+/* min-width, not 0 (2026-08-23). The library held a rigid 58% at every size,
+   so the builder column absorbed every pixel lost as the window narrowed —
+   and inside it the exercise name is the only flexible element, so it took
+   the whole hit: 277px at a full-width panel, 59px at 800. A floor here makes
+   the library yield first, which it does gracefully: its cards are a
+   reflowing grid, where a builder row can't shrink past its fixed fields.
+   460px keeps the name at ~185px, which fits "Kettlebell Swings". */
+.builder-content .builder-body { flex: 1; min-width: 460px; padding: 16px 14px; }
 
 /* Density pass, scoped to this panel (2026-08-19). Chris wants the same
    treatment app-wide, but that's its own conversation — nothing below leaks
@@ -1316,10 +1327,20 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
    needs to be half of the create a workout screen"). At ~650px the list stops
    being a single narrow column and becomes a two-up grid, which is what makes
    the extra width buy visible exercises rather than whitespace. */
-.builder-panel-wide .builder-library { width: 58%; }
+/* 58% is a starting share, not a floor. The base .builder-library rule below
+   sets flex-shrink: 0, which is why the column held exactly 58% at every
+   width and the builder side absorbed the whole loss — and past a point the
+   two together exceeded the panel and the overflow was simply clipped. */
+/* A floor of its own: the search row and Filters button don't shrink, so
+   below ~260px they were the parts being clipped. */
+.builder-panel-wide .builder-library { width: 58%; min-width: 260px; flex-shrink: 1; }
+/* auto-fill rather than a fixed 4 columns: as the library gives up width it
+   drops to three then two, instead of crushing four cards into the space.
+   150px, not 160: at 160 it dropped to three columns as early as a 1200px
+   panel, narrower than it used to reflow. 150 holds four down to 1200. */
 .builder-panel-wide .builder-library-list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   align-content: start;
   gap: 8px;
 }
