@@ -188,6 +188,19 @@ function mostRecentCompletion(workoutId) {
 
 // "YYYY-MM-DD" -> "Jul 22". Built from local date parts (not `new Date(string)`,
 // which parses as UTC and can roll the date back a day in the evening).
+// ---------------- Toast ----------------
+// One at a time: a second message replaces the first rather than queueing, so
+// a rapid sequence can't leave the member reading something already stale.
+let toastTimer = null;
+function showToast(message) {
+  const el = document.getElementById("toast");
+  if (!el) return;
+  el.textContent = message;
+  el.classList.add("visible");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("visible"), 2600);
+}
+
 function formatShortDate(key) {
   const [y, m, d] = key.split("-").map(Number);
   return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -2913,14 +2926,26 @@ const Player = {
 
   exit() {
     this.stopHeartbeat();
-    // Tapping the X is a deliberate quit, and that has always discarded.
-    // The partial-log offer is for the abandonment case only -- see
-    // maybeOfferResume().
-    clearInProgress();
+    // Leaving no longer destroys the session (2026-08-23, Chris). The X sits
+    // in the top-left corner, exactly where a thumb rests holding a phone, and
+    // it used to wipe the workout on a single tap with no confirmation. Rather
+    // than guard that with a dialog, leaving now feeds the resume path that
+    // already exists — so there's one behaviour for "I stopped partway",
+    // however it happened, and nothing to be inconsistent with. Deliberately
+    // binning a session is "Start over" on the resume prompt.
+    //
+    // Nothing to resume to on the very first phase, so that case still clears
+    // rather than nagging them about a workout they didn't start.
+    const worthKeeping = this.index > 0;
+    // Persisted before stop(): stop() settles the clock and drops the
+    // deadline, and an AMRAP's clock is supposed to keep running while you're
+    // away — same as backgrounding.
+    if (worthKeeping) this.persist(); else clearInProgress();
     this.stop();
     this.closeSkipConfirm();
     closeBlockNotes();
     showTab("tab-home");
+    if (worthKeeping) showToast("Saved — pick up where you left off.");
   },
 
   togglePause() {

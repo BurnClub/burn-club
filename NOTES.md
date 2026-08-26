@@ -89,6 +89,3 @@ syncs them.
   Progress tab but hasn't decided where. Its current spot is provisional.
 - **Check-in feature** is paused pending partner feedback. Not a thread to
   push on unprompted.
-- **Exiting mid-workout via the ✕ still discards.** An *abandoned* session
-  now offers to log a partial; a deliberate quit doesn't. Slightly
-  inconsistent, and left alone rather than redesigned unasked.
