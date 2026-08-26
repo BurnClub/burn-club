@@ -66,6 +66,14 @@ syncs them.
 
 ## Settled — don't revisit
 
+- **The completion card stays on Home until a new program is assigned**
+  (Chris, 2026-08-23). Not dismissible, not a popup — it's a standing call to
+  action, and it clears when `start_date` changes. Don't propose a dismiss.
+
+- **Its CTA already opens the coach DM.** "Message your coach" goes straight
+  to the staff thread with the composer ready; there's no separate link to
+  add.
+
 - **Exercise names stay as they are.** Long names were a layout problem and
   have been fixed as one; they are not a naming problem. In particular, a lot
   of exercises with "Static Hold" in the name are *standalone exercises*, not
@@ -78,16 +86,8 @@ syncs them.
 - **The completion card stays open for revision** (Chris, 2026-08-23). Two
   separate things to settle on it:
 
-  1. **The copy itself.** "Message your coach" and "Ask about repeating this
-     program, or what to move on to next" are still first drafts. This is the
-     one screen in the app whose whole job is to start a conversation, so the
-     words are the feature — worth Chris writing them himself rather than
-     inheriting mine.
-  2. **It never goes away.** The card sits on Home until `start_date` changes,
-     so a member who finishes and doesn't hear back sees it every day for
-     months. That's either a standing call to action or nagging, depending on
-     turnaround. A dismiss would fix it; worth deciding once real members hit
-     it.
+  1. **The copy itself.** Chris has approved the current wording; leaving it
+     open only in the sense that he may want to revise it later.
 
 - **Does a finished program end, or re-enrol?** If members repeat a program
   or move to another, `start_date` stops being one field and becomes a
