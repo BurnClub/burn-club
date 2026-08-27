@@ -223,8 +223,48 @@ function customGroups() {
   return CUSTOM_GROUPS.map((g) => ({ ...g, type: "custom" }));
 }
 
+// A challenge team is a group too (2026-08-26, Chris: "create a new section of
+// groups for Challenge teams, and have the messages stored there as well").
+// Modelling it as a third group type rather than a parallel screen means the
+// tree, the roster, the activity feed and the chat all work on it already.
+//
+// Only while the challenge runs, matching the member app: a team exists for
+// the length of its challenge and next month everyone is redrawn.
+const GROUP_TYPE_LABEL = { program: "Program group", custom: "Custom group", team: "Challenge team" };
+const GROUP_TYPE_BADGE = {
+  program: "Program group · membership follows the program",
+  custom: "Custom group · hand-picked",
+  team: "Challenge team · drawn for this challenge, and gone when it ends",
+};
+
+function teamGroups() {
+  const out = [];
+  CHALLENGES.filter((c) => c.format === "teams" && challengeStatus(c) === "active").forEach((c) => {
+    teamsOf(c).forEach((t) => {
+      out.push({
+        id: `team-${t.id}`,
+        type: "team",
+        teamId: t.id,
+        challengeId: c.id,
+        name: t.name,
+        challengeName: c.name,
+        color: t.color,
+        memberIds: (t.memberIds || []).slice(),
+        description: `Drawn for ${c.name}`,
+      });
+    });
+  });
+  return out;
+}
+
 function allGroups() {
-  return [...programGroups(), ...customGroups()];
+  return [...programGroups(), ...customGroups(), ...teamGroups()];
+}
+
+// Reverse of groupConversationId — lets the dashboard's reply queue send a
+// group or team row to the Groups section instead of Messages.
+function groupByConversationId(conversationId) {
+  return allGroups().find((g) => groupConversationId(g) === conversationId) || null;
 }
 
 function groupById(id) {
@@ -234,12 +274,16 @@ function groupById(id) {
 function groupMembers(group) {
   if (!group) return [];
   if (group.type === "program") return MEMBERS.filter((m) => m.program === group.programId);
+  // Custom groups and teams both carry an explicit member list.
   return (group.memberIds || []).map((id) => memberById(id)).filter(Boolean);
 }
 
 // The group's chat thread. Program groups already had one; custom groups get
 // one created alongside them, so "Message Group" never dead-ends.
 function groupConversationId(group) {
+  // Teams keep the id the member app already writes to, so the two sides land
+  // in the same thread without a migration.
+  if (group.type === "team") return `group-team-${group.teamId}`;
   return "group-" + (group.type === "program" ? group.programId : group.id);
 }
 
@@ -328,7 +372,12 @@ function renderGroupTree() {
   if (!host) return;
   const section = (label, list) => list.length
     ? `<p class="tree-section-label">${label}</p>${list.map(groupTreeNodeHtml).join("")}` : "";
-  host.innerHTML = section("Program groups", programGroups()) + section("Custom groups", customGroups())
+  const teams = teamGroups();
+  const byChallenge = [...new Set(teams.map((g) => g.challengeId))].map((id) => {
+    const list = teams.filter((g) => g.challengeId === id);
+    return section(`Teams · ${list[0].challengeName}`, list);
+  }).join("");
+  host.innerHTML = section("Program groups", programGroups()) + section("Custom groups", customGroups()) + byChallenge
     || `<p class="tree-empty">No groups yet</p>`;
   const all = document.querySelector("#view-groups .tree-all");
   if (all) all.classList.toggle("active", groupsPane === "list");
@@ -350,7 +399,7 @@ function renderGroupList() {
     return `
       <div class="library-program-card" data-action="open-group" data-group-id="${g.id}">
         <div class="library-program-card-main">
-          <p class="eyebrow">${g.type === "program" ? "Program group" : "Custom group"}</p>
+          <p class="eyebrow">${g.type === "team" ? `Team · ${esc(g.challengeName)}` : (GROUP_TYPE_LABEL[g.type] || "Group")}</p>
           <h3>${g.name}</h3>
           <p class="library-program-card-count">${members.length} member${members.length === 1 ? "" : "s"}</p>
         </div>
@@ -435,14 +484,20 @@ function renderGroupDetail() {
   const members = groupMembers(group);
 
   document.getElementById("group-detail-title").textContent = group.name;
-  document.getElementById("group-detail-badge").textContent =
-    group.type === "program" ? "Program group · membership follows the program" : "Custom group · hand-picked";
+  document.getElementById("group-detail-badge").textContent = group.type === "team"
+    ? `Challenge team · ${group.challengeName}`
+    : (GROUP_TYPE_BADGE[group.type] || "Group");
   document.getElementById("group-detail-desc").textContent = group.description || "";
 
   // Only custom groups can be edited or deleted — a program group is a view of
-  // the program, so the way to change it is to change who's on the program.
+  // the program, so the way to change it is to change who's on the program,
+  // and a team is a view of its challenge, changed by redrawing there.
   document.getElementById("group-edit-btn").style.display = group.type === "custom" ? "" : "none";
   document.getElementById("group-delete-btn").style.display = group.type === "custom" ? "" : "none";
+  // "Add to Challenge" makes no sense for a team — it already is one. The
+  // button becomes a way back to the challenge it was drawn for.
+  const challengeBtn = document.getElementById("group-challenge-btn");
+  challengeBtn.textContent = group.type === "team" ? "Open Challenge" : "Add to Challenge";
 
   const active = members.filter((m) => latestActivityFor(m.id));
   document.getElementById("group-activity-summary").textContent = members.length
@@ -735,7 +790,20 @@ function renderDashboardUnread() {
 
 // Jump straight from the dashboard into the thread, already open and ready to
 // type. Opening it marks it read, so the panel has to re-render after.
+// Group and team chats aren't in Messages any more, so a group row here has to
+// open the group's page instead of a thread that no longer has a list to sit in.
 function openUnreadConversation(conversationId) {
+  const group = groupByConversationId(conversationId);
+  if (group) {
+    showView("view-groups");
+    openGroup(group.id, "chat");
+    renderGroupList();
+    return;
+  }
+  openUnreadDirectMessage(conversationId);
+}
+
+function openUnreadDirectMessage(conversationId) {
   showView("view-messages");
   renderAdminConversationList();
   openAdminThread(conversationId);
@@ -2913,7 +2981,7 @@ const LIVE_TEAMS_KEY = "burnClubLiveChallengeTeams";
 // leaving a year of dead threads behind.
 function syncTeamConversations() {
   const live = new Map();
-  CHALLENGES.filter((c) => challengeStatus(c) === "active").forEach((c) => {
+  CHALLENGES.filter((c) => c.format === "teams" && challengeStatus(c) === "active").forEach((c) => {
     teamsOf(c).forEach((t) => live.set(`group-team-${t.id}`, `${t.name} Team Chat`));
   });
 
@@ -3854,9 +3922,14 @@ function conversationPreview(conv) {
 
 let selectedConversationId = null;
 
+// Direct messages only (2026-08-26, Chris: "I want to keep the messages
+// section mainly for direct client messages"). Group, program and team chats
+// all live on their group's page in Groups, where the roster and activity that
+// give them context are. CONVERSATIONS still holds every thread — the split is
+// about where each one is read, not what exists.
 function renderAdminConversationList() {
   const preview = (conv) => conversationPreview(conv);
-  document.getElementById("admin-conversation-list").innerHTML = CONVERSATIONS.map((conv) => {
+  document.getElementById("admin-conversation-list").innerHTML = CONVERSATIONS.filter((c) => c.type === "dm").map((conv) => {
     const p = preview(conv);
     return `
       <div class="admin-conversation-row ${conv.id === selectedConversationId ? "active" : ""}" data-action="open-admin-thread" data-conversation-id="${conv.id}">
@@ -3875,11 +3948,24 @@ function renderAdminConversationList() {
   updateAdminUnreadBadge();
 }
 
+// One badge per place a message can be read (2026-08-26). Messages counts only
+// direct messages now that groups have moved out of it, and Groups carries the
+// rest — a single total on Messages would have pointed at a list the unread
+// message wasn't in.
 function updateAdminUnreadBadge() {
-  const unreadCount = MESSAGES.filter((m) => !m.isStaff && !m.read).length;
-  const badge = document.getElementById("side-unread-badge");
-  badge.textContent = unreadCount;
-  badge.style.display = unreadCount > 0 ? "inline-flex" : "none";
+  const unread = MESSAGES.filter((m) => !m.isStaff && !m.read);
+  const dmIds = new Set(CONVERSATIONS.filter((c) => c.type === "dm").map((c) => c.id));
+  const dmCount = unread.filter((m) => dmIds.has(m.conversationId)).length;
+  const groupCount = unread.length - dmCount;
+
+  const set = (id, count) => {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    badge.textContent = count;
+    badge.style.display = count > 0 ? "inline-flex" : "none";
+  };
+  set("side-unread-badge", dmCount);
+  set("side-groups-unread-badge", groupCount);
 }
 
 function renderAdminMessageBubble(m, isGroup) {
@@ -4721,6 +4807,7 @@ function renderChallenges() {
           <span class="status-pill ${status}">${status}</span>
         </div>
         <p class="desc">${program ? program.name : "All Programs"} · ${c.startDate} to ${c.endDate}</p>
+        <p class="desc">${c.format === "teams" ? `Teams · ${teamsOf(c).length} side${teamsOf(c).length === 1 ? "" : "s"}` : "Individual"}</p>
         <div class="program-card-stats">
           <div><p>${c.pointsPerWorkout}</p><p>Pts / Workout</p></div>
           <div><p>${c.thresholdPoints}</p><p>Threshold</p></div>
@@ -4737,6 +4824,13 @@ function renderTeamStandings() {
   const wrap = document.getElementById("team-standings");
   const note = document.getElementById("challenge-teams-note");
   if (!challenge || !wrap) return;
+
+  // An individual challenge has no teams panel at all — the format is chosen
+  // when the challenge is created, not bolted on here afterwards.
+  const isTeams = challenge.format === "teams";
+  document.getElementById("challenge-teams").style.display = isTeams ? "" : "none";
+  if (!isTeams) return;
+
   const standings = teamStandings(challenge);
   if (!standings.length) {
     note.textContent = "No teams drawn yet.";
@@ -4825,7 +4919,17 @@ function openChallengeModal() {
   document.getElementById("challenge-modal-points").value = 5;
   document.getElementById("challenge-modal-threshold").value = 200;
   document.getElementById("challenge-modal-reward").value = "";
+  document.getElementById("challenge-modal-format").value = "individual";
+  document.getElementById("challenge-modal-teamcount").value = 4;
+  updateChallengeFormatFields();
   document.getElementById("challenge-modal-overlay").classList.add("visible");
+}
+
+// The team-count field and its note only mean anything for a team challenge.
+function updateChallengeFormatFields() {
+  const teams = document.getElementById("challenge-modal-format").value === "teams";
+  document.getElementById("challenge-modal-teamcount-field").style.display = teams ? "" : "none";
+  document.getElementById("challenge-modal-teams-desc").style.display = teams ? "" : "none";
 }
 
 function openEditChallengeModal(challengeId) {
@@ -4841,6 +4945,9 @@ function openEditChallengeModal(challengeId) {
   document.getElementById("challenge-modal-points").value = c.pointsPerWorkout;
   document.getElementById("challenge-modal-threshold").value = c.thresholdPoints;
   document.getElementById("challenge-modal-reward").value = c.reward;
+  document.getElementById("challenge-modal-format").value = c.format === "teams" ? "teams" : "individual";
+  document.getElementById("challenge-modal-teamcount").value = c.teamCount || teamsOf(c).length || 4;
+  updateChallengeFormatFields();
   document.getElementById("challenge-modal-overlay").classList.add("visible");
 }
 
@@ -4865,18 +4972,37 @@ function saveChallenge() {
   const pointsPerWorkout = Number(document.getElementById("challenge-modal-points").value) || 5;
   const thresholdPoints = Number(document.getElementById("challenge-modal-threshold").value) || 200;
   const reward = document.getElementById("challenge-modal-reward").value.trim();
+  const format = document.getElementById("challenge-modal-format").value === "teams" ? "teams" : "individual";
+  const teamCount = Math.max(2, Math.min(Number(document.getElementById("challenge-modal-teamcount").value) || 4, MAX_TEAMS));
 
+  let challenge;
   if (editingChallengeId) {
-    const c = challengeById(editingChallengeId);
-    Object.assign(c, { name, programId, startDate, endDate, pointsPerWorkout, thresholdPoints, reward });
+    challenge = challengeById(editingChallengeId);
+    Object.assign(challenge, { name, programId, startDate, endDate, pointsPerWorkout, thresholdPoints, reward, format, teamCount });
   } else {
-    CHALLENGES.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now(), name, programId, startDate, endDate, pointsPerWorkout, thresholdPoints, reward });
+    challenge = { id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now(), name, programId, startDate, endDate, pointsPerWorkout, thresholdPoints, reward, format, teamCount };
+    CHALLENGES.push(challenge);
   }
+
+  if (format === "teams") {
+    // Drawn on save so a team challenge is a team challenge the moment it
+    // exists — there's no half-made state where members are in it but have no
+    // side. Redrawing and moving people stay available on the detail page.
+    // An existing split is left alone unless the team count changed, so
+    // editing the reward doesn't reshuffle everyone.
+    if (teamsOf(challenge).length !== teamCount) challenge.teams = drawTeams(challenge, teamCount);
+  } else {
+    // Switched back to individual: the teams and their chats go with it.
+    challenge.teams = [];
+  }
+
   closeChallengeModal();
-  // Editing the dates can start or end a challenge, which is what decides
-  // whether its team chats belong in the inbox.
+  syncChallengeTeamsToMemberApp();
+  // The format and the dates both decide whether this challenge's team chats
+  // and team groups exist at all.
   syncTeamConversations();
   renderAdminConversationList();
+  renderGroupList();
   renderChallenges();
 }
 
@@ -4925,11 +5051,13 @@ document.addEventListener("DOMContentLoaded", () => {
   loadExerciseLibrary();
 
   populateProgramFilters();
+  // Before anything that reads CONVERSATIONS — the dashboard's reply queue is
+  // built from it, and team chats aren't in it until this has run.
+  syncTeamConversations();
   renderDashboard();
   renderPrograms();
   renderFolderGrid();
   renderPosts();
-  syncTeamConversations();
   renderAdminConversationList();
 
   renderExerciseLibrary();
@@ -4982,7 +5110,15 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("new-group-btn").addEventListener("click", () => openGroupModal(null));
   document.getElementById("group-edit-btn").addEventListener("click", () => openGroupModal(selectedGroupId));
   document.getElementById("group-delete-btn").addEventListener("click", deleteGroup);
-  document.getElementById("group-challenge-btn").addEventListener("click", openGroupChallengeModal);
+  document.getElementById("group-challenge-btn").addEventListener("click", () => {
+    const group = groupById(selectedGroupId);
+    if (group && group.type === "team") {
+      showView("view-challenges");
+      openChallengeDetail(group.challengeId);
+      return;
+    }
+    openGroupChallengeModal();
+  });
   document.getElementById("group-chat-composer").addEventListener("submit", (e) => {
     e.preventDefault();
     const input = document.getElementById("group-chat-input");
@@ -5022,6 +5158,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("settings-back-btn").addEventListener("click", showSettingsIndex);
   document.getElementById("settings-notes-save-btn").addEventListener("click", saveBlockNotesSettings);
+
+  document.getElementById("challenge-modal-format").addEventListener("change", updateChallengeFormatFields);
 
   document.getElementById("admin-thread-composer").addEventListener("submit", (e) => {
     e.preventDefault();

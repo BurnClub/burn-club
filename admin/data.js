@@ -804,6 +804,11 @@ const CHALLENGES = [
     pointsPerWorkout: 5,
     thresholdPoints: 200,
     reward: "Entered to win free Burn Club merch",
+    // "individual" or "teams" (2026-08-26). Teams used to be something you
+    // could bolt onto any challenge from the detail page; now it's what kind
+    // of challenge this is, chosen when it's created.
+    format: "teams",
+    teamCount: 4,
     teams: [
       { id: "t-red", name: "Red", color: "#E0685E", memberIds: ["priya-k", "marcus-t"] },
       { id: "t-blue", name: "Blue", color: "#788CE3", memberIds: ["jamie-r", "alicia-b"] },
