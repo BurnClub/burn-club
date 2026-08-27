@@ -1076,6 +1076,13 @@ function renderProgramComplete(pos) {
   // to argue about.
   document.getElementById("program-complete-title").textContent =
     `Your ${pos.totalWeeks} weeks are up`;
+
+  // Everything on this card except the member's own numbers is Chris's to
+  // reword (Admin -> Settings -> Member-Facing Copy).
+  const pc = APP_SETTINGS.copy.programComplete;
+  document.getElementById("program-complete-eyebrow").textContent = pc.eyebrow;
+  document.getElementById("program-complete-cta").textContent = pc.cta;
+  document.getElementById("program-complete-note").textContent = pc.note;
   // Year included deliberately: this can be read months or years after the
   // fact, and "Aug 23" alone is ambiguous once a year has turned over.
   const ended = pos.endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -1457,9 +1464,12 @@ function challengePointsBreakdown(challenge) {
   const cardioCount = inRange.filter((c) => c.category === "cardio-activity").length;
   const workoutCount = inRange.length - cardioCount;
   const habitDays = perfectHabitDaysInRange(challenge.startDate, challenge.endDate);
+  // Each source has its own value now (Admin -> Settings -> Challenge
+  // Scoring). They all used to borrow the challenge's per-workout number,
+  // which made a habit day worth as much as a full circuit.
   const workouts = workoutCount * challenge.pointsPerWorkout;
-  const cardio = cardioCount * challenge.pointsPerWorkout;
-  const habits = habitDays * challenge.pointsPerWorkout;
+  const cardio = cardioCount * APP_SETTINGS.scoring.cardioPoints;
+  const habits = habitDays * APP_SETTINGS.scoring.habitDayPoints;
   const adjustment = CURRENT_MEMBER.pointAdjustment || 0;
   return { workouts, cardio, habits, adjustment, total: workouts + cardio + habits + adjustment };
 }
@@ -1475,14 +1485,15 @@ function challengePointsForMember(challenge) {
 // scales with the highest score on the board, so it's never fewer levels
 // than there are people to place.
 function challengeLevels(standings) {
-  const maxPoints = Math.max(50, ...standings.map((s) => s.points));
-  const levelCount = Math.ceil(maxPoints / 50);
+  const size = Math.max(1, APP_SETTINGS.scoring.levelSize);
+  const maxPoints = Math.max(size, ...standings.map((s) => s.points));
+  const levelCount = Math.ceil(maxPoints / size);
   const levels = [];
   for (let i = 1; i <= levelCount; i++) {
-    const min = (i - 1) * 50 + 1;
-    const max = i * 50;
-    const count = standings.filter((s) => Math.max(1, Math.ceil(s.points / 50)) === i).length;
-    const mine = standings.some((s) => s.me && Math.max(1, Math.ceil(s.points / 50)) === i);
+    const min = (i - 1) * size + 1;
+    const max = i * size;
+    const count = standings.filter((s) => Math.max(1, Math.ceil(s.points / size)) === i).length;
+    const mine = standings.some((s) => s.me && Math.max(1, Math.ceil(s.points / size)) === i);
     levels.push({ level: i, min, max, count, mine });
   }
   return levels.reverse(); // highest level first, reads top-down like a ladder
@@ -1580,7 +1591,7 @@ function renderChallengeCard() {
 
       <p class="challenge-reward ${reached ? "reached" : ""}">${reached ? "🎉 You've hit the threshold — " + challenge.reward : `Reach ${challenge.thresholdPoints} points — ${challenge.reward}`}</p>
 
-      <p class="challenge-levels-title">Levels (every 50 pts)</p>
+      <p class="challenge-levels-title">Levels (every ${APP_SETTINGS.scoring.levelSize} pts)</p>
       <div class="challenge-levels">
         ${levels.map((l) => `
           <div class="challenge-level-row ${l.mine ? "mine" : ""}">
@@ -2058,7 +2069,24 @@ function copyInviteLink() {
 }
 
 // Help & Support — static FAQ + mailto, no ticketing system behind it.
+// Questions and the contact address are Chris's to edit (Admin -> Settings ->
+// Support & Contact) rather than markup, so a wrong support address or a
+// missing answer isn't a deploy.
+function renderSupportScreen() {
+  const { email, faqs } = APP_SETTINGS.support;
+  document.getElementById("support-faq-list").innerHTML = faqs.map((f) => `
+    <div class="support-faq-item">
+      <p class="support-faq-q">${esc(f.q)}</p>
+      <p class="support-faq-a">${esc(f.a)}</p>
+    </div>
+  `).join("") || `<p class="support-faq-a">No questions here yet — message your coach and they'll help.</p>`;
+  const link = document.getElementById("support-email-link");
+  link.href = `mailto:${email}`;
+  link.style.display = email ? "" : "none";
+}
+
 function openSupportScreen() {
+  renderSupportScreen();
   document.getElementById("support-overlay").classList.add("visible");
 }
 
@@ -2461,42 +2489,22 @@ function tourSeen() {
 
 function tourSlides() {
   const isStructured = CURRENT_MEMBER.scheduleType === "structured";
+  // Wording lives in Admin -> Settings -> Member-Facing Copy. The structure —
+  // which slides exist and what each one points at — stays here, because it
+  // follows the nav rather than the copy.
+  const t = APP_SETTINGS.copy.tour;
+  const slide = (key, anchor, extra) => ({ anchor, title: t[key].title, body: t[key].body, ...extra });
   return [
-    {
-      anchor: "nav-home-btn",
-      title: "Start Here",
-      body: "Home is your day at a glance — today's workout, your streak, and your daily habits. Most days this is the only screen you need.",
-    },
-    isStructured
-      ? {
-          anchor: "nav-calendar-btn",
-          title: "Your Program",
-          body: "Your weeks are already laid out for you. Tap any day to see what's assigned and start it from there.",
-        }
-      : {
-          anchor: "nav-workouts-btn",
-          title: "Every Workout",
-          body: "Browse the full circuit list and start any of them, any day. You can also build your own from the Exercise Library.",
-        },
-    {
-      anchor: "nav-community-btn",
-      title: "The Club",
-      body: "See where you stand in this month's challenge, follow your team, and keep up with everyone else in the group.",
-    },
-    {
-      anchor: "nav-progress-btn",
-      title: "Watch It Add Up",
-      body: "Your personal records, benchmark results, and every workout you've logged, all in one place.",
-    },
-    {
-      // No anchor: the closing slide has nothing to point at, so the card
-      // centers and the dim covers the whole frame.
-      anchor: null,
-      title: "Questions? Just Ask.",
-      body: "Message your coach any time and you'll get a real answer from a real person. You can replay this tour whenever you like from Profile \u2192 Help & Support.",
-      actionLabel: "Message Your Coach",
+    slide("home", "nav-home-btn"),
+    isStructured ? slide("calendar", "nav-calendar-btn") : slide("workouts", "nav-workouts-btn"),
+    slide("community", "nav-community-btn"),
+    slide("progress", "nav-progress-btn"),
+    // No anchor: the closing slide has nothing to point at, so the card
+    // centers and the dim covers the whole frame.
+    slide("contact", null, {
+      actionLabel: t.contact.action,
       action: () => openThread(`dm-${CURRENT_MEMBER.id}`),
-    },
+    }),
   ];
 }
 

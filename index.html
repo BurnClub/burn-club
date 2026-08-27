@@ -67,7 +67,7 @@
              with "0/6 Done This Week" and "0% Program Complete" — an active
              week they appear to be failing. -->
         <div class="program-complete" id="program-complete" style="display:none;">
-          <p class="program-complete-eyebrow">Program summary</p>
+          <p class="program-complete-eyebrow" id="program-complete-eyebrow">Program summary</p>
           <h2 class="program-complete-title" id="program-complete-title">You finished Fit &amp; Functional</h2>
           <p class="program-complete-sub" id="program-complete-sub"></p>
           <div class="stats-plain-grid program-complete-stats">
@@ -85,7 +85,7 @@
             </div>
           </div>
           <button class="btn-primary program-complete-cta" id="program-complete-cta">Message your coach</button>
-          <p class="program-complete-note">Ask about repeating this program, or what to move on to next.</p>
+          <p class="program-complete-note" id="program-complete-note">Ask about repeating this program, or what to move on to next.</p>
         </div>
 
         <div class="home-week-snapshot" id="home-week-snapshot">
@@ -825,21 +825,8 @@
           <button class="player-exit" id="support-close-btn">✕</button>
           <h2 class="cardio-log-title">Help &amp; Support</h2>
           <button class="btn-primary support-tour-btn" id="support-tour-btn" type="button">Take the App Tour</button>
-          <div class="support-faq">
-            <div class="support-faq-item">
-              <p class="support-faq-q">How do I change my workout schedule?</p>
-              <p class="support-faq-a">Head to Workouts — you can start any circuit any day, or build your own from the Exercise Library.</p>
-            </div>
-            <div class="support-faq-item">
-              <p class="support-faq-q">Can I pause my membership?</p>
-              <p class="support-faq-a">Yes — message your coach and they'll take care of it for you.</p>
-            </div>
-            <div class="support-faq-item">
-              <p class="support-faq-q">How do I connect a wearable?</p>
-              <p class="support-faq-a">Go to Profile → Connected Devices and tap Connect next to your device.</p>
-            </div>
-          </div>
-          <a class="btn-primary support-email-link" href="mailto:support@burnclub.com">Email Support</a>
+          <div class="support-faq" id="support-faq-list"></div>
+          <a class="btn-primary support-email-link" id="support-email-link" href="mailto:support@burnclub.com">Email Support</a>
         </div>
       </div>
 

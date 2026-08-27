@@ -1943,3 +1943,21 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .team-name-input:hover { border-color: var(--periwinkle); }
 .team-name-input:focus { border-color: var(--blue); background: white; outline: none; }
+
+/* ---- App settings panels (2026-08-27) ---- */
+.settings-subhead {
+  margin: 26px 0 10px;
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.settings-subhead:first-child { margin-top: 0; }
+.settings-field-help {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--deepblue);
+}
+.settings-note-card .modal-field { margin-bottom: 12px; }
+.settings-note-card .modal-field:last-of-type { margin-bottom: 0; }

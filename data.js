@@ -233,6 +233,90 @@ try {
   });
 } catch (e) {}
 
+// ---------------- App settings (2026-08-27) ----------------
+// Things Chris should be able to change without a deploy, edited in
+// Admin -> Settings and carried on the same localStorage bridge as circuits,
+// messages and the block notes above.
+//
+// Stored as a sparse override rather than the whole object: only what's been
+// changed is written, so a default that gets reworded later reaches members
+// who never touched that field. mergeAppSettings() is why a stored copy from
+// before a new field existed still works.
+const APP_SETTINGS_DEFAULTS = {
+  // Workout points stay on the challenge (each one sets its own); these are
+  // the sources that had no number of their own and silently borrowed it.
+  scoring: {
+    cardioPoints: 5,
+    habitDayPoints: 5,
+    levelSize: 50,
+    defaultWorkoutPoints: 5,
+    defaultThreshold: 200,
+  },
+  support: {
+    email: "support@burnclub.com",
+    faqs: [
+      { q: "How do I change my workout schedule?", a: "Head to Workouts — you can start any circuit any day, or build your own from the Exercise Library." },
+      { q: "Can I pause my membership?", a: "Yes — message your coach and they'll take care of it for you." },
+      { q: "How do I connect a wearable?", a: "Go to Profile → Connected Devices and tap Connect next to your device." },
+    ],
+  },
+  copy: {
+    // Keyed, not indexed: the tour shows Workouts or Calendar depending on the
+    // member's program shape, so slides aren't a fixed list.
+    tour: {
+      home: { title: "Start Here", body: "Home is your day at a glance — today's workout, your streak, and your daily habits. Most days this is the only screen you need." },
+      workouts: { title: "Every Workout", body: "Browse the full circuit list and start any of them, any day. You can also build your own from the Exercise Library." },
+      calendar: { title: "Your Program", body: "Your weeks are already laid out for you. Tap any day to see what's assigned and start it from there." },
+      community: { title: "The Club", body: "See where you stand in this month's challenge, follow your team, and keep up with everyone else in the group." },
+      progress: { title: "Watch It Add Up", body: "Your personal records, benchmark results, and every workout you've logged, all in one place." },
+      contact: { title: "Questions? Just Ask.", body: "Message your coach any time and you'll get a real answer from a real person. You can replay this tour whenever you like from Profile → Help & Support.", action: "Message Your Coach" },
+    },
+    programComplete: {
+      eyebrow: "Program summary",
+      cta: "Message your coach",
+      note: "Ask about repeating this program, or what to move on to next.",
+    },
+  },
+  // What a new member starts with. `auto` ties a habit to a wearable metric;
+  // leave it off for one the member ticks themselves.
+  habits: [
+    { id: "steps-10k", label: "10,000 Steps", auto: "steps", target: 10000 },
+    { id: "water-100oz", label: "100oz Water" },
+    { id: "outdoor-activity", label: "Outdoor Activity" },
+  ],
+};
+
+const LIVE_APP_SETTINGS_KEY = "burnClubAppSettings";
+
+// Recursive merge, so an override can be as narrow as one tour slide's heading
+// and everything around it still tracks the built-in wording. Arrays (faqs,
+// habits) are replaced wholesale rather than merged element-wise — a saved
+// list of two FAQs means two, not two laid over the three defaults.
+function mergeAppSettings(defaults, stored) {
+  if (Array.isArray(stored)) return JSON.parse(JSON.stringify(stored));
+  if (!stored || typeof stored !== "object") return JSON.parse(JSON.stringify(defaults));
+  const out = JSON.parse(JSON.stringify(defaults));
+  Object.keys(stored).forEach((k) => {
+    const v = stored[k];
+    if (v && typeof v === "object" && !Array.isArray(v) && out[k] && typeof out[k] === "object" && !Array.isArray(out[k])) {
+      out[k] = mergeAppSettings(out[k], v);
+    } else {
+      out[k] = Array.isArray(v) ? JSON.parse(JSON.stringify(v)) : v;
+    }
+  });
+  return out;
+}
+
+function loadAppSettings() {
+  try {
+    return mergeAppSettings(APP_SETTINGS_DEFAULTS, JSON.parse(localStorage.getItem(LIVE_APP_SETTINGS_KEY) || "null"));
+  } catch (e) {
+    return mergeAppSettings(APP_SETTINGS_DEFAULTS, null);
+  }
+}
+
+let APP_SETTINGS = loadAppSettings();
+
 // ---------------- Dated availability (2026-08-15) ----------------
 // Rolling-program workouts carry their own availability instead of being
 // tagged into a "this week" or "previous week" bucket by admin. The app works
@@ -1026,9 +1110,7 @@ const HABIT_PRESETS = [
   { id: "custom", label: "Other (custom)", custom: true },
 ];
 
-// Up to 3, member-chosen — seeded here so the demo starts with something set.
-const MY_HABITS_DEFAULT = [
-  { id: "steps-10k", label: "10,000 Steps", auto: "steps", target: 10000 },
-  { id: "water-100oz", label: "100oz Water" },
-  { id: "outdoor-activity", label: "Outdoor Activity" },
-];
+// Up to 3, member-chosen. What a member starts with before they choose is set
+// in Admin -> Settings -> Default Habits — it used to be this literal, which
+// meant the starting habits for every imported member were a code edit.
+const MY_HABITS_DEFAULT = APP_SETTINGS.habits;

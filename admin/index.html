@@ -1148,6 +1148,62 @@
             <span class="settings-nav-caret">›</span>
           </button>
         </div>
+
+        <h2 class="settings-group-title">Challenge Settings</h2>
+        <div class="settings-row-list">
+          <button class="settings-nav-row" data-action="open-app-setting" data-panel="scoring">
+            <span>
+              <span class="settings-nav-name">Challenge Scoring</span>
+              <span class="settings-nav-desc">What a cardio session and a habit day are worth, and how big a level is</span>
+            </span>
+            <span class="settings-nav-caret">›</span>
+          </button>
+        </div>
+
+        <h2 class="settings-group-title">Member Experience</h2>
+        <div class="settings-row-list">
+          <button class="settings-nav-row" data-action="open-app-setting" data-panel="support">
+            <span>
+              <span class="settings-nav-name">Support &amp; Contact</span>
+              <span class="settings-nav-desc">The address on Email Support, and the questions members read before they ask</span>
+            </span>
+            <span class="settings-nav-caret">›</span>
+          </button>
+          <button class="settings-nav-row" data-action="open-app-setting" data-panel="copy">
+            <span>
+              <span class="settings-nav-name">Member-Facing Copy</span>
+              <span class="settings-nav-desc">The first-run app tour and the end-of-program card</span>
+            </span>
+            <span class="settings-nav-caret">›</span>
+          </button>
+          <button class="settings-nav-row" data-action="open-app-setting" data-panel="habits">
+            <span>
+              <span class="settings-nav-name">Default Habits</span>
+              <span class="settings-nav-desc">What a new member starts with before they pick their own</span>
+            </span>
+            <span class="settings-nav-caret">›</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- One shell for every app setting (2026-08-27). The panels differ only
+           in the fields they show, so the header, save button and saved note
+           are shared and renderAppSettingPanel() fills the body. -->
+      <div id="settings-panel-view" style="display:none;">
+        <button class="folder-back-btn" data-action="settings-back">← All Settings</button>
+        <header class="view-header">
+          <div>
+            <p class="eyebrow" id="settings-panel-eyebrow"></p>
+            <h1 id="settings-panel-title"></h1>
+            <p class="challenge-detail-meta" id="settings-panel-desc"></p>
+          </div>
+          <div class="view-header-actions">
+            <button class="btn-ghost-lg small" data-action="reset-app-setting">Restore Defaults</button>
+            <button class="btn-primary" data-action="save-app-setting">Save Changes</button>
+          </div>
+        </header>
+        <div id="settings-panel-body"></div>
+        <p class="settings-saved-note" id="settings-panel-saved" style="display:none;"></p>
       </div>
 
       <!-- Before You Start Notes editor -->

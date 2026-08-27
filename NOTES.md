@@ -87,6 +87,15 @@ syncs them.
 
 ## Decisions still open
 
+- **Team challenges — Chris wants a longer conversation about this section**
+  (2026-08-26). Raised right after teams moved into Groups and challenges got
+  an Individual/Teams format. Not blocked on anything; pick it up next session.
+  Two things already on the table when that happens: default team names are
+  still hard-coded (`DEFAULT_TEAM_NAMES`), and nothing stops two team
+  challenges running at once — a member drawn into both would be on two teams,
+  and the member app's `myChallengeTeam()` silently returns the first match.
+
+
 - **The completion card stays open for revision** (Chris, 2026-08-23). Two
   separate things to settle on it:
 

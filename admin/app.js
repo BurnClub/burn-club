@@ -3733,6 +3733,46 @@ document.addEventListener("click", (e) => {
   if (action === "reset-block-note") {
     resetBlockNote(el.dataset.noteType);
   }
+  if (action === "open-app-setting") {
+    openAppSettingPanel(el.dataset.panel);
+  }
+  if (action === "settings-back") {
+    showSettingsIndex();
+  }
+  if (action === "save-app-setting") {
+    saveAppSettingPanel();
+  }
+  if (action === "reset-app-setting") {
+    resetAppSettingPanel();
+  }
+  // Add/remove read the panel back first, so a row added after typing in
+  // another one doesn't discard what's already on screen.
+  if (action === "add-faq") {
+    APP_SETTINGS.support = APP_SETTING_PANELS.support.read().support;
+    APP_SETTINGS.support.faqs.push({ q: "", a: "" });
+    renderAppSettingPanel();
+  }
+  if (action === "remove-faq") {
+    const row = el.closest(".settings-faq-row");
+    const rows = [...document.querySelectorAll("#settings-faq-rows .settings-faq-row")];
+    const i = rows.indexOf(row);
+    APP_SETTINGS.support = APP_SETTING_PANELS.support.read().support;
+    APP_SETTINGS.support.faqs.splice(i, 1);
+    renderAppSettingPanel();
+  }
+  if (action === "add-default-habit") {
+    APP_SETTINGS.habits = APP_SETTING_PANELS.habits.read().habits;
+    APP_SETTINGS.habits.push({ id: "", label: "" });
+    renderAppSettingPanel();
+  }
+  if (action === "remove-default-habit") {
+    const row = el.closest(".settings-habit-row");
+    const rows = [...document.querySelectorAll("#settings-habit-rows .settings-habit-row")];
+    const i = rows.indexOf(row);
+    APP_SETTINGS.habits = APP_SETTING_PANELS.habits.read().habits;
+    APP_SETTINGS.habits.splice(i, 1);
+    renderAppSettingPanel();
+  }
   if (action === "open-admin-thread") {
     openAdminThread(el.dataset.conversationId);
   }
@@ -4392,6 +4432,301 @@ const SETTINGS_BLOCK_TYPE_ORDER = ["interval", "superset", "straight", "ladder",
 function showSettingsIndex() {
   document.getElementById("settings-index-view").style.display = "";
   document.getElementById("settings-before-you-start-view").style.display = "none";
+  document.getElementById("settings-panel-view").style.display = "none";
+}
+
+// ---------------- App settings panels (2026-08-27) ----------------
+// Four things that were literals in the code and are now Chris's to change:
+// what each point source is worth, the support address and FAQ, the tour and
+// completion-card wording, and the habits a new member starts with.
+//
+// Every panel reads and writes APP_SETTINGS, then saves a sparse diff against
+// APP_SETTINGS_DEFAULTS — so a default reworded in a later version still
+// reaches members who never edited that field.
+
+let openSettingPanel = null;
+
+// Mirrors addHabit()'s cap in the member app. If that ever changes, change it
+// in both — this is the same hand-duplicated-shape rule as the rest of the
+// cross-app data.
+const MAX_DEFAULT_HABITS = 3;
+
+const APP_SETTING_PANELS = {
+  scoring: {
+    eyebrow: "Challenge Settings",
+    title: "Challenge Scoring",
+    desc: "Workout points are set per challenge. These are the sources that had no value of their own — until now all three scored at the challenge's per-workout rate, so a habit day was worth as much as a full circuit.",
+    render: () => {
+      const sc = APP_SETTINGS.scoring;
+      const num = (key, label, help) => `
+        <div class="settings-note-card">
+          <label class="modal-field">${label}
+            <input type="number" min="0" data-setting-field="${key}" value="${sc[key]}" />
+          </label>
+          <p class="settings-field-help">${help}</p>
+        </div>`;
+      return [
+        num("cardioPoints", "Points per cardio session", "Each logged cardio activity inside the challenge window."),
+        num("habitDayPoints", "Points per perfect habit day", "A day where the member ticked every habit they set."),
+        num("levelSize", "Points per level", "Levels are the brackets on the member's challenge card — the heading reads “Levels (every N pts)” using this number."),
+        num("defaultWorkoutPoints", "Default points per workout", "Prefilled when you create a challenge. Each challenge keeps its own value once saved."),
+        num("defaultThreshold", "Default threshold to win", "Prefilled when you create a challenge."),
+      ].join("");
+    },
+    read: () => {
+      const out = {};
+      document.querySelectorAll("#settings-panel-body input[data-setting-field]").forEach((el) => {
+        out[el.dataset.settingField] = Math.max(0, Number(el.value) || 0);
+      });
+      // A level of zero would divide by nothing on the member's challenge card.
+      if (!out.levelSize) out.levelSize = 1;
+      return { scoring: out };
+    },
+  },
+
+  support: {
+    eyebrow: "Member Experience",
+    title: "Support & Contact",
+    desc: "What a member sees under Profile → Help & Support. Leave the address blank to hide the Email Support button entirely.",
+    render: () => {
+      const sp = APP_SETTINGS.support;
+      return `
+        <div class="settings-note-card">
+          <label class="modal-field">Support email address
+            <input type="email" data-setting-field="email" value="${esc(sp.email || "")}" placeholder="you@example.com" />
+          </label>
+          <p class="settings-field-help">Sits behind the Email Support button.</p>
+        </div>
+        <h3 class="settings-subhead">Frequently asked questions</h3>
+        <div id="settings-faq-rows">${sp.faqs.map(faqRowHtml).join("")}</div>
+        <button class="btn-ghost-lg small" data-action="add-faq">+ Add a question</button>`;
+    },
+    read: () => {
+      const faqs = [];
+      document.querySelectorAll("#settings-faq-rows .settings-faq-row").forEach((row) => {
+        const q = row.querySelector("[data-faq-q]").value.trim();
+        const a = row.querySelector("[data-faq-a]").value.trim();
+        // A question with no answer is worse than no question.
+        if (q && a) faqs.push({ q, a });
+      });
+      return { support: { email: document.querySelector("[data-setting-field=email]").value.trim(), faqs } };
+    },
+  },
+
+  copy: {
+    eyebrow: "Member Experience",
+    title: "Member-Facing Copy",
+    desc: "Wording only — which tour slides a member sees still follows their program shape, so a rolling member gets Workouts and a structured member gets Calendar.",
+    render: () => {
+      const t = APP_SETTINGS.copy.tour;
+      const pc = APP_SETTINGS.copy.programComplete;
+      const slide = (key, label, note) => `
+        <div class="settings-note-card">
+          <div class="settings-note-head">
+            <span class="settings-note-type">${label}</span>
+            ${note ? `<span class="settings-note-flag">${note}</span>` : ""}
+          </div>
+          <label class="modal-field">Heading
+            <input type="text" data-tour-title="${key}" value="${esc(t[key].title)}" />
+          </label>
+          <label class="modal-field">Body
+            <textarea data-tour-body="${key}" rows="3">${esc(t[key].body)}</textarea>
+          </label>
+          ${key === "contact" ? `<label class="modal-field">Button label
+            <input type="text" data-tour-action="contact" value="${esc(t.contact.action)}" />
+          </label>` : ""}
+        </div>`;
+      return `
+        <h3 class="settings-subhead">First-run app tour</h3>
+        ${slide("home", "Home")}
+        ${slide("workouts", "Workouts", "Rolling members only")}
+        ${slide("calendar", "Calendar", "Structured members only")}
+        ${slide("community", "Community")}
+        ${slide("progress", "Progress")}
+        ${slide("contact", "Closing slide")}
+        <h3 class="settings-subhead">End-of-program card</h3>
+        <div class="settings-note-card">
+          <p class="settings-field-help">The headline and the three stats are built from the member's own program and history, so they aren't editable here.</p>
+          <label class="modal-field">Eyebrow
+            <input type="text" data-pc-field="eyebrow" value="${esc(pc.eyebrow)}" />
+          </label>
+          <label class="modal-field">Button label
+            <input type="text" data-pc-field="cta" value="${esc(pc.cta)}" />
+          </label>
+          <label class="modal-field">Note under the button
+            <textarea data-pc-field="note" rows="2">${esc(pc.note)}</textarea>
+          </label>
+        </div>`;
+    },
+    read: () => {
+      const tour = {};
+      document.querySelectorAll("#settings-panel-body [data-tour-title]").forEach((el) => {
+        const key = el.dataset.tourTitle;
+        const body = document.querySelector(`[data-tour-body="${key}"]`).value.trim();
+        tour[key] = { title: el.value.trim(), body };
+      });
+      const actionEl = document.querySelector("[data-tour-action=contact]");
+      if (actionEl && tour.contact) tour.contact.action = actionEl.value.trim();
+      const programComplete = {};
+      document.querySelectorAll("#settings-panel-body [data-pc-field]").forEach((el) => {
+        programComplete[el.dataset.pcField] = el.value.trim();
+      });
+      return { copy: { tour, programComplete } };
+    },
+  },
+
+  habits: {
+    eyebrow: "Member Experience",
+    title: "Default Habits",
+    desc: `What a member starts with on day one. They can swap these for their own afterwards — this only sets the starting set. Changing it doesn't touch members who already have habits. Members can hold ${MAX_DEFAULT_HABITS} habits at a time, so that's the most you can set here.`,
+    render: () => `
+      <div id="settings-habit-rows">${APP_SETTINGS.habits.map(habitRowHtml).join("")}</div>
+      ${APP_SETTINGS.habits.length >= MAX_DEFAULT_HABITS
+        ? `<p class="settings-field-help">That's the ${MAX_DEFAULT_HABITS}-habit limit — remove one to add another.</p>`
+        : `<button class="btn-ghost-lg small" data-action="add-default-habit">+ Add a habit</button>`}`,
+    read: () => {
+      const habits = [];
+      document.querySelectorAll("#settings-habit-rows .settings-habit-row").forEach((row) => {
+        const label = row.querySelector("[data-habit-label]").value.trim();
+        if (!label) return;
+        const auto = row.querySelector("[data-habit-auto]").value;
+        const target = Number(row.querySelector("[data-habit-target]").value) || 0;
+        const habit = { id: row.dataset.habitId || slugifyHabit(label), label };
+        // Only an auto habit needs a target — a hand-ticked one has nothing to
+        // compare against.
+        if (auto) { habit.auto = auto; habit.target = target; }
+        habits.push(habit);
+      });
+      // Belt and braces: the member app's habit picker stops at
+      // MAX_DEFAULT_HABITS, but seeding a new member from this list bypasses
+      // that check — a longer default would hand them habits they could never
+      // get back once removed.
+      return { habits: habits.slice(0, MAX_DEFAULT_HABITS) };
+    },
+  },
+};
+
+function slugifyHabit(label) {
+  return "habit-" + label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function faqRowHtml(f) {
+  return `
+    <div class="settings-note-card settings-faq-row">
+      <div class="settings-note-head">
+        <span class="settings-note-type">Question</span>
+        <button class="btn-ghost-lg small btn-danger" data-action="remove-faq">Remove</button>
+      </div>
+      <label class="modal-field">Question
+        <input type="text" data-faq-q value="${esc(f.q || "")}" />
+      </label>
+      <label class="modal-field">Answer
+        <textarea data-faq-a rows="3">${esc(f.a || "")}</textarea>
+      </label>
+    </div>`;
+}
+
+const HABIT_AUTO_SOURCES = [
+  { value: "", label: "Member ticks it themselves" },
+  { value: "steps", label: "Steps (from wearable)" },
+  { value: "activeMinutes", label: "Active minutes (from wearable)" },
+  { value: "calories", label: "Calories (from wearable)" },
+];
+
+function habitRowHtml(h) {
+  return `
+    <div class="settings-note-card settings-habit-row" data-habit-id="${esc(h.id || "")}">
+      <div class="settings-note-head">
+        <span class="settings-note-type">Habit</span>
+        <button class="btn-ghost-lg small btn-danger" data-action="remove-default-habit">Remove</button>
+      </div>
+      <label class="modal-field">Label members see
+        <input type="text" data-habit-label value="${esc(h.label || "")}" />
+      </label>
+      <label class="modal-field">Tracked by
+        <select data-habit-auto>
+          ${HABIT_AUTO_SOURCES.map((s) => `<option value="${s.value}" ${s.value === (h.auto || "") ? "selected" : ""}>${s.label}</option>`).join("")}
+        </select>
+      </label>
+      <label class="modal-field">Daily target
+        <input type="number" min="0" data-habit-target value="${h.target || 0}" />
+      </label>
+      <p class="settings-field-help">Target only applies to a habit tracked from a wearable.</p>
+    </div>`;
+}
+
+function openAppSettingPanel(key) {
+  const panel = APP_SETTING_PANELS[key];
+  if (!panel) return;
+  openSettingPanel = key;
+  document.getElementById("settings-index-view").style.display = "none";
+  document.getElementById("settings-before-you-start-view").style.display = "none";
+  document.getElementById("settings-panel-view").style.display = "";
+  document.getElementById("settings-panel-eyebrow").textContent = panel.eyebrow;
+  document.getElementById("settings-panel-title").textContent = panel.title;
+  document.getElementById("settings-panel-desc").textContent = panel.desc;
+  document.getElementById("settings-panel-saved").style.display = "none";
+  renderAppSettingPanel();
+}
+
+function renderAppSettingPanel() {
+  const panel = APP_SETTING_PANELS[openSettingPanel];
+  if (!panel) return;
+  document.getElementById("settings-panel-body").innerHTML = panel.render();
+}
+
+// Saved as a diff, not a snapshot: anything still matching the default is left
+// out, so it keeps tracking the default if that changes in a later version.
+// Recursive, so editing one tour slide's heading doesn't freeze the wording of
+// the other five. Arrays are all-or-nothing — a list of FAQs only means
+// anything whole.
+function diffFromDefaults(value, base) {
+  if (Array.isArray(value)) return JSON.stringify(value) === JSON.stringify(base) ? undefined : value;
+  if (!value || typeof value !== "object" || !base || typeof base !== "object") {
+    return JSON.stringify(value) === JSON.stringify(base) ? undefined : value;
+  }
+  const out = {};
+  Object.keys(value).forEach((k) => {
+    const d = diffFromDefaults(value[k], base[k]);
+    if (d !== undefined) out[k] = d;
+  });
+  return Object.keys(out).length ? out : undefined;
+}
+
+function storeAppSettings() {
+  localStorage.setItem(LIVE_APP_SETTINGS_KEY, JSON.stringify(diffFromDefaults(APP_SETTINGS, APP_SETTINGS_DEFAULTS) || {}));
+}
+
+function saveAppSettingPanel() {
+  const panel = APP_SETTING_PANELS[openSettingPanel];
+  if (!panel) return;
+  const patch = panel.read();
+  Object.keys(patch).forEach((section) => {
+    if (Array.isArray(patch[section])) APP_SETTINGS[section] = patch[section];
+    else Object.keys(patch[section]).forEach((k) => {
+      const v = patch[section][k];
+      if (v && typeof v === "object" && !Array.isArray(v) && APP_SETTINGS[section][k]) Object.assign(APP_SETTINGS[section][k], v);
+      else APP_SETTINGS[section][k] = v;
+    });
+  });
+  storeAppSettings();
+  renderAppSettingPanel();
+  const note = document.getElementById("settings-panel-saved");
+  note.textContent = "✓ Saved — members will see this the next time their app loads.";
+  note.style.display = "block";
+}
+
+function resetAppSettingPanel() {
+  const panel = APP_SETTING_PANELS[openSettingPanel];
+  if (!panel) return;
+  if (!confirm(`Restore the built-in ${panel.title.toLowerCase()} and lose your edits to this panel?`)) return;
+  const section = Object.keys(panel.read())[0];
+  APP_SETTINGS[section] = JSON.parse(JSON.stringify(APP_SETTINGS_DEFAULTS[section]));
+  storeAppSettings();
+  renderAppSettingPanel();
+  const note = document.getElementById("settings-panel-saved");
+  note.textContent = "✓ Restored to the built-in wording.";
+  note.style.display = "block";
 }
 
 function openBlockNotesSettings() {
@@ -4916,8 +5251,8 @@ function openChallengeModal() {
   document.getElementById("challenge-modal-program").value = "all";
   document.getElementById("challenge-modal-start").value = "";
   document.getElementById("challenge-modal-end").value = "";
-  document.getElementById("challenge-modal-points").value = 5;
-  document.getElementById("challenge-modal-threshold").value = 200;
+  document.getElementById("challenge-modal-points").value = APP_SETTINGS.scoring.defaultWorkoutPoints;
+  document.getElementById("challenge-modal-threshold").value = APP_SETTINGS.scoring.defaultThreshold;
   document.getElementById("challenge-modal-reward").value = "";
   document.getElementById("challenge-modal-format").value = "individual";
   document.getElementById("challenge-modal-teamcount").value = 4;
