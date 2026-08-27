@@ -2958,3 +2958,108 @@ h1, h2, h3 {
   font-size: 11px; font-weight: 700; color: var(--ink);
   background: var(--field-bg); border-radius: 999px; padding: 3px 10px;
 }
+
+/* ---- First-run app tour (2026-08-26) --------------------------------------
+   The dim is painted by a huge spread box-shadow on the spotlight element, not
+   by a background on the overlay — that way there is one element to move and
+   the cut-out comes for free. A slide with no anchor collapses the spotlight
+   to 0x0, which leaves the shadow covering the whole frame. */
+.tour-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  /* Above the settings popups (25) and the bottom nav (10), below the toast (60). */
+  z-index: 50;
+}
+.tour-overlay.visible { display: block; }
+
+.tour-spotlight {
+  position: absolute;
+  /* Starts collapsed in the middle so the first slide's cut-out grows toward
+     the nav button rather than sliding in from the frame's top-left corner. */
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 0 9999px rgba(23, 36, 63, 0.74);
+  pointer-events: none;
+  transition: top 0.28s ease, left 0.28s ease, width 0.28s ease, height 0.28s ease;
+}
+
+.tour-card {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  /* Clear of the nav, so the card never covers the button it points at. */
+  bottom: 104px;
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: 0 16px 40px rgba(23, 36, 63, 0.32);
+}
+/* Closing slide: nothing to point at, so the card centers instead. */
+.tour-card.center { top: 50%; bottom: auto; transform: translateY(-50%); }
+
+.tour-skip {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  padding: 4px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--deepblue);
+  cursor: pointer;
+}
+.tour-title {
+  margin: 0 8px 8px 0;
+  padding-right: 44px;
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.tour-body {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--deepblue);
+}
+.tour-action { display: block; width: 100%; margin-top: 16px; }
+
+.tour-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18px;
+}
+.tour-dots { display: flex; gap: 6px; }
+.tour-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--periwinkle);
+}
+.tour-dot.active { background: var(--blue); }
+.tour-next {
+  background: var(--blue);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 22px;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.tour-next:active { transform: scale(0.98); }
+
+.support-tour-btn { display: block; width: 100%; margin-bottom: 18px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-spotlight { transition: none; }
+}

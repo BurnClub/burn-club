@@ -824,6 +824,7 @@
         <div class="cardio-log-card">
           <button class="player-exit" id="support-close-btn">✕</button>
           <h2 class="cardio-log-title">Help &amp; Support</h2>
+          <button class="btn-primary support-tour-btn" id="support-tour-btn" type="button">Take the App Tour</button>
           <div class="support-faq">
             <div class="support-faq-item">
               <p class="support-faq-q">How do I change my workout schedule?</p>
@@ -865,6 +866,24 @@
       </nav>
 
     </div><!-- /main-app -->
+
+    <!-- ---------- FIRST-RUN APP TOUR (2026-08-26) ----------
+         Sits inside .app rather than .main-app so it covers the bottom nav
+         too — the nav is what it points at, and a member shouldn't be able to
+         tap past the tour into a tab. Copy is placeholder for Chris. -->
+    <div class="tour-overlay" id="tour-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+      <div class="tour-spotlight" id="tour-spotlight"></div>
+      <div class="tour-card" id="tour-card">
+        <button class="tour-skip" id="tour-skip-btn" type="button">Skip</button>
+        <h2 class="tour-title" id="tour-title"></h2>
+        <p class="tour-body" id="tour-body"></p>
+        <button class="btn-primary tour-action" id="tour-action-btn" type="button" style="display:none;"></button>
+        <div class="tour-footer">
+          <div class="tour-dots" id="tour-dots"></div>
+          <button class="tour-next" id="tour-next-btn" type="button">Next</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Brief confirmation, for things that happen without a screen change
          (2026-08-23). Sits inside .app so it's clipped to the phone frame,

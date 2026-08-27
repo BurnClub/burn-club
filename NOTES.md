@@ -51,6 +51,10 @@ syncs them.
   same-origin localStorage. Real propagation needs a backend.
 - **Check-in / journal on the staff app** — built on the member side only;
   it was always meant to exist on both.
+- **"Already took the app tour" flag** — stored in localStorage, so it's per
+  browser. It belongs on the member's record once there's a backend, otherwise
+  a reinstall or a second device replays the tour for someone who has already
+  taken it.
 
 ## Agreed, not yet built
 

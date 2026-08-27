@@ -2422,7 +2422,184 @@ function maybeOfferResume() {
 // urgent of the two, and stacking both modals would bury one behind the other.
 function onEnterApp() {
   if (maybeOfferResume()) return;
+  // The tour wins on a first entry and the check-in waits for it — otherwise
+  // a brand new member's first sight of the app is two stacked overlays.
+  // endTour() calls maybePromptCheckin() once it's done.
+  if (maybeStartTour()) return;
   maybePromptCheckin();
+}
+
+// ---------------- First-run app tour ----------------
+// A short walkthrough on a member's first entry, replayable from Help &
+// Support. Three things worth knowing about it:
+//
+// 1. The deck is built from the member's own program shape, not hard-coded.
+//    applyMemberProgramMode() hides Workouts for structured members and
+//    Calendar for rolling ones, so a fixed five-slide deck would always show
+//    one tab the member doesn't have. tourSlides() reads the same flag.
+//
+// 2. The spotlight only ever anchors to a bottom-nav button. Tours like this
+//    usually rot because they point at in-page content that moves when
+//    anything reflows or scrolls; the nav is five fixed buttons in a fixed
+//    bar, so there is nothing to keep in sync.
+//
+// 3. Demo-level: "already seen it" is a localStorage flag, so it's per
+//    browser. Once the system is set up properly that flag belongs on the
+//    member's record server-side — as written, a reinstall or a second device
+//    replays the tour for someone who has already taken it.
+//
+// All copy below is placeholder, for Chris to rewrite.
+const TOUR_SEEN_KEY = "burnclub-tour-seen";
+
+let tourDeck = [];
+let tourIndex = 0;
+let tourIsReplay = false;
+
+function tourSeen() {
+  return localStorage.getItem(memberKey(TOUR_SEEN_KEY)) === "1";
+}
+
+function tourSlides() {
+  const isStructured = CURRENT_MEMBER.scheduleType === "structured";
+  return [
+    {
+      anchor: "nav-home-btn",
+      title: "Start Here",
+      body: "Home is your day at a glance — today's workout, your streak, and your daily habits. Most days this is the only screen you need.",
+    },
+    isStructured
+      ? {
+          anchor: "nav-calendar-btn",
+          title: "Your Program",
+          body: "Your weeks are already laid out for you. Tap any day to see what's assigned and start it from there.",
+        }
+      : {
+          anchor: "nav-workouts-btn",
+          title: "Every Workout",
+          body: "Browse the full circuit list and start any of them, any day. You can also build your own from the Exercise Library.",
+        },
+    {
+      anchor: "nav-community-btn",
+      title: "The Club",
+      body: "See where you stand in this month's challenge, follow your team, and keep up with everyone else in the group.",
+    },
+    {
+      anchor: "nav-progress-btn",
+      title: "Watch It Add Up",
+      body: "Your personal records, benchmark results, and every workout you've logged, all in one place.",
+    },
+    {
+      // No anchor: the closing slide has nothing to point at, so the card
+      // centers and the dim covers the whole frame.
+      anchor: null,
+      title: "Questions? Just Ask.",
+      body: "Message your coach any time and you'll get a real answer from a real person. You can replay this tour whenever you like from Profile \u2192 Help & Support.",
+      actionLabel: "Message Your Coach",
+      action: () => openThread(`dm-${CURRENT_MEMBER.id}`),
+    },
+  ];
+}
+
+function maybeStartTour() {
+  if (tourSeen()) return false;
+  startTour(false);
+  return true;
+}
+
+function startTour(isReplay) {
+  tourDeck = tourSlides();
+  tourIndex = 0;
+  tourIsReplay = !!isReplay;
+  document.getElementById("tour-overlay").classList.add("visible");
+  window.addEventListener("resize", positionTourSpotlight);
+  renderTourSlide();
+}
+
+function renderTourSlide() {
+  const slide = tourDeck[tourIndex];
+  if (!slide) return;
+
+  // Switch the app behind the dim to the tab being described, so the member is
+  // looking at the real screen rather than a description of it.
+  const anchorEl = slide.anchor ? document.getElementById(slide.anchor) : null;
+  if (anchorEl && anchorEl.dataset.tabTarget) showTab(anchorEl.dataset.tabTarget);
+
+  document.getElementById("tour-title").textContent = slide.title;
+  document.getElementById("tour-body").textContent = slide.body;
+  document.getElementById("tour-card").classList.toggle("center", !slide.anchor);
+
+  const actionBtn = document.getElementById("tour-action-btn");
+  actionBtn.style.display = slide.actionLabel ? "block" : "none";
+  if (slide.actionLabel) actionBtn.textContent = slide.actionLabel;
+
+  const last = tourIndex === tourDeck.length - 1;
+  document.getElementById("tour-next-btn").textContent = last ? "Done" : "Next";
+  document.getElementById("tour-skip-btn").style.display = last ? "none" : "block";
+
+  document.getElementById("tour-dots").innerHTML = tourDeck
+    .map((_, i) => `<span class="tour-dot${i === tourIndex ? " active" : ""}"></span>`)
+    .join("");
+
+  positionTourSpotlight();
+}
+
+// Positions are measured against .app, which is the overlay's offset parent —
+// the whole UI lives inside the phone frame, so viewport coordinates would be
+// off by the frame's own offset.
+function positionTourSpotlight() {
+  const slide = tourDeck[tourIndex];
+  const spot = document.getElementById("tour-spotlight");
+  const anchorEl = slide && slide.anchor ? document.getElementById(slide.anchor) : null;
+  if (!anchorEl) {
+    // Collapsed to nothing in the middle: the box-shadow then dims everything.
+    spot.style.width = "0px";
+    spot.style.height = "0px";
+    spot.style.left = "50%";
+    spot.style.top = "50%";
+    return;
+  }
+  const frame = document.getElementById("app").getBoundingClientRect();
+  const rect = anchorEl.getBoundingClientRect();
+  const pad = 6;
+  spot.style.left = `${rect.left - frame.left - pad}px`;
+  spot.style.top = `${rect.top - frame.top - pad}px`;
+  spot.style.width = `${rect.width + pad * 2}px`;
+  spot.style.height = `${rect.height + pad * 2}px`;
+}
+
+function advanceTour() {
+  if (tourIndex < tourDeck.length - 1) {
+    tourIndex += 1;
+    renderTourSlide();
+    return;
+  }
+  endTour();
+}
+
+// Skipping counts as seen — a member who skips is telling us they don't want
+// it, and showing it again on next launch would be arguing with them.
+function endTour(afterAction) {
+  localStorage.setItem(memberKey(TOUR_SEEN_KEY), "1");
+  document.getElementById("tour-overlay").classList.remove("visible");
+  window.removeEventListener("resize", positionTourSpotlight);
+  if (!afterAction) showTab("tab-home");
+  // Only on a real first run: a replay from Help & Support shouldn't drag the
+  // daily check-in up with it.
+  if (!tourIsReplay && !afterAction) maybePromptCheckin();
+}
+
+function bindTour() {
+  document.getElementById("tour-next-btn").addEventListener("click", advanceTour);
+  document.getElementById("tour-skip-btn").addEventListener("click", () => endTour());
+  document.getElementById("tour-action-btn").addEventListener("click", () => {
+    const slide = tourDeck[tourIndex];
+    endTour(true);
+    if (slide && slide.action) slide.action();
+  });
+  document.getElementById("support-tour-btn").addEventListener("click", () => {
+    closeSupportScreen();
+    startTour(true);
+  });
 }
 
 // ---------------- Workout player engine ----------------
@@ -3988,6 +4165,7 @@ function init() {
 // profile switch — harmless for a popup open, but it made "Add to
 // Calendar" save the same session twice (2026-08-12).
 function wireStaticControls() {
+  bindTour();
   // Straight into the staff thread rather than the inbox — the whole point of
   // the card is to start that conversation, and the inbox is one more step
   // between the member and it.
