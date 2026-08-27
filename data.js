@@ -703,6 +703,16 @@ const MESSAGES = [
   { id: "msg-4", conversationId: "group-burn-club", senderId: "staff", senderName: "Staff", isStaff: true, text: "New circuits are up for the week — 3 fresh ones plus a new stretch session! 🔥", time: "Sun 8:00 AM", read: true },
   { id: "msg-5", conversationId: "group-burn-club", senderId: "priya-k", senderName: "Priya K.", isStaff: false, text: "Sweat & Sculpt kicked my butt today 😅", time: "Sun 5:30 PM", read: true },
   { id: "msg-6", conversationId: "group-burn-club", senderId: "marcus-t", senderName: "Marcus T.", isStaff: false, text: "Same! Worth it though", time: "Sun 5:41 PM", read: false },
+  // Team chats. Hand-duplicated from admin/data.js like every other shared
+  // shape, ids included — the live-message bridge dedupes on id, so the two
+  // copies have to agree or a bridged message would arrive as a second row.
+  { id: "msg-team-red-1", conversationId: "group-team-t-red", senderId: "staff", senderName: "Staff", isStaff: true, text: "Team Red is set — say hi and get after it. 🔥", time: "Sat 9:00 AM", read: true },
+  { id: "msg-team-red-2", conversationId: "group-team-t-red", senderId: "priya-k", senderName: "Priya K.", isStaff: false, text: "Let's go! I'm in for a double this week.", time: "Sat 10:12 AM", read: true },
+  { id: "msg-team-red-3", conversationId: "group-team-t-red", senderId: "marcus-t", senderName: "Marcus T.", isStaff: false, text: "Same here. What's everyone doing Monday?", time: "Sat 11:40 AM", read: false },
+  { id: "msg-team-blue-1", conversationId: "group-team-t-blue", senderId: "staff", senderName: "Staff", isStaff: true, text: "Team Blue is set — say hi and get after it. 🔥", time: "Sat 9:00 AM", read: true },
+  { id: "msg-team-blue-2", conversationId: "group-team-t-blue", senderId: "jamie-r", senderName: "Jamie R.", isStaff: false, text: "First team challenge for me — what counts for points again?", time: "Sat 2:05 PM", read: false },
+  { id: "msg-team-green-1", conversationId: "group-team-t-green", senderId: "staff", senderName: "Staff", isStaff: true, text: "Team Green is set — say hi and get after it. 🔥", time: "Sat 9:00 AM", read: true },
+  { id: "msg-team-gold-1", conversationId: "group-team-t-gold", senderId: "staff", senderName: "Staff", isStaff: true, text: "Team Gold is set — say hi and get after it. 🔥", time: "Sat 9:00 AM", read: true },
 ];
 
 // Messages sent live (from here, admin, or staff) get bridged the same way

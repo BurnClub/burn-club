@@ -2902,6 +2902,37 @@ function syncCircuitToMemberApp(circuit) {
 // makes it reach a phone.
 const LIVE_TEAMS_KEY = "burnClubLiveChallengeTeams";
 
+// Every team chat shows up in admin's inbox alongside the program and custom
+// group chats (2026-08-26, Chris: "make it so admin is included in each of the
+// group chats so it has visibility"). CONVERSATIONS is built once at load from
+// MEMBERS/PROGRAMS/CUSTOM_GROUPS, so teams — drawn, renamed and redrawn long
+// after that — have to be reconciled into it whenever they change.
+//
+// Scoped to running challenges, the same rule the member app's inbox uses: a
+// team chat arrives with its challenge and leaves when it ends, rather than
+// leaving a year of dead threads behind.
+function syncTeamConversations() {
+  const live = new Map();
+  CHALLENGES.filter((c) => challengeStatus(c) === "active").forEach((c) => {
+    teamsOf(c).forEach((t) => live.set(`group-team-${t.id}`, `${t.name} Team Chat`));
+  });
+
+  // A redraw replaces every team object, ids and all, so stale team chats have
+  // to go or the inbox would grow by a full set per shuffle. Only ever removes
+  // rows this function added — program and custom group chats have no teamId.
+  for (let i = CONVERSATIONS.length - 1; i >= 0; i--) {
+    const conv = CONVERSATIONS[i];
+    if (conv.teamId && !live.has(conv.id)) CONVERSATIONS.splice(i, 1);
+  }
+
+  live.forEach((name, id) => {
+    const existing = CONVERSATIONS.find((c) => c.id === id);
+    // Updating rather than replacing keeps a rename from resetting the thread.
+    if (existing) existing.name = name;
+    else CONVERSATIONS.push({ id, type: "group", teamId: id.slice("group-team-".length), name });
+  });
+}
+
 function syncChallengeTeamsToMemberApp() {
   const payload = CHALLENGES
     .filter((c) => teamsOf(c).length)
@@ -3516,6 +3547,10 @@ document.addEventListener("input", (e) => {
   // action that needs them.
   team.name = t.value;
   syncChallengeTeamsToMemberApp();
+  // Safe to redraw the inbox here — it's a different panel from the input the
+  // coach is typing in, so unlike the team cards it won't lose focus.
+  syncTeamConversations();
+  renderAdminConversationList();
 });
 
 document.addEventListener("change", (e) => {
@@ -3733,6 +3768,8 @@ document.addEventListener("click", (e) => {
       const wanted = Number(document.getElementById("team-count").value) || 4;
       challenge.teams = drawTeams(challenge, wanted);
       syncChallengeTeamsToMemberApp();
+      syncTeamConversations();
+      renderAdminConversationList();
       renderChallengeStandings();
     }
   }
@@ -4836,6 +4873,10 @@ function saveChallenge() {
     CHALLENGES.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now(), name, programId, startDate, endDate, pointsPerWorkout, thresholdPoints, reward });
   }
   closeChallengeModal();
+  // Editing the dates can start or end a challenge, which is what decides
+  // whether its team chats belong in the inbox.
+  syncTeamConversations();
+  renderAdminConversationList();
   renderChallenges();
 }
 
@@ -4888,6 +4929,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderPrograms();
   renderFolderGrid();
   renderPosts();
+  syncTeamConversations();
   renderAdminConversationList();
 
   renderExerciseLibrary();

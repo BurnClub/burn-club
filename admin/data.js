@@ -795,8 +795,12 @@ const CHALLENGES = [
     id: "summer-sweat-2026",
     name: "Summer Sweat Challenge",
     programId: "burn-club",
-    startDate: "2026-07-01",
-    endDate: "2026-07-31",
+    // Bracketing today, same bump the member app's copy already had (see
+    // CHALLENGES in ../data.js). Admin's copy still said 2026-07, so admin
+    // read the challenge as "ended" while the member app read it as running —
+    // the two apps disagreed about whether teams were live at all.
+    startDate: "2026-08-01",
+    endDate: "2026-08-31",
     pointsPerWorkout: 5,
     thresholdPoints: 200,
     reward: "Entered to win free Burn Club merch",
@@ -872,6 +876,15 @@ const MESSAGES = [
   { id: "msg-9", conversationId: "group-custom-founding-members", senderId: "staff", senderName: "Staff", isStaff: true, text: "Early access to the new benchmark this Friday — you three first, as always.", time: "Sun 4:00 PM", read: true },
   { id: "msg-10", conversationId: "group-custom-founding-members", senderId: "priya-k", senderName: "Priya K.", isStaff: false, text: "Love it. Ready to beat my last Gauntlet score 🔥", time: "Sun 6:22 PM", read: false },
   { id: "msg-11", conversationId: "group-custom-form-check", senderId: "staff", senderName: "Staff", isStaff: true, text: "Send your deadlift setup when you get a chance — happy to review before next week.", time: "Today 9:10 AM", read: true },
+  // One kickoff per team chat, so every team thread has a coach in it from the
+  // moment the teams are drawn.
+  { id: "msg-team-red-1", conversationId: "group-team-t-red", senderId: "staff", senderName: "Staff", isStaff: true, text: "Team Red is set — say hi and get after it. 🔥", time: "Sat 9:00 AM", read: true },
+  { id: "msg-team-red-2", conversationId: "group-team-t-red", senderId: "priya-k", senderName: "Priya K.", isStaff: false, text: "Let's go! I'm in for a double this week.", time: "Sat 10:12 AM", read: true },
+  { id: "msg-team-red-3", conversationId: "group-team-t-red", senderId: "marcus-t", senderName: "Marcus T.", isStaff: false, text: "Same here. What's everyone doing Monday?", time: "Sat 11:40 AM", read: false },
+  { id: "msg-team-blue-1", conversationId: "group-team-t-blue", senderId: "staff", senderName: "Staff", isStaff: true, text: "Team Blue is set — say hi and get after it. 🔥", time: "Sat 9:00 AM", read: true },
+  { id: "msg-team-blue-2", conversationId: "group-team-t-blue", senderId: "jamie-r", senderName: "Jamie R.", isStaff: false, text: "First team challenge for me — what counts for points again?", time: "Sat 2:05 PM", read: false },
+  { id: "msg-team-green-1", conversationId: "group-team-t-green", senderId: "staff", senderName: "Staff", isStaff: true, text: "Team Green is set — say hi and get after it. 🔥", time: "Sat 9:00 AM", read: true },
+  { id: "msg-team-gold-1", conversationId: "group-team-t-gold", senderId: "staff", senderName: "Staff", isStaff: true, text: "Team Gold is set — say hi and get after it. 🔥", time: "Sat 9:00 AM", read: true },
 ];
 
 const LIVE_MESSAGES_KEY = "burnClubLiveMessages";
