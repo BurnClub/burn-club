@@ -58,6 +58,42 @@ syncs them.
 
 ## Agreed, not yet built
 
+### Next candidates for Settings (2026-08-27)
+
+Reviewed after the first four moved out of the code (Challenge Scoring,
+Support & Contact, Member-Facing Copy, Default Habits). Listed in the order
+they were recommended; Chris parked all five for a later session.
+
+- **Habit Library** (`HABIT_PRESETS`, data.js). The starting habits are
+  editable now but the menu members pick *from* is not, so Chris can set what
+  a member begins with and not what they can switch to. Cheap — reuses the
+  Default Habits panel almost wholesale.
+- **Cardio activity types** (hardcoded buttons in index.html's cardio-log
+  overlay: Walk / Run / Bike / Stair Stepper). A member who rows, swims, hikes
+  or uses an elliptical has nowhere to log it, so it earns no challenge points
+  either. Each type wants its own unit — "Distance (mi)" is wrong for a stair
+  stepper. Cheap, and the only one on this list that fixes something broken
+  rather than unfreezing a constant.
+- **Benchmarks** (`BENCHMARKS`, data.js). Still literally named "Benchmark A /
+  B / C" on a member-visible Progress screen. Wants real names, descriptions,
+  a fourth, and a per-benchmark score type. Medium: scoreType drives how
+  results render, so a new benchmark with no history has to render cleanly.
+- **Daily check-in questions** (the two sliders in index.html + `CHECKIN_SERIES`
+  in app.js). Chris's coaching instrumentation — it decides what he can see
+  about a member over time. Medium: the questions drive a two-line chart with
+  fixed colours, so a third question means teaching the chart to handle N
+  series.
+- **Notification types and defaults** (`NOTIF_TYPES`, app.js). Five toggles,
+  all defaulting to on. Cosmetic until push exists, but "all on by default" is
+  the setting that decides whether an imported member's first week is helpful
+  or annoying — worth choosing before the import, not after.
+
+Left off deliberately: the referral/invite offer (offered 2026-08-26, Chris
+picked the other four — still available); default team names and draw
+behaviour (belongs with the team challenge conversation above); and streak
+rules, which are real logic rather than config and want their own design pass.
+
+
 - **Offline.** Wanted, but deliberately *not* first: the current platform has
   no offline support and no member has ever complained, which is better
   evidence than a hunch. The rule is therefore don't build it now, don't
