@@ -452,13 +452,13 @@
           <div class="checkin-slider-block">
             <label class="rpe-label" for="checkin-mental">Mentally <span id="checkin-mental-value">7</span>/10</label>
             <input type="range" id="checkin-mental" class="rpe-slider checkin-slider-mental" min="1" max="10" step="1" value="7" />
-            <div class="rpe-scale-labels"><span>Drained</span><span>Sharp</span></div>
+            <div class="rpe-scale-labels" id="checkin-mental-scale"><span>Drained</span><span>Sharp</span></div>
           </div>
 
           <div class="checkin-slider-block">
             <label class="rpe-label" for="checkin-physical">Physically <span id="checkin-physical-value">7</span>/10</label>
             <input type="range" id="checkin-physical" class="rpe-slider checkin-slider-physical" min="1" max="10" step="1" value="7" />
-            <div class="rpe-scale-labels"><span>Beat up</span><span>Strong</span></div>
+            <div class="rpe-scale-labels" id="checkin-physical-scale"><span>Beat up</span><span>Strong</span></div>
           </div>
 
           <label class="field checkin-note-field">
@@ -477,12 +477,8 @@
           <button class="player-exit" id="cardio-log-close-btn">✕</button>
           <h2 class="cardio-log-title">Log Cardio Activity</h2>
 
-          <div class="pill-filter-row" id="cardio-activity-picker">
-            <button class="pill-filter" type="button" data-activity="Walk">Walk</button>
-            <button class="pill-filter" type="button" data-activity="Run">Run</button>
-            <button class="pill-filter" type="button" data-activity="Bike">Bike</button>
-            <button class="pill-filter" type="button" data-activity="Stair Stepper">Stair Stepper</button>
-          </div>
+          <!-- Rendered from Settings -> Cardio Activities, not fixed here. -->
+          <div class="pill-filter-row" id="cardio-activity-picker"></div>
 
           <label class="field">
             <span id="cardio-distance-label">Distance (mi)</span>

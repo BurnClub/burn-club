@@ -435,7 +435,19 @@ function openCheckinModal() {
   document.getElementById("checkin-mental-value").textContent = mental.value;
   document.getElementById("checkin-physical-value").textContent = physical.value;
   document.getElementById("checkin-note").value = existing ? existing.note || "" : "";
-  document.getElementById("checkin-title").textContent = existing ? "Update today's check-in" : "How are you today?";
+  // Wording from Admin -> Settings -> Daily Check-In. The two question keys
+  // stay fixed — they're the field names inside every stored check-in.
+  const ci = APP_SETTINGS.checkin;
+  document.getElementById("checkin-title").textContent = existing ? "Update today's check-in" : ci.title;
+  document.getElementById("checkin-sub").textContent = ci.sub;
+  document.getElementById("checkin-note-prompt").innerHTML = `${esc(ci.notePrompt)} <em>Optional</em>`;
+  document.getElementById("checkin-note").placeholder = ci.notePlaceholder;
+  ci.questions.forEach((q) => {
+    const label = document.querySelector(`label[for="checkin-${q.key}"]`);
+    if (label) label.innerHTML = `${esc(q.label)} <span id="checkin-${q.key}-value">${document.getElementById("checkin-" + q.key).value}</span>/10`;
+    const scale = document.getElementById(`checkin-${q.key}-scale`);
+    if (scale) scale.innerHTML = `<span>${esc(q.low)}</span><span>${esc(q.high)}</span>`;
+  });
   document.getElementById("checkin-saved").style.display = "none";
   // "Not now" is only meaningful on a fresh day — once there's an entry the
   // button below is Done, not a dismissal.
@@ -479,14 +491,17 @@ function renderCheckinAffordances() {
 
 // ---- read-back -------------------------------------------------------------
 
-const CHECKIN_SERIES = [
-  { key: "mental", label: "Mentally", color: "#788CE3" },
-  // Not the palette's --danger: that sits at 2.94:1 on white, just under the
-  // 3:1 floor. This is the same coral nudged until it passes (3.33:1), with
-  // CVD separation from the blue of 19.7 (target 8) — computed, not eyeballed.
-  { key: "physical", label: "Physically", color: "#E0685E" },
-];
-
+// Labels come from Settings; the colours and the two keys stay here. The keys
+// are the field names inside every stored check-in, and the colours are picked
+// for contrast against each other and the chart background, not by taste.
+// The second colour is not the palette's --danger: that sits at 2.94:1 on
+// white, just under the 3:1 floor. This is the same coral nudged until it
+// passes (3.33:1), with CVD separation from the blue of 19.7 (target 8) —
+// computed, not eyeballed. Don't swap either for a nicer-looking hue.
+const CHECKIN_SERIES = APP_SETTINGS.checkin.questions.map((q, i) => ({
+  ...q,
+  color: ["#788CE3", "#E0685E"][i] || "#5C7A99",
+}));
 function recentCheckins(days) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - (days - 1));
@@ -728,12 +743,10 @@ function logCompletion(circuit, weights) {
 // points (challengePointsForMember just counts COMPLETIONS in range),
 // the workout streak (currentStreak checks COMPLETIONS dates generically),
 // and the This-Week calendar highlight (see WORKOUT_CATEGORIES above).
-const CARDIO_ACTIVITY_TYPES = [
-  { id: "Walk", unit: "mi", unitLabel: "Distance (mi)", step: "0.1" },
-  { id: "Run", unit: "mi", unitLabel: "Distance (mi)", step: "0.1" },
-  { id: "Bike", unit: "mi", unitLabel: "Distance (mi)", step: "0.1" },
-  { id: "Stair Stepper", unit: "flights", unitLabel: "Flights Climbed", step: "1" },
-];
+// Set in Admin -> Settings -> Cardio Activities. The buttons used to be
+// hardcoded in the markup too, which meant a member who rowed, swam or hiked
+// had nowhere to log it — and so earned no challenge points for it.
+const CARDIO_ACTIVITY_TYPES = APP_SETTINGS.cardioTypes;
 let cardioSelectedActivity = "Walk";
 
 // `date` defaults to today (the manual-log and wearable-sync callers), but
@@ -783,17 +796,28 @@ function renderCardioLog() {
   if (syncBtn) syncBtn.style.display = WEARABLE.provider ? "inline-block" : "none";
 }
 
+// Built from the configured list rather than fixed markup, so adding Row or
+// Swim in Settings actually gives members a button to press.
+function renderCardioActivityPicker() {
+  document.getElementById("cardio-activity-picker").innerHTML = CARDIO_ACTIVITY_TYPES
+    .map((t) => `<button class="pill-filter" type="button" data-activity="${esc(t.id)}">${esc(t.id)}</button>`)
+    .join("");
+}
+
 function updateCardioActivityPicker() {
   document.querySelectorAll("#cardio-activity-picker .pill-filter").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.activity === cardioSelectedActivity);
   });
-  const meta = CARDIO_ACTIVITY_TYPES.find((t) => t.id === cardioSelectedActivity);
+  // Falls back to the first type if the selected one was removed in Settings.
+  const meta = CARDIO_ACTIVITY_TYPES.find((t) => t.id === cardioSelectedActivity) || CARDIO_ACTIVITY_TYPES[0];
+  if (!meta) return;
   document.getElementById("cardio-distance-label").textContent = meta.unitLabel;
   document.getElementById("cardio-distance-input").step = meta.step;
 }
 
 function openCardioLogModal() {
-  cardioSelectedActivity = "Walk";
+  cardioSelectedActivity = (CARDIO_ACTIVITY_TYPES[0] || {}).id;
+  renderCardioActivityPicker();
   updateCardioActivityPicker();
   document.getElementById("cardio-distance-input").value = "";
   document.getElementById("cardio-minutes-input").value = "";
@@ -1060,6 +1084,13 @@ function formatTrainingTime(totalMinutes) {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
+// {placeholder} -> value. An unknown placeholder is left as written rather
+// than blanked, so a typo in Settings shows up as "{weks}" on the card
+// instead of silently swallowing the word.
+function fillCopyTemplate(template, vars) {
+  return String(template || "").replace(/\{(\w+)\}/g, (whole, key) => (key in vars ? vars[key] : whole));
+}
+
 function renderProgramComplete(pos) {
   const card = document.getElementById("program-complete");
   const snapshot = document.getElementById("home-week-snapshot");
@@ -1069,25 +1100,27 @@ function renderProgramComplete(pos) {
   snapshot.style.display = done ? "none" : "";
   if (!done) return false;
 
-  // "Your 8 weeks are up", not "You finished" (Chris, 2026-08-23). The card
-  // fires on the calendar, not on effort, so a member who trained twice would
-  // have been congratulated for finishing. A neutral headline lets their own
-  // numbers below say how it actually went — one code path, and no threshold
-  // to argue about.
-  document.getElementById("program-complete-title").textContent =
-    `Your ${pos.totalWeeks} weeks are up`;
-
-  // Everything on this card except the member's own numbers is Chris's to
-  // reword (Admin -> Settings -> Member-Facing Copy).
+  // Every word on this card is Chris's to reword (Admin -> Settings ->
+  // Member-Facing Copy); only the member's own numbers are computed. The
+  // headline and subline take placeholders because they name the member's
+  // program and dates — see fillCopyTemplate().
+  //
+  // The default headline is "Your 8 weeks are up", not "You finished" (Chris,
+  // 2026-08-23): the card fires on the calendar, not on effort, so a member
+  // who trained twice would have been congratulated for finishing. If that
+  // wording is ever changed here, that's the reasoning it's changing away
+  // from.
   const pc = APP_SETTINGS.copy.programComplete;
-  document.getElementById("program-complete-eyebrow").textContent = pc.eyebrow;
-  document.getElementById("program-complete-cta").textContent = pc.cta;
-  document.getElementById("program-complete-note").textContent = pc.note;
   // Year included deliberately: this can be read months or years after the
   // fact, and "Aug 23" alone is ambiguous once a year has turned over.
   const ended = pos.endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  document.getElementById("program-complete-sub").textContent =
-    `${CURRENT_MEMBER.program}, finished ${ended}.`;
+  const vars = { weeks: pos.totalWeeks, program: CURRENT_MEMBER.program, date: ended };
+
+  document.getElementById("program-complete-title").textContent = fillCopyTemplate(pc.title, vars);
+  document.getElementById("program-complete-sub").textContent = fillCopyTemplate(pc.sub, vars);
+  document.getElementById("program-complete-eyebrow").textContent = pc.eyebrow;
+  document.getElementById("program-complete-cta").textContent = pc.cta;
+  document.getElementById("program-complete-note").textContent = pc.note;
 
   // Three stats that each say something different. The old set repeated
   // itself: "8 Weeks" was already in the sentence above, and "63% of the
@@ -1992,13 +2025,8 @@ function saveHealthProfileForm() {
 // Notifications — device-local prefs only (no member-facing product would
 // bridge these to staff/admin), so plain localStorage, not the shared key.
 const NOTIF_PREFS_KEY = "burnclub-notif-prefs";
-const NOTIF_TYPES = [
-  { id: "workouts", label: "Workout Reminders" },
-  { id: "messages", label: "New Messages" },
-  { id: "community", label: "Community Activity" },
-  { id: "challenges", label: "Challenge Updates" },
-  { id: "weekly-summary", label: "Weekly Progress Summary" },
-];
+// Set in Admin -> Settings -> Notifications, defaults included.
+const NOTIF_TYPES = APP_SETTINGS.notifications;
 let NOTIF_PREFS = {};
 
 function loadNotifPrefs() {
@@ -2007,7 +2035,7 @@ function loadNotifPrefs() {
     if (stored) return stored;
   } catch (e) {}
   const defaults = {};
-  NOTIF_TYPES.forEach((t) => { defaults[t.id] = true; });
+  NOTIF_TYPES.forEach((t) => { defaults[t.id] = t.defaultOn !== false; });
   return defaults;
 }
 
@@ -4651,11 +4679,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("cardio-log-close-btn").addEventListener("click", closeCardioLogModal);
   document.getElementById("cardio-log-save-btn").addEventListener("click", saveCardioLogForm);
   document.getElementById("cardio-sync-btn").addEventListener("click", syncCardioFromWearable);
-  document.querySelectorAll("#cardio-activity-picker .pill-filter").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      cardioSelectedActivity = btn.dataset.activity;
-      updateCardioActivityPicker();
-    });
+  // Delegated: the buttons are rebuilt from settings each time the modal
+  // opens, so listeners bound to them directly would be lost.
+  document.getElementById("cardio-activity-picker").addEventListener("click", (e) => {
+    const btn = e.target.closest(".pill-filter");
+    if (!btn) return;
+    cardioSelectedActivity = btn.dataset.activity;
+    updateCardioActivityPicker();
   });
   document.getElementById("player-pause-btn").addEventListener("click", () => Player.togglePause());
   document.getElementById("player-technique-toggle").addEventListener("click", () => {

@@ -3606,6 +3606,12 @@ document.addEventListener("input", (e) => {
 
 document.addEventListener("input", (e) => {
   const t = e.target;
+  if (t.dataset.action === "edit-team-names") {
+    // Deliberately not re-rendering: that would blow away what's being typed.
+    // The next draw reads the saved list.
+    saveTeamNames(t.value);
+    return;
+  }
   if (t.dataset.action !== "rename-team") return;
   const challenge = challengeById(selectedChallengeId);
   const team = challenge && teamsOf(challenge).find((x) => x.id === t.dataset.teamId);
@@ -3613,6 +3619,9 @@ document.addEventListener("input", (e) => {
   // Deliberately not re-rendering here — that would blow away the input the
   // coach is typing in. The name is stored; the cards redraw on the next
   // action that needs them.
+  // defaultName is left alone: a name that no longer matches it is by
+  // definition hand-typed, and one typed back to the default is by definition
+  // the default again.
   team.name = t.value;
   syncChallengeTeamsToMemberApp();
   // Safe to redraw the inbox here — it's a different panel from the input the
@@ -3758,6 +3767,52 @@ document.addEventListener("click", (e) => {
     const i = rows.indexOf(row);
     APP_SETTINGS.support = APP_SETTING_PANELS.support.read().support;
     APP_SETTINGS.support.faqs.splice(i, 1);
+    renderAppSettingPanel();
+  }
+  // Every add/remove reads the panel back first, so a row added after typing
+  // in another one doesn't discard what's already on screen.
+  if (action === "add-habit-preset") {
+    APP_SETTINGS.habitPresets = readHabitRows("#settings-preset-rows");
+    APP_SETTINGS.habitPresets.push({ id: "", label: "" });
+    renderAppSettingPanel();
+  }
+  if (action === "remove-habit-preset") {
+    const i = rowIndex(el, "#settings-preset-rows .settings-habit-row");
+    APP_SETTINGS.habitPresets = readHabitRows("#settings-preset-rows");
+    APP_SETTINGS.habitPresets.splice(i, 1);
+    renderAppSettingPanel();
+  }
+  if (action === "add-cardio-type") {
+    APP_SETTINGS.cardioTypes = APP_SETTING_PANELS.cardioTypes.read().cardioTypes;
+    APP_SETTINGS.cardioTypes.push({ id: "", unitLabel: "Distance (mi)", step: "0.1" });
+    renderAppSettingPanel();
+  }
+  if (action === "remove-cardio-type") {
+    const i = rowIndex(el, "#settings-cardio-rows .settings-cardio-row");
+    APP_SETTINGS.cardioTypes = APP_SETTING_PANELS.cardioTypes.read().cardioTypes;
+    APP_SETTINGS.cardioTypes.splice(i, 1);
+    renderAppSettingPanel();
+  }
+  if (action === "add-benchmark") {
+    APP_SETTINGS.benchmarks = APP_SETTING_PANELS.benchmarks.read().benchmarks;
+    APP_SETTINGS.benchmarks.push({ id: "", name: "", subtitle: "", scoreType: "rounds" });
+    renderAppSettingPanel();
+  }
+  if (action === "remove-benchmark") {
+    const i = rowIndex(el, "#settings-benchmark-rows .settings-benchmark-row");
+    APP_SETTINGS.benchmarks = APP_SETTING_PANELS.benchmarks.read().benchmarks;
+    APP_SETTINGS.benchmarks.splice(i, 1);
+    renderAppSettingPanel();
+  }
+  if (action === "add-notif-type") {
+    APP_SETTINGS.notifications = APP_SETTING_PANELS.notifications.read().notifications;
+    APP_SETTINGS.notifications.push({ id: "", label: "", defaultOn: true });
+    renderAppSettingPanel();
+  }
+  if (action === "remove-notif-type") {
+    const i = rowIndex(el, "#settings-notif-rows .settings-notif-row");
+    APP_SETTINGS.notifications = APP_SETTING_PANELS.notifications.read().notifications;
+    APP_SETTINGS.notifications.splice(i, 1);
     renderAppSettingPanel();
   }
   if (action === "add-default-habit") {
@@ -4546,10 +4601,17 @@ const APP_SETTING_PANELS = {
         ${slide("contact", "Closing slide")}
         <h3 class="settings-subhead">End-of-program card</h3>
         <div class="settings-note-card">
-          <p class="settings-field-help">The headline and the three stats are built from the member's own program and history, so they aren't editable here.</p>
+          <p class="settings-field-help">The three stats are computed from the member's own history and aren't editable. In the headline and subline you can use <code>{weeks}</code>, <code>{program}</code> and <code>{date}</code> — each is filled in from the member's record.</p>
           <label class="modal-field">Eyebrow
             <input type="text" data-pc-field="eyebrow" value="${esc(pc.eyebrow)}" />
           </label>
+          <label class="modal-field">Headline
+            <input type="text" data-pc-field="title" value="${esc(pc.title)}" />
+          </label>
+          <label class="modal-field">Subline
+            <input type="text" data-pc-field="sub" value="${esc(pc.sub)}" />
+          </label>
+          <p class="settings-field-help" id="pc-preview"></p>
           <label class="modal-field">Button label
             <input type="text" data-pc-field="cta" value="${esc(pc.cta)}" />
           </label>
@@ -4573,6 +4635,150 @@ const APP_SETTING_PANELS = {
       });
       return { copy: { tour, programComplete } };
     },
+    afterRender: () => {
+      renderProgramCompletePreview();
+      document.querySelectorAll("#settings-panel-body [data-pc-field]").forEach((el) => {
+        el.addEventListener("input", renderProgramCompletePreview);
+      });
+    },
+  },
+
+  habitPresets: {
+    eyebrow: "Member Experience",
+    title: "Habit Library",
+    desc: "The menu a member picks from when they add a habit. \"Other (custom)\" is always offered on top of this list, so a member is never boxed in by it.",
+    render: () => `
+      <div id="settings-preset-rows">${APP_SETTINGS.habitPresets.map(habitRowHtml).join("")}</div>
+      <button class="btn-ghost-lg small" data-action="add-habit-preset">+ Add a habit</button>`,
+    read: () => ({ habitPresets: readHabitRows("#settings-preset-rows") }),
+  },
+
+  cardioTypes: {
+    eyebrow: "Member Experience",
+    title: "Cardio Activities",
+    desc: "What a member can log under \"+ Log Activity\". Anything not on this list can't be logged at all, so it earns no challenge points either. Each activity carries its own unit — \"Distance (mi)\" is wrong for a stair stepper and meaningless for a swim.",
+    render: () => `
+      <div id="settings-cardio-rows">${APP_SETTINGS.cardioTypes.map(cardioRowHtml).join("")}</div>
+      <button class="btn-ghost-lg small" data-action="add-cardio-type">+ Add an activity</button>`,
+    read: () => {
+      const cardioTypes = [];
+      document.querySelectorAll("#settings-cardio-rows .settings-cardio-row").forEach((row) => {
+        const id = row.querySelector("[data-cardio-id]").value.trim();
+        if (!id) return;
+        cardioTypes.push({
+          id,
+          unitLabel: row.querySelector("[data-cardio-unit]").value.trim() || "Distance (mi)",
+          step: row.querySelector("[data-cardio-step]").value.trim() || "1",
+        });
+      });
+      return { cardioTypes };
+    },
+  },
+
+  benchmarks: {
+    eyebrow: "Member Experience",
+    title: "Benchmarks",
+    desc: "The repeatable tests on a member's Progress tab. Rounds scores rank highest-first; time scores rank fastest-first, so the score type decides what counts as an improvement.",
+    render: () => `
+      <div id="settings-benchmark-rows">${APP_SETTINGS.benchmarks.map(benchmarkRowHtml).join("")}</div>
+      <button class="btn-ghost-lg small" data-action="add-benchmark">+ Add a benchmark</button>`,
+    read: () => {
+      const benchmarks = [];
+      document.querySelectorAll("#settings-benchmark-rows .settings-benchmark-row").forEach((row) => {
+        const name = row.querySelector("[data-benchmark-name]").value.trim();
+        if (!name) return;
+        benchmarks.push({
+          // Existing benchmarks keep their id so their result history still
+          // matches; a new one gets a slug from its name.
+          id: row.dataset.benchmarkId || slugify("benchmark", name),
+          name,
+          subtitle: row.querySelector("[data-benchmark-subtitle]").value.trim(),
+          scoreType: row.querySelector("[data-benchmark-score]").value,
+        });
+      });
+      return { benchmarks };
+    },
+  },
+
+  checkin: {
+    eyebrow: "Member Experience",
+    title: "Daily Check-In",
+    desc: "The prompt a member sees once a day, and the two scales they answer. The scores feed the trend chart on Progress — so these two questions are what you can actually see about someone over time.",
+    render: () => {
+      const ci = APP_SETTINGS.checkin;
+      return `
+        <div class="settings-note-card">
+          <label class="modal-field">Heading
+            <input type="text" data-checkin-field="title" value="${esc(ci.title)}" />
+          </label>
+          <label class="modal-field">Subheading
+            <input type="text" data-checkin-field="sub" value="${esc(ci.sub)}" />
+          </label>
+        </div>
+        <h3 class="settings-subhead">The two scales</h3>
+        <p class="settings-field-help">Both are 1–10. The end labels are what tell a member which direction is which.</p>
+        ${ci.questions.map((q, i) => `
+          <div class="settings-note-card">
+            <div class="settings-note-head"><span class="settings-note-type">Scale ${i + 1}</span></div>
+            <label class="modal-field">Label
+              <input type="text" data-checkin-q="${esc(q.key)}" data-field="label" value="${esc(q.label)}" />
+            </label>
+            <label class="modal-field">Low end (1)
+              <input type="text" data-checkin-q="${esc(q.key)}" data-field="low" value="${esc(q.low)}" />
+            </label>
+            <label class="modal-field">High end (10)
+              <input type="text" data-checkin-q="${esc(q.key)}" data-field="high" value="${esc(q.high)}" />
+            </label>
+          </div>`).join("")}
+        <h3 class="settings-subhead">The optional note</h3>
+        <div class="settings-note-card">
+          <label class="modal-field">Prompt
+            <input type="text" data-checkin-field="notePrompt" value="${esc(ci.notePrompt)}" />
+          </label>
+          <label class="modal-field">Placeholder text
+            <input type="text" data-checkin-field="notePlaceholder" value="${esc(ci.notePlaceholder)}" />
+          </label>
+        </div>
+        <p class="settings-field-help">Adding a third scale isn't a settings change — every stored check-in holds exactly these two fields, and the Progress chart draws exactly two lines. Ask and it can be built properly.</p>`;
+    },
+    read: () => {
+      const checkin = { questions: [] };
+      document.querySelectorAll("#settings-panel-body [data-checkin-field]").forEach((el) => {
+        checkin[el.dataset.checkinField] = el.value.trim();
+      });
+      // Rebuilt in the order the keys already exist in, never from the DOM
+      // alone — the keys are stored data and must not be reordered or renamed.
+      APP_SETTINGS.checkin.questions.forEach((q) => {
+        const get = (field) => {
+          const el = document.querySelector(`[data-checkin-q="${q.key}"][data-field="${field}"]`);
+          return el ? el.value.trim() : q[field];
+        };
+        checkin.questions.push({ key: q.key, label: get("label"), low: get("low"), high: get("high") });
+      });
+      return { checkin };
+    },
+  },
+
+  notifications: {
+    eyebrow: "Member Experience",
+    title: "Notifications",
+    desc: "What a member can switch on or off, and what's already on when they arrive. Nothing sends yet — that needs the native build — but these defaults are what an imported member's first week will feel like, so they're worth choosing before the import rather than after.",
+    render: () => `
+      <div id="settings-notif-rows">${APP_SETTINGS.notifications.map(notifRowHtml).join("")}</div>
+      <button class="btn-ghost-lg small" data-action="add-notif-type">+ Add a notification type</button>`,
+    read: () => {
+      const notifications = [];
+      document.querySelectorAll("#settings-notif-rows .settings-notif-row").forEach((row) => {
+        const label = row.querySelector("[data-notif-label]").value.trim();
+        if (!label) return;
+        notifications.push({
+          id: row.dataset.notifId || slugify("notif", label),
+          label,
+          defaultOn: row.querySelector("[data-notif-default]").checked,
+        });
+      });
+      return { notifications };
+    },
   },
 
   habits: {
@@ -4585,29 +4791,109 @@ const APP_SETTING_PANELS = {
         ? `<p class="settings-field-help">That's the ${MAX_DEFAULT_HABITS}-habit limit — remove one to add another.</p>`
         : `<button class="btn-ghost-lg small" data-action="add-default-habit">+ Add a habit</button>`}`,
     read: () => {
-      const habits = [];
-      document.querySelectorAll("#settings-habit-rows .settings-habit-row").forEach((row) => {
-        const label = row.querySelector("[data-habit-label]").value.trim();
-        if (!label) return;
-        const auto = row.querySelector("[data-habit-auto]").value;
-        const target = Number(row.querySelector("[data-habit-target]").value) || 0;
-        const habit = { id: row.dataset.habitId || slugifyHabit(label), label };
-        // Only an auto habit needs a target — a hand-ticked one has nothing to
-        // compare against.
-        if (auto) { habit.auto = auto; habit.target = target; }
-        habits.push(habit);
-      });
       // Belt and braces: the member app's habit picker stops at
       // MAX_DEFAULT_HABITS, but seeding a new member from this list bypasses
       // that check — a longer default would hand them habits they could never
       // get back once removed.
-      return { habits: habits.slice(0, MAX_DEFAULT_HABITS) };
+      return { habits: readHabitRows("#settings-habit-rows").slice(0, MAX_DEFAULT_HABITS) };
     },
   },
 };
 
+// Which row a Remove button sits in. Read from the DOM rather than baked into
+// the button, so it stays right after rows are added or removed.
+function rowIndex(el, selector) {
+  return [...document.querySelectorAll(selector)].indexOf(el.closest(selector.split(" ").pop()));
+}
+
+function slugify(prefix, label) {
+  return prefix + "-" + label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 function slugifyHabit(label) {
-  return "habit-" + label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return slugify("habit", label);
+}
+
+// Habit rows are the same shape in both the Default Habits and Habit Library
+// panels, so they share a reader.
+function readHabitRows(scope) {
+  const habits = [];
+  document.querySelectorAll(`${scope} .settings-habit-row`).forEach((row) => {
+    const label = row.querySelector("[data-habit-label]").value.trim();
+    if (!label) return;
+    const auto = row.querySelector("[data-habit-auto]").value;
+    const target = Number(row.querySelector("[data-habit-target]").value) || 0;
+    const habit = { id: row.dataset.habitId || slugifyHabit(label), label };
+    // Only an auto habit needs a target — a hand-ticked one has nothing to
+    // compare against.
+    if (auto) { habit.auto = auto; habit.target = target; }
+    habits.push(habit);
+  });
+  return habits;
+}
+
+function cardioRowHtml(t) {
+  return `
+    <div class="settings-note-card settings-cardio-row">
+      <div class="settings-note-head">
+        <span class="settings-note-type">Activity</span>
+        <button class="btn-ghost-lg small btn-danger" data-action="remove-cardio-type">Remove</button>
+      </div>
+      <label class="modal-field">Name members see
+        <input type="text" data-cardio-id value="${esc(t.id || "")}" placeholder="e.g. Row" />
+      </label>
+      <label class="modal-field">What's measured
+        <input type="text" data-cardio-unit value="${esc(t.unitLabel || "")}" placeholder="e.g. Distance (m)" />
+      </label>
+      <label class="modal-field">Input step
+        <input type="text" data-cardio-step value="${esc(t.step || "1")}" />
+      </label>
+      <p class="settings-field-help">Step is how much one tap of the up/down arrow changes the number — 0.1 for miles, 1 for whole units.</p>
+    </div>`;
+}
+
+const BENCHMARK_SCORE_TYPES = [
+  { value: "rounds", label: "Rounds / reps — more is better" },
+  { value: "time", label: "Time — faster is better" },
+];
+
+function benchmarkRowHtml(b) {
+  return `
+    <div class="settings-note-card settings-benchmark-row" data-benchmark-id="${esc(b.id || "")}">
+      <div class="settings-note-head">
+        <span class="settings-note-type">Benchmark</span>
+        <button class="btn-ghost-lg small btn-danger" data-action="remove-benchmark">Remove</button>
+      </div>
+      <label class="modal-field">Name
+        <input type="text" data-benchmark-name value="${esc(b.name || "")}" placeholder="e.g. The Gauntlet" />
+      </label>
+      <label class="modal-field">Description
+        <input type="text" data-benchmark-subtitle value="${esc(b.subtitle || "")}" placeholder="e.g. 12-Minute AMRAP" />
+      </label>
+      <label class="modal-field">Scored by
+        <select data-benchmark-score>
+          ${BENCHMARK_SCORE_TYPES.map((o) => `<option value="${o.value}" ${o.value === (b.scoreType || "rounds") ? "selected" : ""}>${o.label}</option>`).join("")}
+        </select>
+      </label>
+      ${b.id ? `<p class="settings-field-help">Renaming keeps this benchmark's result history. Removing it hides the history too.</p>` : ""}
+    </div>`;
+}
+
+function notifRowHtml(n) {
+  return `
+    <div class="settings-note-card settings-notif-row" data-notif-id="${esc(n.id || "")}">
+      <div class="settings-note-head">
+        <span class="settings-note-type">Notification</span>
+        <button class="btn-ghost-lg small btn-danger" data-action="remove-notif-type">Remove</button>
+      </div>
+      <label class="modal-field">Label members see
+        <input type="text" data-notif-label value="${esc(n.label || "")}" />
+      </label>
+      <label class="settings-checkbox">
+        <input type="checkbox" data-notif-default ${n.defaultOn !== false ? "checked" : ""} />
+        <span>On by default for new members</span>
+      </label>
+    </div>`;
 }
 
 function faqRowHtml(f) {
@@ -4673,6 +4959,35 @@ function renderAppSettingPanel() {
   const panel = APP_SETTING_PANELS[openSettingPanel];
   if (!panel) return;
   document.getElementById("settings-panel-body").innerHTML = panel.render();
+  if (panel.afterRender) panel.afterRender();
+}
+
+// Same substitution the member app does, so what's previewed here is what
+// gets rendered there. Kept in both because the two apps share shapes by hand.
+function fillCopyTemplate(template, vars) {
+  return String(template || "").replace(/\{(\w+)\}/g, (whole, key) => (key in vars ? vars[key] : whole));
+}
+
+// Live preview under the headline fields — placeholders are easy to typo, and
+// a card that reads "Your {weks} weeks are up" is the kind of thing you only
+// notice once a member has seen it.
+const PC_PREVIEW_VARS = { weeks: 8, program: "Fit & Functional", date: "Aug 23, 2026" };
+
+function renderProgramCompletePreview() {
+  const host = document.getElementById("pc-preview");
+  if (!host) return;
+  const get = (k) => (document.querySelector(`[data-pc-field="${k}"]`) || {}).value || "";
+  const unknown = [];
+  [get("title"), get("sub")].forEach((t) => {
+    String(t).replace(/\{(\w+)\}/g, (whole, key) => {
+      if (!(key in PC_PREVIEW_VARS) && !unknown.includes(whole)) unknown.push(whole);
+      return whole;
+    });
+  });
+  host.innerHTML = `A member on an 8-week Fit &amp; Functional would read:<br />
+    <strong>${esc(fillCopyTemplate(get("title"), PC_PREVIEW_VARS))}</strong><br />
+    ${esc(fillCopyTemplate(get("sub"), PC_PREVIEW_VARS))}
+    ${unknown.length ? `<br /><span style="color:var(--danger);font-weight:700;">${unknown.join(", ")} ${unknown.length === 1 ? "isn't a placeholder" : "aren't placeholders"} — it will print as written. Use {weeks}, {program} or {date}.</span>` : ""}`;
 }
 
 // Saved as a diff, not a snapshot: anything still matching the default is left
@@ -5003,6 +5318,13 @@ function teamsOf(challenge) {
   return challenge.teams || [];
 }
 
+// Falls back to the built-in list if the setting has been emptied — an
+// unnamed team is one nobody can tell from its neighbours.
+function teamNamePool() {
+  const names = (APP_SETTINGS.teamNames || []).map((n) => String(n).trim()).filter(Boolean);
+  return names.length ? names : DEFAULT_TEAM_NAMES;
+}
+
 function teamOfMember(challenge, memberId) {
   return teamsOf(challenge).find((t) => (t.memberIds || []).includes(memberId)) || null;
 }
@@ -5048,12 +5370,27 @@ function pastPairCounts(excludeChallengeId) {
 function drawTeams(challenge, teamCount) {
   const members = challengeStandings(challenge).map((s) => s.member);
   const count = Math.max(2, Math.min(teamCount || 4, MAX_TEAMS, members.length || 2));
-  // Existing names are kept across a redraw so Chris doesn't lose his edits
-  // every time he reshuffles.
+  // A hand-typed team name survives a redraw; one that just came from the
+  // default pool doesn't. Without that split, editing the default names would
+  // appear to do nothing — every slot already had a name, so the new pool
+  // could only ever reach teams beyond the current count. `defaultName`
+  // records what the pool gave a team, so a name that still matches it is
+  // known to be untouched (2026-08-27).
   const existing = teamsOf(challenge);
-  const names = Array.from({ length: count }, (_, i) =>
-    (existing[i] && existing[i].name) || DEFAULT_TEAM_NAMES[i % DEFAULT_TEAM_NAMES.length]);
-  const teams = names.map((name, i) => ({ id: `t-${i}-${Date.now()}`, name, color: TEAM_PALETTE[i % TEAM_PALETTE.length], memberIds: [] }));
+  const namePool = teamNamePool();
+  const names = Array.from({ length: count }, (_, i) => {
+    const prev = existing[i];
+    const fromPool = namePool[i % namePool.length];
+    const renamedByHand = prev && prev.name && prev.name !== prev.defaultName;
+    return renamedByHand ? prev.name : fromPool;
+  });
+  const teams = names.map((name, i) => ({
+    id: `t-${i}-${Date.now()}`,
+    name,
+    defaultName: namePool[i % namePool.length],
+    color: TEAM_PALETTE[i % TEAM_PALETTE.length],
+    memberIds: [],
+  }));
   if (!members.length) return teams;
 
   const { counts, key } = pastPairCounts(challenge.id);
@@ -5077,7 +5414,13 @@ function drawTeams(challenge, teamCount) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
-    const t = names.map((name, i) => ({ id: `t-${i}-${Date.now()}`, name, color: TEAM_PALETTE[i % TEAM_PALETTE.length], memberIds: [] }));
+    const t = names.map((name, i) => ({
+      id: `t-${i}-${Date.now()}`,
+      name,
+      defaultName: namePool[i % namePool.length],
+      color: TEAM_PALETTE[i % TEAM_PALETTE.length],
+      memberIds: [],
+    }));
     pool.forEach((id, i) => t[i % count].memberIds.push(id));
     for (let pass = 0; pass < 30; pass++) {
       let improved = false;
@@ -5167,6 +5510,7 @@ function renderTeamStandings() {
   if (!isTeams) return;
 
   const standings = teamStandings(challenge);
+  syncTeamNamesField();
   if (!standings.length) {
     note.textContent = "No teams drawn yet.";
     wrap.innerHTML = `<p class="team-empty">Draw teams to split everyone in this challenge into four sides. Scoring is the same — a team's score is its members' points added up.</p>`;
@@ -5175,6 +5519,7 @@ function renderTeamStandings() {
   const leader = standings[0].total;
   const countField = document.getElementById("team-count");
   if (countField && document.activeElement !== countField) countField.value = standings.length;
+  syncTeamNamesField();
   note.textContent = `${standings.length} teams · redraw replaces the current split`;
   wrap.innerHTML = standings.map((row, i) => {
     const colour = row.team.color || "#788CE3";
@@ -5203,6 +5548,19 @@ function renderTeamStandings() {
       </div>
     `;
   }).join("");
+}
+
+// Never clobber the field while it's being typed in — same rule the team
+// count and the team-name inputs follow.
+function syncTeamNamesField() {
+  const field = document.getElementById("team-default-names");
+  if (!field || document.activeElement === field) return;
+  field.value = (APP_SETTINGS.teamNames || []).join(", ");
+}
+
+function saveTeamNames(value) {
+  APP_SETTINGS.teamNames = value.split(",").map((n) => n.trim()).filter(Boolean);
+  storeAppSettings();
 }
 
 function renderChallengeStandings() {

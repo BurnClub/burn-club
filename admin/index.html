@@ -1009,6 +1009,14 @@
               <button class="btn-ghost-lg small" data-action="draw-teams">Draw Teams</button>
             </div>
           </div>
+          <!-- The names a team gets before it's renamed (2026-08-27). Sits
+               here rather than in Settings because this is where you are when
+               you decide you want different ones. -->
+          <div class="team-default-names">
+            <label class="team-default-names-label" for="team-default-names">Default names for new teams</label>
+            <input type="text" id="team-default-names" data-action="edit-team-names" placeholder="Red, Blue, Green, Gold" />
+            <p class="settings-field-help">Comma-separated, used in order. A team you've already renamed keeps its name through a redraw.</p>
+          </div>
           <div class="team-standings" id="team-standings"></div>
         </section>
 
@@ -1180,6 +1188,41 @@
             <span>
               <span class="settings-nav-name">Default Habits</span>
               <span class="settings-nav-desc">What a new member starts with before they pick their own</span>
+            </span>
+            <span class="settings-nav-caret">›</span>
+          </button>
+          <button class="settings-nav-row" data-action="open-app-setting" data-panel="habitPresets">
+            <span>
+              <span class="settings-nav-name">Habit Library</span>
+              <span class="settings-nav-desc">The menu members choose their own habits from</span>
+            </span>
+            <span class="settings-nav-caret">›</span>
+          </button>
+          <button class="settings-nav-row" data-action="open-app-setting" data-panel="cardioTypes">
+            <span>
+              <span class="settings-nav-name">Cardio Activities</span>
+              <span class="settings-nav-desc">What members can log, and the unit each one is measured in</span>
+            </span>
+            <span class="settings-nav-caret">›</span>
+          </button>
+          <button class="settings-nav-row" data-action="open-app-setting" data-panel="benchmarks">
+            <span>
+              <span class="settings-nav-name">Benchmarks</span>
+              <span class="settings-nav-desc">The repeatable tests on a member's Progress tab</span>
+            </span>
+            <span class="settings-nav-caret">›</span>
+          </button>
+          <button class="settings-nav-row" data-action="open-app-setting" data-panel="checkin">
+            <span>
+              <span class="settings-nav-name">Daily Check-In</span>
+              <span class="settings-nav-desc">The daily prompt and the two scales it asks about</span>
+            </span>
+            <span class="settings-nav-caret">›</span>
+          </button>
+          <button class="settings-nav-row" data-action="open-app-setting" data-panel="notifications">
+            <span>
+              <span class="settings-nav-name">Notifications</span>
+              <span class="settings-nav-desc">What members can toggle, and what's on by default</span>
             </span>
             <span class="settings-nav-caret">›</span>
           </button>

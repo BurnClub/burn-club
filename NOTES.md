@@ -58,6 +58,16 @@ syncs them.
 
 ## Agreed, not yet built
 
+- **Admin validation report** (agreed 2026-08-25, tabled 2026-08-27). One page
+  listing what would break on import: every workout referencing an exercise
+  name that isn't in the library, and every member record with a missing or
+  malformed field. Both failure modes are known and silent — a typo'd exercise
+  name loses its video, cues and weight tracking without saying so, and a blank
+  `start_date` crashes `init()`. Worth having before ~600 workouts and a couple
+  hundred member records land, because after the import these are found by
+  hand. Deliberately tabled for its own session, not dropped.
+
+
 ### Next candidates for Settings (2026-08-27)
 
 Reviewed after the first four moved out of the code (Challenge Scoring,
@@ -102,7 +112,9 @@ rules, which are real logic rather than config and want their own design pass.
 
 - **Free-trial Burn Club program**, to hand App Review as a working demo
   account. It needs to be a real member record on a real program, not a
-  special case, or it won't exercise what a reviewer is checking.
+  special case, or it won't exercise what a reviewer is checking. Tabled for a
+  later session (2026-08-27) — it's gated on the App Store submission actually
+  being imminent, so there's no value in building it early.
 
 ## Settled — don't revisit
 

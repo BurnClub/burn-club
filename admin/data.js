@@ -461,6 +461,10 @@ try {
 // who never touched that field. mergeAppSettings() is why a stored copy from
 // before a new field existed still works.
 const APP_SETTINGS_DEFAULTS = {
+  // The names a fresh team gets before Chris renames it. Editable from the
+  // Teams panel on a challenge rather than Settings, because that's where
+  // you're standing when you notice you want different ones.
+  teamNames: ["Red", "Blue", "Green", "Gold", "Purple", "Pink", "Mint", "Slate"],
   // Workout points stay on the challenge (each one sets its own); these are
   // the sources that had no number of their own and silently borrowed it.
   scoring: {
@@ -489,12 +493,63 @@ const APP_SETTINGS_DEFAULTS = {
       progress: { title: "Watch It Add Up", body: "Your personal records, benchmark results, and every workout you've logged, all in one place." },
       contact: { title: "Questions? Just Ask.", body: "Message your coach any time and you'll get a real answer from a real person. You can replay this tour whenever you like from Profile → Help & Support.", action: "Message Your Coach" },
     },
+    // {weeks}, {program} and {date} are filled in from the member's own
+    // record. A heading with no placeholder is fine — it just reads the same
+    // for everyone.
     programComplete: {
       eyebrow: "Program summary",
+      title: "Your {weeks} weeks are up",
+      sub: "{program}, finished {date}.",
       cta: "Message your coach",
       note: "Ask about repeating this program, or what to move on to next.",
     },
   },
+  // The menu members choose from. "Other (custom)" is appended in code rather
+  // than listed here — it's the escape hatch, not a preset.
+  habitPresets: [
+    { id: "steps-10k", label: "10,000 Steps", auto: "steps", target: 10000 },
+    { id: "water-100oz", label: "100oz Water" },
+    { id: "outdoor-activity", label: "Outdoor Activity" },
+    { id: "pushups-25", label: "25 Push-ups" },
+  ],
+  // What a member can log under "+ Log Activity". Each carries its own unit,
+  // because "Distance (mi)" is wrong for a stair stepper and meaningless for a
+  // swim. `step` is the input's increment.
+  cardioTypes: [
+    { id: "Walk", unitLabel: "Distance (mi)", step: "0.1" },
+    { id: "Run", unitLabel: "Distance (mi)", step: "0.1" },
+    { id: "Bike", unitLabel: "Distance (mi)", step: "0.1" },
+    { id: "Stair Stepper", unitLabel: "Flights Climbed", step: "1" },
+  ],
+  benchmarks: [
+    { id: "benchmark-a", name: "Benchmark A", subtitle: "The Gauntlet — 12-Minute AMRAP", scoreType: "rounds" },
+    { id: "benchmark-b", name: "Benchmark B", subtitle: "Sprint 500 — For Time", scoreType: "time" },
+    { id: "benchmark-c", name: "Benchmark C", subtitle: "Endurance Test — 15-Minute AMRAP", scoreType: "rounds" },
+  ],
+  // The two question keys are fixed: they're the field names inside every
+  // stored check-in and the two series on the Progress chart. Wording and the
+  // scale ends are free to change; adding a third question is not a settings
+  // change (see NOTES.md).
+  checkin: {
+    title: "How are you today?",
+    sub: "Only you can see this.",
+    notePrompt: "Anything worth noting?",
+    notePlaceholder: "Sleep, soreness, stress, a win…",
+    questions: [
+      { key: "mental", label: "Mentally", low: "Drained", high: "Sharp" },
+      { key: "physical", label: "Physically", low: "Beat up", high: "Strong" },
+    ],
+  },
+  // Cosmetic until the native build gives them somewhere to go, but the
+  // defaults decide whether an imported member's first week is useful or
+  // noisy — worth choosing before the import, not after.
+  notifications: [
+    { id: "workouts", label: "Workout Reminders", defaultOn: true },
+    { id: "messages", label: "New Messages", defaultOn: true },
+    { id: "community", label: "Community Activity", defaultOn: true },
+    { id: "challenges", label: "Challenge Updates", defaultOn: true },
+    { id: "weekly-summary", label: "Weekly Progress Summary", defaultOn: true },
+  ],
   // What a new member starts with. `auto` ties a habit to a wearable metric;
   // leave it off for one the member ticks themselves.
   habits: [
@@ -894,10 +949,10 @@ const CHALLENGES = [
     format: "teams",
     teamCount: 4,
     teams: [
-      { id: "t-red", name: "Red", color: "#E0685E", memberIds: ["priya-k", "marcus-t"] },
-      { id: "t-blue", name: "Blue", color: "#788CE3", memberIds: ["jamie-r", "alicia-b"] },
-      { id: "t-green", name: "Green", color: "#13673F", memberIds: ["chris-v"] },
-      { id: "t-gold", name: "Gold", color: "#E6B400", memberIds: ["jordan-p"] },
+      { id: "t-red", name: "Red", defaultName: "Red", color: "#E0685E", memberIds: ["priya-k", "marcus-t"] },
+      { id: "t-blue", name: "Blue", defaultName: "Blue", color: "#788CE3", memberIds: ["jamie-r", "alicia-b"] },
+      { id: "t-green", name: "Green", defaultName: "Green", color: "#13673F", memberIds: ["chris-v"] },
+      { id: "t-gold", name: "Gold", defaultName: "Gold", color: "#E6B400", memberIds: ["jordan-p"] },
     ],
   },
 ];
@@ -906,6 +961,9 @@ const CHALLENGES = [
 // derived from its name (2026-08-24) — names are Chris's to edit, so keying
 // colour off them would have a rename silently change a team's colour.
 const TEAM_PALETTE = ["#E0685E", "#788CE3", "#13673F", "#E6B400", "#A78BFA", "#F0A6CA", "#37FF8B", "#5C7A99"];
+// Kept as the fallback if the setting is ever emptied — a team with no name
+// at all would render a blank input nobody could tell apart from its
+// neighbours.
 const DEFAULT_TEAM_NAMES = ["Red", "Blue", "Green", "Gold", "Purple", "Pink", "Mint", "Slate"];
 const MAX_TEAMS = TEAM_PALETTE.length;
 
