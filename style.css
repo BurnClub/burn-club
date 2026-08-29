@@ -2932,6 +2932,10 @@ h1, h2, h3 {
   border-left: 5px solid var(--team-colour);
   padding: 16px 18px;
   margin-top: 12px;
+  /* Matches .challenge-card's bottom margin above it (2026-08-27). Without
+     this the card had a top margin and no bottom one, so the Activity Feed
+     sat flush against it — a 0px gap between two differently-coloured cards. */
+  margin-bottom: 24px;
   box-shadow: 0 4px 12px rgba(23, 36, 63, 0.05);
 }
 .team-challenge-head { display: flex; align-items: center; gap: 8px; }
