@@ -2950,7 +2950,9 @@ h1, h2, h3 {
 .team-standing-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  /* Tight gaps and narrow fixed columns on purpose: every pixel spent here
+     comes out of the bar track, and the bars are the part doing the work. */
+  gap: 7px;
   padding: 5px 0;
 }
 .team-standing-rank {
@@ -2959,7 +2961,7 @@ h1, h2, h3 {
 }
 .team-standing-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .team-standing-name {
-  width: 74px; flex-shrink: 0;
+  width: 64px; flex-shrink: 0;
   font-size: 13px; font-weight: 700; color: var(--ink);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -2974,11 +2976,48 @@ h1, h2, h3 {
   width: 34px; flex-shrink: 0;
   font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: var(--ink); text-align: right;
 }
-/* The member's own team, marked by weight rather than colour alone — the
-   colour is already doing the job of naming the team. */
+/* The member's own team (2026-08-27, Chris: "make it more obvious what team
+   the member is on"). Weight alone wasn't enough, so the row now reads as a
+   highlighted band: a tinted fill pulled out to the card's padding edges, a
+   stripe in the team's own colour tying it to the card's left border, and the
+   word "You" so it's stated rather than implied. Three signals, none of them
+   colour on its own. */
+.team-standing-row.mine {
+  /* Negative margins + matching padding make the band span the card's full
+     width while the row's content stays aligned with the rows above it. */
+  margin: 2px -10px;
+  padding: 7px 10px;
+  background: var(--field-bg);
+  border-left: 4px solid var(--team-colour);
+  border-radius: var(--radius-sm);
+}
+.team-standing-row.mine .team-standing-rank { margin-left: -4px; }
 .team-standing-row.mine .team-standing-name,
 .team-standing-row.mine .team-standing-rank { color: var(--ink); font-weight: 800; }
 .team-standing-row.mine .team-standing-total { font-size: 17px; }
+/* Present on every row, filled on one. Reserving the width here is what keeps
+   all four bar tracks the same length — a chip that only existed on the
+   member's row would shorten that row's track and make its bar read shorter
+   than its score. */
+.team-standing-you-slot {
+  width: 32px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-start;
+}
+.team-standing-you {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #FFFFFF;
+  /* --ink on the pale fill, not the team colour: gold and mint both fail
+     against white text, and this label has to read the same on every team. */
+  background: var(--ink);
+  border-radius: 999px;
+  padding: 2px 6px;
+}
 
 .team-challenge-mine-block { border-top: 1px solid rgba(23, 36, 63, 0.08); padding-top: 12px; }
 .team-challenge-mine { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--deepblue); }

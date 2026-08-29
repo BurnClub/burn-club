@@ -1574,15 +1574,19 @@ function renderTeamChallengeCard() {
   // threshold to hit, so the only meaningful scale is each other.
   const leader = Math.max(1, standings[0].total);
 
-  const rows = standings.map((row, i) => `
-    <div class="team-standing-row ${row.mine ? "mine" : ""}">
+  const rows = standings.map((row, i) => {
+    const colour = esc(row.team.color || "#788CE3");
+    return `
+    <div class="team-standing-row ${row.mine ? "mine" : ""}" ${row.mine ? `style="--team-colour:${colour}"` : ""}>
       <span class="team-standing-rank">${i + 1}</span>
-      <span class="team-standing-dot" style="background:${esc(row.team.color || "#788CE3")}"></span>
+      <span class="team-standing-dot" style="background:${colour}"></span>
       <span class="team-standing-name">${esc(row.team.name)}</span>
-      <div class="team-standing-track"><div class="team-standing-fill" style="width:${Math.round((row.total / leader) * 100)}%;background:${esc(row.team.color || "#788CE3")}"></div></div>
+      <span class="team-standing-you-slot">${row.mine ? `<span class="team-standing-you">You</span>` : ""}</span>
+      <div class="team-standing-track"><div class="team-standing-fill" style="width:${Math.round((row.total / leader) * 100)}%;background:${colour}"></div></div>
       <span class="team-standing-total">${row.total}</span>
     </div>
-  `).join("");
+  `;
+  }).join("");
 
   container.innerHTML = `
     <div class="team-challenge" style="--team-colour:${esc(team.color || "#788CE3")}">
