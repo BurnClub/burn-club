@@ -811,6 +811,10 @@ const CHALLENGES = [
 // live copy replaces it when the coach draws. Same same-browser limitation as
 // every other bridge here.
 const LIVE_TEAMS_KEY = "burnClubLiveChallengeTeams";
+// Named separately from the individual challenge, and bridged from admin
+// alongside the teams themselves.
+let TEAM_CHALLENGE_NAME = "August Showdown";
+
 let CHALLENGE_TEAMS = [
   { id: "t-red", name: "Red", color: "#E0685E", memberIds: ["priya-k", "marcus-t"], memberNames: ["Priya K.", "Marcus T."] },
   { id: "t-blue", name: "Blue", color: "#788CE3", memberIds: ["jamie-r", "alicia-b"], memberNames: ["Jamie R.", "Alicia B."] },

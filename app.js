@@ -1547,6 +1547,13 @@ function teamStandings(challenge) {
   })).sort((a, b) => b.total - a.total);
 }
 
+// Built to mirror renderChallengeCard() above (2026-08-27, Chris: "I want the
+// team challenge card to look more like the individual"): same eyebrow ->
+// name -> ranked rows -> your own line. The individual card ranks point
+// brackets; this one ranks the teams themselves, biggest first.
+//
+// The member's own team keeps the coloured left border and a marked row, so
+// "which one is mine" doesn't depend on reading the names.
 function renderTeamChallengeCard() {
   const container = document.getElementById("team-challenge-card");
   if (!container) return;
@@ -1558,26 +1565,42 @@ function renderTeamChallengeCard() {
     return;
   }
   container.style.display = "block";
+
   const standings = teamStandings(challenge);
   const myIndex = standings.findIndex((s) => s.mine);
   const mine = standings[myIndex];
-  const ahead = myIndex > 0 ? standings[myIndex - 1] : null;
   const myPoints = challengePointsForMember(challenge);
+  // Bars are relative to the leader, not to a target: a team challenge has no
+  // threshold to hit, so the only meaningful scale is each other.
+  const leader = Math.max(1, standings[0].total);
+
+  const rows = standings.map((row, i) => `
+    <div class="team-standing-row ${row.mine ? "mine" : ""}">
+      <span class="team-standing-rank">${i + 1}</span>
+      <span class="team-standing-dot" style="background:${esc(row.team.color || "#788CE3")}"></span>
+      <span class="team-standing-name">${esc(row.team.name)}</span>
+      <div class="team-standing-track"><div class="team-standing-fill" style="width:${Math.round((row.total / leader) * 100)}%;background:${esc(row.team.color || "#788CE3")}"></div></div>
+      <span class="team-standing-total">${row.total}</span>
+    </div>
+  `).join("");
 
   container.innerHTML = `
     <div class="team-challenge" style="--team-colour:${esc(team.color || "#788CE3")}">
-      <div class="team-challenge-head">
-        <span class="team-challenge-dot"></span>
-        <h3>${esc(team.name)}</h3>
-        <span class="team-challenge-rank">#${myIndex + 1} of ${standings.length}</span>
-      </div>
-      <p class="team-challenge-total">${mine.total}<span> team pts</span></p>
-      <p class="team-challenge-gap">${ahead
-        ? `${ahead.total - mine.total} pts behind ${esc(ahead.team.name)}`
-        : "Your team is in front"}</p>
-      <p class="team-challenge-mine">You've put in ${myPoints} of them.</p>
-      <div class="team-challenge-mates">
-        ${(team.memberNames || []).map((n) => `<span class="team-mate">${esc(n)}</span>`).join("")}
+      <p class="challenge-eyebrow">Team Challenge</p>
+      <h2 class="challenge-name">${esc(TEAM_CHALLENGE_NAME)}</h2>
+
+      <div class="team-standings-list">${rows}</div>
+
+      <div class="team-challenge-mine-block">
+        <p class="team-challenge-mine">
+          ${myPoints === mine.total
+            ? `Every one of ${esc(team.name)}'s <strong>${mine.total}</strong> points is yours`
+            : `You've put <strong>${myPoints}</strong> of ${esc(team.name)}'s <strong>${mine.total}</strong>`}
+          ${myIndex === 0 ? "— and they're in front." : `— they're #${myIndex + 1} of ${standings.length}.`}
+        </p>
+        <div class="team-challenge-mates">
+          ${(team.memberNames || []).map((n) => `<span class="team-mate">${esc(n)}</span>`).join("")}
+        </div>
       </div>
     </div>
   `;
@@ -4145,7 +4168,10 @@ function loadChallengeTeams() {
     const challenge = currentChallenge();
     const forChallenge = challenge && stored.find((s) => s.challengeId === challenge.id);
     const entry = forChallenge || stored[0];
-    if (entry && Array.isArray(entry.teams) && entry.teams.length) CHALLENGE_TEAMS = entry.teams;
+    if (entry && Array.isArray(entry.teams) && entry.teams.length) {
+      CHALLENGE_TEAMS = entry.teams;
+      if (entry.teamChallengeName) TEAM_CHALLENGE_NAME = entry.teamChallengeName;
+    }
   } catch (e) {
     // Keep the seeded teams rather than blanking the section.
   }

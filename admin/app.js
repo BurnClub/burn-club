@@ -3006,9 +3006,11 @@ function syncChallengeTeamsToMemberApp() {
     .filter((c) => teamsOf(c).length)
     .map((c) => ({
       challengeId: c.id,
+      teamChallengeName: c.teamChallengeName || `${c.name} Teams`,
       teams: teamsOf(c).map((t) => ({
         id: t.id,
         name: t.name,
+        color: t.color,
         memberIds: (t.memberIds || []).slice(),
         memberNames: (t.memberIds || []).map((id) => (memberById(id) || {}).name).filter(Boolean),
       })),
@@ -3606,6 +3608,14 @@ document.addEventListener("input", (e) => {
 
 document.addEventListener("input", (e) => {
   const t = e.target;
+  if (t.dataset.action === "edit-team-challenge-name") {
+    const challenge = challengeById(selectedChallengeId);
+    if (challenge) {
+      challenge.teamChallengeName = t.value;
+      syncChallengeTeamsToMemberApp();
+    }
+    return;
+  }
   if (t.dataset.action === "edit-team-names") {
     // Deliberately not re-rendering: that would blow away what's being typed.
     // The next draw reads the saved list.
@@ -5554,8 +5564,13 @@ function renderTeamStandings() {
 // count and the team-name inputs follow.
 function syncTeamNamesField() {
   const field = document.getElementById("team-default-names");
-  if (!field || document.activeElement === field) return;
-  field.value = (APP_SETTINGS.teamNames || []).join(", ");
+  if (field && document.activeElement !== field) field.value = (APP_SETTINGS.teamNames || []).join(", ");
+
+  const nameField = document.getElementById("team-challenge-name");
+  const challenge = challengeById(selectedChallengeId);
+  if (nameField && challenge && document.activeElement !== nameField) {
+    nameField.value = challenge.teamChallengeName || "";
+  }
 }
 
 function saveTeamNames(value) {

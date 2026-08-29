@@ -947,6 +947,11 @@ const CHALLENGES = [
     // could bolt onto any challenge from the detail page; now it's what kind
     // of challenge this is, chosen when it's created.
     format: "teams",
+    // The team competition is named separately from the individual challenge
+    // (2026-08-27, Chris). Both run off the same points; the member app shows
+    // them as two cards, so two names is what stops the second card reading
+    // as a repeat of the first.
+    teamChallengeName: "August Showdown",
     teamCount: 4,
     teams: [
       { id: "t-red", name: "Red", defaultName: "Red", color: "#E0685E", memberIds: ["priya-k", "marcus-t"] },
