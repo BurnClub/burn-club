@@ -2442,11 +2442,11 @@ h1, h2, h3 {
 }
 .pr-row-left { min-width: 0; }
 .pr-exercise { display: block; font-size: 13px; font-weight: 800; color: var(--ink); }
-.pr-meta { display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--subtext-color); }
+.pr-meta { display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: #4E6580; }
 .pr-row-right { text-align: right; flex-shrink: 0; }
 .pr-weight { font-family: var(--font-heading); font-size: 19px; font-weight: 800; color: var(--ink); }
 .pr-unit { font-family: var(--font-body); font-size: 10px; font-weight: 700; color: var(--subtext-color); margin-left: 3px; }
-.pr-delta { display: block; font-size: 10px; font-weight: 800; color: #2E8B57; }
+.pr-delta { display: block; font-size: 10px; font-weight: 800; color: #166534; }
 
 /* The completion-screen banner. Yellow rather than the app's blue: this is a
    moment, and it should not read as another panel. */
@@ -3063,3 +3063,25 @@ h1, h2, h3 {
 @media (prefers-reduced-motion: reduce) {
   .tour-spotlight { transition: none; }
 }
+
+/* ---- Personal Bests on the green card (2026-08-27) -------------------------
+   Progress ran Workout Mix, Check-Ins and Personal Bests as three white cards
+   in a row (Chris: "too many white boxes in a row"). Personal Bests takes the
+   green the app already uses for Stretch & Core Library and Habits, and its
+   rows go white so each best reads as its own card rather than a list line.
+
+   Scoped to .card-green on purpose: the rows are pale blue on a white card,
+   and Personal Bests may yet move somewhere else (see the placement note in
+   index.html) — this way it keeps working either way. */
+.card-green .pr-row {
+  background: var(--card-white);
+  /* White on this mint sits at 1.27:1, so the edge can't come from the fill.
+     A shadow gives the card its boundary instead — same treatment as
+     .home-section-card.card-white on the white page. */
+  box-shadow: 0 2px 6px rgba(23, 36, 63, 0.12);
+}
+/* --blue "Show N more" drops to 2.49:1 on this green and the empty state to
+   3.53:1; both are 12px and need 4.5. Navy on green is the palette's own rule
+   and clears it at 12.2:1. */
+.card-green .checkin-more-btn,
+.card-green .checkin-empty { color: var(--ink); }
