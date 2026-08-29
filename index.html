@@ -658,6 +658,18 @@
              the donut per Chris's follow-up. -->
         <div id="stat-bubbles"></div>
 
+        <!-- PLACEMENT IS PROVISIONAL (2026-08-19). Chris wants Personal Bests
+             somewhere other than Progress but hasn't decided where — it sits
+             here for now. Swapped above Check-Ins on 2026-08-27, which also
+             puts the green card between two white ones. Moving it is
+             markup-only: renderPersonalBests() just fills #pr-list, and the
+             section derives everything from COMPLETIONS, so it has no
+             dependency on the tab it lives in. -->
+        <div class="home-section-card card-green">
+          <h2 class="home-section-title">Personal Bests</h2>
+          <div id="pr-list"></div>
+        </div>
+
         <!-- Check-in history (2026-08-19). Lives in Progress because this is
              longitudinal data, same shelf as benchmarks and the mix donut —
              Profile is settings. -->
@@ -666,16 +678,6 @@
           <div id="checkin-insights"></div>
           <div id="checkin-chart"></div>
           <div class="checkin-entry-list" id="checkin-entry-list"></div>
-        </div>
-
-        <!-- PLACEMENT IS PROVISIONAL (2026-08-19). Chris wants Personal Bests
-             somewhere other than Progress but hasn't decided where — it sits
-             here for now. Moving it is markup-only: renderPersonalBests()
-             just fills #pr-list, and the section derives everything from
-             COMPLETIONS, so it has no dependency on the tab it lives in. -->
-        <div class="home-section-card card-green">
-          <h2 class="home-section-title">Personal Bests</h2>
-          <div id="pr-list"></div>
         </div>
 
         <div class="home-section-card card-blue">
