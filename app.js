@@ -414,6 +414,26 @@ function saveCheckin({ mental, physical, note }) {
   saveCheckins();
 }
 
+// Members can switch the daily prompt off entirely (2026-08-30, Chris).
+// Distinct from dismissing: dismissing is for today, this is until they say
+// otherwise. Per-member, defaulting to on.
+//
+// "Off" means the two things that come at the member unprompted — the daily
+// modal and the post-workout nudge. The Home shortcut icon and their existing
+// history both stay: turning the prompt off should stop the asking, not
+// delete the feature or lock them out of logging a day they do want to.
+const CHECKIN_ENABLED_KEY = "burnclub-checkin-enabled";
+
+function checkinEnabled() {
+  return localStorage.getItem(memberKey(CHECKIN_ENABLED_KEY)) !== "0";
+}
+
+function setCheckinEnabled(on) {
+  localStorage.setItem(memberKey(CHECKIN_ENABLED_KEY), on ? "1" : "0");
+  renderCheckinAffordances();
+  renderCheckinSection();
+}
+
 // Asked once a day at most. Dismissing is remembered for that day only, so
 // skipping today never turns the prompt off for good.
 function checkinPromptDismissedToday() {
@@ -475,6 +495,7 @@ function saveCheckinForm() {
 // answered or dismissed it. Deliberately not blocking: it's an overlay with a
 // close button, not a gate in front of the app.
 function maybePromptCheckin() {
+  if (!checkinEnabled()) return;
   if (todaysCheckin() || checkinPromptDismissedToday()) return;
   openCheckinModal();
 }
@@ -483,10 +504,13 @@ function maybePromptCheckin() {
 // "has today been logged yet".
 function renderCheckinAffordances() {
   const done = !!todaysCheckin();
+  // The dot answers "is today logged" and rides the Home shortcut, which stays
+  // whether or not the prompt is on.
   const dot = document.getElementById("checkin-done-dot");
   if (dot) dot.style.display = done ? "block" : "none";
+  // The nudge does come at the member, so it goes with the prompt.
   const nudge = document.getElementById("complete-checkin-nudge");
-  if (nudge) nudge.style.display = done ? "none" : "block";
+  if (nudge) nudge.style.display = done || !checkinEnabled() ? "none" : "block";
 }
 
 // ---- read-back -------------------------------------------------------------
@@ -618,9 +642,12 @@ function renderCheckinSection() {
 
   const insightsEl = document.getElementById("checkin-insights");
   const insights = checkinInsights();
-  insightsEl.innerHTML = insights.length
+  const offNote = checkinEnabled()
+    ? ""
+    : `<p class="checkin-off-note">Daily prompt is off — turn it back on in Profile → Daily Check-In. You can still log a day from the icon on Home.</p>`;
+  insightsEl.innerHTML = offNote + (insights.length
     ? insights.map((t) => `<p class="checkin-insight">${t}</p>`).join("")
-    : "";
+    : "");
 
   // Collapsed to the latest day by default (2026-08-19, Chris) — ten entries
   // was most of the section's height. The chart and the insights stay put:
@@ -2085,6 +2112,35 @@ function renderNotifPrefs() {
       renderNotifPrefs();
     });
   });
+}
+
+// Reuses the notification toggle row so "off" looks the same everywhere in
+// Profile, plus a line saying what off actually does — a member shouldn't have
+// to switch it off to find out whether it deletes their history.
+function renderCheckinSettings() {
+  const on = checkinEnabled();
+  document.getElementById("checkin-settings-body").innerHTML = `
+    <button class="notif-row ${on ? "checked" : ""}" id="toggle-checkin-pref" type="button">
+      <span class="notif-checkbox">${on ? "✓" : ""}</span>
+      <span class="notif-label">Ask me once a day</span>
+    </button>
+    <p class="checkin-settings-note">${on
+      ? "You'll get the check-in once a day, and a nudge after a workout if you haven't done it yet."
+      : "The daily prompt is off. Your past check-ins are still in Progress, and you can log one any time from the icon at the top of Home."}</p>
+  `;
+  document.getElementById("toggle-checkin-pref").addEventListener("click", () => {
+    setCheckinEnabled(!checkinEnabled());
+    renderCheckinSettings();
+  });
+}
+
+function openCheckinSettings() {
+  renderCheckinSettings();
+  document.getElementById("checkin-settings-overlay").classList.add("visible");
+}
+
+function closeCheckinSettings() {
+  document.getElementById("checkin-settings-overlay").classList.remove("visible");
 }
 
 function openNotificationsScreen() {
@@ -4261,6 +4317,8 @@ function wireStaticControls() {
   document.getElementById("open-invite-btn").addEventListener("click", openInviteScreen);
   document.getElementById("invite-close-btn").addEventListener("click", closeInviteScreen);
   document.getElementById("invite-copy-btn").addEventListener("click", copyInviteLink);
+  document.getElementById("open-checkin-settings-btn").addEventListener("click", openCheckinSettings);
+  document.getElementById("checkin-settings-close-btn").addEventListener("click", closeCheckinSettings);
   document.getElementById("open-support-btn").addEventListener("click", openSupportScreen);
   document.getElementById("support-close-btn").addEventListener("click", closeSupportScreen);
 }

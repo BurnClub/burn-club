@@ -724,6 +724,7 @@
 
         <div class="settings-list">
           <button class="settings-row" id="open-notifications-btn"><span>Notifications</span><span>›</span></button>
+          <button class="settings-row" id="open-checkin-settings-btn"><span>Daily Check-In</span><span>›</span></button>
           <button class="settings-row" id="open-health-profile-btn"><span>My Health Profile</span><span>›</span></button>
           <button class="settings-row" id="open-invite-btn"><span>Invite a Friend</span><span>›</span></button>
           <button class="settings-row" id="open-support-btn"><span>Help &amp; Support</span><span>›</span></button>
@@ -732,6 +733,18 @@
       </section>
 
       <!-- ---------- NOTIFICATIONS POPUP (2026-08-12) ---------- -->
+      <!-- ---------- DAILY CHECK-IN SETTING (2026-08-30) ----------
+           Its own row rather than a line in Notifications: nothing about the
+           check-in is sent, it's an in-app prompt, and turning it off has
+           consequences worth a sentence of explanation. -->
+      <div class="cardio-log-overlay" id="checkin-settings-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="checkin-settings-close-btn">✕</button>
+          <h2 class="cardio-log-title">Daily Check-In</h2>
+          <div id="checkin-settings-body"></div>
+        </div>
+      </div>
+
       <div class="cardio-log-overlay" id="notifications-overlay">
         <div class="cardio-log-card">
           <button class="player-exit" id="notifications-close-btn">✕</button>

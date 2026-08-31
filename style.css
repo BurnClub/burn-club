@@ -3154,3 +3154,24 @@ h1, h2, h3 {
    and clears it at 12.2:1. */
 .card-green .checkin-more-btn,
 .card-green .checkin-empty { color: var(--ink); }
+
+/* ---- Daily check-in preference (2026-08-30) ---- */
+.checkin-settings-note {
+  margin: 12px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--deepblue);
+}
+/* Sits above the insights in the Progress section so the section reads as
+   switched off rather than broken. */
+.checkin-off-note {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  background: var(--field-bg);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--ink);
+}

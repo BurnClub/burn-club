@@ -55,6 +55,11 @@ syncs them.
   browser. It belongs on the member's record once there's a backend, otherwise
   a reinstall or a second device replays the tour for someone who has already
   taken it.
+- **Member preferences generally** — the app-tour flag above, the daily
+  check-in on/off switch, and notification toggles are all localStorage, so
+  they're per browser. Same fix as everything else here: they belong on the
+  member record. Until then a member who turns the check-in off and reinstalls
+  gets asked again. Worth doing in one pass rather than one flag at a time.
 
 ## Agreed, not yet built
 
