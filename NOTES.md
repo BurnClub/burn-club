@@ -140,6 +140,32 @@ rules, which are real logic rather than config and want their own design pass.
 
 ## Decisions still open
 
+- **What the notes feature could be — Chris wants a longer conversation**
+  (2026-08-30). Raised straight after the daily check-in got a member-facing
+  on/off switch. Deferred deliberately; he leads this one, so don't arrive
+  with a design.
+
+  Scope was not defined when he raised it, and the phrasing ("the notes app")
+  could reasonably mean more than one thing — ask before building anything.
+  What exists today that it would grow out of:
+
+  - The **check-in note**: one optional free-text field per day, prompted as
+    "Anything worth noting?" with the placeholder "Sleep, soreness, stress, a
+    win…". Stored on the check-in record alongside the two 1–10 scales, and
+    read back in Progress → Check-Ins. Both the prompt and the placeholder are
+    editable in Admin → Settings → Daily Check-In.
+  - A member can send a single day's entry to their coach from that section
+    ("Send to coach").
+  - The **staff-side check-in / journal** is listed above as still unbuilt —
+    it was always meant to exist on both sides, and it's the obvious other
+    half of whatever this becomes.
+
+  Questions worth having answers to before it's built: is this the member's
+  private journal, or a shared record the coach reads by default? Is it tied
+  to a day like the check-in is, or free-standing? And does it want to be
+  searchable, which is the thing that would decide how it's stored.
+
+
 - **Team challenges — Chris wants a longer conversation about this section**
   (2026-08-26). Raised right after teams moved into Groups and challenges got
   an Individual/Teams format. Not blocked on anything; pick it up next session.
