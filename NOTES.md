@@ -4,6 +4,58 @@ Things deliberately left undone, and why. Not a bug list — everything here
 works as built; these are decisions deferred or work blocked on something
 outside the prototype.
 
+## Security — a hard look before the real app
+
+Chris's call (2026-08-30): before this becomes a downloadable app with real
+members in it, security gets its own proper pass. Not a checklist to tick at
+the end — several of these decide how things are stored, so they want deciding
+before the backend is written, not after.
+
+Nothing below is a live emergency: the prototype holds no real member data,
+and every seeded record uses an @example.com address. They all become real the
+day the member import runs.
+
+**The two that matter most**
+
+- **Neither app authenticates.** The member login form and the admin login
+  form both just `preventDefault()` and reveal the app — any email, any
+  password, or none. There is no session, no token, no check.
+- **`admin/` is published to the same public GitHub Pages site.** Anyone with
+  the URL has full coach access: every member record, every message, the
+  health profiles, the lot. Today that's fake data behind an unguessable-ish
+  path. On import day it is real data behind an unguessable-ish path, which is
+  not a control.
+
+**The rest of the surface**
+
+- **Everything is client-side.** All member data lives in localStorage,
+  unencrypted, readable by anything running on the origin and by anyone with
+  the device. The health profile (height, weight, activity level, notes) is in
+  there too.
+- **Health data raises the bar.** Height/weight/activity now, and HealthKit /
+  Health Connect later, need an explicit privacy disclosure and a real answer
+  to where the data goes and who can read it. Apple will ask.
+- **The repo is public.** Anything committed here is world-readable forever,
+  including in history. No real member data, keys or tokens should ever land
+  in it — worth a check of what's already there before the repo is anything
+  but a prototype.
+- **The import must carry no passwords** (already settled — members set their
+  own on first sign-in). Worth restating here because it's a security decision
+  as much as a UX one.
+- **Payment stays on the website**, so the app never handles card data. That's
+  a genuine security advantage and it's worth keeping deliberately rather than
+  losing it by accident later.
+- **The three apps trust each other completely** through same-origin
+  localStorage. Whatever replaces that bridge needs to decide what the member
+  app is actually allowed to ask for — right now it could ask for anything.
+
+**Worth deciding early, because they shape storage**
+
+Where member data lives and who can read it; whether check-in notes are
+private to the member or readable by the coach (see the notes-feature
+conversation below); how account recovery works; and what happens to a
+member's data when they cancel.
+
 ## Blocked on the native build
 
 Everything here is a thing a web app fundamentally can't do, so it waits for
