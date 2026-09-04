@@ -3175,3 +3175,61 @@ h1, h2, h3 {
   line-height: 1.45;
   color: var(--ink);
 }
+
+/* ---- Choosing what shows in Personal Bests (2026-09-04) ---- */
+.pr-banner-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.pr-banner-row .pr-banner-line { flex: 1; min-width: 120px; margin: 0; }
+.pr-showcase-btn {
+  flex-shrink: 0;
+  background: var(--ink);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+/* On-state is quieter than the invitation: once it's added, the button is a
+   confirmation, not a call to action. */
+.pr-showcase-btn.on {
+  background: rgba(23, 36, 63, 0.08);
+  color: var(--ink);
+}
+.pr-showcase-btn:active { transform: scale(0.98); }
+.pr-banner-foot {
+  margin: 10px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--ink);
+  opacity: 0.75;
+}
+.pr-picker-note {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--deepblue);
+}
+.pr-picker-row .notif-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+.pr-picker-best {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--deepblue);
+}

@@ -276,8 +276,62 @@ function personalBestFor(name) {
   return { name, best: best.weight, date: best.date, previous: previous ? previous.weight : null, sessions: history.length };
 }
 
+// ---- Showcasing (2026-09-04) -----------------------------------------------
+// Progress used to list a personal best for every exercise the member had ever
+// logged a weight against. Chris: "this program isn't necessarily about
+// breaking PRs... that shouldn't be the goal of each workout" — a wall of
+// numbers argues the opposite. So the member picks which lifts appear there,
+// prompted at the moment one actually happens.
+//
+// What's stored is the exercise *name*, not the number. A showcased lift shows
+// its current best, so it can't go stale and sit there claiming 220 while the
+// member has since done 235. The choice is which lifts they care about, not
+// which single result to frame.
+const SHOWCASED_PRS_KEY = "burnclub-showcased-prs";
+
+// A real member starts with an empty Progress section and fills it as they go.
+// The demo seeds two so the card isn't blank on first look — same
+// seeded-on-first-load pattern as COMPLETIONS above.
+const SHOWCASED_PRS_SEED = ["Barbell Back Squat", "Barbell Deadlift"];
+
+function loadShowcasedPRs() {
+  const stored = localStorage.getItem(memberKey(SHOWCASED_PRS_KEY));
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+      // fall through and reseed
+    }
+  }
+  localStorage.setItem(memberKey(SHOWCASED_PRS_KEY), JSON.stringify(SHOWCASED_PRS_SEED));
+  return [...SHOWCASED_PRS_SEED];
+}
+
+let SHOWCASED_PRS = [];
+
+function saveShowcasedPRs() {
+  localStorage.setItem(memberKey(SHOWCASED_PRS_KEY), JSON.stringify(SHOWCASED_PRS));
+}
+
+function isShowcased(name) {
+  return SHOWCASED_PRS.includes(name);
+}
+
+function toggleShowcased(name) {
+  if (isShowcased(name)) SHOWCASED_PRS = SHOWCASED_PRS.filter((n) => n !== name);
+  else SHOWCASED_PRS.push(name);
+  saveShowcasedPRs();
+}
+
+// What Progress actually lists.
+function showcasedPersonalBests() {
+  return personalBests().filter((pr) => isShowcased(pr.name));
+}
+
 // Ordered by how recently the best was set, so a lift moving this month sits
-// above one that peaked in March.
+// above one that peaked in March. This is every exercise with a logged weight —
+// the picker's list. Progress uses showcasedPersonalBests() above.
 function personalBests() {
   const names = new Set();
   COMPLETIONS.forEach((c) => {
@@ -314,9 +368,15 @@ let prListExpanded = false;
 function renderPersonalBests() {
   const host = document.getElementById("pr-list");
   if (!host) return;
-  const all = personalBests();
+  const eligible = personalBests();
+  const all = showcasedPersonalBests();
+  // Two different empty states, because they mean different things: nothing
+  // logged yet, versus logged plenty and chosen not to pin any of it.
   if (!all.length) {
-    host.innerHTML = `<p class="checkin-empty">Log a weight during a workout and your bests show up here.</p>`;
+    host.innerHTML = eligible.length
+      ? `<p class="checkin-empty">Nothing pinned here yet. When you beat a lift you'll be asked if you want it on this page — or pick some now.</p>`
+      : `<p class="checkin-empty">Log a weight during a workout and your bests can show up here.</p>`;
+    if (eligible.length) appendPRChooseButton(host, eligible);
     return;
   }
   const shown = prListExpanded ? all : all.slice(0, 3);
@@ -347,6 +407,47 @@ function renderPersonalBests() {
       renderPersonalBests();
     });
   }
+  appendPRChooseButton(host, eligible);
+}
+
+// Without this the completion screen would be the only way in, and a member who
+// tapped past it would have lost that lift for good — and would have no way to
+// take one down again either.
+function appendPRChooseButton(host, eligible) {
+  if (!eligible.length) return;
+  host.insertAdjacentHTML("beforeend", `
+    <button class="checkin-more-btn" id="pr-choose-btn">Choose what shows here</button>
+  `);
+  host.querySelector("#pr-choose-btn").addEventListener("click", openPRPicker);
+}
+
+function renderPRPicker() {
+  const eligible = personalBests();
+  document.getElementById("pr-picker-body").innerHTML = `
+    <p class="pr-picker-note">Pick the lifts worth keeping an eye on. The rest still count — they just aren't on the page.</p>
+    ${eligible.map((pr) => `
+      <button class="notif-row pr-picker-row ${isShowcased(pr.name) ? "checked" : ""}" data-showcase-name="${esc(pr.name)}" type="button">
+        <span class="notif-checkbox">${isShowcased(pr.name) ? "✓" : ""}</span>
+        <span class="notif-label">${esc(pr.name)}<span class="pr-picker-best">${pr.best} lbs</span></span>
+      </button>
+    `).join("")}
+  `;
+  document.querySelectorAll("[data-showcase-name]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      toggleShowcased(btn.dataset.showcaseName);
+      renderPRPicker();
+      renderPersonalBests();
+    });
+  });
+}
+
+function openPRPicker() {
+  renderPRPicker();
+  document.getElementById("pr-picker-overlay").classList.add("visible");
+}
+
+function closePRPicker() {
+  document.getElementById("pr-picker-overlay").classList.remove("visible");
 }
 
 // The moment worth catching: shown on the completion screen when a weight just
@@ -361,8 +462,24 @@ function renderPRBanner(prs) {
   el.style.display = "block";
   el.innerHTML = `
     <p class="pr-banner-title">${prs.length === 1 ? "New personal best" : `${prs.length} new personal bests`}</p>
-    ${prs.map((p) => `<p class="pr-banner-line"><strong>${esc(p.name)}</strong> ${p.weight} lbs <span>&middot; beat ${p.previous}</span></p>`).join("")}
+    ${prs.map((p) => `
+      <div class="pr-banner-row">
+        <p class="pr-banner-line"><strong>${esc(p.name)}</strong> ${p.weight} lbs <span>&middot; beat ${p.previous}</span></p>
+        <button class="pr-showcase-btn ${isShowcased(p.name) ? "on" : ""}" data-showcase-name="${esc(p.name)}" type="button">
+          ${isShowcased(p.name) ? "✓ On your Progress page" : "Add to Progress"}
+        </button>
+      </div>
+    `).join("")}
+    <p class="pr-banner-foot">Only what you add here shows up in Progress. Everything you lift still counts either way.</p>
   `;
+  // Rebound on every render because the buttons are replaced above.
+  el.querySelectorAll("[data-showcase-name]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      toggleShowcased(btn.dataset.showcaseName);
+      renderPRBanner(prs);
+      renderPersonalBests();
+    });
+  });
 }
 
 // ---------------- Daily Check-Ins (2026-08-19) ----------------
@@ -4260,6 +4377,7 @@ function init() {
   renderTodayStats();
   renderWearableSection();
 
+  SHOWCASED_PRS = loadShowcasedPRs();
   MY_HABITS = loadMyHabits();
   HABIT_CHECKS = loadHabitChecks();
   renderHabitsSection();
@@ -4317,6 +4435,7 @@ function wireStaticControls() {
   document.getElementById("open-invite-btn").addEventListener("click", openInviteScreen);
   document.getElementById("invite-close-btn").addEventListener("click", closeInviteScreen);
   document.getElementById("invite-copy-btn").addEventListener("click", copyInviteLink);
+  document.getElementById("pr-picker-close-btn").addEventListener("click", closePRPicker);
   document.getElementById("open-checkin-settings-btn").addEventListener("click", openCheckinSettings);
   document.getElementById("checkin-settings-close-btn").addEventListener("click", closeCheckinSettings);
   document.getElementById("open-support-btn").addEventListener("click", openSupportScreen);

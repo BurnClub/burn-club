@@ -737,6 +737,17 @@
            Its own row rather than a line in Notifications: nothing about the
            check-in is sent, it's an in-app prompt, and turning it off has
            consequences worth a sentence of explanation. -->
+      <!-- ---------- WHAT SHOWS IN PERSONAL BESTS (2026-09-04) ----------
+           The completion screen is where the choice is offered in the moment;
+           this is how it's changed afterwards, in either direction. -->
+      <div class="cardio-log-overlay" id="pr-picker-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="pr-picker-close-btn">✕</button>
+          <h2 class="cardio-log-title">Personal Bests</h2>
+          <div id="pr-picker-body"></div>
+        </div>
+      </div>
+
       <div class="cardio-log-overlay" id="checkin-settings-overlay">
         <div class="cardio-log-card">
           <button class="player-exit" id="checkin-settings-close-btn">✕</button>
