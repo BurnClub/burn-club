@@ -938,8 +938,8 @@ const CHALLENGES = [
     // CHALLENGES in ../data.js). Admin's copy still said 2026-07, so admin
     // read the challenge as "ended" while the member app read it as running —
     // the two apps disagreed about whether teams were live at all.
-    startDate: "2026-08-01",
-    endDate: "2026-08-31",
+    startDate: "2026-09-01",
+    endDate: "2026-09-30",
     pointsPerWorkout: 5,
     thresholdPoints: 200,
     reward: "Entered to win free Burn Club merch",

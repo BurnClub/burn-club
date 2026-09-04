@@ -3,11 +3,22 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
 <title>Burn Club</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
+<script>
+  // Runs before the first paint, and deliberately before app.js: applying the
+  // theme any later means a dark-mode member sees a white flash on every load.
+  // Duplicated from setTheme()/currentTheme() in app.js on purpose — this has
+  // to be inline to beat the paint, and it's three lines.
+  try {
+    var t = localStorage.getItem("burnclub-theme");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+</script>
 </head>
 <body>
 
@@ -723,6 +734,7 @@
         </div>
 
         <div class="settings-list">
+          <button class="settings-row" id="open-appearance-btn"><span>Appearance</span><span>›</span></button>
           <button class="settings-row" id="open-notifications-btn"><span>Notifications</span><span>›</span></button>
           <button class="settings-row" id="open-checkin-settings-btn"><span>Daily Check-In</span><span>›</span></button>
           <button class="settings-row" id="open-health-profile-btn"><span>My Health Profile</span><span>›</span></button>
@@ -740,6 +752,15 @@
       <!-- ---------- WHAT SHOWS IN PERSONAL BESTS (2026-09-04) ----------
            The completion screen is where the choice is offered in the moment;
            this is how it's changed afterwards, in either direction. -->
+      <!-- ---------- APPEARANCE (2026-09-04) ---------- -->
+      <div class="cardio-log-overlay" id="appearance-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="appearance-close-btn">✕</button>
+          <h2 class="cardio-log-title">Appearance</h2>
+          <div id="appearance-body"></div>
+        </div>
+      </div>
+
       <div class="cardio-log-overlay" id="pr-picker-overlay">
         <div class="cardio-log-card">
           <button class="player-exit" id="pr-picker-close-btn">✕</button>

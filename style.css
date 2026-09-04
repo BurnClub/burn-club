@@ -86,13 +86,154 @@
      sections). Sizes still vary by hierarchy; weight/color don't.
      Rolling out on Home first, same as the other passes this session. */
   --title-weight: 600;
-  --title-color: var(--deepblue);
+  --title-color: var(--text-muted);
   --subtitle-weight: 700;
-  --subtitle-color: var(--deepblue);
+  --subtitle-color: var(--text-muted);
   --text-weight: 700;
-  --text-color: var(--ink);
+  --text-color: var(--text);
   --subtext-weight: 700;
-  --subtext-color: var(--deepblue);
+  --subtext-color: var(--text-muted);
+
+  /* ---- Theme roles (2026-09-04) ----------------------------------------
+     Everything above is a brand hue. These are the roles that flip between
+     light and dark, and they exist because the hues can't do that job:
+     --ink is both "dark text" and an actual navy fill (the phone frame, the
+     toast, the YOU chip), so flipping it would invert 15 surfaces that are
+     meant to stay dark. Text now reads --text / --text-muted; --ink and
+     --deepblue keep their fill duties and never move.
+
+     Rule for the coloured cards below: keep the hue, drop the lightness. A
+     dark mint is still recognisably the mint card; a grey one isn't. */
+  --text: #17243F;        /* was color: var(--ink) / var(--slate) */
+  --text-muted: #4E6580;  /* was color: var(--deepblue), which failed 4.5:1 on every surface */
+  --border: rgba(23, 36, 63, 0.08);
+  --border-strong: rgba(23, 36, 63, 0.14);
+  --shadow: rgba(23, 36, 63, 0.05);
+  --shadow-lift: rgba(23, 36, 63, 0.12);
+  --surface-blue: #788CE3; /* the Workouts / Benchmarks card fill, split from
+                              --blue so the card can recede in dark mode while
+                              buttons and links keep the vivid brand blue */
+  /* Strong-emphasis marks — the YOU chip, the toast, a running hold button,
+     the "this is your bracket" bar. They're navy-on-light today, and they have
+     to invert in dark or they vanish into the surface they sit on. */
+  /* --blue is the brand fill. As *text* it measured 3.15:1 on white and 2.89
+     on the subtle surface — under 4.5 in the light theme it was written for,
+     and 3.81 on the dark periwinkle in the new one. Links and ghost buttons
+     get their own value that passes on each theme's surfaces; the brand fill
+     itself is untouched. */
+  --accent-text: #4F62B8;
+  --text-faint: #AEB9D0;
+  --chip: #17243F;
+  --chip-text: #FFFFFF;
+  --bubble-in: #E9E9EB;   /* incoming message bubble */
+  --positive: #166534;    /* "up" deltas — see the dark value for why it moves */
+  --habit-done: rgba(23, 42, 58, 0.45);
+}
+
+/* Dark theme. Applied by [data-theme="dark"] on <html>, which the member sets
+   in Profile. The media query below it is the "follow my phone" default, and
+   is written so an explicit light choice still wins. */
+:root[data-theme="dark"] {
+  --bg: #12161F;
+  --card-white: #1B2130;
+  --white: #222A3A;
+  --alice: #1B2130;
+  --field-bg: #252E40;
+
+  --text: #EDF1F8;
+  --text-muted: #9FB2CA;
+  --border: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --shadow: rgba(0, 0, 0, 0.40);
+  --shadow-lift: rgba(0, 0, 0, 0.55);
+
+  /* Same hues, lower lightness — the cards stay identifiable. */
+  --green: #1E4433;
+  --green-dark: #18382A;
+  --chartreuse: #1E4433;
+  --chartreuse-dark: #18382A;
+  --turquoise: #4A2739;      /* the Community/Activity pink */
+  --turquoise-dark: #3D2030;
+  --pink: #43254A;
+  --pink-dark: #371E3D;
+  --periwinkle: #2B3557;
+  --periwinkle-dark: #232B47;
+  --kawaii-blue: #1E3A4A;
+  --kawaii-blue-dark: #18303D;
+  --floral: #2A4152;
+  --floral-dark: #223544;
+  --lime: #3F4A18;
+  --lime-dark: #333C13;
+  --lemon: #4A4A0F;
+  --lemon-dark: #3C3C0C;
+  --purple: #4B3A7A;
+  --bubble-in: #2C3444;
+  /* #166534 is 7.1:1 on white and only 1.9:1 on the dark card — a green
+     that reads as 'up' has to get lighter, not darker, when the ground does
+     the opposite. This one is 7.0:1 on #1B2130. */
+  --positive: #5FD08A;
+  --habit-done: rgba(237, 241, 248, 0.45);
+  --accent-text: #98A6EC;
+  --text-faint: #5E6C88;
+  --chip: #EDF1F8;
+  --chip-text: #12161F;
+  --surface-blue: #26314F;
+  --spring: #1C5B36;
+
+  /* --blue and --yellow keep their values: both carry white or navy text on
+     a mid-tone fill that reads correctly on either background, and both are
+     doing brand-identity work rather than surface work. */
+}
+
+@media (prefers-color-scheme: dark) {
+  /* :not([data-theme="light"]) so a member who has explicitly chosen light
+     keeps light even on a dark phone. */
+  :root:not([data-theme="light"]) {
+    --bg: #12161F;
+    --card-white: #1B2130;
+    --white: #222A3A;
+    --alice: #1B2130;
+    --field-bg: #252E40;
+
+    --text: #EDF1F8;
+    --text-muted: #9FB2CA;
+    --border: rgba(255, 255, 255, 0.10);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --shadow: rgba(0, 0, 0, 0.40);
+    --shadow-lift: rgba(0, 0, 0, 0.55);
+
+    --green: #1E4433;
+    --green-dark: #18382A;
+    --chartreuse: #1E4433;
+    --chartreuse-dark: #18382A;
+    --turquoise: #4A2739;
+    --turquoise-dark: #3D2030;
+    --pink: #43254A;
+    --pink-dark: #371E3D;
+    --periwinkle: #2B3557;
+    --periwinkle-dark: #232B47;
+    --kawaii-blue: #1E3A4A;
+    --kawaii-blue-dark: #18303D;
+    --floral: #2A4152;
+    --floral-dark: #223544;
+    --lime: #3F4A18;
+    --lime-dark: #333C13;
+    --lemon: #4A4A0F;
+    --lemon-dark: #3C3C0C;
+    --purple: #4B3A7A;
+    --bubble-in: #2C3444;
+    /* #166534 is 7.1:1 on white and only 1.9:1 on the dark card — a green
+       that reads as 'up' has to get lighter, not darker, when the ground does
+       the opposite. This one is 7.0:1 on #1B2130. */
+    --positive: #5FD08A;
+    --habit-done: rgba(237, 241, 248, 0.45);
+    --accent-text: #98A6EC;
+    --text-faint: #5E6C88;
+    --chip: #EDF1F8;
+    --chip-text: #12161F;
+    --surface-blue: #26314F;
+    --spring: #1C5B36;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -101,7 +242,7 @@ body {
   margin: 0;
   font-family: var(--font-body);
   background: linear-gradient(180deg, #dfe6ff 0%, #eef1ff 40%);
-  color: var(--ink);
+  color: var(--text);
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -186,7 +327,7 @@ h1, h2, h3 {
   gap: 6px;
   font-size: 13px;
   font-weight: 700;
-  color: var(--deepblue);
+  color: var(--text-muted);
 }
 .field input,
 .field select,
@@ -198,12 +339,12 @@ h1, h2, h3 {
   font-family: var(--font-body);
   background: var(--field-bg);
   outline: none;
-  color: var(--ink);
+  color: var(--text);
 }
 .field textarea { resize: none; }
 .field input:focus,
 .field select:focus,
-.field textarea:focus { border-color: var(--blue); }
+.field textarea:focus { border-color: var(--accent-text); }
 
 .btn-primary {
   background: var(--blue);
@@ -225,7 +366,7 @@ h1, h2, h3 {
 .btn-ghost {
   background: none;
   border: none;
-  color: var(--deepblue);
+  color: var(--text-muted);
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
@@ -285,7 +426,7 @@ h1, h2, h3 {
 .home-stats-plain .today-stat { background: none; box-shadow: none; padding: 0; }
 .home-stats-plain .today-stat-icon,
 .home-stats-plain .today-stat-num,
-.home-stats-plain .today-stat-label { color: var(--slate); }
+.home-stats-plain .today-stat-label { color: var(--text); }
 .home-split-row { display: flex; align-items: stretch; gap: 12px; margin-bottom: 10px; }
 .home-split-row .home-section-card { flex: 1; min-width: 0; margin-bottom: 0; }
 /* No-background split-row section (2026-08-10: Last Week / Cardio Log) —
@@ -313,13 +454,13 @@ h1, h2, h3 {
   z-index: 1;
   margin-top: auto;
   padding-top: 12px;
-  border-top: 1px solid rgba(23,42,58,0.12);
+  border-top: 1px solid var(--border-strong);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .habit-streak-icon { font-size: 18px; line-height: 1; }
-.habit-streak-text { margin: 0; font-size: 12px; font-weight: 800; color: var(--slate); }
+.habit-streak-text { margin: 0; font-size: 12px; font-weight: 800; color: var(--text); }
 .habit-streak-text span { font-family: var(--font-heading); font-size: 16px; }
 
 /* ---------- TODAY STATS (wearable — faked) ---------- */
@@ -332,11 +473,11 @@ h1, h2, h3 {
   display: flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+  box-shadow: 0 4px 12px var(--border);
 }
-.today-stat-icon { display: flex; color: var(--ink); }
+.today-stat-icon { display: flex; color: var(--text); }
 .today-stat-icon svg { width: 22px; height: 22px; display: block; }
-.today-stat-num { font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--ink); margin: 0; }
+.today-stat-num { font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--text); margin: 0; }
 /* Week-over-week movement, riding alongside the number rather than under it
    (2026-08-19). Tone is "is this the good direction", not "is this up" — a
    resting heart rate falling is the improvement. */
@@ -349,7 +490,7 @@ h1, h2, h3 {
 }
 /* --green-dark/--pink-dark are gradient stops for card backgrounds, far too
    pale for 10px text on white — these are their legible counterparts. */
-.today-stat-delta.tone-up { color: #2E8B57; }
+.today-stat-delta.tone-up { color: var(--positive); }
 .today-stat-delta.tone-down { color: var(--danger); }
 .today-stat-delta.tone-flat { color: var(--subtext-color); }
 .today-stat-label { font-size: 10px; font-weight: var(--subtext-weight); color: var(--subtext-color); margin: 2px 0 0; }
@@ -359,7 +500,7 @@ h1, h2, h3 {
   padding: 14px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--deepblue);
+  color: var(--text-muted);
   text-align: center;
   flex: 1;
 }
@@ -376,7 +517,7 @@ h1, h2, h3 {
   gap: 10px;
   background: none;
   border: none;
-  border-bottom: 1px solid rgba(23,36,63,0.08);
+  border-bottom: 1px solid var(--border);
   padding: 8px 0;
   cursor: pointer;
   text-align: left;
@@ -388,11 +529,11 @@ h1, h2, h3 {
    Green). --slate text, and the checkbox's default white border/checkmark
    (built for a saturated/dark card) needs to flip to slate so it doesn't
    wash out against the light background. */
-.card-habits .habit-row { border-bottom-color: rgba(23,42,58,0.12); }
-.card-habits .habit-label { color: var(--slate); }
-.card-habits .habit-row.checked .habit-label { color: rgba(23,42,58,0.45); }
-.card-habits .habit-auto-tag { color: var(--slate); }
-.card-habits .habit-checkbox { border-color: var(--slate); color: var(--slate); }
+.card-habits .habit-row { border-bottom-color: var(--border-strong); }
+.card-habits .habit-label { color: var(--text); }
+.card-habits .habit-row.checked .habit-label { color: var(--habit-done); }
+.card-habits .habit-auto-tag { color: var(--text); }
+.card-habits .habit-checkbox { border-color: var(--text); color: var(--text); }
 .habit-checkbox {
   width: 18px;
   height: 18px;
@@ -409,14 +550,14 @@ h1, h2, h3 {
 .habit-row.checked .habit-checkbox { background: white; border-color: white; color: black; }
 /* Lighter weight to match the workout-card subtext style (2026-08-09 ask). */
 .habit-label { flex: 1; font-size: 12px; font-weight: 400; color: var(--subtext-color); }
-.habit-row.checked .habit-label { color: var(--deepblue); text-decoration: line-through; }
+.habit-row.checked .habit-label { color: var(--text-muted); text-decoration: line-through; }
 .habit-auto-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: var(--subtext-weight); color: var(--subtext-color); background: var(--bg); padding: 2px 8px 2px 6px; border-radius: 999px; }
 .habit-auto-icon svg { width: 10px; height: 10px; display: block; }
 .habit-empty-card {
   padding: 4px 0;
   font-size: 12px;
   font-weight: 700;
-  color: var(--deepblue);
+  color: var(--text-muted);
   text-align: center;
 }
 
@@ -424,7 +565,7 @@ h1, h2, h3 {
   font-size: 16px;
   font-weight: 800;
   margin: 24px 0 12px;
-  color: var(--ink);
+  color: var(--text);
 }
 .screen > .section-title:first-of-type { margin-top: 0; }
 
@@ -439,7 +580,7 @@ h1, h2, h3 {
   border: 1px solid rgba(255,255,255,0.5);
   padding: 18px;
   margin-bottom: 10px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+  box-shadow: 0 4px 12px var(--border);
   overflow: hidden;
 }
 /* Flat colors instead of gradients across all card variants (2026-08-10,
@@ -450,7 +591,7 @@ h1, h2, h3 {
 /* Workouts: unchanged this round (Chris said keep it) — still Wisteria
    Blue, still the same watermark shape, just the watermark's own color
    moved to --slate below. */
-.home-section-card.card-blue { background: var(--blue); }
+.home-section-card.card-blue { background: var(--surface-blue); }
 .home-section-card.card-pink { background: var(--pink); }
 /* Community: turquoise #41D3BD (2026-08-08 pass #2 — was Dark Emerald).
    Title/name/message in --slate, but the time and dot stay White — see the
@@ -472,9 +613,9 @@ h1, h2, h3 {
    white page a plain white card needs its own edge: a faint navy-tinted
    outline instead of the light-catch border the colored cards use. */
 .home-section-card.card-white {
-  background: white;
-  border: 1px solid rgba(23,36,63,0.08);
-  box-shadow: 0 4px 14px rgba(23,36,63,0.07);
+  background: var(--card-white);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 14px var(--border);
 }
 /* Watermark icon behind the workout cards — was a line-art barbell (Chris's
    2026-08-06 request), then a hand-traced SVG outline of the melting-smiley
@@ -559,7 +700,7 @@ h1, h2, h3 {
 .card-blue .home-section-title { color: white; }
 .card-blue .home-section-title::before { background: white; }
 .card-habits .home-section-title,
-.card-community .home-section-title { color: var(--slate); }
+.card-community .home-section-title { color: var(--text); }
 .card-habits .home-section-title::before,
 .card-community .home-section-title::before { background: var(--slate); }
 .section-subtitle {
@@ -581,7 +722,7 @@ h1, h2, h3 {
   border-radius: var(--radius-md);
   padding: 12px 14px;
   cursor: pointer;
-  color: var(--ink);
+  color: var(--text);
   /* <button> doesn't inherit the page font by default — without this it was
      silently falling back to the browser's UI font (e.g. Arial), the one
      real font mismatch found while confirming type consistency (2026-08-06). */
@@ -591,7 +732,7 @@ h1, h2, h3 {
      stay distinct from --white's other job as the tint for standalone cards
      sitting directly on the page background (today-stat tiles, feed items). */
   background: var(--card-white);
-  box-shadow: 0 4px 10px rgba(23,36,63,0.08);
+  box-shadow: 0 4px 10px var(--border);
   position: relative;
   overflow: hidden;
 }
@@ -623,7 +764,7 @@ h1, h2, h3 {
   display: none;
 }
 .circuit-bg-icon svg { width: 100%; height: 100%; display: block; }
-.color-blue .circuit-bg-icon { color: var(--blue); }
+.color-blue .circuit-bg-icon { color: var(--accent-text); }
 .color-periwinkle .circuit-bg-icon { color: var(--purple); }
 .color-deepblue .circuit-bg-icon { color: var(--pink); }
 .color-yellow .circuit-bg-icon { color: var(--yellow); }
@@ -636,7 +777,7 @@ h1, h2, h3 {
 .circuit-tag {
   flex-shrink: 0;
   background: var(--periwinkle);
-  color: var(--ink);
+  color: var(--text);
   padding: 3px 10px;
   border-radius: 999px;
   font-size: 11px;
@@ -648,13 +789,13 @@ h1, h2, h3 {
    the fuller palette (blue/purple/pink/yellow) for variety between workouts. */
 .color-blue .circuit-tag { background: var(--blue); color: white; }
 .color-periwinkle .circuit-tag { background: var(--purple); color: white; }
-.color-deepblue .circuit-tag { background: var(--pink); color: var(--ink); }
-.color-yellow .circuit-tag { background: var(--yellow); color: var(--ink); }
+.color-deepblue .circuit-tag { background: var(--pink); color: var(--text); }
+.color-yellow .circuit-tag { background: var(--yellow); color: var(--text); }
 
 /* Was a heavy grey wash — Chris found it distracting (2026-08-06). Card stays
    white like any other now; completion reads via strikethrough + muted title
    plus the small red check/date, matching how Daily Habits marks done. */
-.circuit-card.completed h3 { text-decoration: line-through; color: var(--deepblue); }
+.circuit-card.completed h3 { text-decoration: line-through; color: var(--text-muted); }
 /* Small red check + date, replacing the old oversized "✓ COMPLETED" pill —
    sits in the same top-right slot the tag would otherwise occupy. */
 .circuit-completed-mark {
@@ -687,7 +828,7 @@ h1, h2, h3 {
   align-items: flex-start;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px solid rgba(23,36,63,0.08);
+  border-bottom: 1px solid var(--border);
 }
 .buzz-row:last-child { border-bottom: none; }
 .buzz-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); flex-shrink: 0; margin-top: 6px; }
@@ -700,7 +841,7 @@ h1, h2, h3 {
    one-color-per-card rule the last few passes used). */
 .card-community .buzz-dot { background: white; }
 .card-community .buzz-text p,
-.card-community .buzz-text strong { color: var(--slate); }
+.card-community .buzz-text strong { color: var(--text); }
 .card-community .buzz-text p.buzz-time { color: white; }
 
 /* ---------- ARCHIVE ---------- */
@@ -715,7 +856,7 @@ h1, h2, h3 {
    own bottom margin (was on the row) keeps the *next* section from crowding
    it — otherwise the caption reads like it's floating between two sections
    instead of captioning the one above it. */
-.stat-bubbles-caption { margin: 6px 0 24px; text-align: center; font-size: 11px; font-weight: 700; color: var(--deepblue); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-bubbles-caption { margin: 6px 0 24px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
 .stat-bubbles-row { display: flex; justify-content: center; gap: 16px; margin-bottom: 0; }
 .stat-bubble {
   width: 132px;
@@ -731,17 +872,17 @@ h1, h2, h3 {
    matches the same --deepblue used in the Workouts tab's green Stretch &
    Core Library card (was --ink) (2026-08-11). */
 .stat-bubble-minutes { background: var(--purple); color: white; }
-.stat-bubble-calories { background: var(--green); color: var(--deepblue); }
+.stat-bubble-calories { background: var(--green); color: var(--text-muted); }
 /* +25% (2026-08-11) — was 30px. */
 .stat-bubble-num { margin: 0; font-family: var(--font-heading); font-size: 38px; font-weight: 800; line-height: 1; }
 .stat-bubble-unit { margin: 2px 0 0; font-size: 11px; font-weight: 700; opacity: 0.75; }
 .stat-bubble-delta { margin-top: 6px; font-size: 11px; font-weight: 800; }
-.stat-bubble-minutes .stat-bubble-delta.up { color: var(--chartreuse); }
+.stat-bubble-minutes .stat-bubble-delta.up { color: #FFFFFF; }
 .stat-bubble-minutes .stat-bubble-delta.down { color: rgba(255,255,255,0.75); }
 .stat-bubble-minutes .stat-bubble-delta.neutral { color: rgba(255,255,255,0.6); }
 .stat-bubble-calories .stat-bubble-delta.up { color: var(--green-dark); }
-.stat-bubble-calories .stat-bubble-delta.down { color: var(--deepblue); }
-.stat-bubble-calories .stat-bubble-delta.neutral { color: var(--deepblue); opacity: 0.7; }
+.stat-bubble-calories .stat-bubble-delta.down { color: var(--text-muted); }
+.stat-bubble-calories .stat-bubble-delta.neutral { color: var(--text-muted); opacity: 0.7; }
 
 /* ---------- WORKOUT MIX DONUT (2026-08-11) ---------- */
 /* Fixed hue order, one color per category, never reassigned by rank/filter. */
@@ -756,13 +897,13 @@ h1, h2, h3 {
 .donut-empty-ring { stroke: var(--periwinkle); }
 .workout-mix-donut-wrap { display: flex; align-items: center; gap: 18px; }
 .workout-mix-donut { width: 110px; height: 110px; flex-shrink: 0; }
-.donut-center-num { font-family: var(--font-heading); font-size: 20px; font-weight: 800; fill: var(--ink); }
-.donut-center-label { font-size: 8px; font-weight: 700; fill: var(--deepblue); font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.5px; }
+.donut-center-num { font-family: var(--font-heading); font-size: 20px; font-weight: 800; fill: var(--text); }
+.donut-center-label { font-size: 8px; font-weight: 700; fill: var(--text-muted); font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.5px; }
 .donut-legend { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
 .donut-legend-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 .donut-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.donut-legend-label { flex: 1; color: var(--ink); font-weight: 600; }
-.donut-legend-count { font-weight: 800; color: var(--ink); }
+.donut-legend-label { flex: 1; color: var(--text); font-weight: 600; }
+.donut-legend-count { font-weight: 800; color: var(--text); }
 
 /* ---------- YEAR CHART (2026-08-11) ---------- */
 /* Single-series bar chart, one hue (--blue) per the dataviz skill's "no
@@ -772,10 +913,10 @@ h1, h2, h3 {
    literal size rather than scaling oddly. */
 .year-chart { display: block; width: 100%; height: auto; margin-top: 8px; }
 .year-chart-bar { fill: var(--blue); }
-.year-chart-bar.current { fill: var(--ink); }
-.year-chart-value { font-size: 8px; font-weight: 700; fill: var(--deepblue); font-family: var(--font-body); }
-.year-chart-label { font-size: 7px; font-weight: 700; fill: var(--deepblue); font-family: var(--font-body); opacity: 0.7; }
-.year-chart-label.current { fill: var(--ink); opacity: 1; }
+.year-chart-bar.current { fill: var(--text); }
+.year-chart-value { font-size: 8px; font-weight: 700; fill: var(--text-muted); font-family: var(--font-body); }
+.year-chart-label { font-size: 7px; font-weight: 700; fill: var(--text-muted); font-family: var(--font-body); opacity: 0.7; }
+.year-chart-label.current { fill: var(--text); opacity: 1; }
 
 /* Last Week's Workouts — a compact, tappable workout entry. Nested inside the
    pink .card-last-week wrapper (2026-08-10 revert) — white rows on the
@@ -791,12 +932,12 @@ h1, h2, h3 {
   border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: 13px;
-  box-shadow: 0 4px 10px rgba(23,36,63,0.08);
+  box-shadow: 0 4px 10px var(--border);
   border: none;
   width: 100%;
   text-align: left;
   font-family: inherit;
-  color: var(--ink);
+  color: var(--text);
   cursor: pointer;
 }
 .circuit-row-compact.completed { opacity: 0.6; }
@@ -830,13 +971,13 @@ h1, h2, h3 {
    outline .home-section-card.card-white uses. */
 .calendar-day-row {
   background: var(--card-white);
-  border: 1px solid rgba(23,36,63,0.08);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 12px 16px;
   box-shadow: 0 4px 20px 2px rgba(23,36,63,0.3);
 }
 .calendar-day-row.today { outline: 2px solid var(--blue); outline-offset: -2px; }
-.calendar-day-date { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; color: var(--deepblue); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
+.calendar-day-date { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
 .calendar-today-tag { background: var(--blue); color: white; font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
 .calendar-item-btn {
   display: flex;
@@ -859,7 +1000,7 @@ h1, h2, h3 {
 .calendar-item-label { font-weight: 800; font-size: 14px; color: white; }
 /* Same white-on-blue secondary-text value the blue DM conversation row uses. */
 .calendar-item-meta { font-size: 12px; color: rgba(255,255,255,0.75); font-weight: 600; }
-.calendar-item-muted { font-size: 13px; font-weight: 700; color: var(--deepblue); opacity: 0.7; padding: 10px 12px; display: block; }
+.calendar-item-muted { font-size: 13px; font-weight: 700; color: var(--text-muted); opacity: 0.7; padding: 10px 12px; display: block; }
 .calendar-item-check { position: absolute; top: 10px; right: 12px; font-size: 11px; font-weight: 800; color: white; }
 /* Home / Gym marker, only drawn when a member has access to both variants of
    a session and therefore has a choice to make (2026-08-14). */
@@ -871,7 +1012,7 @@ h1, h2, h3 {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--blue);
+  color: var(--accent-text);
   background: white;
   padding: 3px 9px;
   border-radius: 999px;
@@ -911,13 +1052,13 @@ h1, h2, h3 {
   cursor: pointer;
   font-family: inherit;
 }
-.calendar-scheduled-label { font-weight: 800; font-size: 14px; color: var(--slate); }
-.calendar-scheduled-meta { font-size: 12px; font-weight: 600; color: var(--slate); opacity: 0.7; }
+.calendar-scheduled-label { font-weight: 800; font-size: 14px; color: var(--text); }
+.calendar-scheduled-meta { font-size: 12px; font-weight: 600; color: var(--text); opacity: 0.7; }
 /* Completed sessions recede to the darker green, same idea as blue program
    workouts dropping to --deepblue once they're done. */
 .calendar-item-scheduled.completed { background: var(--green-dark); }
 .calendar-item-scheduled.completed .calendar-scheduled-label { text-decoration: line-through; opacity: 0.75; }
-.calendar-scheduled-check { flex-shrink: 0; font-size: 13px; font-weight: 800; color: var(--slate); }
+.calendar-scheduled-check { flex-shrink: 0; font-size: 13px; font-weight: 800; color: var(--text); }
 .calendar-scheduled-remove {
   width: 26px;
   height: 26px;
@@ -925,15 +1066,15 @@ h1, h2, h3 {
   border-radius: 8px;
   border: none;
   background: rgba(255,255,255,0.65);
-  color: var(--slate);
+  color: var(--text);
   font-weight: 800;
   cursor: pointer;
   font-family: inherit;
 }
 .calendar-scheduled-remove:hover { background: white; }
 
-.complete-sched-date { margin: -8px 0 16px; text-align: center; font-size: 12px; font-weight: 700; color: var(--deepblue); text-transform: uppercase; letter-spacing: 0.3px; }
-.complete-sched-future { margin: 0 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: var(--deepblue); line-height: 1.4; }
+.complete-sched-date { margin: -8px 0 16px; text-align: center; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+.complete-sched-future { margin: 0 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: var(--text-muted); line-height: 1.4; }
 
 /* ---------- DETAIL ---------- */
 .detail-header {
@@ -954,11 +1095,11 @@ h1, h2, h3 {
   border-radius: 50%;
   font-size: 18px;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(23,36,63,0.08);
+  box-shadow: 0 4px 10px var(--border);
 }
 .detail-tag {
   background: var(--periwinkle);
-  color: var(--blue);
+  color: var(--accent-text);
   font-weight: 800;
   font-size: 11px;
   text-transform: uppercase;
@@ -968,10 +1109,10 @@ h1, h2, h3 {
 /* Player screen's block-type pill only (2026-08-11) — much darker text to
    match the exit X's dark blue, not the workout-detail screen's tag which
    keeps the lighter --blue. */
-#player-block-label { color: var(--deepblue); }
-.detail-hero h1 { font-size: 24px; color: var(--ink); }
-.detail-hero p { color: var(--deepblue); font-weight: 700; font-size: 13px; margin: 6px 0 0; }
-.detail-desc { color: var(--ink); opacity: 0.75; font-size: 14px; line-height: 1.5; margin: 16px 0 4px; }
+#player-block-label { color: var(--text-muted); }
+.detail-hero h1 { font-size: 24px; color: var(--text); }
+.detail-hero p { color: var(--text-muted); font-weight: 700; font-size: 13px; margin: 6px 0 0; }
+.detail-desc { color: var(--text); opacity: 0.75; font-size: 14px; line-height: 1.5; margin: 16px 0 4px; }
 
 .block-summary-list {
   display: flex;
@@ -981,11 +1122,11 @@ h1, h2, h3 {
 /* White background + blue outline (2026-08-11) — was the cream --white
    tint, no border. */
 .block-card {
-  background: #FFFFFF;
+  background: var(--card-white);
   border: 1px solid var(--blue);
   border-radius: var(--radius-md);
   padding: 16px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+  box-shadow: 0 4px 12px var(--border);
 }
 .block-card-top {
   display: flex;
@@ -1000,7 +1141,7 @@ h1, h2, h3 {
   min-width: 30px;
   border-radius: 50%;
   background: var(--periwinkle);
-  color: var(--deepblue);
+  color: var(--text-muted);
   font-weight: 800;
   font-family: var(--font-heading);
   display: flex;
@@ -1008,14 +1149,14 @@ h1, h2, h3 {
   justify-content: center;
   font-size: 14px;
 }
-.block-name { margin: 0; font-weight: 800; font-size: 15px; color: var(--ink); }
-.block-type-tag { margin: 2px 0 0; font-size: 11px; font-weight: 700; color: var(--deepblue); text-transform: uppercase; letter-spacing: 0.5px; }
-.block-summary-line { margin: 0 0 10px; font-size: 12px; color: var(--deepblue); font-weight: 700; }
+.block-name { margin: 0; font-weight: 800; font-size: 15px; color: var(--text); }
+.block-type-tag { margin: 2px 0 0; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.block-summary-line { margin: 0 0 10px; font-size: 12px; color: var(--text-muted); font-weight: 700; }
 .block-exercise-names {
   margin: 0;
   padding-left: 18px;
   font-size: 13px;
-  color: var(--ink);
+  color: var(--text);
   opacity: 0.8;
   display: flex;
   flex-direction: column;
@@ -1052,13 +1193,13 @@ h1, h2, h3 {
   border-radius: 50%;
   font-size: 16px;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(23,36,63,0.08);
+  box-shadow: 0 4px 10px var(--border);
 }
 /* Every .player-exit X, everywhere it's used (2026-08-11, widened from
    player-screen-only) — normal blue at 40% opacity background, black X
    (was dark blue --deepblue). */
 .player-exit { background: rgba(120, 140, 227, 0.4); color: black; }
-.player-progress-text { font-size: 12px; font-weight: 700; color: var(--deepblue); }
+.player-progress-text { font-size: 12px; font-weight: 700; color: var(--text-muted); }
 .player-progress-track {
   height: 6px;
   background: var(--periwinkle);
@@ -1117,7 +1258,7 @@ h1, h2, h3 {
   font-family: var(--font-heading);
   font-size: 39px;
   font-weight: 800;
-  color: var(--ink);
+  color: var(--text);
   text-align: center;
   margin: 0 0 14px;
 }
@@ -1129,7 +1270,7 @@ h1, h2, h3 {
   font-family: var(--font-heading);
   font-size: 22px;
   font-weight: 800;
-  color: var(--blue);
+  color: var(--accent-text);
   text-align: center;
   margin: 0 0 14px;
 }
@@ -1139,7 +1280,7 @@ h1, h2, h3 {
    (was 14px) per Chris's "50% of what it is now" ask. */
 .player-sub-pill {
   text-align: center;
-  color: var(--deepblue);
+  color: var(--text-muted);
   font-weight: 700;
   font-size: 13px;
   margin: 4px 0 7px;
@@ -1157,7 +1298,7 @@ h1, h2, h3 {
   margin: 0 auto 14px;
   background: none;
   border: none;
-  color: var(--blue);
+  color: var(--accent-text);
   font-weight: 800;
   font-size: 12px;
   font-family: var(--font-heading);
@@ -1173,7 +1314,7 @@ h1, h2, h3 {
   margin: 0;
   font-size: 13px;
   line-height: 1.5;
-  color: var(--ink);
+  color: var(--text);
   opacity: 0.85;
   text-align: center;
   transition: max-height 0.2s ease;
@@ -1190,7 +1331,7 @@ h1, h2, h3 {
   font-family: var(--font-heading);
   font-size: 56px;
   font-weight: 800;
-  color: var(--blue);
+  color: var(--accent-text);
   margin: 0;
   line-height: 1;
 }
@@ -1200,14 +1341,14 @@ h1, h2, h3 {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--deepblue);
+  color: var(--text-muted);
 }
 .player-total-clock {
   display: none;
   margin: 6px 0 0;
   font-size: 12px;
   font-weight: 700;
-  color: var(--deepblue);
+  color: var(--text-muted);
 }
 
 /* "Before You Start" block notes. Were an inline panel on the player's
@@ -1222,13 +1363,13 @@ h1, h2, h3 {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--deepblue);
+  color: var(--text-muted);
 }
 .block-notes-body {
   margin: 0 0 20px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--deepblue);
+  color: var(--text-muted);
   line-height: 1.55;
   text-align: center;
 }
@@ -1295,7 +1436,7 @@ h1, h2, h3 {
   min-width: 22px;
   border-radius: 50%;
   background: white;
-  color: var(--blue);
+  color: var(--accent-text);
   font-weight: 800;
   font-family: var(--font-heading);
   font-size: 12px;
@@ -1315,18 +1456,18 @@ h1, h2, h3 {
   font-family: 'Nunito', sans-serif;
   font-size: 13px;
   font-weight: 700;
-  color: var(--slate);
+  color: var(--text);
   background: white;
   text-align: center;
   outline: none;
   -moz-appearance: textfield;
 }
-.superset-weight-input:focus { border-color: var(--blue); }
+.superset-weight-input:focus { border-color: var(--accent-text); }
 .superset-weight-input::-webkit-outer-spin-button,
 .superset-weight-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 /* The placeholder carries last session's number, so it should read as data
    rather than as greyed-out hint text. */
-.superset-weight-input::placeholder { color: var(--deepblue); opacity: 0.65; font-weight: 700; }
+.superset-weight-input::placeholder { color: var(--text-muted); opacity: 0.65; font-weight: 700; }
 
 /* EMOM's single field, centred under the clock — it belongs to whichever
    exercise the current minute is on. */
@@ -1340,7 +1481,7 @@ h1, h2, h3 {
 .player-emom-weight label {
   font-size: 12px;
   font-weight: 800;
-  color: var(--deepblue);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1358,7 +1499,7 @@ h1, h2, h3 {
   font-family: 'Baloo 2', sans-serif;
   font-size: 14px;
   font-weight: 800;
-  color: var(--deepblue);
+  color: var(--text-muted);
   cursor: pointer;
 }
 .player-back-btn:active { opacity: 0.6; }
@@ -1378,7 +1519,7 @@ h1, h2, h3 {
   border-radius: 50%;
   border: none;
   background: white;
-  color: var(--blue);
+  color: var(--accent-text);
   font-size: 11px;
   cursor: pointer;
   flex-shrink: 0;
@@ -1402,7 +1543,7 @@ h1, h2, h3 {
   background: var(--periwinkle);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+  box-shadow: 0 4px 12px var(--border);
 }
 .player-set-row.done { opacity: 0.55; }
 .player-set-row.done .set-row-reps { text-decoration: line-through; }
@@ -1411,8 +1552,8 @@ h1, h2, h3 {
   height: 26px;
   min-width: 26px;
   border-radius: 50%;
-  background: #FFFFFF;
-  color: var(--ink);
+  background: var(--card-white);
+  color: var(--text);
   font-weight: 800;
   font-family: var(--font-heading);
   font-size: 13px;
@@ -1420,7 +1561,7 @@ h1, h2, h3 {
   align-items: center;
   justify-content: center;
 }
-.set-row-reps { flex: 1; font-weight: 700; font-size: 13px; color: var(--ink); }
+.set-row-reps { flex: 1; font-weight: 700; font-size: 13px; color: var(--text); }
 /* Done button replaces the old checkbox + inline weight field (2026-08-07) —
    weight moved into the rest popup, see the note above toggleSetChecked in
    app.js. */
@@ -1430,8 +1571,8 @@ h1, h2, h3 {
 .set-row-done-btn {
   border: 2px solid #FFFFFF;
   border-radius: var(--radius-sm);
-  background: #FFFFFF;
-  color: var(--ink);
+  background: var(--card-white);
+  color: var(--text);
   font-weight: 800;
   font-size: 12px;
   padding: 8px 14px;
@@ -1443,9 +1584,9 @@ h1, h2, h3 {
    periwinkle card is 2.13:1 and goes muddy under the row's 0.55 opacity.
    Ink fill is 10.4:1 against the card and still reads once faded. */
 .player-set-row.done .set-row-done-btn {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #FFFFFF;
+  background: var(--chip);
+  border-color: var(--text);
+  color: var(--chip-text);
 }
 
 /* Rest timer pops up over the checklist between sets instead of a full
@@ -1483,7 +1624,7 @@ h1, h2, h3 {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--deepblue);
+  color: var(--text-muted);
 }
 .rest-overlay-weight-row { display: flex; gap: 8px; }
 .rest-overlay-weight-field input {
@@ -1541,7 +1682,7 @@ h1, h2, h3 {
   text-align: center;
   font-weight: 800;
   font-size: 15px;
-  color: var(--ink);
+  color: var(--text);
 }
 /* Technique cue, below the video (2026-08-11) — same source as the
    collapsible one on the player screen (EXERCISE_LIBRARY.technique), just
@@ -1552,7 +1693,7 @@ h1, h2, h3 {
   text-align: center;
   font-size: 13px;
   line-height: 1.5;
-  color: var(--ink);
+  color: var(--text);
   opacity: 0.85;
 }
 
@@ -1575,14 +1716,14 @@ h1, h2, h3 {
   border-radius: var(--radius-sm);
 }
 .cardio-log-row-left { display: flex; flex-direction: column; }
-.cardio-log-activity { font-weight: 800; font-size: 13px; color: var(--ink); }
+.cardio-log-activity { font-weight: 800; font-size: 13px; color: var(--text); }
 .cardio-log-meta { font-size: 11px; font-weight: 600; color: var(--subtext-color); margin: 2px 0 0; }
 .cardio-log-source {
   font-size: 9px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  color: var(--blue);
+  color: var(--accent-text);
   /* Was periwinkle, which sat almost on top of the row's new pale-blue
      background — white separates it cleanly without adding a colour. */
   background: var(--card-white);
@@ -1590,7 +1731,7 @@ h1, h2, h3 {
   border-radius: 999px;
   flex-shrink: 0;
 }
-.cardio-log-empty { font-size: 12px; font-weight: 700; color: var(--deepblue); text-align: center; padding: 6px 0; }
+.cardio-log-empty { font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: center; padding: 6px 0; }
 .cardio-log-actions { display: flex; gap: 8px; }
 .cardio-log-actions .btn-primary,
 .cardio-log-actions .btn-outline { flex: 1; }
@@ -1601,7 +1742,7 @@ h1, h2, h3 {
 .btn-outline {
   background: none;
   border: 2px solid var(--blue);
-  color: var(--blue);
+  color: var(--accent-text);
   border-radius: 999px;
   font-weight: 800;
   font-family: var(--font-heading);
@@ -1629,7 +1770,7 @@ h1, h2, h3 {
   position: relative;
 }
 .cardio-log-card .player-exit { position: absolute; top: -10px; right: -10px; }
-.cardio-log-title { margin: 0 0 16px; font-size: 18px; font-weight: 800; color: var(--ink); text-align: center; }
+.cardio-log-title { margin: 0 0 16px; font-size: 18px; font-weight: 800; color: var(--text); text-align: center; }
 
 /* Settings popups (2026-08-12): Notifications / My Health Profile / Invite
    a Friend / Help & Support all reuse .cardio-log-overlay/.cardio-log-card
@@ -1646,7 +1787,7 @@ h1, h2, h3 {
   gap: 10px;
   background: none;
   border: none;
-  border-bottom: 1px solid rgba(23,36,63,0.08);
+  border-bottom: 1px solid var(--border);
   padding: 10px 0;
   width: 100%;
   text-align: left;
@@ -1667,10 +1808,10 @@ h1, h2, h3 {
   font-size: 12px;
   color: white;
 }
-.notif-row.checked .notif-checkbox { background: var(--blue); border-color: var(--blue); }
-.notif-label { font-size: 13px; font-weight: 700; color: var(--ink); }
+.notif-row.checked .notif-checkbox { background: var(--blue); border-color: var(--accent-text); }
+.notif-label { font-size: 13px; font-weight: 700; color: var(--text); }
 
-.invite-blurb { margin: 0 0 18px; font-size: 13px; font-weight: 600; color: var(--deepblue); text-align: center; line-height: 1.4; }
+.invite-blurb { margin: 0 0 18px; font-size: 13px; font-weight: 600; color: var(--text-muted); text-align: center; line-height: 1.4; }
 .invite-code {
   margin: 0 0 18px;
   padding: 14px;
@@ -1681,15 +1822,15 @@ h1, h2, h3 {
   font-size: 20px;
   font-weight: 800;
   letter-spacing: 1px;
-  color: var(--blue);
+  color: var(--accent-text);
 }
 
 .support-faq { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; }
-.support-faq-q { margin: 0 0 4px; font-size: 13px; font-weight: 800; color: var(--ink); }
-.support-faq-a { margin: 0; font-size: 12px; font-weight: 500; color: var(--deepblue); line-height: 1.4; }
+.support-faq-q { margin: 0 0 4px; font-size: 13px; font-weight: 800; color: var(--text); }
+.support-faq-a { margin: 0; font-size: 12px; font-weight: 500; color: var(--text-muted); line-height: 1.4; }
 .support-email-link { display: block; text-align: center; text-decoration: none; }
 .cardio-log-card .field { margin-bottom: 14px; }
-.cardio-log-saved { margin: 10px 0 0; font-size: 12px; font-weight: 700; color: var(--blue); text-align: center; }
+.cardio-log-saved { margin: 10px 0 0; font-size: 12px; font-weight: 700; color: var(--accent-text); text-align: center; }
 
 .player-round-counter {
   display: none;
@@ -1704,7 +1845,7 @@ h1, h2, h3 {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--deepblue);
+  color: var(--text-muted);
 }
 .round-count {
   margin: 2px 0 14px;
@@ -1712,7 +1853,7 @@ h1, h2, h3 {
   font-family: var(--font-heading);
   font-size: 56px;
   font-weight: 800;
-  color: var(--ink);
+  color: var(--text);
   line-height: 1;
 }
 .round-add-btn { width: 100%; margin-bottom: 10px; }
@@ -1738,7 +1879,7 @@ h1, h2, h3 {
   flex: 1;
   background: var(--white);
   border: 2px solid var(--periwinkle);
-  color: var(--blue);
+  color: var(--accent-text);
   border-radius: 999px;
   padding: 15px;
   font-size: 15px;
@@ -1749,7 +1890,7 @@ h1, h2, h3 {
 .btn-ghost-lg.small { flex: 0 0 auto; padding: 8px 16px; font-size: 12px; }
 /* Pause button only (2026-08-11) — pure white #FFFFFF instead of the cream
    --white every other .btn-ghost-lg still uses. */
-#player-pause-btn { background: #FFFFFF; }
+#player-pause-btn { background: var(--card-white); }
 
 #player-complete-set-btn { margin-top: auto; }
 
@@ -1776,7 +1917,7 @@ h1, h2, h3 {
   box-shadow: 0 10px 24px rgba(120,140,227,0.3);
 }
 .workout-complete h1 { font-size: 24px; }
-.workout-complete p { color: var(--deepblue); font-size: 14px; max-width: 260px; line-height: 1.5; }
+.workout-complete p { color: var(--text-muted); font-size: 14px; max-width: 260px; line-height: 1.5; }
 .workout-complete .btn-primary { margin-top: 8px; padding: 14px 32px; }
 /* Total Time stat, 2026-08-11 pass: no card (was the cream --white tile),
    number 200% bigger and black (was 18px --ink), and the row widened to
@@ -1795,10 +1936,10 @@ h1, h2, h3 {
   background: var(--white);
   border-radius: var(--radius-md);
   padding: 16px 18px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.06);
+  box-shadow: 0 4px 12px var(--border);
   text-align: left;
 }
-.benchmark-score-label { margin: 0 0 12px; font-size: 13px; font-weight: 700; color: var(--ink); }
+.benchmark-score-label { margin: 0 0 12px; font-size: 13px; font-weight: 700; color: var(--text); }
 .benchmark-score-input-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 .benchmark-score-input-row input {
   flex: 1;
@@ -1810,9 +1951,9 @@ h1, h2, h3 {
   font-family: var(--font-body);
   outline: none;
 }
-.benchmark-score-input-row input:focus { border-color: var(--blue); }
-.benchmark-score-colon { font-weight: 800; color: var(--deepblue); }
-.benchmark-score-saved { margin: 10px 0 0; font-size: 12px; font-weight: 700; color: var(--blue); }
+.benchmark-score-input-row input:focus { border-color: var(--accent-text); }
+.benchmark-score-colon { font-weight: 800; color: var(--text-muted); }
+.benchmark-score-saved { margin: 10px 0 0; font-size: 12px; font-weight: 700; color: var(--accent-text); }
 
 /* No card (2026-08-11) — was the cream --white tile. */
 .rpe-section {
@@ -1822,7 +1963,7 @@ h1, h2, h3 {
   padding: 0;
 }
 .rpe-label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 10px; }
-.rpe-label span { color: var(--blue); font-size: 16px; font-weight: 800; }
+.rpe-label span { color: var(--accent-text); font-size: 16px; font-weight: 800; }
 .rpe-slider {
   -webkit-appearance: none;
   appearance: none;
@@ -1858,7 +1999,7 @@ h1, h2, h3 {
   justify-content: space-between;
   font-size: 10px;
   font-weight: 700;
-  color: var(--deepblue);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -1872,27 +2013,27 @@ h1, h2, h3 {
   background: var(--white);
   padding: 12px 16px;
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+  box-shadow: 0 4px 12px var(--border);
   font-weight: 700;
   font-size: 14px;
 }
 .leader-row.me { background: var(--blue); color: white; }
 .leader-row.me .leader-stat { color: white; opacity: 0.85; }
-.leader-rank { width: 26px; color: var(--deepblue); font-weight: 800; }
+.leader-rank { width: 26px; color: var(--text-muted); font-weight: 800; }
 .leader-row.me .leader-rank { color: white; }
 .leader-name { flex: 1; }
-.leader-stat { color: var(--deepblue); font-size: 12px; }
+.leader-stat { color: var(--text-muted); font-size: 12px; }
 
 /* ---------- PROGRESS ---------- */
 .range-toggle {
   display: flex;
   background: var(--card-white);
-  border: 1px solid rgba(23,36,63,0.08);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 4px;
   gap: 4px;
   margin-bottom: 16px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+  box-shadow: 0 4px 12px var(--border);
 }
 .range-btn {
   flex: 1;
@@ -1902,7 +2043,7 @@ h1, h2, h3 {
   border-radius: 9px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--deepblue);
+  color: var(--text-muted);
   cursor: pointer;
   font-family: inherit;
 }
@@ -1917,8 +2058,8 @@ h1, h2, h3 {
   row-gap: 20px;
 }
 .stat-item { text-align: center; }
-.stat-num { font-family: var(--font-heading); font-size: 22px; color: var(--blue); margin: 0; font-weight: 800; }
-.stat-label { margin: 4px 0 0; font-size: 11px; color: var(--deepblue); font-weight: 700; }
+.stat-num { font-family: var(--font-heading); font-size: 22px; color: var(--accent-text); margin: 0; font-weight: 800; }
+.stat-label { margin: 4px 0 0; font-size: 11px; color: var(--text-muted); font-weight: 700; }
 
 #progress-calendar-section { margin-bottom: 20px; }
 /* Home's "This Week" snapshot (2026-08-10) — same calendar-grid/stat-item
@@ -1951,14 +2092,14 @@ h1, h2, h3 {
   border-radius: 8px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--ink);
-  box-shadow: 0 2px 6px rgba(23,36,63,0.05);
+  color: var(--text);
+  box-shadow: 0 2px 6px var(--border);
 }
 .cal-day.empty { box-shadow: none; background: transparent; }
 /* Future days get a faint outline too now (2026-08-11) — half the width of
    today's (1px vs 2px), same color, so today still reads as the strongest
    emphasis but future days aren't bare/undifferentiated boxes. */
-.cal-day.future { color: var(--periwinkle); outline: 1px solid var(--deepblue); outline-offset: -1px; }
+.cal-day.future { color: var(--text-faint); outline: 1px solid var(--border-strong); outline-offset: -1px; }
 .cal-day.today { outline: 2px solid var(--deepblue); outline-offset: -2px; }
 .cal-day.done.cal-workout { background: var(--kawaii-blue); }
 .cal-day.done.cal-stretch { background: var(--green); }
@@ -1972,27 +2113,27 @@ h1, h2, h3 {
   border-radius: var(--radius-md);
   padding: 18px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+  box-shadow: 0 4px 12px var(--border);
 }
-.challenge-eyebrow { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--deepblue); }
+.challenge-eyebrow { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
 /* +50% (2026-08-11) — was 20px. */
-.challenge-name { margin: 4px 0 14px; font-family: var(--font-heading); font-size: 30px; color: var(--ink); }
+.challenge-name { margin: 4px 0 14px; font-family: var(--font-heading); font-size: 30px; color: var(--text); }
 .challenge-points-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; }
-.challenge-points-num { font-family: var(--font-heading); font-size: 26px; font-weight: 800; color: var(--blue); }
-.challenge-points-label { font-size: 12px; font-weight: 700; color: var(--deepblue); }
+.challenge-points-num { font-family: var(--font-heading); font-size: 26px; font-weight: 800; color: var(--accent-text); }
+.challenge-points-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
 /* White (2026-08-11) — was --yellow (gold). Only the not-yet-reached state;
    .reached below still goes blue once the threshold is hit. */
 .challenge-reward {
   margin: 12px 0 16px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--ink);
-  background: #FFFFFF;
+  color: var(--text);
+  background: var(--card-white);
   border-radius: 10px;
   padding: 10px 12px;
 }
 .challenge-reward.reached { background: var(--blue); color: white; }
-.challenge-empty { margin: 0; font-size: 13px; color: var(--deepblue); text-align: center; }
+.challenge-empty { margin: 0; font-size: 13px; color: var(--text-muted); text-align: center; }
 
 /* ---------- CHALLENGE: points breakdown + levels + collapsible leaderboard
    (2026-08-11) — Chris's members said a ranked leaderboard wasn't
@@ -2005,20 +2146,20 @@ h1, h2, h3 {
   gap: 8px;
   margin: 14px 0;
   font-size: 12px;
-  color: var(--deepblue);
+  color: var(--text-muted);
   font-weight: 600;
 }
-.challenge-breakdown strong { color: var(--ink); font-weight: 800; }
-.challenge-levels-title { margin: 4px 0 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--deepblue); }
+.challenge-breakdown strong { color: var(--text); font-weight: 800; }
+.challenge-levels-title { margin: 4px 0 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
 .challenge-levels { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
 .challenge-level-row { display: flex; align-items: center; gap: 10px; }
 .challenge-level-row.mine .challenge-level-range,
-.challenge-level-row.mine .challenge-level-count { color: var(--blue); font-weight: 800; }
-.challenge-level-range { width: 64px; flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--deepblue); }
+.challenge-level-row.mine .challenge-level-count { color: var(--accent-text); font-weight: 800; }
+.challenge-level-range { width: 64px; flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--text-muted); }
 .challenge-level-bar-track { flex: 1; height: 8px; background: var(--periwinkle); border-radius: 999px; overflow: hidden; }
 .challenge-level-bar-fill { height: 100%; background: var(--blue); border-radius: 999px; }
-.challenge-level-row.mine .challenge-level-bar-fill { background: var(--ink); }
-.challenge-level-count { width: 20px; flex-shrink: 0; text-align: right; font-size: 12px; font-weight: 800; color: var(--ink); }
+.challenge-level-row.mine .challenge-level-bar-fill { background: var(--chip); }
+.challenge-level-count { width: 20px; flex-shrink: 0; text-align: right; font-size: 12px; font-weight: 800; color: var(--text); }
 
 .challenge-leaderboard-toggle {
   width: 100%;
@@ -2033,7 +2174,7 @@ h1, h2, h3 {
   font-family: var(--font-heading);
   font-weight: 800;
   font-size: 13px;
-  color: var(--blue);
+  color: var(--accent-text);
   cursor: pointer;
 }
 .challenge-leaderboard-caret { display: inline-block; transition: transform 0.15s; }
@@ -2049,20 +2190,20 @@ h1, h2, h3 {
   background: var(--card-white);
   border-radius: var(--radius-md);
   padding: 14px 10px;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+  box-shadow: 0 4px 12px var(--border);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 6px;
 }
-.benchmark-name { margin: 0; font-weight: 800; font-size: 13px; color: var(--ink); }
-.benchmark-subtitle { margin: 0; font-size: 10px; color: var(--deepblue); font-weight: 600; line-height: 1.3; }
+.benchmark-name { margin: 0; font-weight: 800; font-size: 13px; color: var(--text); }
+.benchmark-subtitle { margin: 0; font-size: 10px; color: var(--text-muted); font-weight: 600; line-height: 1.3; }
 /* Push score + delta/tag to the bottom of the card as one group, regardless
    of subtitle length, so all 3 columns line up on the same baseline
    (2026-08-07). */
 .benchmark-bottom { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: auto; padding-top: 4px; }
-.benchmark-best { font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--blue); }
+.benchmark-best { font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--accent-text); }
 .benchmark-delta {
   display: inline-block;
   font-size: 10px;
@@ -2076,7 +2217,7 @@ h1, h2, h3 {
   display: inline-block;
   font-size: 10px;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--text);
   background: var(--yellow);
   padding: 5px 8px;
   border-radius: 999px;
@@ -2089,7 +2230,7 @@ h1, h2, h3 {
   padding: 16px;
   font-weight: 700;
   font-size: 13px;
-  color: var(--ink);
+  color: var(--text);
   text-align: center;
 }
 
@@ -2104,7 +2245,7 @@ h1, h2, h3 {
 .badge {
   margin-top: 6px;
   background: var(--periwinkle);
-  color: var(--blue);
+  color: var(--accent-text);
   font-weight: 800;
   font-size: 11px;
   text-transform: uppercase;
@@ -2118,31 +2259,31 @@ h1, h2, h3 {
    manager, so that list inherits this same flat look, ready to sit inside
    its own colored card (see .card-habits overrides further down). */
 .profile-info-list { display: flex; flex-direction: column; margin-bottom: 20px; }
-.profile-info-row { display: flex; justify-content: space-between; background: none; padding: 10px 0; font-size: 13px; font-weight: 700; border-bottom: 1px solid rgba(23,36,63,0.08); }
+.profile-info-row { display: flex; justify-content: space-between; background: none; padding: 10px 0; font-size: 13px; font-weight: 700; border-bottom: 1px solid var(--border); }
 .profile-info-row:last-child { border-bottom: none; }
-.profile-info-row span:first-child { color: var(--deepblue); }
-.profile-info-row span:last-child { color: var(--ink); }
+.profile-info-row span:first-child { color: var(--text-muted); }
+.profile-info-row span:last-child { color: var(--text); }
 
 .wearable-section { display: flex; flex-direction: column; margin-bottom: 20px; }
-.wearable-row { display: flex; justify-content: space-between; align-items: center; background: none; padding: 10px 0; border-bottom: 1px solid rgba(23,36,63,0.08); }
+.wearable-row { display: flex; justify-content: space-between; align-items: center; background: none; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .wearable-row:last-child { border-bottom: none; }
-.wearable-name { margin: 0; font-size: 13px; font-weight: 800; color: var(--ink); }
-.wearable-status { margin: 2px 0 0; font-size: 11px; font-weight: 700; color: var(--deepblue); }
+.wearable-name { margin: 0; font-size: 13px; font-weight: 800; color: var(--text); }
+.wearable-status { margin: 2px 0 0; font-size: 11px; font-weight: 700; color: var(--text-muted); }
 .wearable-status.connected { color: #1a8a44; }
 /* Connect/Disconnect only (2026-08-12, Chris) — scoped to the Connected
    Devices container so the shared .btn-ghost-lg default (white/periwinkle,
    used elsewhere for Pause and + Add Habit) is untouched. */
-#wearable-section .btn-ghost-lg { background: var(--blue); border-color: var(--blue); color: white; }
+#wearable-section .btn-ghost-lg { background: var(--blue); border-color: var(--accent-text); color: white; }
 
 /* Daily Habits manager (Profile tab): wrapped in the same green card as the
    Home page's Habits section (2026-08-12, Chris: "put a green card around
    them to match the home page"), rows compacted down from the Connected
    Devices default above. */
 #profile-habits-section .wearable-section { margin-bottom: 12px; }
-#profile-habits-section .wearable-row { padding: 7px 0; border-bottom-color: rgba(23,42,58,0.12); }
-#profile-habits-section .wearable-name { font-size: 12px; color: var(--slate); }
-#profile-habits-section .wearable-status { color: var(--slate); }
-#profile-habits-section .habit-remove-btn { background: white; color: var(--deepblue); }
+#profile-habits-section .wearable-row { padding: 7px 0; border-bottom-color: var(--border-strong); }
+#profile-habits-section .wearable-name { font-size: 12px; color: var(--text); }
+#profile-habits-section .wearable-status { color: var(--text); }
+#profile-habits-section .habit-remove-btn { background: var(--card-white); color: var(--text-muted); }
 #profile-habits-section .habit-remove-btn:hover { background: rgba(255,255,255,0.7); }
 /* Title reworded to "Manage your daily habits" and sized down 25% from the
    24px .home-section-title default (2026-08-12, Chris). */
@@ -2158,7 +2299,7 @@ h1, h2, h3 {
   border-radius: 50%;
   border: none;
   background: none;
-  color: var(--blue);
+  color: var(--accent-text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2176,16 +2317,16 @@ h1, h2, h3 {
   border-radius: 8px;
   border: none;
   background: var(--bg);
-  color: var(--deepblue);
+  color: var(--text-muted);
   font-weight: 800;
   cursor: pointer;
 }
-.habit-remove-btn:hover { background: var(--periwinkle); color: var(--blue); }
+.habit-remove-btn:hover { background: var(--periwinkle); color: var(--accent-text); }
 .habit-picker { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .habit-picker-option {
   background: var(--white);
   border: 2px solid var(--periwinkle);
-  color: var(--blue);
+  color: var(--accent-text);
   border-radius: var(--radius-sm);
   padding: 10px 14px;
   font-size: 13px;
@@ -2203,7 +2344,7 @@ h1, h2, h3 {
   font-size: 13px;
   font-family: inherit;
 }
-.habit-limit-note { font-size: 12px; color: var(--deepblue); font-weight: 700; text-align: center; margin-top: 8px; }
+.habit-limit-note { font-size: 12px; color: var(--text-muted); font-weight: 700; text-align: center; margin-top: 8px; }
 
 .settings-list { display: flex; flex-direction: column; gap: 8px; }
 /* Solid blue/white-text card (2026-08-12 pass #2, Chris: "all of the cards
@@ -2243,11 +2384,11 @@ h1, h2, h3 {
      2026-08-06 report of the bar looking "partially transparent"). */
   transform: translateZ(0);
   display: none;
-  background: #FFFFFF;
-  border-top: 1px solid rgba(23,36,63,0.06);
+  background: var(--card-white);
+  border-top: 1px solid var(--border);
   padding: 12px 6px 18px;
   justify-content: space-around;
-  box-shadow: 0 -6px 20px rgba(23,36,63,0.06);
+  box-shadow: 0 -6px 20px var(--border);
 }
 .nav-btn {
   background: none;
@@ -2266,7 +2407,7 @@ h1, h2, h3 {
 .nav-btn span:not(.nav-icon) { display: none; }
 .nav-icon { display: flex; }
 .nav-icon svg { width: 23px; height: 23px; display: block; }
-.nav-btn.active { color: var(--blue); }
+.nav-btn.active { color: var(--accent-text); }
 
 /* ---------- DAILY CHECK-IN (2026-08-19) ---------- */
 .checkin-card { text-align: left; }
@@ -2285,7 +2426,7 @@ h1, h2, h3 {
   resize: vertical;
   width: 100%;
 }
-.checkin-note-field textarea:focus { outline: none; border-color: var(--blue); }
+.checkin-note-field textarea:focus { outline: none; border-color: var(--accent-text); }
 /* Skipping has to be as easy as answering, or the prompt becomes a wall. */
 .checkin-skip-btn {
   display: block;
@@ -2335,10 +2476,10 @@ h1, h2, h3 {
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--text);
   cursor: pointer;
 }
-.checkin-nudge span { color: var(--blue); font-weight: 800; }
+.checkin-nudge span { color: var(--accent-text); font-weight: 800; }
 
 /* ---- read-back ---- */
 .checkin-insight {
@@ -2348,8 +2489,8 @@ h1, h2, h3 {
   color: var(--subtext-color);
   line-height: 1.45;
 }
-.checkin-insight strong { color: var(--ink); font-weight: 800; }
-.checkin-empty { font-size: 12px; font-weight: 700; color: var(--deepblue); }
+.checkin-insight strong { color: var(--text); font-weight: 800; }
+.checkin-empty { font-size: 12px; font-weight: 700; color: var(--text-muted); }
 
 /* Legend is always present for two series, and both lines are also labelled
    at their last point — identity never rests on colour alone. */
@@ -2368,14 +2509,14 @@ h1, h2, h3 {
 .checkin-axis-label { font-family: var(--font-body); font-size: 8px; font-weight: 700; fill: var(--subtext-color); }
 .checkin-axis-end { text-anchor: end; }
 /* Text wears text tokens; the coloured dot beside it carries identity. */
-.checkin-point-label { font-family: var(--font-body); font-size: 9px; font-weight: 800; fill: var(--ink); }
+.checkin-point-label { font-family: var(--font-body); font-size: 9px; font-weight: 800; fill: var(--text); }
 
 .checkin-entry-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 .checkin-entry { background: var(--field-bg); border-radius: var(--radius-sm); padding: 9px 12px; }
 .checkin-entry-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.checkin-entry-date { font-size: 12px; font-weight: 800; color: var(--ink); }
+.checkin-entry-date { font-size: 12px; font-weight: 800; color: var(--text); }
 .checkin-entry-scores { display: flex; gap: 10px; }
-.checkin-score { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 800; color: var(--ink); }
+.checkin-score { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 800; color: var(--text); }
 .checkin-entry-note { margin: 6px 0 0; font-size: 12px; font-weight: 600; color: var(--subtext-color); line-height: 1.4; }
 .checkin-share-btn {
   margin-top: 8px;
@@ -2385,10 +2526,10 @@ h1, h2, h3 {
   font-family: var(--font-body);
   font-size: 11px;
   font-weight: 800;
-  color: var(--blue);
+  color: var(--accent-text);
   cursor: pointer;
 }
-.checkin-share-btn.shared { color: #2E8B57; cursor: default; }
+.checkin-share-btn.shared { color: var(--positive); cursor: default; }
 
 .checkin-more-btn {
   display: flex;
@@ -2403,7 +2544,7 @@ h1, h2, h3 {
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 800;
-  color: var(--blue);
+  color: var(--accent-text);
   cursor: pointer;
 }
 .checkin-caret { font-size: 10px; line-height: 1; }
@@ -2424,10 +2565,10 @@ h1, h2, h3 {
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 800;
-  color: var(--ink);
+  color: var(--text);
   cursor: pointer;
 }
-.cardio-pick-btn.active { background: var(--blue); border-color: var(--blue); color: white; }
+.cardio-pick-btn.active { background: var(--blue); border-color: var(--accent-text); color: white; }
 
 /* ---------- PERSONAL BESTS (2026-08-19) ---------- */
 .pr-row {
@@ -2441,12 +2582,12 @@ h1, h2, h3 {
   margin-bottom: 8px;
 }
 .pr-row-left { min-width: 0; }
-.pr-exercise { display: block; font-size: 13px; font-weight: 800; color: var(--ink); }
-.pr-meta { display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: #4E6580; }
+.pr-exercise { display: block; font-size: 13px; font-weight: 800; color: var(--text); }
+.pr-meta { display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
 .pr-row-right { text-align: right; flex-shrink: 0; }
-.pr-weight { font-family: var(--font-heading); font-size: 19px; font-weight: 800; color: var(--ink); }
+.pr-weight { font-family: var(--font-heading); font-size: 19px; font-weight: 800; color: var(--text); }
 .pr-unit { font-family: var(--font-body); font-size: 10px; font-weight: 700; color: var(--subtext-color); margin-left: 3px; }
-.pr-delta { display: block; font-size: 10px; font-weight: 800; color: #166534; }
+.pr-delta { display: block; font-size: 10px; font-weight: 800; color: var(--positive); }
 
 /* The completion-screen banner. Yellow rather than the app's blue: this is a
    moment, and it should not read as another panel. */
@@ -2462,11 +2603,11 @@ h1, h2, h3 {
   font-family: var(--font-heading);
   font-size: 15px;
   font-weight: 800;
-  color: var(--ink);
+  color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.pr-banner-line { margin: 0; font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.5; }
+.pr-banner-line { margin: 0; font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.5; }
 .pr-banner-line span { font-weight: 600; opacity: 0.65; }
 
 /* ---------- MESSAGING ---------- */
@@ -2487,7 +2628,7 @@ h1, h2, h3 {
   color: white;
   font-family: inherit;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(23,36,63,0.06);
+  box-shadow: 0 2px 8px var(--border);
 }
 .msg-icon svg { width: 19px; height: 19px; display: block; }
 .msg-unread-badge {
@@ -2516,7 +2657,7 @@ h1, h2, h3 {
   border-radius: var(--radius-md);
   padding: 14px 16px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(23,36,63,0.05);
+  box-shadow: 0 4px 14px var(--border);
 }
 /* Staff = solid blue bubble, white icon circle with a blue chat-bubble icon.
    Group = white (#FFFFFF, not the cream --white) bubble with a 2px pink
@@ -2529,8 +2670,8 @@ h1, h2, h3 {
 .conversation-row-dm .conversation-name,
 .conversation-row-dm .conversation-preview { color: white; }
 .conversation-row-dm .conversation-time { color: rgba(255,255,255,0.75); }
-.conversation-row-dm .conversation-icon { background: white; color: var(--blue); }
-.conversation-row-group { background: #FFFFFF; border: 2px solid var(--blue); }
+.conversation-row-dm .conversation-icon { background: var(--card-white); color: var(--accent-text); }
+.conversation-row-group { background: var(--card-white); border: 2px solid var(--blue); }
 .conversation-row-group .conversation-icon { background: var(--pink); color: white; }
 .conversation-icon svg { width: 20px; height: 20px; }
 .conversation-icon {
@@ -2546,7 +2687,7 @@ h1, h2, h3 {
 }
 .conversation-text { flex: 1; min-width: 0; }
 .conversation-name { margin: 0 0 3px; font-weight: 800; font-size: 14px; }
-.conversation-preview { margin: 0; font-size: 12px; color: var(--deepblue); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conversation-preview { margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .conversation-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
 .conversation-time { font-size: 10px; color: #9aa5c9; font-weight: 700; }
 .conversation-unread-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); }
@@ -2572,14 +2713,14 @@ h1, h2, h3 {
 .msg-bubble {
   position: relative;
   max-width: 78%;
-  background: #E9E9EB;
+  background: var(--bubble-in);
   border-radius: var(--radius-md);
   padding: 10px 14px;
-  box-shadow: 0 2px 8px rgba(23,36,63,0.05);
+  box-shadow: 0 2px 8px var(--border);
 }
 .msg-bubble-row.from-me .msg-bubble { background: var(--blue); color: white; }
 .msg-bubble p { margin: 0; font-size: 14px; font-weight: 400; line-height: 1.4; }
-.msg-sender { font-size: 11px; font-weight: 800; color: var(--blue); margin: 0 0 3px !important; }
+.msg-sender { font-size: 11px; font-weight: 800; color: var(--accent-text); margin: 0 0 3px !important; }
 .msg-bubble-row.from-me .msg-sender { color: rgba(255,255,255,0.85); }
 .msg-time { display: block; margin-top: 4px; font-size: 10px; font-weight: 700; opacity: 0.6; }
 
@@ -2611,7 +2752,7 @@ h1, h2, h3 {
 }
 .msg-bubble-row:not(.from-me) .msg-bubble::before {
   left: -8px;
-  background: #E9E9EB;
+  background: var(--bubble-in);
   border-bottom-right-radius: 18px;
 }
 .msg-bubble-row:not(.from-me) .msg-bubble::after {
@@ -2673,7 +2814,7 @@ h1, h2, h3 {
   border: 2px solid var(--blue);
   border-radius: 999px;
   background: none;
-  color: var(--blue);
+  color: var(--accent-text);
   font-family: var(--font-heading);
   font-weight: 800;
   font-size: 12px;
@@ -2686,13 +2827,13 @@ h1, h2, h3 {
 }
 .hold-btn.running {
   background: var(--blue);
-  border-color: var(--blue);
+  border-color: var(--accent-text);
   color: #FFFFFF;
 }
 .hold-btn.done {
   background: none;
   border-color: var(--periwinkle);
-  color: var(--deepblue);
+  color: var(--text-muted);
   cursor: default;
 }
 /* On the straight-sets row the card is already periwinkle, so an outline in
@@ -2700,18 +2841,18 @@ h1, h2, h3 {
    treatment the Done button next to it gets. */
 .player-set-row .hold-btn {
   border-color: #FFFFFF;
-  background: #FFFFFF;
-  color: var(--ink);
+  background: var(--card-white);
+  color: var(--text);
 }
 .player-set-row .hold-btn.running {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #FFFFFF;
+  background: var(--chip);
+  border-color: var(--text);
+  color: var(--chip-text);
 }
 .player-set-row .hold-btn.done {
   background: none;
   border-color: #FFFFFF;
-  color: var(--ink);
+  color: var(--text);
   opacity: 0.7;
 }
 
@@ -2723,7 +2864,7 @@ h1, h2, h3 {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--blue);
+  color: var(--accent-text);
   border: 1.5px solid var(--periwinkle);
   border-radius: 999px;
   padding: 1px 7px;
@@ -2747,38 +2888,38 @@ h1, h2, h3 {
   /* The divider does the separating now, so the inter-row gap goes; the rows'
      own 12px vertical padding is what spaces them. */
   gap: 0;
-  box-shadow: 0 4px 12px rgba(23,36,63,0.05);
+  box-shadow: 0 4px 12px var(--border);
 }
 /* The divider was periwinkle, which is now the colour of the card behind it —
    it would have vanished entirely. White keeps it, and matches the circles
    and pills sitting on the same card. */
-.player-amrap-list .amrap-row:not(:last-child)::after { background: #FFFFFF; }
+.player-amrap-list .amrap-row:not(:last-child)::after { background: var(--card-white); }
 /* Blue numerals on periwinkle measure 2.13:1. Ink is 10.4:1, and matches the
    numbering on the straight-sets card. */
-.player-amrap-list .amrap-order-num { color: var(--ink); }
+.player-amrap-list .amrap-order-num { color: var(--text); }
 /* Same reason the Done button went white-on-ink over there: a blue outline on
    a periwinkle card goes muddy. */
 .player-amrap-list .hold-btn {
   border-color: #FFFFFF;
-  background: #FFFFFF;
-  color: var(--ink);
+  background: var(--card-white);
+  color: var(--text);
 }
 .player-amrap-list .hold-btn.running {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #FFFFFF;
+  background: var(--chip);
+  border-color: var(--text);
+  color: var(--chip-text);
 }
 .player-amrap-list .hold-btn.done {
   background: none;
   border-color: #FFFFFF;
-  color: var(--ink);
+  color: var(--text);
   opacity: 0.7;
 }
 /* Periwinkle borders are invisible against the card, so the white fill has to
    define these on its own. */
 .player-amrap-list .superset-weight-input { border-color: #FFFFFF; }
-.player-amrap-list .row-seg-tag { border-color: #FFFFFF; color: var(--ink); }
-.player-amrap-list .amrap-play-btn { color: var(--ink); }
+.player-amrap-list .row-seg-tag { border-color: #FFFFFF; color: var(--text); }
+.player-amrap-list .amrap-play-btn { color: var(--text); }
 
 /* ---------- TWO-LINE EXERCISE ROW (2026-08-23) ----------
    Chris: the row was "much too busy" — order number, name, reps, weight and
@@ -2832,15 +2973,15 @@ h1, h2, h3 {
   width: 94px;
   border-color: transparent;
   background: transparent;
-  color: var(--deepblue);
+  color: var(--text-muted);
   font-weight: 500;
   text-align: left;
   padding: 3px 4px;
 }
 .amrap-row-line2 .superset-weight-input:focus {
   border-color: #FFFFFF;
-  background: #FFFFFF;
-  color: var(--ink);
+  background: var(--card-white);
+  color: var(--text);
   text-align: center;
 }
 /* Pressable, so it can't be mistaken for the flat DROP tag beside it. */
@@ -2884,8 +3025,8 @@ h1, h2, h3 {
 .program-complete-stats .stat-label { color: #FFFFFF; opacity: 0.8; }
 .program-complete-cta {
   width: 100%;
-  background: #FFFFFF;
-  color: var(--ink);
+  background: var(--card-white);
+  color: var(--text);
   box-shadow: none;
 }
 .program-complete-note { margin: 10px 0 0; font-size: 12px; font-weight: 600; opacity: 0.85; }
@@ -2901,8 +3042,8 @@ h1, h2, h3 {
   /* Clear of the bottom nav rather than over it. */
   bottom: 92px;
   z-index: 60;
-  background: var(--ink);
-  color: #FFFFFF;
+  background: var(--chip);
+  color: var(--chip-text);
   border-radius: var(--radius-sm);
   padding: 12px 16px;
   font-size: 13px;
@@ -2936,7 +3077,7 @@ h1, h2, h3 {
      this the card had a top margin and no bottom one, so the Activity Feed
      sat flush against it — a 0px gap between two differently-coloured cards. */
   margin-bottom: 24px;
-  box-shadow: 0 4px 12px rgba(23, 36, 63, 0.05);
+  box-shadow: 0 4px 12px var(--border);
 }
 /* The eyebrow and name are .challenge-eyebrow/.challenge-name, borrowed from
    the individual card so the two read as a pair (2026-08-27). Only the parts
@@ -2957,24 +3098,24 @@ h1, h2, h3 {
 }
 .team-standing-rank {
   width: 14px; flex-shrink: 0;
-  font-size: 12px; font-weight: 800; color: var(--deepblue); text-align: right;
+  font-size: 12px; font-weight: 800; color: var(--text-muted); text-align: right;
 }
 .team-standing-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .team-standing-name {
   width: 64px; flex-shrink: 0;
-  font-size: 13px; font-weight: 700; color: var(--ink);
+  font-size: 13px; font-weight: 700; color: var(--text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .team-standing-track {
   flex: 1; min-width: 0; height: 8px;
-  background: rgba(23, 36, 63, 0.08);
+  background: var(--border);
   border-radius: 999px;
   overflow: hidden;
 }
 .team-standing-fill { height: 100%; border-radius: 999px; }
 .team-standing-total {
   width: 34px; flex-shrink: 0;
-  font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: var(--ink); text-align: right;
+  font-family: var(--font-heading); font-size: 15px; font-weight: 800; color: var(--text); text-align: right;
 }
 /* The member's own team (2026-08-27, Chris: "make it more obvious what team
    the member is on"). Weight alone wasn't enough, so the row now reads as a
@@ -2993,7 +3134,7 @@ h1, h2, h3 {
 }
 .team-standing-row.mine .team-standing-rank { margin-left: -4px; }
 .team-standing-row.mine .team-standing-name,
-.team-standing-row.mine .team-standing-rank { color: var(--ink); font-weight: 800; }
+.team-standing-row.mine .team-standing-rank { color: var(--text); font-weight: 800; }
 .team-standing-row.mine .team-standing-total { font-size: 17px; }
 /* Present on every row, filled on one. Reserving the width here is what keeps
    all four bar tracks the same length — a chip that only existed on the
@@ -3011,20 +3152,20 @@ h1, h2, h3 {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: #FFFFFF;
+  color: var(--chip-text);
   /* --ink on the pale fill, not the team colour: gold and mint both fail
      against white text, and this label has to read the same on every team. */
-  background: var(--ink);
+  background: var(--chip);
   border-radius: 999px;
   padding: 2px 6px;
 }
 
-.team-challenge-mine-block { border-top: 1px solid rgba(23, 36, 63, 0.08); padding-top: 12px; }
-.team-challenge-mine { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--deepblue); }
-.team-challenge-mine strong { color: var(--ink); font-weight: 800; }
+.team-challenge-mine-block { border-top: 1px solid var(--border); padding-top: 12px; }
+.team-challenge-mine { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.team-challenge-mine strong { color: var(--text); font-weight: 800; }
 .team-challenge-mates { display: flex; flex-wrap: wrap; gap: 6px; }
 .team-mate {
-  font-size: 11px; font-weight: 700; color: var(--ink);
+  font-size: 11px; font-weight: 700; color: var(--text);
   background: var(--field-bg); border-radius: 999px; padding: 3px 10px;
 }
 
@@ -3080,7 +3221,7 @@ h1, h2, h3 {
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 600;
-  color: var(--deepblue);
+  color: var(--text-muted);
   cursor: pointer;
 }
 .tour-title {
@@ -3089,14 +3230,14 @@ h1, h2, h3 {
   font-family: var(--font-heading);
   font-size: 22px;
   font-weight: 800;
-  color: var(--ink);
+  color: var(--text);
 }
 .tour-body {
   margin: 0;
   font-size: 14px;
   font-weight: 500;
   line-height: 1.5;
-  color: var(--deepblue);
+  color: var(--text-muted);
 }
 .tour-action { display: block; width: 100%; margin-top: 16px; }
 
@@ -3147,13 +3288,13 @@ h1, h2, h3 {
   /* White on this mint sits at 1.27:1, so the edge can't come from the fill.
      A shadow gives the card its boundary instead — same treatment as
      .home-section-card.card-white on the white page. */
-  box-shadow: 0 2px 6px rgba(23, 36, 63, 0.12);
+  box-shadow: 0 2px 6px var(--border-strong);
 }
 /* --blue "Show N more" drops to 2.49:1 on this green and the empty state to
    3.53:1; both are 12px and need 4.5. Navy on green is the palette's own rule
    and clears it at 12.2:1. */
 .card-green .checkin-more-btn,
-.card-green .checkin-empty { color: var(--ink); }
+.card-green .checkin-empty { color: var(--text); }
 
 /* ---- Daily check-in preference (2026-08-30) ---- */
 .checkin-settings-note {
@@ -3161,7 +3302,7 @@ h1, h2, h3 {
   font-size: 12px;
   font-weight: 600;
   line-height: 1.5;
-  color: var(--deepblue);
+  color: var(--text-muted);
 }
 /* Sits above the insights in the Progress section so the section reads as
    switched off rather than broken. */
@@ -3173,7 +3314,7 @@ h1, h2, h3 {
   font-size: 12px;
   font-weight: 700;
   line-height: 1.45;
-  color: var(--ink);
+  color: var(--text);
 }
 
 /* ---- Choosing what shows in Personal Bests (2026-09-04) ---- */
@@ -3187,8 +3328,8 @@ h1, h2, h3 {
 .pr-banner-row .pr-banner-line { flex: 1; min-width: 120px; margin: 0; }
 .pr-showcase-btn {
   flex-shrink: 0;
-  background: var(--ink);
-  color: #FFFFFF;
+  background: var(--chip);
+  color: var(--chip-text);
   border: none;
   border-radius: 999px;
   padding: 6px 12px;
@@ -3200,8 +3341,8 @@ h1, h2, h3 {
 /* On-state is quieter than the invitation: once it's added, the button is a
    confirmation, not a call to action. */
 .pr-showcase-btn.on {
-  background: rgba(23, 36, 63, 0.08);
-  color: var(--ink);
+  background: var(--border);
+  color: var(--text);
 }
 .pr-showcase-btn:active { transform: scale(0.98); }
 .pr-banner-foot {
@@ -3209,7 +3350,7 @@ h1, h2, h3 {
   font-size: 11px;
   font-weight: 600;
   line-height: 1.45;
-  color: var(--ink);
+  color: var(--text);
   opacity: 0.75;
 }
 .pr-picker-note {
@@ -3217,7 +3358,7 @@ h1, h2, h3 {
   font-size: 12px;
   font-weight: 600;
   line-height: 1.5;
-  color: var(--deepblue);
+  color: var(--text-muted);
 }
 .pr-picker-row .notif-label {
   display: flex;
@@ -3231,5 +3372,5 @@ h1, h2, h3 {
   flex-shrink: 0;
   font-size: 12px;
   font-weight: 700;
-  color: var(--deepblue);
+  color: var(--text-muted);
 }

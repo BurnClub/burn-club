@@ -798,8 +798,8 @@ const CHALLENGES = [
     // pinned-date limitation as the rest of this seed data (see project
     // memory: DAILY_STATS/CHALLENGES aren't relative-to-today generators
     // like COMPLETIONS is) — will need bumping again later.
-    startDate: "2026-08-01",
-    endDate: "2026-08-31",
+    startDate: "2026-09-01",
+    endDate: "2026-09-30",
     pointsPerWorkout: 5,
     thresholdPoints: 200,
     reward: "Entered to win free Burn Club merch",

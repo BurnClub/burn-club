@@ -539,6 +539,36 @@ function saveCheckin({ mental, physical, note }) {
 // modal and the post-workout nudge. The Home shortcut icon and their existing
 // history both stay: turning the prompt off should stop the asking, not
 // delete the feature or lock them out of logging a day they do want to.
+// ---------------- Appearance (2026-09-04) ----------------
+// Three states, not two: "system" follows the phone, and light/dark pin it.
+// Stored per browser rather than per member — a phone is a phone whoever is
+// signed in on it, and it has to be readable before we know who that is (the
+// login screen is themed too). See applyTheme() in index.html's head for why
+// the first paint can't wait for this file.
+const THEME_KEY = "burnclub-theme";
+const THEME_OPTIONS = [
+  { id: "system", label: "Match my phone" },
+  { id: "light", label: "Light" },
+  { id: "dark", label: "Dark" },
+];
+
+function currentTheme() {
+  const stored = localStorage.getItem(THEME_KEY);
+  return THEME_OPTIONS.some((o) => o.id === stored) ? stored : "system";
+}
+
+function applyTheme(theme) {
+  // "system" removes the attribute entirely so the prefers-color-scheme media
+  // query in style.css is the only thing deciding.
+  if (theme === "system") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", theme);
+}
+
+function setTheme(theme) {
+  localStorage.setItem(THEME_KEY, theme);
+  applyTheme(theme);
+}
+
 const CHECKIN_ENABLED_KEY = "burnclub-checkin-enabled";
 
 function checkinEnabled() {
@@ -2234,6 +2264,36 @@ function renderNotifPrefs() {
 // Reuses the notification toggle row so "off" looks the same everywhere in
 // Profile, plus a line saying what off actually does — a member shouldn't have
 // to switch it off to find out whether it deletes their history.
+function renderAppearanceSettings() {
+  const active = currentTheme();
+  document.getElementById("appearance-body").innerHTML = `
+    ${THEME_OPTIONS.map((o) => `
+      <button class="notif-row ${o.id === active ? "checked" : ""}" data-theme-choice="${o.id}" type="button">
+        <span class="notif-checkbox">${o.id === active ? "✓" : ""}</span>
+        <span class="notif-label">${o.label}</span>
+      </button>
+    `).join("")}
+    <p class="checkin-settings-note">${active === "system"
+      ? "Burn Club follows whatever your phone is set to, and switches with it."
+      : `Burn Club stays ${active} whatever your phone is set to.`}</p>
+  `;
+  document.querySelectorAll("[data-theme-choice]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setTheme(btn.dataset.themeChoice);
+      renderAppearanceSettings();
+    });
+  });
+}
+
+function openAppearanceSettings() {
+  renderAppearanceSettings();
+  document.getElementById("appearance-overlay").classList.add("visible");
+}
+
+function closeAppearanceSettings() {
+  document.getElementById("appearance-overlay").classList.remove("visible");
+}
+
 function renderCheckinSettings() {
   const on = checkinEnabled();
   document.getElementById("checkin-settings-body").innerHTML = `
@@ -4435,6 +4495,8 @@ function wireStaticControls() {
   document.getElementById("open-invite-btn").addEventListener("click", openInviteScreen);
   document.getElementById("invite-close-btn").addEventListener("click", closeInviteScreen);
   document.getElementById("invite-copy-btn").addEventListener("click", copyInviteLink);
+  document.getElementById("open-appearance-btn").addEventListener("click", openAppearanceSettings);
+  document.getElementById("appearance-close-btn").addEventListener("click", closeAppearanceSettings);
   document.getElementById("pr-picker-close-btn").addEventListener("click", closePRPicker);
   document.getElementById("open-checkin-settings-btn").addEventListener("click", openCheckinSettings);
   document.getElementById("checkin-settings-close-btn").addEventListener("click", closeCheckinSettings);
