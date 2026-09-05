@@ -3374,3 +3374,29 @@ h1, h2, h3 {
   font-weight: 700;
   color: var(--text-muted);
 }
+
+/* ---- Focus visibility (WCAG 2.4.7, 2026-09-04) -----------------------------
+   Six input rules set `outline: none`. Some replaced it with a :focus border,
+   but the RPE slider and the rest-overlay weight field replaced it with
+   nothing — a keyboard or switch user lost the caret entirely on those.
+
+   :focus-visible rather than :focus so a mouse tap doesn't leave a ring behind
+   on every button, which is why the outlines were removed in the first place. */
+:focus-visible {
+  outline: 3px solid var(--accent-text);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* Inputs that strip the default get it back explicitly — `outline: none` in
+   their own rule would otherwise win on specificity. */
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible,
+.superset-weight-input:focus-visible,
+.rest-overlay-weight-field input:focus-visible,
+.benchmark-score-input-row input:focus-visible,
+.checkin-note-field textarea:focus-visible,
+.rpe-slider:focus-visible {
+  outline: 3px solid var(--accent-text);
+  outline-offset: 2px;
+}

@@ -56,6 +56,58 @@ private to the member or readable by the coach (see the notes-feature
 conversation below); how account recovery works; and what happens to a
 member's data when they cancel.
 
+## Accessibility — WCAG 2.1 AA before the real app
+
+Chris's call (2026-09-04), alongside the security pass: he wants the app clear
+of ADA exposure before it ships.
+
+Worth being precise about the target. **The ADA itself specifies no technical
+standard for apps.** In practice — DOJ actions, and effectively every
+settlement — the standard applied is **WCAG 2.1 Level AA**, plus the platform
+screen readers (VoiceOver, TalkBack) once it's a native build. Nothing in this
+file is legal advice; it's engineering readiness. A real audit by someone who
+does this for a living is worth buying before launch, not after a demand
+letter.
+
+**Already done (2026-09-04)**
+
+- Every decorative SVG icon is `aria-hidden` — 30 of them were being walked by
+  screen readers on top of the label the button already had.
+- The Messages button had no label, so its accessible name came from the
+  unread badge: it announced as "4, button" on every tab.
+- Habit remove buttons announced as "✕". They name their habit now.
+- A visible `:focus-visible` ring. Six input rules set `outline: none`; some
+  replaced it with a focus border, but the RPE slider and the rest-overlay
+  weight field replaced it with nothing, so a keyboard or switch user lost the
+  caret completely. That's 2.4.7, a straight AA failure.
+- Contrast has been measured rather than eyeballed throughout, and the dark
+  theme was audited element-by-element in the live DOM.
+
+**Known failures, not yet fixed**
+
+- **White on the brand blue is 3.15:1 and white on the coral badge is 2.94:1**,
+  against a 4.5:1 requirement. That's the primary button, the Profile rows and
+  every unread badge, in both themes. Fixing it means moving the brand colours,
+  which is Chris's decision and is pending a conversation with his partner.
+
+**Not yet assessed — needs its own pass**
+
+- **Exercise video captions or transcripts** (1.2.2, Level A). This lands
+  directly on the video project: every demo video needs a caption track or an
+  equivalent text alternative. Cheapest if it's part of producing them rather
+  than retrofitted across ~600 workouts.
+- **Timing** (2.2.1). The app is built out of countdowns. There is an explicit
+  exception where timing is essential to the activity, which exercise timing
+  plausibly meets — but that's a position worth writing down deliberately
+  rather than discovering under challenge.
+- **Reflow and text resize** (1.4.4, 1.4.10) — 200% text and 320px width
+  without losing content. Untested; the two-line exercise rows and the fixed
+  column widths in the team standings are the likely trouble spots.
+- **Native screen reader support.** Everything above is the web layer. A
+  wrapped app has to be walked with VoiceOver and TalkBack for real, by hand.
+- **Motion.** `prefers-reduced-motion` is honoured in two places already; the
+  rest of the app's transitions haven't been checked against it.
+
 ## Blocked on the native build
 
 Everything here is a thing a web app fundamentally can't do, so it waits for

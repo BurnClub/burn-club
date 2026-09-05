@@ -5,11 +5,11 @@
 // (Chris's 2026-08-06 request). Single-color line/fill icons that inherit
 // `color` from their surrounding CSS — same currentColor approach as the
 // bottom nav icons built earlier this session.
-const ICON_MSG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg>`;
-const ICON_STEPS = `<svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="8" cy="15" rx="3" ry="5" transform="rotate(-15 8 15)"/><circle cx="10.8" cy="8.2" r="1.4"/><ellipse cx="16" cy="9" rx="3" ry="5" transform="rotate(15 16 9)"/><circle cx="13.2" cy="15.8" r="1.4"/></svg>`;
-const ICON_FLAME = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1.2 3-2.6 4.3-2.6 7.8a2.6 2.6 0 0 0 5.2 0c0-.9-.5-1.6-.9-2.4 2 1.3 3.8 4 3.8 6.9a5.5 5.5 0 0 1-11 0C6.5 9 9.5 6.5 12 2z"/></svg>`;
-const ICON_HEART = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12,21.35L10.55,20.03C5.4,15.36 2,12.28 2,8.5 2,5.42 4.42,3 7.5,3c1.74,0 3.41,0.81 4.5,2.09C13.09,3.81 14.76,3 16.5,3 19.58,3 22,5.42 22,8.5c0,3.78 -3.4,6.86 -8.55,11.54L12,21.35z"/></svg>`;
-const ICON_LINK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l6-6"/><path d="M13 6l1-1a3 3 0 1 1 4 4l-1 1"/><path d="M11 18l-1 1a3 3 0 1 1-4-4l1-1"/></svg>`;
+const ICON_MSG = `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg>`;
+const ICON_STEPS = `<svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><ellipse cx="8" cy="15" rx="3" ry="5" transform="rotate(-15 8 15)"/><circle cx="10.8" cy="8.2" r="1.4"/><ellipse cx="16" cy="9" rx="3" ry="5" transform="rotate(15 16 9)"/><circle cx="13.2" cy="15.8" r="1.4"/></svg>`;
+const ICON_FLAME = `<svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1.2 3-2.6 4.3-2.6 7.8a2.6 2.6 0 0 0 5.2 0c0-.9-.5-1.6-.9-2.4 2 1.3 3.8 4 3.8 6.9a5.5 5.5 0 0 1-11 0C6.5 9 9.5 6.5 12 2z"/></svg>`;
+const ICON_HEART = `<svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M12,21.35L10.55,20.03C5.4,15.36 2,12.28 2,8.5 2,5.42 4.42,3 7.5,3c1.74,0 3.41,0.81 4.5,2.09C13.09,3.81 14.76,3 16.5,3 19.58,3 22,5.42 22,8.5c0,3.78 -3.4,6.86 -8.55,11.54L12,21.35z"/></svg>`;
+const ICON_LINK = `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l6-6"/><path d="M13 6l1-1a3 3 0 1 1 4 4l-1 1"/><path d="M11 18l-1 1a3 3 0 1 1-4-4l1-1"/></svg>`;
 
 // ---------------- Home / Circuits / Community / Progress rendering ----------------
 
@@ -19,12 +19,12 @@ const ICON_LINK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 // Each is a simple rounded-stroke stick figure, viewBox 0 0 100 100, colored
 // via CSS `color` (see .circuit-bg-icon) so it inherits the card's accent.
 const CIRCUIT_ICONS = {
-  core: `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><circle cx="28" cy="26" r="9"/><path d="M30 34L46 55"/><path d="M46 55L70 48"/><path d="M70 48L77 72"/><path d="M38 42L58 50"/></svg>`,
-  cardio: `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><circle cx="62" cy="18" r="9"/><path d="M58 26L42 50"/><path d="M42 50L58 64L48 90"/><path d="M42 50L22 56L27 82"/><path d="M50 32L67 22"/><path d="M50 32L32 44"/></svg>`,
-  legs: `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="16" r="9"/><path d="M50 25L50 48"/><path d="M50 48L30 58L35 85"/><path d="M50 48L70 58L65 85"/><path d="M50 30L27 36"/><path d="M50 30L73 36"/></svg>`,
-  upper: `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="16" r="9"/><path d="M50 25L50 62"/><path d="M50 62L35 90"/><path d="M50 62L65 90"/><path d="M50 30L30 12"/><path d="M50 30L70 12"/><path d="M18 12L42 12"/><path d="M58 12L82 12"/></svg>`,
-  fullbody: `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="16" r="9"/><path d="M50 25L50 55"/><path d="M50 30L25 10"/><path d="M50 30L75 10"/><path d="M50 55L25 90"/><path d="M50 55L75 90"/></svg>`,
-  stretch: `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><circle cx="35" cy="20" r="9"/><path d="M37 28L56 55"/><path d="M56 55L50 90"/><path d="M56 55L68 88"/><path d="M42 34L68 14"/><path d="M42 34L30 55"/></svg>`,
+  core: `<svg aria-hidden="true" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><circle cx="28" cy="26" r="9"/><path d="M30 34L46 55"/><path d="M46 55L70 48"/><path d="M70 48L77 72"/><path d="M38 42L58 50"/></svg>`,
+  cardio: `<svg aria-hidden="true" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><circle cx="62" cy="18" r="9"/><path d="M58 26L42 50"/><path d="M42 50L58 64L48 90"/><path d="M42 50L22 56L27 82"/><path d="M50 32L67 22"/><path d="M50 32L32 44"/></svg>`,
+  legs: `<svg aria-hidden="true" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="16" r="9"/><path d="M50 25L50 48"/><path d="M50 48L30 58L35 85"/><path d="M50 48L70 58L65 85"/><path d="M50 30L27 36"/><path d="M50 30L73 36"/></svg>`,
+  upper: `<svg aria-hidden="true" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="16" r="9"/><path d="M50 25L50 62"/><path d="M50 62L35 90"/><path d="M50 62L65 90"/><path d="M50 30L30 12"/><path d="M50 30L70 12"/><path d="M18 12L42 12"/><path d="M58 12L82 12"/></svg>`,
+  fullbody: `<svg aria-hidden="true" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="16" r="9"/><path d="M50 25L50 55"/><path d="M50 30L25 10"/><path d="M50 30L75 10"/><path d="M50 55L25 90"/><path d="M50 55L75 90"/></svg>`,
+  stretch: `<svg aria-hidden="true" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><circle cx="35" cy="20" r="9"/><path d="M37 28L56 55"/><path d="M56 55L50 90"/><path d="M56 55L68 88"/><path d="M42 34L68 14"/><path d="M42 34L30 55"/></svg>`,
 };
 
 function circuitIconKey(c) {
@@ -770,7 +770,7 @@ function renderCheckinChart(entries) {
     <div class="checkin-legend">
       ${CHECKIN_SERIES.map((s) => `<span class="checkin-legend-item"><span class="checkin-swatch" style="background:${s.color}"></span>${s.label}</span>`).join("")}
     </div>
-    <svg class="checkin-chart-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Check-in scores over time">
+    <svg aria-hidden="true" class="checkin-chart-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Check-in scores over time">
       ${gridHtml}
       <text class="checkin-axis-label" x="${padL}" y="${h - 4}">${first}</text>
       <text class="checkin-axis-label checkin-axis-end" x="${w - padR}" y="${h - 4}">${lastDate}</text>
@@ -1215,7 +1215,7 @@ function renderYearChart() {
     `;
   }).join("");
 
-  return `<svg class="year-chart" viewBox="0 0 ${width} ${valueH + chartH + labelH}" role="img" aria-label="Workouts completed per month this year">${bars}</svg>`;
+  return `<svg aria-hidden="true" class="year-chart" viewBox="0 0 ${width} ${valueH + chartH + labelH}" role="img" aria-label="Workouts completed per month this year">${bars}</svg>`;
 }
 
 // Home's "This Week" snapshot (2026-08-10) — a copy of the Progress tab's
@@ -1404,7 +1404,7 @@ function renderWorkoutMixDonut(counts) {
 
   return `
     <div class="workout-mix-donut-wrap">
-      <svg class="workout-mix-donut" viewBox="0 0 100 100" role="img" aria-label="Breakdown of workout types this period">
+      <svg aria-hidden="true" class="workout-mix-donut" viewBox="0 0 100 100" role="img" aria-label="Breakdown of workout types this period">
         ${ringHtml}
         <text x="50" y="46" text-anchor="middle" class="donut-center-num">${total}</text>
         <text x="50" y="60" text-anchor="middle" class="donut-center-label">Total</text>
@@ -2113,7 +2113,7 @@ function renderHabitManager() {
     ? MY_HABITS.map((h) => `
         <div class="wearable-row">
           <p class="wearable-name">${esc(h.label)}</p>
-          <button class="habit-remove-btn" data-remove-habit="${h.id}">✕</button>
+          <button class="habit-remove-btn" data-remove-habit="${h.id}" aria-label="Remove ${esc(h.label)}">✕</button>
         </div>
       `).join("")
     : `<div class="wearable-row"><p class="wearable-status">No habits set yet.</p></div>`;
@@ -4107,8 +4107,8 @@ function conversationPreview(conv) {
 // paths already used elsewhere in the app (msg-icon-btn's bubble, the
 // bottom nav's Community icon), just reused here for visual consistency.
 const CONVERSATION_ICON_SVG = {
-  dm: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg>`,
-  group: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><path d="M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="7" r="2.3"/><path d="M14 20c.3-2.7 2-4.6 4.3-5"/></svg>`,
+  dm: `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg>`,
+  group: `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><path d="M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="7" r="2.3"/><path d="M14 20c.3-2.7 2-4.6 4.3-5"/></svg>`,
 };
 
 function renderConversationRow(conv) {
