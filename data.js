@@ -303,11 +303,6 @@ const APP_SETTINGS_DEFAULTS = {
     { id: "Bike", unitLabel: "Distance (mi)", step: "0.1" },
     { id: "Stair Stepper", unitLabel: "Flights Climbed", step: "1" },
   ],
-  benchmarks: [
-    { id: "benchmark-a", name: "Benchmark A", subtitle: "The Gauntlet — 12-Minute AMRAP", scoreType: "rounds" },
-    { id: "benchmark-b", name: "Benchmark B", subtitle: "Sprint 500 — For Time", scoreType: "time" },
-    { id: "benchmark-c", name: "Benchmark C", subtitle: "Endurance Test — 15-Minute AMRAP", scoreType: "rounds" },
-  ],
   // The two question keys are fixed: they're the field names inside every
   // stored check-in and the two series on the Progress chart. Wording and the
   // scale ends are free to change; adding a third question is not a settings
@@ -810,6 +805,10 @@ const CHALLENGES = [
 // workouts are (2026-08-24). Seeded so the demo has something to show; the
 // live copy replaces it when the coach draws. Same same-browser limitation as
 // every other bridge here.
+// Benchmarks belong to a program and reach the member app the same way
+// circuits do (2026-09-05).
+const LIVE_BENCHMARKS_KEY = "burnClubProgramBenchmarks";
+
 const LIVE_TEAMS_KEY = "burnClubLiveChallengeTeams";
 // Named separately from the individual challenge, and bridged from admin
 // alongside the teams themselves.
@@ -1056,8 +1055,30 @@ function buildSeedCompletionsForMember(member) {
 // scoreType: "rounds" (AMRAP-style — how many rounds in a fixed time,
 // higher is better) or "time" (for-time — finish a fixed amount of work as
 // fast as possible, lower is better, stored in seconds).
-// Set in Admin -> Settings -> Benchmarks.
-const BENCHMARKS = APP_SETTINGS.benchmarks;
+// The member's own program's benchmarks, set in Admin on the program itself.
+// Seeded so the demo has something before anything is bridged; a real member's
+// list arrives with their program.
+const BENCHMARKS_SEED = [
+  { id: "benchmark-a", name: "Benchmark A", subtitle: "The Gauntlet — 12-Minute AMRAP", scoreType: "rounds" },
+  { id: "benchmark-b", name: "Benchmark B", subtitle: "Sprint 500 — For Time", scoreType: "time" },
+  { id: "benchmark-c", name: "Benchmark C", subtitle: "Endurance Test — 15-Minute AMRAP", scoreType: "rounds" },
+];
+
+let BENCHMARKS = [...BENCHMARKS_SEED];
+
+function loadProgramBenchmarks() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(LIVE_BENCHMARKS_KEY) || "null");
+    if (!Array.isArray(stored)) return;
+    const mine = stored.find((entry) => entry.programId === CURRENT_MEMBER.programId);
+    // Only replaced on a real match. A member whose program genuinely has no
+    // benchmarks should see none, but a bridge that was never written
+    // shouldn't wipe the seeded demo list.
+    if (mine && Array.isArray(mine.benchmarks)) BENCHMARKS = mine.benchmarks;
+  } catch (e) {
+    // Keep the seed rather than blanking the section.
+  }
+}
 
 // Filler result history so the Progress tab's Benchmarks section has
 // something to show before the real post-workout score prompt exists (not

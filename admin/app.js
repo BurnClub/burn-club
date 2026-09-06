@@ -98,8 +98,33 @@ function folderById(id) {
   return FOLDERS.find((f) => f.id === id);
 }
 
-function benchmarkById(id) {
-  return BENCHMARKS.find((b) => b.id === id);
+// Benchmarks belong to a program (2026-09-05). A retest only means anything
+// against the programming it belongs to, so Burn Club's set is Burn Club's.
+// The builder is always working inside one program, so the dropdown offers
+// that program's benchmarks and nothing else.
+function benchmarkOptionsHtml() {
+  const scopeProgram = builderProgramId
+    || (currentScope && currentScope.type === "program" && currentScope.id)
+    || (currentScope && currentScope.programId)
+    || (folderById(currentScope && currentScope.id) || {}).program;
+  const list = benchmarksForProgram(scopeProgram);
+  if (!list.length) return `<option value="">No benchmarks set up for this program yet</option>`;
+  return list.map((b) => `<option value="${esc(b.id)}">${esc(b.name)} — ${esc(b.subtitle)}</option>`).join("");
+}
+
+function benchmarksForProgram(programId) {
+  const program = programById(programId);
+  return (program && program.benchmarks) || [];
+}
+
+// Falls back to a scan across programs so an existing workout keeps showing
+// its benchmark's name even if it's been moved between programs.
+function benchmarkById(id, programId) {
+  if (programId) {
+    const own = benchmarksForProgram(programId).find((b) => b.id === id);
+    if (own) return own;
+  }
+  return PROGRAMS.flatMap((p) => p.benchmarks || []).find((b) => b.id === id);
 }
 
 // Which program owns a workout. Rolling programs put it on the workout
@@ -1699,6 +1724,102 @@ function availabilityCellHtml(circuit) {
     <br /><span class="avail-state state-${state}">${AVAILABILITY_LABELS[state]}</span>`;
 }
 
+// ---------------- Program benchmarks (2026-09-05) ----------------
+// Chris wanted these inside the program rather than in global settings. Doing
+// that also collapsed a split I'd introduced: a standalone BENCHMARKS const
+// drove the builder's dropdown while a second copy in APP_SETTINGS drove the
+// member app, so renaming one didn't rename the other. The program owns them
+// now, and the member app reads them over the bridge.
+const BENCHMARK_SCORE_LABELS = { rounds: "Rounds / reps — more is better", time: "Time — faster is better" };
+
+function renderProgramBenchmarks(programId) {
+  const section = document.getElementById("program-benchmarks");
+  if (!section) return;
+  // Only on a program scope: a folder or a week is a slice of a program's
+  // workouts, not the program itself.
+  section.style.display = programId ? "" : "none";
+  if (!programId) return;
+
+  const list = benchmarksForProgram(programId);
+  // How many workouts are tagged into each, so it's obvious which slots are
+  // actually programmed and which are sitting empty.
+  const taggedCount = (id) => CIRCUITS.filter((c) => c.isBenchmark && c.benchmarkId === id).length;
+
+  document.getElementById("program-benchmark-list").innerHTML = list.length
+    ? list.map((b) => {
+        const n = taggedCount(b.id);
+        return `
+        <div class="program-benchmark-row">
+          <div class="program-benchmark-main">
+            <p class="program-benchmark-name">${esc(b.name)}</p>
+            <p class="program-benchmark-sub">${esc(b.subtitle) || "No description"}</p>
+            <p class="program-benchmark-meta">${BENCHMARK_SCORE_LABELS[b.scoreType] || esc(b.scoreType)} · ${n} workout${n === 1 ? "" : "s"} tagged</p>
+          </div>
+          <div class="program-benchmark-actions">
+            <button class="btn-ghost-lg small" data-action="edit-program-benchmark" data-benchmark-id="${esc(b.id)}">Edit</button>
+            <button class="btn-ghost-lg small btn-danger" data-action="remove-program-benchmark" data-benchmark-id="${esc(b.id)}">Remove</button>
+          </div>
+        </div>`;
+      }).join("")
+    : `<p class="program-benchmark-empty">No benchmarks for this program yet. Add one, then tag a workout as it in the builder.</p>`;
+}
+
+function addBenchmarkToProgram(programId) {
+  const program = programById(programId);
+  if (!program) return;
+  const name = prompt("Benchmark name (e.g. The Gauntlet)");
+  if (!name || !name.trim()) return;
+  const subtitle = prompt("Short description (e.g. 12-Minute AMRAP)") || "";
+  const scoreType = confirm("OK = scored by rounds or reps (more is better)\nCancel = scored by time (faster is better)") ? "rounds" : "time";
+  program.benchmarks = program.benchmarks || [];
+  program.benchmarks.push({
+    id: slugify("benchmark", name.trim()) + "-" + Date.now(),
+    name: name.trim(),
+    subtitle: subtitle.trim(),
+    scoreType,
+  });
+  syncBenchmarksToMemberApp();
+  renderProgramBenchmarks(programId);
+}
+
+function editProgramBenchmark(programId, benchmarkId) {
+  const b = benchmarksForProgram(programId).find((x) => x.id === benchmarkId);
+  if (!b) return;
+  // The id is deliberately left alone: it's what every tagged workout and every
+  // stored member result points at.
+  const name = prompt("Benchmark name", b.name);
+  if (name === null) return;
+  if (name.trim()) b.name = name.trim();
+  const subtitle = prompt("Short description", b.subtitle);
+  if (subtitle !== null) b.subtitle = subtitle.trim();
+  syncBenchmarksToMemberApp();
+  renderScopeDetail();
+}
+
+function removeProgramBenchmark(programId, benchmarkId) {
+  const program = programById(programId);
+  if (!program) return;
+  const tagged = CIRCUITS.filter((c) => c.isBenchmark && c.benchmarkId === benchmarkId);
+  // Say what it costs before doing it: those workouts lose their tag, and
+  // members keep results for a benchmark that no longer exists.
+  const warning = tagged.length
+    ? `${tagged.length} workout${tagged.length === 1 ? " is" : "s are"} tagged as this benchmark. Removing it leaves ${tagged.length === 1 ? "that workout" : "those workouts"} untagged, and members keep past results with nothing to compare them to.\n\nRemove anyway?`
+    : "Remove this benchmark?";
+  if (!confirm(warning)) return;
+  program.benchmarks = (program.benchmarks || []).filter((b) => b.id !== benchmarkId);
+  tagged.forEach((c) => { c.isBenchmark = false; c.benchmarkId = null; });
+  syncBenchmarksToMemberApp();
+  renderScopeDetail();
+}
+
+// Same localStorage bridge as circuits, messages and teams.
+function syncBenchmarksToMemberApp() {
+  const payload = PROGRAMS
+    .filter((p) => (p.benchmarks || []).length)
+    .map((p) => ({ programId: p.id, benchmarks: p.benchmarks.map((b) => ({ ...b })) }));
+  localStorage.setItem(LIVE_BENCHMARKS_KEY, JSON.stringify(payload));
+}
+
 function renderScopeDetail() {
   // Before the guard: the tree's counts move when workouts are added, deleted
   // or copied out of the open folder, and some of those paths return early.
@@ -1738,6 +1859,7 @@ function renderScopeDetail() {
     document.getElementById("folder-detail-edit-btn").style.display = folder.live ? "none" : "";
   }
 
+  renderProgramBenchmarks(isProgram ? currentScope.id : null);
   renderCircuitVariantFilter();
   const rows = currentScopeCircuits();
 
@@ -1755,7 +1877,7 @@ function renderScopeDetail() {
     return `
     <tr>
       <td><input type="checkbox" class="select-item-checkbox" data-role="select-circuit" data-circuit-id="${c.id}" ${selectedCircuitIds.has(c.id) ? "checked" : ""} /></td>
-      <td><strong>${c.title}</strong>${c.variant ? ` <span class="variant-pill variant-${c.variant}">${(PROGRAM_VARIANTS.find((v) => v.key === c.variant) || {}).label || c.variant}</span>` : ""}${c.category !== "circuit" && c.category !== "structured" ? ` <span class="status-pill">${categoryLabel(c.category)}</span>` : ""}${c.isBenchmark ? ` <span class="status-pill benchmark-pill">${icon("trophy")} ${benchmarkById(c.benchmarkId)?.name || "Benchmark"}</span>` : ""}<br /><span style="color:var(--deepblue);font-weight:700;font-size:11px;">${c.focus} · ${c.difficulty}</span></td>
+      <td><strong>${c.title}</strong>${c.variant ? ` <span class="variant-pill variant-${c.variant}">${(PROGRAM_VARIANTS.find((v) => v.key === c.variant) || {}).label || c.variant}</span>` : ""}${c.category !== "circuit" && c.category !== "structured" ? ` <span class="status-pill">${categoryLabel(c.category)}</span>` : ""}${c.isBenchmark ? ` <span class="status-pill benchmark-pill">${icon("trophy")} ${esc(benchmarkById(c.benchmarkId, circuitProgramId(c))?.name || "Benchmark")}</span>` : ""}<br /><span style="color:var(--deepblue);font-weight:700;font-size:11px;">${c.focus} · ${c.difficulty}</span></td>
       ${showWhere ? `<td>${isWeek ? availabilityCellHtml(c) : (folder ? folder.name : "—")}</td>` : ""}
       <td class="col-tight">${c.blocks.length} blocks</td>
       <td>
@@ -2182,7 +2304,7 @@ function openBuilder(folderId) {
   document.getElementById("builder-difficulty").value = "Intermediate";
   document.getElementById("builder-desc").value = "";
   document.getElementById("builder-is-benchmark").checked = false;
-  document.getElementById("builder-benchmark-select").innerHTML = BENCHMARKS.map((b) => `<option value="${b.id}">${b.name} — ${b.subtitle}</option>`).join("");
+  document.getElementById("builder-benchmark-select").innerHTML = benchmarkOptionsHtml();
   document.getElementById("builder-benchmark-select-wrap").style.display = "none";
   builderBlocks = [];
   builderActiveSlot = null;
@@ -2387,7 +2509,7 @@ function openEditBuilder(circuitId) {
   document.getElementById("builder-difficulty").value = circuit.difficulty;
   document.getElementById("builder-desc").value = circuit.desc;
   document.getElementById("builder-is-benchmark").checked = !!circuit.isBenchmark;
-  document.getElementById("builder-benchmark-select").innerHTML = BENCHMARKS.map((b) => `<option value="${b.id}">${b.name} — ${b.subtitle}</option>`).join("");
+  document.getElementById("builder-benchmark-select").innerHTML = benchmarkOptionsHtml();
   document.getElementById("builder-benchmark-select-wrap").style.display = circuit.isBenchmark ? "" : "none";
   if (circuit.isBenchmark) document.getElementById("builder-benchmark-select").value = circuit.benchmarkId;
   builderSlotId = circuit.slotId || null;
@@ -2968,6 +3090,10 @@ function syncCircuitToMemberApp(circuit) {
 // its name, and who else is on it. Same limitation as the rest of the bridge —
 // it reaches a member app running in this browser, and a real backend is what
 // makes it reach a phone.
+// Benchmarks belong to a program and reach the member app the same way
+// circuits do (2026-09-05).
+const LIVE_BENCHMARKS_KEY = "burnClubProgramBenchmarks";
+
 const LIVE_TEAMS_KEY = "burnClubLiveChallengeTeams";
 
 // Every team chat shows up in admin's inbox alongside the program and custom
@@ -3752,6 +3878,15 @@ document.addEventListener("click", (e) => {
   if (action === "reset-block-note") {
     resetBlockNote(el.dataset.noteType);
   }
+  if (action === "add-benchmark-to-program" && currentScope && currentScope.type === "program") {
+    addBenchmarkToProgram(currentScope.id);
+  }
+  if (action === "edit-program-benchmark" && currentScope && currentScope.type === "program") {
+    editProgramBenchmark(currentScope.id, el.dataset.benchmarkId);
+  }
+  if (action === "remove-program-benchmark" && currentScope && currentScope.type === "program") {
+    removeProgramBenchmark(currentScope.id, el.dataset.benchmarkId);
+  }
   if (action === "open-app-setting") {
     openAppSettingPanel(el.dataset.panel);
   }
@@ -3801,17 +3936,6 @@ document.addEventListener("click", (e) => {
     const i = rowIndex(el, "#settings-cardio-rows .settings-cardio-row");
     APP_SETTINGS.cardioTypes = APP_SETTING_PANELS.cardioTypes.read().cardioTypes;
     APP_SETTINGS.cardioTypes.splice(i, 1);
-    renderAppSettingPanel();
-  }
-  if (action === "add-benchmark") {
-    APP_SETTINGS.benchmarks = APP_SETTING_PANELS.benchmarks.read().benchmarks;
-    APP_SETTINGS.benchmarks.push({ id: "", name: "", subtitle: "", scoreType: "rounds" });
-    renderAppSettingPanel();
-  }
-  if (action === "remove-benchmark") {
-    const i = rowIndex(el, "#settings-benchmark-rows .settings-benchmark-row");
-    APP_SETTINGS.benchmarks = APP_SETTING_PANELS.benchmarks.read().benchmarks;
-    APP_SETTINGS.benchmarks.splice(i, 1);
     renderAppSettingPanel();
   }
   if (action === "add-notif-type") {
@@ -4685,31 +4809,6 @@ const APP_SETTING_PANELS = {
     },
   },
 
-  benchmarks: {
-    eyebrow: "Member Experience",
-    title: "Benchmarks",
-    desc: "The repeatable tests on a member's Progress tab. Rounds scores rank highest-first; time scores rank fastest-first, so the score type decides what counts as an improvement.",
-    render: () => `
-      <div id="settings-benchmark-rows">${APP_SETTINGS.benchmarks.map(benchmarkRowHtml).join("")}</div>
-      <button class="btn-ghost-lg small" data-action="add-benchmark">+ Add a benchmark</button>`,
-    read: () => {
-      const benchmarks = [];
-      document.querySelectorAll("#settings-benchmark-rows .settings-benchmark-row").forEach((row) => {
-        const name = row.querySelector("[data-benchmark-name]").value.trim();
-        if (!name) return;
-        benchmarks.push({
-          // Existing benchmarks keep their id so their result history still
-          // matches; a new one gets a slug from its name.
-          id: row.dataset.benchmarkId || slugify("benchmark", name),
-          name,
-          subtitle: row.querySelector("[data-benchmark-subtitle]").value.trim(),
-          scoreType: row.querySelector("[data-benchmark-score]").value,
-        });
-      });
-      return { benchmarks };
-    },
-  },
-
   checkin: {
     eyebrow: "Member Experience",
     title: "Daily Check-In",
@@ -4862,32 +4961,6 @@ function cardioRowHtml(t) {
     </div>`;
 }
 
-const BENCHMARK_SCORE_TYPES = [
-  { value: "rounds", label: "Rounds / reps — more is better" },
-  { value: "time", label: "Time — faster is better" },
-];
-
-function benchmarkRowHtml(b) {
-  return `
-    <div class="settings-note-card settings-benchmark-row" data-benchmark-id="${esc(b.id || "")}">
-      <div class="settings-note-head">
-        <span class="settings-note-type">Benchmark</span>
-        <button class="btn-ghost-lg small btn-danger" data-action="remove-benchmark">Remove</button>
-      </div>
-      <label class="modal-field">Name
-        <input type="text" data-benchmark-name value="${esc(b.name || "")}" placeholder="e.g. The Gauntlet" />
-      </label>
-      <label class="modal-field">Description
-        <input type="text" data-benchmark-subtitle value="${esc(b.subtitle || "")}" placeholder="e.g. 12-Minute AMRAP" />
-      </label>
-      <label class="modal-field">Scored by
-        <select data-benchmark-score>
-          ${BENCHMARK_SCORE_TYPES.map((o) => `<option value="${o.value}" ${o.value === (b.scoreType || "rounds") ? "selected" : ""}>${o.label}</option>`).join("")}
-        </select>
-      </label>
-      ${b.id ? `<p class="settings-field-help">Renaming keeps this benchmark's result history. Removing it hides the history too.</p>` : ""}
-    </div>`;
-}
 
 function notifRowHtml(n) {
   return `

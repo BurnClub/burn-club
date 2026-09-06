@@ -4463,6 +4463,7 @@ function loadChallengeTeams() {
 
 function init() {
   loadChallengeTeams();
+  loadProgramBenchmarks();
   COMPLETIONS = loadCompletions();
   CHECKINS = loadCheckins();
   BENCHMARK_RESULTS = loadBenchmarkResults();

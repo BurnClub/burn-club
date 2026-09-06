@@ -203,6 +203,20 @@
               <button class="btn-primary" id="new-circuit-btn">+ New Workout</button>
             </header>
 
+            <!-- Benchmarks, on the program that owns them (2026-09-05). Only
+                 shown on a program scope: a folder or a week is a slice of a
+                 program's workouts, not the program itself. -->
+            <section class="program-benchmarks" id="program-benchmarks" style="display:none;">
+              <div class="program-benchmarks-head">
+                <div>
+                  <h2>Benchmarks</h2>
+                  <p class="challenge-detail-meta">Retests for this program. Tag a workout as one in the builder, and members see their history for it in Progress.</p>
+                </div>
+                <button class="btn-ghost-lg small" data-action="add-benchmark-to-program">+ Add Benchmark</button>
+              </div>
+              <div id="program-benchmark-list"></div>
+            </section>
+
             <!-- Variant filter (2026-08-15). A week folder holds both variants of
                  every session, so without this the table lists each workout twice
                  with identical text and no way to tell them apart. -->
@@ -1207,13 +1221,6 @@
             <span>
               <span class="settings-nav-name">Cardio Activities</span>
               <span class="settings-nav-desc">What members can log, and the unit each one is measured in</span>
-            </span>
-            <span class="settings-nav-caret">›</span>
-          </button>
-          <button class="settings-nav-row" data-action="open-app-setting" data-panel="benchmarks">
-            <span>
-              <span class="settings-nav-name">Benchmarks</span>
-              <span class="settings-nav-desc">The repeatable tests on a member's Progress tab</span>
             </span>
             <span class="settings-nav-caret">›</span>
           </button>

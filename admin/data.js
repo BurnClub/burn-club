@@ -141,6 +141,15 @@ const PROGRAMS = [
     memberCount: 214,
     circuitsPerWeek: 3,
     description: "The flagship full-body circuit program — 3 new circuits every week.",
+    // Owned by the program (2026-09-05, Chris: "a place within the program,
+    // burn club specifically, where we keep the benchmarks"). Another program
+    // can carry its own set, or none — a retest only means anything against
+    // the programming it belongs to.
+    benchmarks: [
+      { id: "benchmark-a", name: "Benchmark A", subtitle: "The Gauntlet — 12-Minute AMRAP", scoreType: "rounds" },
+      { id: "benchmark-b", name: "Benchmark B", subtitle: "Sprint 500 — For Time", scoreType: "time" },
+      { id: "benchmark-c", name: "Benchmark C", subtitle: "Endurance Test — 15-Minute AMRAP", scoreType: "rounds" },
+    ],
   },
   {
     id: "thirty-minute-burn",
@@ -521,11 +530,6 @@ const APP_SETTINGS_DEFAULTS = {
     { id: "Bike", unitLabel: "Distance (mi)", step: "0.1" },
     { id: "Stair Stepper", unitLabel: "Flights Climbed", step: "1" },
   ],
-  benchmarks: [
-    { id: "benchmark-a", name: "Benchmark A", subtitle: "The Gauntlet — 12-Minute AMRAP", scoreType: "rounds" },
-    { id: "benchmark-b", name: "Benchmark B", subtitle: "Sprint 500 — For Time", scoreType: "time" },
-    { id: "benchmark-c", name: "Benchmark C", subtitle: "Endurance Test — 15-Minute AMRAP", scoreType: "rounds" },
-  ],
   // The two question keys are fixed: they're the field names inside every
   // stored check-in and the two series on the Progress chart. Wording and the
   // scale ends are free to change; adding a third question is not a settings
@@ -696,6 +700,8 @@ const CIRCUITS = [
     programId: "burn-club",
     availableFrom: SEED_NEXT_WEEK,
     category: "circuit",
+    isBenchmark: true,
+    benchmarkId: "benchmark-a",
     tag: "New",
     title: "Power Hour",
     focus: "Full Body",
@@ -891,15 +897,10 @@ const SCHEDULE_TEMPLATES = {
 // don't set these, members do, on their own Profile); seeded here since admin
 // has no live connection to the member app's real localStorage-backed picks.
 // ---------------- Benchmarks ----------------
-// Fixed retest slots (A/B/C) a workout can be tagged as when it's created —
-// matches the member app's BENCHMARKS exactly (name, format, scoreType),
-// since a benchmark's identity/scoring format doesn't change between
-// programmings, only the specific exercises inside it might.
-const BENCHMARKS = [
-  { id: "benchmark-a", name: "Benchmark A", subtitle: "The Gauntlet — 12-Minute AMRAP", scoreType: "rounds" },
-  { id: "benchmark-b", name: "Benchmark B", subtitle: "Sprint 500 — For Time", scoreType: "time" },
-  { id: "benchmark-c", name: "Benchmark C", subtitle: "Endurance Test — 15-Minute AMRAP", scoreType: "rounds" },
-];
+// Live on the program now — see PROGRAMS above, and benchmarksForProgram() in
+// app.js. There used to be a standalone list here as well as a copy in
+// APP_SETTINGS, which meant renaming a benchmark in Settings changed it for
+// members but not in the workout builder's dropdown. One owner now.
 
 const MEMBERS = [
   { id: "priya-k", name: "Priya K.", email: "priya.k@example.com", program: "burn-club", streak: 10, memberSince: "Jan 2025", badge: "Founding Member", status: "active", notes: "", challengePoints: 195, pointAdjustment: 10, habits: ["10,000 Steps", "100oz Water", "Outdoor Activity"] },

@@ -1995,3 +1995,40 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   cursor: pointer;
 }
 .settings-checkbox input { width: 16px; height: 16px; cursor: pointer; }
+
+/* ---- Program benchmarks (2026-09-05) ---- */
+.program-benchmarks {
+  background: var(--card-white, #FFFFFF);
+  border: 1px solid rgba(23, 36, 63, 0.08);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  margin-bottom: 18px;
+}
+.program-benchmarks-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.program-benchmarks-head h2 {
+  margin: 0 0 2px;
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.program-benchmark-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(23, 36, 63, 0.08);
+}
+.program-benchmark-main { min-width: 0; }
+.program-benchmark-name { margin: 0; font-size: 15px; font-weight: 800; color: var(--ink); }
+.program-benchmark-sub { margin: 2px 0 0; font-size: 13px; font-weight: 600; color: var(--deepblue); }
+.program-benchmark-meta { margin: 4px 0 0; font-size: 11px; font-weight: 700; color: var(--deepblue); opacity: 0.8; }
+.program-benchmark-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.program-benchmark-empty { margin: 0; font-size: 13px; font-weight: 600; color: var(--deepblue); }
