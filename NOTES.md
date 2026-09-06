@@ -92,10 +92,15 @@ letter.
 
 **Not yet assessed — needs its own pass**
 
-- **Exercise video captions or transcripts** (1.2.2, Level A). This lands
-  directly on the video project: every demo video needs a caption track or an
-  equivalent text alternative. Cheapest if it's part of producing them rather
-  than retrofitted across ~600 workouts.
+- **Exercise video alternatives — largely already satisfied** (corrected
+  2026-09-05). The demo videos are filmed and silent. Captions (1.2.2) apply
+  to *audio* in video, so they don't apply here at all — the relevant criterion
+  is 1.2.1, which a text alternative conveying the same information satisfies.
+  `EXERCISE_LIBRARY.technique` is that alternative and already exists for every
+  exercise. No refilming, no voiceover, no caption tracks.
+  What's left is narrower: make sure every exercise actually *has* technique
+  text (the admin validation report would catch the gaps), and that the text
+  genuinely describes the movement rather than just cueing it.
 - **Timing** (2.2.1). The app is built out of countdowns. There is an explicit
   exception where timing is essential to the activity, which exercise timing
   plausibly meets — but that's a position worth writing down deliberately

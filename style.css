@@ -3400,3 +3400,35 @@ h1, h2, h3 {
   outline: 3px solid var(--accent-text);
   outline-offset: 2px;
 }
+
+/* ---- Read the technique aloud (2026-09-05) ---- */
+.player-technique-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.player-technique-row .player-technique-toggle { flex: 1; min-width: 0; }
+.player-technique-speak {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  /* 36px, comfortably over the 24px minimum target — it gets tapped with
+     sweaty hands mid-set. */
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  color: var(--text);
+  cursor: pointer;
+}
+.player-technique-speak svg { width: 17px; height: 17px; }
+.player-technique-speak:active { transform: scale(0.96); }
+/* Filled while it's talking, so a second tap to stop is an obvious thing to do. */
+.player-technique-speak.speaking {
+  background: var(--chip);
+  border-color: var(--chip);
+  color: var(--chip-text);
+}

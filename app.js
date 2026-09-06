@@ -2404,17 +2404,63 @@ function closeBlockNotes() {
 // exercises, not a single one under the title, so there's no one technique
 // to show there yet). Always collapses back down on a new exercise so it
 // never shows stale text left open from the previous one.
+// ---------------- Speaking the technique cue (2026-09-05) ----------------
+// The demo videos are silent, so EXERCISE_LIBRARY.technique is already their
+// text alternative and nothing here is required for that. This is for the
+// member mid-set, whose eyes are on the movement rather than the phone.
+//
+// Uses the browser's own speech synthesis — no audio files, nothing to record,
+// and it reads whatever the technique text says, so re-wording a cue in the
+// library changes what's spoken with no other work.
+//
+// Deliberately on demand rather than automatic: a voice starting by itself
+// every time the exercise changes would be worse than useless in a gym.
+function canSpeak() {
+  return typeof window !== "undefined" && "speechSynthesis" in window;
+}
+
+let speakingNow = false;
+
+function stopSpeaking() {
+  if (!canSpeak()) return;
+  window.speechSynthesis.cancel();
+  speakingNow = false;
+  document.querySelectorAll(".player-technique-speak.speaking")
+    .forEach((b) => b.classList.remove("speaking"));
+}
+
+function speakText(text, button) {
+  if (!canSpeak() || !text) return;
+  // Second tap stops it — the same button both starts and interrupts, because
+  // mid-workout the thing you most want is to shut it up.
+  if (speakingNow) { stopSpeaking(); return; }
+  stopSpeaking();
+  const utterance = new SpeechSynthesisUtterance(text);
+  // A shade under default: these are instructions being followed in real time.
+  utterance.rate = 0.95;
+  utterance.onend = stopSpeaking;
+  utterance.onerror = stopSpeaking;
+  speakingNow = true;
+  if (button) button.classList.add("speaking");
+  window.speechSynthesis.speak(utterance);
+}
+
 function setPlayerExerciseTechnique(exerciseName) {
+  const row = document.getElementById("player-technique-row");
   const toggle = document.getElementById("player-technique-toggle");
   const body = document.getElementById("player-technique-body");
+  const speak = document.getElementById("player-technique-speak");
   toggle.classList.remove("expanded");
   body.classList.remove("expanded");
+  // A cue for the previous exercise must not carry on over this one.
+  stopSpeaking();
   const ex = exerciseName ? EXERCISE_LIBRARY.find((x) => x.name === exerciseName) : null;
   if (ex && ex.technique) {
-    toggle.style.display = "flex";
+    row.style.display = "flex";
     body.textContent = ex.technique;
+    speak.style.display = canSpeak() ? "flex" : "none";
   } else {
-    toggle.style.display = "none";
+    row.style.display = "none";
     body.textContent = "";
   }
 }
@@ -3504,6 +3550,7 @@ const Player = {
 
   exit() {
     this.stopHeartbeat();
+    stopSpeaking();
     // Leaving no longer destroys the session (2026-08-23, Chris). The X sits
     // in the top-left corner, exactly where a thumb rests holding a phone, and
     // it used to wipe the workout on a single tap with no confirmation. Rather
@@ -4957,6 +5004,9 @@ document.addEventListener("DOMContentLoaded", () => {
     updateCardioActivityPicker();
   });
   document.getElementById("player-pause-btn").addEventListener("click", () => Player.togglePause());
+  document.getElementById("player-technique-speak").addEventListener("click", (e) => {
+    speakText(document.getElementById("player-technique-body").textContent, e.currentTarget);
+  });
   document.getElementById("player-technique-toggle").addEventListener("click", () => {
     document.getElementById("player-technique-toggle").classList.toggle("expanded");
     document.getElementById("player-technique-body").classList.toggle("expanded");

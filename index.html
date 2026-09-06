@@ -353,9 +353,19 @@
              detail popup uses. Only shown for single-exercise phases (work/
              rest/emom/sets) since AMRAP/superset show a list of exercises,
              not one under the title — see setPlayerExerciseTechnique(). -->
-        <button class="player-technique-toggle" id="player-technique-toggle" type="button" style="display:none;">
-          <span>Technique</span><span class="player-technique-caret">⌄</span>
-        </button>
+        <div class="player-technique-row" id="player-technique-row" style="display:none;">
+          <button class="player-technique-toggle" id="player-technique-toggle" type="button">
+            <span>Technique</span><span class="player-technique-caret">⌄</span>
+          </button>
+          <!-- Reads the cue aloud (2026-09-05, Chris). The demo videos are
+               silent, so this text is already the video's text alternative —
+               speaking it is for the member mid-movement, whose eyes are on
+               the exercise rather than the phone. Hidden entirely where the
+               browser has no speech synthesis. -->
+          <button class="player-technique-speak" id="player-technique-speak" type="button" aria-label="Read technique aloud">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+          </button>
+        </div>
         <p class="player-technique-body" id="player-technique-body"></p>
 
         <div class="player-center" id="player-center">
