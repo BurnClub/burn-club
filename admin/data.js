@@ -542,7 +542,21 @@ const APP_SETTINGS_DEFAULTS = {
     questions: [
       { key: "mental", label: "Mentally", low: "Drained", high: "Sharp" },
       { key: "physical", label: "Physically", low: "Beat up", high: "Strong" },
+      // Hours, not a 1-10 feeling — same 0-10 range, so it plots on the same
+      // chart, but it's a measurement rather than a rating (2026-09-06).
+      { key: "sleepHours", label: "Hours slept", low: "0", high: "10", unit: "hrs", min: 0 },
     ],
+    // Four choices, so it's an answer rather than a scale. Labels are Chris's
+    // to reword; the stored values are the fixed keys underneath them.
+    sleepQuality: {
+      label: "How did you sleep?",
+      options: [
+        { value: "bad", label: "Bad" },
+        { value: "ok", label: "OK" },
+        { value: "good", label: "Good" },
+        { value: "great", label: "Great" },
+      ],
+    },
   },
   // Cosmetic until the native build gives them somewhere to go, but the
   // defaults decide whether an imported member's first week is useful or

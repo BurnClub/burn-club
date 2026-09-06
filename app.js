@@ -452,6 +452,22 @@ function closePRPicker() {
 
 // The moment worth catching: shown on the completion screen when a weight just
 // beat the previous best, rather than leaving it to be discovered in Progress.
+// Saved against the completion entry's id, so the note follows the session
+// rather than the day — two workouts in a day get their own notes.
+function saveSessionNoteFromForm() {
+  const input = document.getElementById("session-note-input");
+  if (!input || !currentCompletionEntry) return;
+  const text = input.value.trim();
+  if (text) SESSION_NOTES[currentCompletionEntry.id] = text;
+  else delete SESSION_NOTES[currentCompletionEntry.id];
+  saveSessionNotes();
+}
+
+function resetSessionNoteField() {
+  const input = document.getElementById("session-note-input");
+  if (input) input.value = "";
+}
+
 function renderPRBanner(prs) {
   const el = document.getElementById("pr-banner");
   if (!el) return;
@@ -519,13 +535,14 @@ function todaysCheckin() {
 
 // One entry per day — checking in twice edits the day rather than stacking a
 // second row, so the trend has exactly one point per date.
-function saveCheckin({ mental, physical, note }) {
+function saveCheckin({ mental, physical, sleepHours, sleepQuality, note }) {
   const date = dateKey(new Date());
   const existing = checkinFor(date);
+  const fields = { mental, physical, sleepHours, sleepQuality, note };
   if (existing) {
-    Object.assign(existing, { mental, physical, note });
+    Object.assign(existing, fields);
   } else {
-    CHECKINS.push({ date, mental, physical, note, sharedAt: null });
+    CHECKINS.push({ date, ...fields, sharedAt: null });
   }
   CHECKINS.sort((a, b) => (a.date < b.date ? -1 : 1));
   saveCheckins();
@@ -539,6 +556,259 @@ function saveCheckin({ mental, physical, note }) {
 // modal and the post-workout nudge. The Home shortcut icon and their existing
 // history both stay: turning the prompt off should stop the asking, not
 // delete the feature or lock them out of logging a day they do want to.
+// ---------------- Notebook (2026-09-06) ----------------
+// One place for everything the member wrote: the daily check-in, the note they
+// left after a session, their pinned bests, and free-form notes. What the app
+// worked out for itself — charts, streaks, wearable figures — stays on
+// Progress. That split is the whole organising rule; if a thing is computed it
+// doesn't belong in here.
+//
+// Opens from the topbar icon that used to open the check-in directly. The
+// check-in now lives on the Today page, so that's still the way in.
+const NOTEBOOK_NOTES_KEY = "burnclub-notebook-notes";
+const SESSION_NOTES_KEY = "burnclub-session-notes";
+
+const NOTEBOOK_TABS = [
+  { id: "today", label: "Today" },
+  { id: "log", label: "Log" },
+  { id: "prs", label: "PRs" },
+  { id: "notes", label: "Notes" },
+];
+let notebookTab = "today";
+
+// Free-form notes, split by whether they're meant for the coach — that's a
+// different kind of note, because it has a destination.
+function loadNotebookNotes() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(memberKey(NOTEBOOK_NOTES_KEY)) || "null");
+    if (stored && Array.isArray(stored.coach) && Array.isArray(stored.other)) return stored;
+  } catch (e) {}
+  return { coach: [], other: [] };
+}
+let NOTEBOOK_NOTES = { coach: [], other: [] };
+function saveNotebookNotes() {
+  localStorage.setItem(memberKey(NOTEBOOK_NOTES_KEY), JSON.stringify(NOTEBOOK_NOTES));
+}
+
+// A note attached to one workout, keyed by the completion entry's id.
+function loadSessionNotes() {
+  try {
+    return JSON.parse(localStorage.getItem(memberKey(SESSION_NOTES_KEY)) || "{}") || {};
+  } catch (e) { return {}; }
+}
+let SESSION_NOTES = {};
+function saveSessionNotes() {
+  localStorage.setItem(memberKey(SESSION_NOTES_KEY), JSON.stringify(SESSION_NOTES));
+}
+function sessionNoteFor(entryId) {
+  return (SESSION_NOTES[entryId] || "").trim();
+}
+
+function qualityLabel(value) {
+  const opt = APP_SETTINGS.checkin.sleepQuality.options.find((o) => o.value === value);
+  return opt ? opt.label : null;
+}
+
+function openNotebook(tab) {
+  notebookTab = tab || "today";
+  renderNotebook();
+  document.getElementById("notebook-overlay").classList.add("visible");
+}
+
+function closeNotebook() {
+  document.getElementById("notebook-overlay").classList.remove("visible");
+}
+
+function renderNotebook() {
+  document.getElementById("notebook-tabs").innerHTML = NOTEBOOK_TABS.map((t) => `
+    <button class="notebook-tab ${t.id === notebookTab ? "active" : ""}" role="tab"
+            aria-selected="${t.id === notebookTab}" data-notebook-tab="${t.id}">${t.label}</button>
+  `).join("");
+  const body = document.getElementById("notebook-content");
+  body.innerHTML = {
+    today: notebookToday, log: notebookLog, prs: notebookPRs, notes: notebookNotes,
+  }[notebookTab]();
+  document.getElementById("notebook-page").scrollTop = 0;
+  wireNotebookBody();
+}
+
+// ---- Today -----------------------------------------------------------------
+
+function notebookToday() {
+  const today = dateKey(new Date());
+  const checkin = checkinFor(today);
+  const done = COMPLETIONS.filter((c) => c.date === today);
+  const session = done[done.length - 1] || null;
+
+  const scale = (q, value) => {
+    if (value == null || value === "") return `<div class="nb-row"><b>${esc(q.label)}</b><span class="nb-val">Not recorded</span></div>`;
+    const pct = Math.max(0, Math.min(100, (value / 10) * 100));
+    const colour = (CHECKIN_SERIES.find((cs) => cs.key === q.key) || {}).color || "#788CE3";
+    return `<div class="nb-row"><b>${esc(q.label)}</b>
+      <div class="nb-bar"><i style="width:${pct}%;background:${colour}"></i></div>
+      <em>${value}</em></div>`;
+  };
+
+  const quality = checkin ? qualityLabel(checkin.sleepQuality) : null;
+  const note = session ? sessionNoteFor(session.id) : "";
+
+  return `
+    <p class="nb-title">${new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}</p>
+    <p class="nb-sub">${session ? esc(session.title) + " · " + session.minutes + " min" : "Nothing logged yet"}</p>
+
+    <p class="nb-sect">How you felt</p>
+    ${checkin
+      ? APP_SETTINGS.checkin.questions.map((q) => scale(q, checkin[q.key])).join("") +
+        `<div class="nb-row"><b>Sleep quality</b><span class="nb-val">${quality ? esc(quality) : "Not recorded"}</span></div>`
+      : `<p class="nb-empty">You haven't checked in today.</p>
+         <button class="nb-action" data-notebook-action="checkin">+ Check in now</button>`}
+
+    <p class="nb-sect">Session note</p>
+    ${session
+      ? (note
+          ? `<p class="nb-note">${esc(note)}</p><button class="nb-action" data-notebook-action="edit-session-note" data-entry="${esc(session.id)}">Edit</button>`
+          : `<button class="nb-action" data-notebook-action="edit-session-note" data-entry="${esc(session.id)}">+ Add a note about today's session</button>`)
+      : `<p class="nb-empty">Finish a workout and you can write about it here.</p>`}
+
+    <p class="nb-sect">What you lifted</p>
+    ${todaysLiftsHtml(done)}
+  `;
+}
+
+function todaysLiftsHtml(done) {
+  const lifts = [];
+  done.forEach((c) => {
+    Object.entries(c.weights || {}).forEach(([name, weight]) => lifts.push({ name, weight }));
+  });
+  if (!lifts.length) return `<p class="nb-empty">No weights logged today.</p>`;
+  return lifts.map((l) => {
+    const best = personalBestFor(l.name);
+    const isPR = best && Number(l.weight) >= best.best;
+    return `<div class="nb-lift"><b>${esc(l.name)}</b><span>${l.weight} <small>lbs</small>${isPR ? `<span class="nb-pill">PR</span>` : ""}</span></div>`;
+  }).join("");
+}
+
+// ---- Log -------------------------------------------------------------------
+
+function notebookLog() {
+  // Every day the member put something down — a check-in, a session, or a note.
+  const days = new Map();
+  CHECKINS.forEach((c) => days.set(c.date, { date: c.date, checkin: c }));
+  COMPLETIONS.forEach((c) => {
+    const d = days.get(c.date) || { date: c.date };
+    d.session = c;
+    days.set(c.date, d);
+  });
+  const rows = [...days.values()].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 40);
+  if (!rows.length) return `<p class="nb-title">Your log</p><p class="nb-empty">Nothing written down yet.</p>`;
+
+  const dot = (key, value) => {
+    if (value == null || value === "") return "";
+    const colour = (CHECKIN_SERIES.find((cs) => cs.key === key) || {}).color || "#788CE3";
+    return `<span><i class="nb-dot" style="background:${colour}"></i>${value}</span>`;
+  };
+
+  return `
+    <p class="nb-title">Your log</p>
+    <p class="nb-sub">${CHECKIN_SERIES.map((c) => esc(c.label)).join(" · ")}</p>
+    ${rows.map((r) => {
+      const note = r.session ? sessionNoteFor(r.session.id) : "";
+      const scores = CHECKIN_SERIES.map((cs) => dot(cs.key, r.checkin ? r.checkin[cs.key] : null)).join("");
+      return `
+        <div class="nb-logrow">
+          <span class="nb-d">${formatShortDate(r.date)}</span>
+          <span class="nb-t">${r.session ? esc(r.session.title) : "Rest day"}</span>
+          <span class="nb-scores">${scores}</span>
+        </div>
+        ${note ? `<p class="nb-note">${esc(note)}</p>` : ""}
+        ${r.checkin && r.checkin.note ? `<p class="nb-note">${esc(r.checkin.note)}</p>` : ""}
+      `;
+    }).join("")}
+  `;
+}
+
+// ---- PRs -------------------------------------------------------------------
+
+function notebookPRs() {
+  const shown = showcasedPersonalBests();
+  const eligible = personalBests();
+  if (!shown.length) {
+    return `
+      <p class="nb-title">Personal bests</p>
+      <p class="nb-sub">The lifts you're keeping an eye on</p>
+      <p class="nb-empty">${eligible.length
+        ? "Nothing pinned yet. When you beat a lift you'll be asked if you want it here."
+        : "Log a weight during a workout and your bests can show up here."}</p>
+      ${eligible.length ? `<button class="nb-action" data-notebook-action="choose-prs">+ Choose what shows here</button>` : ""}`;
+  }
+  return `
+    <p class="nb-title">Personal bests</p>
+    <p class="nb-sub">The lifts you're keeping an eye on</p>
+    ${shown.map((pr) => `
+      <div class="nb-lift"><b>${esc(pr.name)}</b><span>${pr.best} <small>lbs</small></span></div>
+      <p class="nb-meta">${formatShortDate(pr.date)}${pr.previous ? ` · up ${pr.best - pr.previous} on previous` : " · first at this weight"}</p>
+    `).join("")}
+    <button class="nb-action" data-notebook-action="choose-prs">+ Choose what shows here</button>`;
+}
+
+// ---- Notes -----------------------------------------------------------------
+
+function notebookNotes() {
+  const list = (items, kind) => items.length
+    ? items.map((t, i) => `<p class="nb-note" data-note-kind="${kind}" data-note-index="${i}">${esc(t)}</p>`).join("")
+    : `<p class="nb-empty">Nothing here yet.</p>`;
+  return `
+    <p class="nb-title">Notes</p>
+    <p class="nb-sub">Not tied to a day</p>
+    <p class="nb-sect first">For my coach</p>
+    ${list(NOTEBOOK_NOTES.coach, "coach")}
+    <button class="nb-action" data-notebook-action="add-note" data-kind="coach">+ Add</button>
+    <p class="nb-sect">Anything else</p>
+    ${list(NOTEBOOK_NOTES.other, "other")}
+    <button class="nb-action" data-notebook-action="add-note" data-kind="other">+ Add</button>`;
+}
+
+// ---- wiring ----------------------------------------------------------------
+
+function wireNotebookBody() {
+  document.querySelectorAll("#notebook-content [data-notebook-action]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const action = btn.dataset.notebookAction;
+      if (action === "checkin") { closeNotebook(); openCheckinModal(); return; }
+      if (action === "choose-prs") { closeNotebook(); openPRPicker(); return; }
+      if (action === "edit-session-note") {
+        const id = btn.dataset.entry;
+        const next = prompt("Note about this session", sessionNoteFor(id));
+        if (next === null) return;
+        if (next.trim()) SESSION_NOTES[id] = next.trim(); else delete SESSION_NOTES[id];
+        saveSessionNotes();
+        renderNotebook();
+        return;
+      }
+      if (action === "add-note") {
+        const kind = btn.dataset.kind;
+        const text = prompt(kind === "coach" ? "Something to ask your coach" : "Note");
+        if (!text || !text.trim()) return;
+        NOTEBOOK_NOTES[kind].push(text.trim());
+        saveNotebookNotes();
+        renderNotebook();
+      }
+    });
+  });
+  // Tapping an existing note edits or clears it.
+  document.querySelectorAll("#notebook-content [data-note-kind]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const kind = el.dataset.noteKind, i = Number(el.dataset.noteIndex);
+      const next = prompt("Edit note (clear it to delete)", NOTEBOOK_NOTES[kind][i]);
+      if (next === null) return;
+      if (next.trim()) NOTEBOOK_NOTES[kind][i] = next.trim();
+      else NOTEBOOK_NOTES[kind].splice(i, 1);
+      saveNotebookNotes();
+      renderNotebook();
+    });
+  });
+}
+
 // ---------------- Appearance (2026-09-04) ----------------
 // Three states, not two: "system" follows the phone, and light/dark pin it.
 // Stored per browser rather than per member — a phone is a phone whoever is
@@ -593,14 +863,32 @@ function dismissCheckinPrompt() {
 
 // ---- capture ---------------------------------------------------------------
 
+// The quality answer is its own control because four choices aren't a scale —
+// a slider would imply a precision that "Bad / OK / Good / Great" doesn't have.
+let checkinQuality = null;
+
+function renderCheckinQuality() {
+  const cfg = APP_SETTINGS.checkin.sleepQuality;
+  document.getElementById("checkin-quality-label").textContent = cfg.label;
+  document.getElementById("checkin-quality-row").innerHTML = cfg.options.map((o) => `
+    <button type="button" class="checkin-quality-btn ${o.value === checkinQuality ? "selected" : ""}"
+            data-quality="${esc(o.value)}" aria-pressed="${o.value === checkinQuality}">${esc(o.label)}</button>
+  `).join("");
+}
+
 function openCheckinModal() {
   const existing = todaysCheckin();
   const mental = document.getElementById("checkin-mental");
   const physical = document.getElementById("checkin-physical");
+  const sleep = document.getElementById("checkin-sleepHours");
   mental.value = existing ? existing.mental : 7;
   physical.value = existing ? existing.physical : 7;
+  sleep.value = existing && existing.sleepHours != null ? existing.sleepHours : 7;
   document.getElementById("checkin-mental-value").textContent = mental.value;
   document.getElementById("checkin-physical-value").textContent = physical.value;
+  document.getElementById("checkin-sleepHours-value").textContent = sleep.value;
+  checkinQuality = existing ? existing.sleepQuality || null : null;
+  renderCheckinQuality();
   document.getElementById("checkin-note").value = existing ? existing.note || "" : "";
   // Wording from Admin -> Settings -> Daily Check-In. The two question keys
   // stay fixed — they're the field names inside every stored check-in.
@@ -610,8 +898,12 @@ function openCheckinModal() {
   document.getElementById("checkin-note-prompt").innerHTML = `${esc(ci.notePrompt)} <em>Optional</em>`;
   document.getElementById("checkin-note").placeholder = ci.notePlaceholder;
   ci.questions.forEach((q) => {
+    const input = document.getElementById("checkin-" + q.key);
+    if (!input) return;
     const label = document.querySelector(`label[for="checkin-${q.key}"]`);
-    if (label) label.innerHTML = `${esc(q.label)} <span id="checkin-${q.key}-value">${document.getElementById("checkin-" + q.key).value}</span>/10`;
+    // Hours read "7.5 hrs"; the 1-10 ratings read "7/10".
+    const suffix = q.unit ? ` ${esc(q.unit)}` : "/10";
+    if (label) label.innerHTML = `${esc(q.label)} <span id="checkin-${q.key}-value">${input.value}</span>${suffix}`;
     const scale = document.getElementById(`checkin-${q.key}-scale`);
     if (scale) scale.innerHTML = `<span>${esc(q.low)}</span><span>${esc(q.high)}</span>`;
   });
@@ -630,6 +922,10 @@ function saveCheckinForm() {
   saveCheckin({
     mental: Number(document.getElementById("checkin-mental").value),
     physical: Number(document.getElementById("checkin-physical").value),
+    sleepHours: Number(document.getElementById("checkin-sleepHours").value),
+    // null rather than a default: not answering is different from answering
+    // "OK", and the read-back should be able to tell.
+    sleepQuality: checkinQuality,
     note: document.getElementById("checkin-note").value.trim(),
   });
   document.getElementById("checkin-saved").style.display = "block";
@@ -671,7 +967,11 @@ function renderCheckinAffordances() {
 // computed, not eyeballed. Don't swap either for a nicer-looking hue.
 const CHECKIN_SERIES = APP_SETTINGS.checkin.questions.map((q, i) => ({
   ...q,
-  color: ["#788CE3", "#E0685E"][i] || "#5C7A99",
+  // Third is a teal: measured 4.6:1 on the light card and 5.4:1 on the dark
+  // one, and separable from both the blue and the coral for the common forms
+  // of colour blindness. Identity never rests on colour alone here anyway —
+  // every series is labelled in the legend and at its last point.
+  color: ["#788CE3", "#E0685E", "#2F7D74"][i] || "#5C7A99",
 }));
 function recentCheckins(days) {
   const cutoff = new Date();
@@ -747,19 +1047,42 @@ function renderCheckinChart(entries) {
 
   const w = 300, h = 120, padL = 6, padR = 34, padT = 10, padB = 18;
   const x = (i) => padL + (i / (entries.length - 1)) * (w - padL - padR);
-  const y = (v) => padT + (1 - (v - 1) / 9) * (h - padT - padB);
+  // 0-10, not 1-10: hours slept can legitimately be under 1, and a rating of 1
+  // still lands inside the range.
+  const y = (v) => padT + (1 - v / 10) * (h - padT - padB);
 
-  const gridHtml = [1, 5.5, 10].map((v) =>
+  const gridHtml = [0, 5, 10].map((v) =>
     `<line class="checkin-grid" x1="${padL}" x2="${w - padR}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" />`
   ).join("");
 
-  const seriesHtml = CHECKIN_SERIES.map((s) => {
-    const d = entries.map((e, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(e[s.key]).toFixed(1)}`).join(" ");
-    const last = entries[entries.length - 1];
+  // Sleep only started being recorded partway through, so a series can begin
+  // mid-chart. Points with no value break the line rather than being drawn as
+  // zero — a member who wasn't asked didn't sleep zero hours.
+  const drawn = CHECKIN_SERIES.map((s) => {
+    const pts = entries.map((e, i) => ({ i, v: e[s.key] })).filter((p) => p.v != null && p.v !== "");
+    return pts.length ? { s, pts, last: pts[pts.length - 1] } : null;
+  }).filter(Boolean);
+
+  // Three series close together put their end labels on top of each other, so
+  // nudge any that land within a label's height of one another. Only the label
+  // moves — the dot stays on its real value.
+  const labels = drawn
+    .map((d) => ({ text: d.last.v, colour: d.s.color, y: y(d.last.v) }))
+    .sort((a, b) => a.y - b.y);
+  const MIN = 10;
+  labels.forEach((l, i) => { if (i && l.y - labels[i - 1].y < MIN) l.y = labels[i - 1].y + MIN; });
+
+  const seriesHtml = drawn.map(({ s, pts, last }) => {
+    let d = "", prev = null;
+    pts.forEach((p) => {
+      d += `${prev !== null && p.i === prev + 1 ? "L" : "M"}${x(p.i).toFixed(1)},${y(p.v).toFixed(1)} `;
+      prev = p.i;
+    });
+    const label = labels.find((l) => l.colour === s.color && l.text === last.v);
     return `
-      <path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-      <circle cx="${x(entries.length - 1).toFixed(1)}" cy="${y(last[s.key]).toFixed(1)}" r="4" fill="${s.color}" stroke="#fff" stroke-width="2" />
-      <text class="checkin-point-label" x="${(w - padR + 6).toFixed(1)}" y="${(y(last[s.key]) + 3.5).toFixed(1)}">${last[s.key]}</text>
+      <path d="${d.trim()}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="${x(last.i).toFixed(1)}" cy="${y(last.v).toFixed(1)}" r="4" fill="${s.color}" stroke="var(--card-white)" stroke-width="2" />
+      <text class="checkin-point-label" x="${(w - padR + 6).toFixed(1)}" y="${((label ? label.y : y(last.v)) + 3.5).toFixed(1)}">${last.v}</text>
     `;
   }).join("");
 
@@ -782,88 +1105,23 @@ function renderCheckinChart(entries) {
 let checkinListExpanded = false;
 
 function renderCheckinSection() {
-  const listEl = document.getElementById("checkin-entry-list");
-  if (!listEl) return;
+  const insightsEl = document.getElementById("checkin-insights");
+  if (!insightsEl) return;
   const entries = recentCheckins(28);
   renderCheckinChart(entries);
 
-  const insightsEl = document.getElementById("checkin-insights");
   const insights = checkinInsights();
   const offNote = checkinEnabled()
     ? ""
-    : `<p class="checkin-off-note">Daily prompt is off — turn it back on in Profile → Daily Check-In. You can still log a day from the icon on Home.</p>`;
+    : `<p class="checkin-off-note">Daily prompt is off — turn it back on in Profile → Daily Check-In. You can still log a day from the notebook on Home.</p>`;
   insightsEl.innerHTML = offNote + (insights.length
     ? insights.map((t) => `<p class="checkin-insight">${t}</p>`).join("")
     : "");
 
-  // Collapsed to the latest day by default (2026-08-19, Chris) — ten entries
-  // was most of the section's height. The chart and the insights stay put:
-  // they're the reason to open the section, and hiding them behind a tap would
-  // turn it back into a diary.
-  const all = [...entries].reverse().slice(0, 10);
-  const recent = checkinListExpanded ? all : all.slice(0, 1);
-  const hidden = all.length - recent.length;
-  listEl.innerHTML = recent.length
-    ? recent.map((e) => `
-        <div class="checkin-entry">
-          <div class="checkin-entry-head">
-            <span class="checkin-entry-date">${formatShortDate(e.date)}</span>
-            <span class="checkin-entry-scores">
-              <span class="checkin-score"><span class="checkin-swatch" style="background:${CHECKIN_SERIES[0].color}"></span>${e.mental}</span>
-              <span class="checkin-score"><span class="checkin-swatch" style="background:${CHECKIN_SERIES[1].color}"></span>${e.physical}</span>
-            </span>
-          </div>
-          ${e.note ? `<p class="checkin-entry-note">${e.note}</p>` : ""}
-          <button class="checkin-share-btn${e.sharedAt ? " shared" : ""}" data-share-checkin="${e.date}">
-            ${e.sharedAt ? "✓ Sent to your coach" : "Send to coach"}
-          </button>
-        </div>
-      `).join("")
-    : `<p class="checkin-empty">No check-ins yet.</p>`;
-
-  // Only worth a toggle when there's something behind it.
-  if (hidden > 0 || checkinListExpanded) {
-    listEl.insertAdjacentHTML("beforeend", `
-      <button class="checkin-more-btn" id="checkin-more-btn">
-        ${checkinListExpanded ? "Show less" : `Show ${hidden} more`}
-        <span class="checkin-caret">${checkinListExpanded ? "\u25B4" : "\u25BE"}</span>
-      </button>
-    `);
-    listEl.querySelector("#checkin-more-btn").addEventListener("click", () => {
-      checkinListExpanded = !checkinListExpanded;
-      renderCheckinSection();
-    });
-  }
-
-  listEl.querySelectorAll("[data-share-checkin]").forEach((btn) => {
-    btn.addEventListener("click", () => shareCheckin(btn.dataset.shareCheckin));
-  });
-}
-
-// The only way anything here leaves the member's phone, and it's one entry at
-// a time by hand. Goes into the existing coach DM thread, so staff see it as a
-// message rather than as a feed they can browse.
-function shareCheckin(dateStr) {
-  const entry = checkinFor(dateStr);
-  if (!entry || entry.sharedAt) return;
-  const lines = [
-    `Check-in — ${formatShortDate(entry.date)}`,
-    `Mentally ${entry.mental}/10 · Physically ${entry.physical}/10`,
-  ];
-  if (entry.note) lines.push(`"${entry.note}"`);
-  broadcastMessage({
-    id: "msg-" + Date.now(),
-    conversationId: `dm-${CURRENT_MEMBER.id}`,
-    senderId: CURRENT_MEMBER.id,
-    senderName: CURRENT_MEMBER.name,
-    isStaff: false,
-    text: lines.join("\n"),
-    time: "Just now",
-    read: true,
-  });
-  entry.sharedAt = dateKey(new Date());
-  saveCheckins();
-  renderCheckinSection();
+  // The written entries moved to the Notebook's Log (2026-09-06). This section
+  // is now the trend only — the chart and what it implies. The guard above is
+  // on the insights element rather than the list, which no longer exists here;
+  // guarding on the list would have skipped the chart too.
 }
 
 function lastWeightFor(exerciseName) {
@@ -3520,6 +3778,8 @@ const Player = {
     const prs = newPersonalBests(this.sessionWeights);
     const entry = logCompletion(this.circuit, this.sessionWeights);
     renderPRBanner(prs);
+    // A previous session's note must not be sitting in the box.
+    resetSessionNoteField();
     // The cardio block is part of the workout, but the minutes belong in the
     // cardio log too — otherwise they'd be buried inside a structured-workout
     // completion and never reach the mix donut or the cardio count
@@ -4486,6 +4746,8 @@ function init() {
   renderWearableSection();
 
   SHOWCASED_PRS = loadShowcasedPRs();
+  NOTEBOOK_NOTES = loadNotebookNotes();
+  SESSION_NOTES = loadSessionNotes();
   MY_HABITS = loadMyHabits();
   HABIT_CHECKS = loadHabitChecks();
   renderHabitsSection();
@@ -4545,6 +4807,14 @@ function wireStaticControls() {
   document.getElementById("invite-copy-btn").addEventListener("click", copyInviteLink);
   document.getElementById("open-appearance-btn").addEventListener("click", openAppearanceSettings);
   document.getElementById("appearance-close-btn").addEventListener("click", closeAppearanceSettings);
+  document.getElementById("notebook-close-btn").addEventListener("click", closeNotebook);
+  document.getElementById("notebook-scrim").addEventListener("click", closeNotebook);
+  document.getElementById("notebook-tabs").addEventListener("click", (e) => {
+    const tab = e.target.closest("[data-notebook-tab]");
+    if (!tab) return;
+    notebookTab = tab.dataset.notebookTab;
+    renderNotebook();
+  });
   document.getElementById("pr-picker-close-btn").addEventListener("click", closePRPicker);
   document.getElementById("open-checkin-settings-btn").addEventListener("click", openCheckinSettings);
   document.getElementById("checkin-settings-close-btn").addEventListener("click", closeCheckinSettings);
@@ -4951,8 +5221,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("[data-action='open-messages']").forEach((btn) => {
     btn.addEventListener("click", openMessagesInbox);
   });
-  document.querySelectorAll("[data-action='open-checkin']").forEach((btn) => {
-    btn.addEventListener("click", openCheckinModal);
+  document.querySelectorAll("[data-action='open-notebook']").forEach((btn) => {
+    btn.addEventListener("click", () => openNotebook("today"));
   });
   document.getElementById("thread-back-btn").addEventListener("click", openMessagesInbox);
   document.getElementById("thread-composer").addEventListener("submit", (e) => {
@@ -4986,11 +5256,23 @@ document.addEventListener("DOMContentLoaded", () => {
     closeCheckinModal();
   });
   document.getElementById("complete-checkin-nudge").addEventListener("click", openCheckinModal);
-  ["mental", "physical"].forEach((k) => {
+  ["mental", "physical", "sleepHours"].forEach((k) => {
     const slider = document.getElementById(`checkin-${k}`);
+    if (!slider) return;
     slider.addEventListener("input", () => {
-      document.getElementById(`checkin-${k}-value`).textContent = slider.value;
+      // The readout span is rebuilt by openCheckinModal, so look it up each
+      // time rather than caching a node that gets replaced.
+      const out = document.getElementById(`checkin-${k}-value`);
+      if (out) out.textContent = slider.value;
     });
+  });
+  // Delegated: the quality buttons are re-rendered whenever the modal opens.
+  document.getElementById("checkin-quality-row").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-quality]");
+    if (!btn) return;
+    // Tapping the selected one clears it — not answering stays possible.
+    checkinQuality = checkinQuality === btn.dataset.quality ? null : btn.dataset.quality;
+    renderCheckinQuality();
   });
   document.getElementById("cardio-log-btn").addEventListener("click", openCardioLogModal);
   document.getElementById("cardio-log-close-btn").addEventListener("click", closeCardioLogModal);
@@ -5023,6 +5305,7 @@ document.addEventListener("DOMContentLoaded", () => {
   rpeSlider.addEventListener("change", () => {
     if (!currentCompletionEntry) return;
     currentCompletionEntry.rpe = Number(rpeSlider.value);
+    saveSessionNoteFromForm();
     saveCompletions();
   });
   document.getElementById("benchmark-score-save-btn").addEventListener("click", saveBenchmarkScore);

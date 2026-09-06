@@ -4848,7 +4848,18 @@ const APP_SETTING_PANELS = {
             <input type="text" data-checkin-field="notePlaceholder" value="${esc(ci.notePlaceholder)}" />
           </label>
         </div>
-        <p class="settings-field-help">Adding a third scale isn't a settings change — every stored check-in holds exactly these two fields, and the Progress chart draws exactly two lines. Ask and it can be built properly.</p>`;
+        <h3 class="settings-subhead">Sleep quality</h3>
+        <p class="settings-field-help">Four choices rather than a scale. The wording is yours; the values stored underneath don't change, so renaming an option keeps every past answer intact.</p>
+        <div class="settings-note-card">
+          <label class="modal-field">Question
+            <input type="text" data-quality-field="label" value="${esc(APP_SETTINGS.checkin.sleepQuality.label)}" />
+          </label>
+          ${APP_SETTINGS.checkin.sleepQuality.options.map((o, i) => `
+            <label class="modal-field">Option ${i + 1}
+              <input type="text" data-quality-option="${esc(o.value)}" value="${esc(o.label)}" />
+            </label>`).join("")}
+        </div>
+        <p class="settings-field-help">A further scale beyond these three isn't a settings change — each one is a stored field on every check-in and a line on the Progress chart. Ask and it can be built properly.</p>`;
     },
     read: () => {
       const checkin = { questions: [] };
@@ -4862,8 +4873,19 @@ const APP_SETTING_PANELS = {
           const el = document.querySelector(`[data-checkin-q="${q.key}"][data-field="${field}"]`);
           return el ? el.value.trim() : q[field];
         };
-        checkin.questions.push({ key: q.key, label: get("label"), low: get("low"), high: get("high") });
+        // Spread q first so anything the panel doesn't edit — unit, min — survives.
+        checkin.questions.push({ ...q, label: get("label"), low: get("low"), high: get("high") });
       });
+      const qLabel = document.querySelector("[data-quality-field=label]");
+      checkin.sleepQuality = {
+        label: qLabel ? qLabel.value.trim() : APP_SETTINGS.checkin.sleepQuality.label,
+        // Same rule as the questions: the stored value is fixed, only its
+        // label moves, so renaming "OK" to "Fine" doesn't orphan past answers.
+        options: APP_SETTINGS.checkin.sleepQuality.options.map((o) => {
+          const el = document.querySelector(`[data-quality-option="${o.value}"]`);
+          return { value: o.value, label: el ? el.value.trim() || o.label : o.label };
+        }),
+      };
       return { checkin };
     },
   },

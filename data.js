@@ -315,7 +315,21 @@ const APP_SETTINGS_DEFAULTS = {
     questions: [
       { key: "mental", label: "Mentally", low: "Drained", high: "Sharp" },
       { key: "physical", label: "Physically", low: "Beat up", high: "Strong" },
+      // Hours, not a 1-10 feeling — same 0-10 range, so it plots on the same
+      // chart, but it's a measurement rather than a rating (2026-09-06).
+      { key: "sleepHours", label: "Hours slept", low: "0", high: "10", unit: "hrs", min: 0 },
     ],
+    // Four choices, so it's an answer rather than a scale. Labels are Chris's
+    // to reword; the stored values are the fixed keys underneath them.
+    sleepQuality: {
+      label: "How did you sleep?",
+      options: [
+        { value: "bad", label: "Bad" },
+        { value: "ok", label: "OK" },
+        { value: "good", label: "Good" },
+        { value: "great", label: "Great" },
+      ],
+    },
   },
   // Cosmetic until the native build gives them somewhere to go, but the
   // defaults decide whether an imported member's first week is useful or
@@ -1168,7 +1182,16 @@ function buildSeedCheckins() {
     // Most days carry no note — that's realistic, and it keeps the list from
     // reading like a wall of text.
     const note = daysAgo % 5 === 0 ? CHECKIN_NOTES[daysAgo % CHECKIN_NOTES.length] : "";
-    out.push({ date: dateKey(date), mental, physical, note, sharedAt: null });
+    // Sleep tracks the same wave, loosely — enough that the chart shows a
+    // relationship without it looking manufactured. The oldest week predates
+    // sleep tracking and carries none, which is the case the read-back has to
+    // handle for real members too.
+    const tracked = daysAgo <= 16;
+    const sleepHours = tracked ? Math.round((6.9 - wave * 1.1) * 2) / 2 : null;
+    const sleepQuality = tracked
+      ? (sleepHours >= 8 ? "great" : sleepHours >= 7 ? "good" : sleepHours >= 6 ? "ok" : "bad")
+      : null;
+    out.push({ date: dateKey(date), mental, physical, sleepHours, sleepQuality, note, sharedAt: null });
   }
   return out;
 }

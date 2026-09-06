@@ -59,8 +59,8 @@
           <div class="topbar-actions">
             <!-- Shortcut for "log something now". The daily prompt comes to
                  the member on its own; this is for the rest of the time. -->
-            <button class="msg-icon-btn" data-action="open-checkin" title="Daily check-in">
-              <span class="msg-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M8 10h8M8 14h6"/></svg></span>
+            <button class="msg-icon-btn" data-action="open-notebook" aria-label="Notebook" title="Notebook">
+              <span class="msg-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M8 4v16"/></svg></span>
               <span class="checkin-done-dot" id="checkin-done-dot" style="display:none;"></span>
             </button>
             <button class="msg-icon-btn" data-action="open-messages" aria-label="Messages"><span class="msg-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button>
@@ -482,6 +482,17 @@
             <div class="rpe-scale-labels" id="checkin-physical-scale"><span>Beat up</span><span>Strong</span></div>
           </div>
 
+          <div class="checkin-slider-block">
+            <label class="rpe-label" for="checkin-sleepHours">Hours slept <span id="checkin-sleepHours-value">7</span></label>
+            <input type="range" id="checkin-sleepHours" class="rpe-slider checkin-slider-sleep" min="0" max="10" step="0.5" value="7" />
+            <div class="rpe-scale-labels" id="checkin-sleepHours-scale"><span>0</span><span>10</span></div>
+          </div>
+
+          <div class="checkin-quality-block">
+            <span class="rpe-label" id="checkin-quality-label">How did you sleep?</span>
+            <div class="checkin-quality-row" id="checkin-quality-row"></div>
+          </div>
+
           <label class="field checkin-note-field">
             <span id="checkin-note-prompt">Anything worth noting? <em>Optional</em></span>
             <textarea id="checkin-note" rows="3" placeholder="Sleep, soreness, stress, a win…"></textarea>
@@ -572,6 +583,15 @@
                best. The Progress list is where you go looking; this is the
                moment you'd otherwise miss. -->
           <div class="pr-banner" id="pr-banner" style="display:none;"></div>
+          <!-- The session note (2026-09-06). Asked here because this is the
+               moment it gets written in a real gym notebook — standing there
+               having just finished. It shows up on the Notebook's Today page
+               and in the Log. -->
+          <div class="session-note-section">
+            <label class="rpe-label" for="session-note-input">Anything worth noting? <em>Optional</em></label>
+            <textarea id="session-note-input" class="session-note-input" rows="2" placeholder="Felt strong, bumped squat 5lb, left knee cranky…"></textarea>
+          </div>
+
           <div class="rpe-section">
             <label class="rpe-label" for="rpe-slider">How hard did that feel? <span id="rpe-value">5</span>/10</label>
             <input type="range" id="rpe-slider" class="rpe-slider" min="1" max="10" step="1" value="5" />
@@ -686,19 +706,16 @@
              markup-only: renderPersonalBests() just fills #pr-list, and the
              section derives everything from COMPLETIONS, so it has no
              dependency on the tab it lives in. -->
-        <div class="home-section-card card-green">
-          <h2 class="home-section-title">Personal Bests</h2>
-          <div id="pr-list"></div>
-        </div>
-
         <!-- Check-in history (2026-08-19). Lives in Progress because this is
              longitudinal data, same shelf as benchmarks and the mix donut —
              Profile is settings. -->
+        <!-- Chart and insights only (2026-09-06). The written entries moved to
+             the Notebook's Log: Progress shows what the app worked out, the
+             notebook holds what the member wrote. -->
         <div class="home-section-card card-white">
           <h2 class="home-section-title">Check-Ins</h2>
           <div id="checkin-insights"></div>
           <div id="checkin-chart"></div>
-          <div class="checkin-entry-list" id="checkin-entry-list"></div>
         </div>
 
         <div class="home-section-card card-blue">
@@ -921,6 +938,23 @@
         <div class="tour-footer">
           <div class="tour-dots" id="tour-dots"></div>
           <button class="tour-next" id="tour-next-btn" type="button">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- NOTEBOOK (2026-09-06) ----------
+         Everything the member wrote, in one place: the check-in, the note they
+         left after a session, their pinned bests, and free-form notes. What
+         the app worked out for itself stays on Progress. -->
+    <div class="notebook-overlay" id="notebook-overlay" role="dialog" aria-modal="true" aria-label="Notebook">
+      <div class="notebook-scrim" id="notebook-scrim"></div>
+      <div class="notebook">
+        <div class="notebook-tabs" id="notebook-tabs" role="tablist"></div>
+        <button class="notebook-close" id="notebook-close-btn" type="button" aria-label="Close notebook">✕</button>
+        <div class="notebook-page" id="notebook-page">
+          <div class="notebook-rules" aria-hidden="true"></div>
+          <div class="notebook-margin" aria-hidden="true"></div>
+          <div class="notebook-content" id="notebook-content"></div>
         </div>
       </div>
     </div>
