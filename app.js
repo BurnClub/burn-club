@@ -4476,6 +4476,7 @@ function renderConversationRow(conv) {
         <p class="conversation-preview">${esc(preview.lastText)}</p>
       </div>
       <div class="conversation-meta">
+        ${conv.type === "dm" ? `<span class="conversation-trainer">Trainer</span>` : ""}
         <span class="conversation-time">${preview.lastTime}</span>
         ${preview.unread ? `<span class="conversation-unread-dot"></span>` : ""}
       </div>

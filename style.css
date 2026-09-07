@@ -124,6 +124,7 @@
   --accent-text: #4F62B8;
   /* Notebook paper. Its own set rather than reusing the app palette: it's
      meant to read as a different object sitting on top of the app. */
+  --trainer: #D42A1F;
   --paper: #F7EFD3;
   --paper-rule: rgba(23, 36, 63, .10);
   --paper-margin: rgba(198, 120, 120, .42);
@@ -186,6 +187,7 @@
   --habit-done: rgba(237, 241, 248, 0.45);
   /* Kraft, not a bright pad — a legal-pad yellow would glow against the dark
      theme. Same object, different stock. */
+  --trainer: #FF6B5E;
   --paper: #2A2419;
   --paper-rule: rgba(255, 255, 255, .10);
   --paper-margin: rgba(198, 120, 120, .38);
@@ -251,6 +253,7 @@
     --habit-done: rgba(237, 241, 248, 0.45);
     /* Kraft, not a bright pad — a legal-pad yellow would glow against the dark
        theme. Same object, different stock. */
+    --trainer: #FF6B5E;
     --paper: #2A2419;
     --paper-rule: rgba(255, 255, 255, .10);
     --paper-margin: rgba(198, 120, 120, .38);
@@ -2681,16 +2684,14 @@ h1, h2, h3 {
   justify-content: center;
 }
 
-.conversation-list { display: flex; flex-direction: column; gap: 10px; }
+.conversation-list { display: flex; flex-direction: column; }
 .conversation-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--white);
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
+  padding: 12px 4px;
   cursor: pointer;
-  box-shadow: 0 4px 14px var(--border);
 }
 /* Staff = solid blue bubble, white icon circle with a blue chat-bubble icon.
    Group = white (#FFFFFF, not the cream --white) bubble with a 2px pink
@@ -2699,13 +2700,27 @@ h1, h2, h3 {
    these per-type icon colors are possible; see CONVERSATION_ICON_SVG in
    app.js). White text/icon on the staff row for contrast against solid
    blue — not literally requested but load-bearing for readability. */
-.conversation-row-dm { background: var(--blue); }
-.conversation-row-dm .conversation-name,
-.conversation-row-dm .conversation-preview { color: white; }
-.conversation-row-dm .conversation-time { color: rgba(255,255,255,0.75); }
-.conversation-row-dm .conversation-icon { background: var(--card-white); color: var(--accent-text); }
-.conversation-row-group { background: var(--card-white); border: 2px solid var(--blue); }
-.conversation-row-group .conversation-icon { background: var(--pink); color: white; }
+/* Inset to start past the avatar, the way Apple's does — a full-width line
+   reads as a table, an inset one reads as a list. Not on the last row: a
+   divider under the final item is dividing it from nothing. */
+.conversation-row::after {
+  content: "";
+  position: absolute;
+  left: 56px; right: 0; bottom: 0;
+  height: 1px;
+  background: var(--blue);
+}
+.conversation-row:last-child::after { display: none; }
+.conversation-row:active { background: var(--white); }
+
+/* The rows are identical now, so the avatar carries the type and the Trainer
+   label carries the one that matters. */
+.conversation-row-dm .conversation-icon { background: var(--blue); color: #FFFFFF; }
+.conversation-row-group .conversation-icon { background: var(--pink); color: var(--text); }
+/* Chris: same size and weight as the preview text, just a bright red. Two
+   values because the brightest red that stays legible differs by theme —
+   #D42A1F is 5.06:1 on the white page, #FF6B5E is 6.48:1 on the dark one. */
+.conversation-trainer { font-size: 12px; font-weight: 600; color: var(--trainer); }
 .conversation-icon svg { width: 20px; height: 20px; }
 .conversation-icon {
   width: 40px;
@@ -2722,7 +2737,7 @@ h1, h2, h3 {
 .conversation-name { margin: 0 0 3px; font-weight: 800; font-size: 14px; }
 .conversation-preview { margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .conversation-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
-.conversation-time { font-size: 10px; color: #9aa5c9; font-weight: 700; }
+.conversation-time { font-size: 10px; color: var(--text-muted); font-weight: 700; }
 .conversation-unread-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); }
 
 .thread-screen.visible { display: flex; flex-direction: column; }
