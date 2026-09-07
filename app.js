@@ -575,6 +575,9 @@ const NOTEBOOK_TABS = [
   { id: "notes", label: "Notes" },
 ];
 let notebookTab = "today";
+// Which past months are open in the Log. Not persisted on purpose — the recent
+// week is what you come back to.
+let notebookOpenMonths = new Set();
 
 // Free-form notes, split by whether they're meant for the coach — that's a
 // different kind of note, because it has a destination.
@@ -612,6 +615,8 @@ function qualityLabel(value) {
 function openNotebook(tab) {
   notebookTab = tab || "today";
   renderNotebook();
+  // Opening starts at the top; toggling a month inside it does not.
+  document.getElementById("notebook-page").scrollTop = 0;
   document.getElementById("notebook-overlay").classList.add("visible");
 }
 
@@ -628,7 +633,6 @@ function renderNotebook() {
   body.innerHTML = {
     today: notebookToday, log: notebookLog, prs: notebookPRs, notes: notebookNotes,
   }[notebookTab]();
-  document.getElementById("notebook-page").scrollTop = 0;
   wireNotebookBody();
 }
 
@@ -699,31 +703,62 @@ function notebookLog() {
     d.session = c;
     days.set(c.date, d);
   });
-  const rows = [...days.values()].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 40);
+  const rows = [...days.values()].sort((a, b) => (a.date < b.date ? 1 : -1));
   if (!rows.length) return `<p class="nb-title">Your log</p><p class="nb-empty">Nothing written down yet.</p>`;
 
-  const dot = (key, value) => {
-    if (value == null || value === "") return "";
-    const colour = (CHECKIN_SERIES.find((cs) => cs.key === key) || {}).color || "#788CE3";
-    return `<span><i class="nb-dot" style="background:${colour}"></i>${value}</span>`;
-  };
+  // The last week is what gets referenced; everything older is history, and a
+  // year of it unrolled would bury the part you came for (2026-09-06, Chris).
+  // Month headings sit directly under the recent days rather than behind a
+  // second "show earlier" tap — one tap to a month, and the list of months
+  // says at a glance how far back it goes.
+  const cutoff = dateKey(new Date(Date.now() - 6 * 864e5));
+  const recent = rows.filter((r) => r.date >= cutoff);
+  const older = rows.filter((r) => r.date < cutoff);
+
+  const byMonth = [];
+  older.forEach((r) => {
+    const key = r.date.slice(0, 7);
+    let group = byMonth.find((g) => g.key === key);
+    if (!group) {
+      const [y, m] = key.split("-").map(Number);
+      group = { key, label: new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" }), rows: [] };
+      byMonth.push(group);
+    }
+    group.rows.push(r);
+  });
 
   return `
     <p class="nb-title">Your log</p>
-    <p class="nb-sub">${CHECKIN_SERIES.map((c) => esc(c.label)).join(" · ")}</p>
-    ${rows.map((r) => {
-      const note = r.session ? sessionNoteFor(r.session.id) : "";
-      const scores = CHECKIN_SERIES.map((cs) => dot(cs.key, r.checkin ? r.checkin[cs.key] : null)).join("");
+    <p class="nb-sub">${CHECKIN_SERIES.map((c) => esc(c.label)).join(" \u00b7 ")}</p>
+    ${recent.length ? recent.map(notebookLogRow).join("") : `<p class="nb-empty">Nothing this week.</p>`}
+    ${byMonth.map((g) => {
+      const open = notebookOpenMonths.has(g.key);
       return `
-        <div class="nb-logrow">
-          <span class="nb-d">${formatShortDate(r.date)}</span>
-          <span class="nb-t">${r.session ? esc(r.session.title) : "Rest day"}</span>
-          <span class="nb-scores">${scores}</span>
-        </div>
-        ${note ? `<p class="nb-note">${esc(note)}</p>` : ""}
-        ${r.checkin && r.checkin.note ? `<p class="nb-note">${esc(r.checkin.note)}</p>` : ""}
-      `;
+        <button class="nb-month" data-notebook-month="${esc(g.key)}" aria-expanded="${open}">
+          <span class="nb-month-caret">${open ? "\u25B4" : "\u25BE"}</span>
+          <span class="nb-month-name">${esc(g.label)}</span>
+          <span class="nb-month-count">${g.rows.length} day${g.rows.length === 1 ? "" : "s"}</span>
+        </button>
+        ${open ? g.rows.map(notebookLogRow).join("") : ""}`;
     }).join("")}
+  `;
+}
+
+function notebookLogRow(r) {
+  const note = r.session ? sessionNoteFor(r.session.id) : "";
+  const scores = CHECKIN_SERIES.map((cs) => {
+    const value = r.checkin ? r.checkin[cs.key] : null;
+    if (value == null || value === "") return "";
+    return `<span><i class="nb-dot" style="background:${cs.color}"></i>${value}</span>`;
+  }).join("");
+  return `
+    <div class="nb-logrow">
+      <span class="nb-d">${formatShortDate(r.date)}</span>
+      <span class="nb-t">${r.session ? esc(r.session.title) : "Rest day"}</span>
+      <span class="nb-scores">${scores}</span>
+    </div>
+    ${note ? `<p class="nb-note">${esc(note)}</p>` : ""}
+    ${r.checkin && r.checkin.note ? `<p class="nb-note">${esc(r.checkin.note)}</p>` : ""}
   `;
 }
 
@@ -793,6 +828,19 @@ function wireNotebookBody() {
         saveNotebookNotes();
         renderNotebook();
       }
+    });
+  });
+  document.querySelectorAll("#notebook-content [data-notebook-month]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.notebookMonth;
+      if (notebookOpenMonths.has(key)) notebookOpenMonths.delete(key);
+      else notebookOpenMonths.add(key);
+      // Hold the scroll position, or opening a month near the bottom throws
+      // you back to the top of the page.
+      const page = document.getElementById("notebook-page");
+      const y = page.scrollTop;
+      renderNotebook();
+      page.scrollTop = y;
     });
   });
   // Tapping an existing note edits or clears it.
@@ -4814,6 +4862,7 @@ function wireStaticControls() {
     if (!tab) return;
     notebookTab = tab.dataset.notebookTab;
     renderNotebook();
+    document.getElementById("notebook-page").scrollTop = 0;
   });
   document.getElementById("pr-picker-close-btn").addEventListener("click", closePRPicker);
   document.getElementById("open-checkin-settings-btn").addEventListener("click", openCheckinSettings);
