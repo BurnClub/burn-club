@@ -1162,7 +1162,7 @@ function renderCheckinSection() {
   const insights = checkinInsights();
   const offNote = checkinEnabled()
     ? ""
-    : `<p class="checkin-off-note">Daily prompt is off — turn it back on in Profile → Daily Check-In. You can still log a day from the notebook on Home.</p>`;
+    : `<p class="checkin-off-note">Daily prompt is off — turn it back on in Profile → Daily Check-In. You can still log a day from the notebook in the top bar.</p>`;
   insightsEl.innerHTML = offNote + (insights.length
     ? insights.map((t) => `<p class="checkin-insight">${t}</p>`).join("")
     : "");
@@ -2610,7 +2610,7 @@ function renderCheckinSettings() {
     </button>
     <p class="checkin-settings-note">${on
       ? "You'll get the check-in once a day, and a nudge after a workout if you haven't done it yet."
-      : "The daily prompt is off. Your past check-ins are still in Progress, and you can log one any time from the icon at the top of Home."}</p>
+      : "The daily prompt is off. Your past check-ins are still in your notebook, and you can log one any time from Today in there."}</p>
   `;
   document.getElementById("toggle-checkin-pref").addEventListener("click", () => {
     setCheckinEnabled(!checkinEnabled());
