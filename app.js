@@ -997,8 +997,9 @@ function renderCheckinAffordances() {
   const done = !!todaysCheckin();
   // The dot answers "is today logged" and rides the Home shortcut, which stays
   // whether or not the prompt is on.
-  const dot = document.getElementById("checkin-done-dot");
-  if (dot) dot.style.display = done ? "block" : "none";
+  document.querySelectorAll("[data-role='checkin-done-dot']").forEach((dot) => {
+    dot.style.display = done ? "block" : "none";
+  });
   // The nudge does come at the member, so it goes with the prompt.
   const nudge = document.getElementById("complete-checkin-nudge");
   if (nudge) nudge.style.display = done || !checkinEnabled() ? "none" : "block";
