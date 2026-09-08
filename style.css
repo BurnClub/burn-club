@@ -16,7 +16,18 @@
      describes the value. */
   --white: #F2F5FD;
   --card-white: #FFFFFF;
-  --bg: #FFFFFF;
+  /* Page ground (Chris, 2026-09-07). Was #FFFFFF. A warm off-white at 98%
+     lightness, hue 40 — the same family as the notebook paper (#F7EFD3,
+     hue 47), so the notebook reads as the same paper a shade heavier rather
+     than as a foreign object dropped on a cool page. Picked over the cool
+     #F5F7FA because that one drops --white (#F2F5FD) to 1.02:1 against the
+     ground, which flattens .today-stat, .wearable-prompt-card,
+     .benchmark-score-section and .leader-row. Here --white keeps 1.06:1 and
+     nothing else had to move. Note this is a tint, not a ground: at 1.03:1
+     off pure white it does about half the card-lifting a darker grey would.
+     Every surface that must match the page reads var(--bg), so changing it
+     again is a one-line edit. */
+  --bg: #FDFBF7;
   --danger: #E8746A;
   --pink: #F2B4F5;
   --purple: #A78BFA;
@@ -2775,10 +2786,12 @@ h1, h2, h3 {
 /* iMessage-style tail (2026-08-11) — classic two-pseudo-element trick: one
    draws a rounded corner in the bubble's own color, the other "cuts" a bite
    out of it in the page's background color so it reads as a tapered point
-   instead of a plain corner. The mask color (var(--bg), #FFFFFF) only works
-   because the thread screen sits directly on the plain white app
-   background with nothing else behind it — if that ever changes, this tail
-   needs a matching color update. */
+   instead of a plain corner. The mask reads var(--bg) rather than a literal,
+   so it followed the page ground from #FFFFFF to #FDFBF7 on 2026-09-07
+   without an edit — which is the whole reason it was written that way. It
+   only holds while the thread screen sits directly on the app ground with
+   nothing else behind it; put anything between them and the tail needs a
+   matching color. */
 .msg-bubble::before,
 .msg-bubble::after {
   content: "";
