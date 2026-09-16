@@ -38,16 +38,43 @@ function circuitIconKey(c) {
   return "upper";
 }
 
+// Stretch & Core workouts are meant to be repeated within the month (Chris,
+// 2026-09-16), so they deliberately never get the crossed-off treatment a
+// one-off weekly workout gets — striking one through says "finished with
+// this", which is the opposite of what the library is for. They carry a
+// tally instead: how many times this month, and when it was last done.
+//
+// Three states rather than two, because the month rolls over. Done this
+// month shows the count; done in an earlier month still has to answer "when
+// did I last do this", so it drops the count and keeps the date; never done
+// keeps the tag chip exactly as before.
+function repeatMarkFor(c) {
+  const completion = mostRecentCompletion(c.id);
+  if (!completion) return `<span class="circuit-tag">${c.tag}</span>`;
+  const times = completionsThisMonth(c.id);
+  const date = formatShortDate(completion.date);
+  // Nothing this month: the count is the uninteresting half, so it goes and
+  // the date carries its own label rather than sitting under a big "0".
+  if (!times) return `<div class="circuit-repeat-mark"><span class="circuit-completed-date">Last ${date}</span></div>`;
+  // "3× / SEP 12" on its own could be read as three times on Sep 12 — which
+  // is a real thing a member could have done — so anything above one says so.
+  return `<div class="circuit-repeat-mark"><span class="circuit-repeat-count">${times}×</span><span class="circuit-completed-date">${times > 1 ? "Last " : ""}${date}</span></div>`;
+}
+
 function renderCircuitCard(c) {
   const completion = mostRecentCompletion(c.id);
+  const repeatable = STRETCH_CORE_CATEGORIES.includes(c.category);
+  const done = completion && !repeatable;
   return `
-    <button class="circuit-card color-${c.color}${completion ? " completed" : ""}" data-open-circuit="${c.id}">
+    <button class="circuit-card color-${c.color}${done ? " completed" : ""}" data-open-circuit="${c.id}">
       <span class="circuit-bg-icon">${CIRCUIT_ICONS[circuitIconKey(c)]}</span>
       <div class="circuit-card-top">
         <h3>${esc(c.title)}</h3>
-        ${completion
-          ? `<div class="circuit-completed-mark"><span class="circuit-check">✓</span><span class="circuit-completed-date">${formatShortDate(completion.date)}</span></div>`
-          : `<span class="circuit-tag">${c.tag}</span>`}
+        ${repeatable
+          ? repeatMarkFor(c)
+          : completion
+            ? `<div class="circuit-completed-mark"><span class="circuit-check">✓</span><span class="circuit-completed-date">${formatShortDate(completion.date)}</span></div>`
+            : `<span class="circuit-tag">${c.tag}</span>`}
       </div>
       <p>${c.meta}</p>
     </button>
@@ -184,6 +211,17 @@ function saveBenchmarkResults() {
 // grey-out treatment on the Home/Workouts cards.
 function mostRecentCompletion(workoutId) {
   return COMPLETIONS.filter((c) => c.workoutId === workoutId).sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+}
+
+// Times this workout was completed in the current calendar month, for the
+// Stretch & Core tally (2026-09-16). Scoped to the month because that's the
+// unit Chris thinks in for the library — an all-time count on an `always:
+// true` workout only ever grows, which stops meaning anything. Compares on
+// the "YYYY-MM" prefix of the stored date key rather than parsing, matching
+// how the rest of the file treats these strings.
+function completionsThisMonth(workoutId) {
+  const prefix = dateKey(new Date()).slice(0, 7);
+  return COMPLETIONS.filter((c) => c.workoutId === workoutId && String(c.date).startsWith(prefix)).length;
 }
 
 // "YYYY-MM-DD" -> "Jul 22". Built from local date parts (not `new Date(string)`,
@@ -4735,7 +4773,7 @@ function renderCircuitLists() {
   // or "previous week" by moving it between folders (2026-08-15). Scheduled
   // and past workouts simply match nothing, so they're invisible to members
   // without anyone having to publish or retire them.
-  const isEvergreen = (c) => c.category === "stretch" || c.category === "core-burn";
+  const isEvergreen = (c) => STRETCH_CORE_CATEGORIES.includes(c.category);
   const inWeek = (c, state) => !isEvergreen(c) && c.category !== "structured"
     && circuitAvailability(c).state === state;
 
