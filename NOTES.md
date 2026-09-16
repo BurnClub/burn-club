@@ -172,6 +172,32 @@ syncs them.
 
 ## Agreed, not yet built
 
+- **Workout & program import spreadsheet** (Chris, 2026-09-15). A defined
+  spreadsheet format that the admin app can read to create programs and
+  workouts in bulk. Two distinct jobs, and they pull the design in different
+  directions:
+  1. **Migration** — getting the existing programs out of the old app and into
+     this one. One-way, one-time, tolerant of mess, and the volume is the
+     problem (~600 workouts).
+  2. **Authoring** — Chris builds programs in Excel by preference, because a
+     grid shows progressions across weeks and makes it obvious which exercises
+     are under-programmed. A screen full of cards does not. This one is
+     ongoing, and it is the reason the feature is worth more than a migration
+     script.
+  Job 2 means this should not be a one-way importer. If Chris keeps authoring
+  in Excel after launch, the sheet is a working surface and edits will flow
+  both ways — export-current-program-to-sheet matters as much as import. Decide
+  that early; retro-fitting round-trip onto a one-way importer means matching
+  rows to records that have no stable ids, which is the expensive version.
+  Open questions for that session: what identifies a row across a re-import
+  (exercise name is not stable — a rename silently orphans the video and cues);
+  how sets/reps/tempo/progressions are laid out per row; whether structured and
+  rolling programs share one sheet shape or need two.
+  **This and the validation report below are the same piece of work.** Bulk
+  import is exactly where a typo'd exercise name fails silently, and the
+  report is what makes that visible. Building the importer without it means
+  importing 600 workouts and finding the breakage by hand.
+
 - **Admin validation report** (agreed 2026-08-25, tabled 2026-08-27). One page
   listing what would break on import: every workout referencing an exercise
   name that isn't in the library, and every member record with a missing or
