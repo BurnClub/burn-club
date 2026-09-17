@@ -1232,6 +1232,12 @@ function recordWeights(weights) {
 let LAST_WEIGHTS = {};
 
 function logCompletion(circuit, weights) {
+  // No circuit means there's nothing to write, and writing a completion with
+  // a null workoutId would put a junk row in the member's history that every
+  // stat then has to count around. Returning null rather than throwing:
+  // both callers treat the entry as optional, and a failed log should not
+  // take the screen down with it (2026-09-16).
+  if (!circuit || !circuit.id) return null;
   const minutes = parseInt(circuit.meta, 10) || 20;
   const entry = {
     id: `local-${Date.now()}`,
@@ -3858,6 +3864,13 @@ const Player = {
   },
 
   finish() {
+    // Nothing to finish without an open workout. this.circuit starts null and
+    // is only ever set by opening one, so this is the "finish fired with no
+    // session" case — reachable by firing the skip-confirm button before any
+    // workout has been opened. Guarding logCompletion alone wouldn't be
+    // enough: the completion screen below reads this.circuit's blocks and
+    // title, so the crash would just move a few lines down (2026-09-16).
+    if (!this.circuit) return;
     this.stopHeartbeat();
     clearInProgress();
     // Before logCompletion, deliberately: once this session is written its own
