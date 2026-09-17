@@ -1035,6 +1035,16 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .exercise-upload-table .status-pill.upload-update { background: var(--periwinkle); color: var(--blue); }
 .exercise-upload-table .status-pill.upload-error { background: #ffe0e0; color: #b23; }
 .exercise-upload-row-warning { display: block; font-size: 10px; color: #a35b00; font-weight: 600; margin-top: 2px; }
+/* Upload preview additions (2026-09-17). A blocked row is a row that would
+   have imported something whose video can never be found, so it reads as an
+   error rather than a warning. "—" in a column means the uploaded file didn't
+   carry that column at all and the existing value is being left alone — the
+   distinction the partial-sheet upload depends on being able to see. */
+.exercise-upload-row-error { display: block; font-size: 10px; color: #b23; font-weight: 700; margin-top: 2px; }
+.exercise-upload-table .status-pill.upload-error { background: #fbe0e0; color: #b23; }
+.exercise-upload-untouched { color: var(--muted, #8894ab); }
+.exercise-upload-columns { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--muted, #8894ab); }
+.exercise-upload-table code { font-size: 11px; background: var(--periwinkle); padding: 1px 5px; border-radius: 4px; }
 
 .modal-field-label { display: block; margin-bottom: 2px; }
 .modal-field-hint { font-weight: 600; text-transform: none; letter-spacing: normal; color: #9aa5c9; font-size: 11px; }

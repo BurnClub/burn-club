@@ -3432,14 +3432,79 @@ function loadExerciseLibrary() {
 
 // ---------------- Exercise spreadsheet upload (2026-08-10) ----------------
 // CSV only (no build tooling to pull in an .xlsx parsing library) — Chris can
-// export any spreadsheet tool's sheet as CSV. Columns: Name, Body Parts,
-// Equipment, Type, Technique, Track Weight, Video URL. Body Parts/Equipment
-// are semicolon-separated within their cell since commas are the delimiter.
-const EXERCISE_UPLOAD_HEADERS = ["Name", "Body Parts", "Equipment", "Type", "Technique", "Track Weight", "Video URL"];
+// export any spreadsheet tool's sheet as CSV. Body Parts/Equipment are
+// semicolon-separated within their cell since commas are the delimiter.
+//
+// Columns are matched by HEADER NAME, not position (2026-09-17). Two reasons,
+// both of which used to be real problems:
+//
+//  1. Column order in the sheet no longer has to match the code's.
+//  2. A partial sheet becomes possible. Only the columns actually present in
+//     the file are written on an update, so a technique-only upload (Id +
+//     Technique) fills in technique and leaves body parts, equipment, type
+//     and track-weight alone. Before this, every upload overwrote every
+//     field, so a partial sheet silently wiped everything it didn't carry.
+//     That's exactly the shape of the bulk technique upload Chris is doing
+//     once the technique column is finished.
+const EXERCISE_UPLOAD_HEADERS = ["Id", "Name", "Body Parts", "Equipment", "Type", "Technique", "Track Weight", "Video URL"];
+
+// header text -> field. Matched after lowercasing and stripping anything that
+// isn't a letter or digit, so "Body Parts", "body_parts" and "BodyParts" are
+// all the same column.
+const EXERCISE_UPLOAD_FIELDS = {
+  id: "id",
+  exerciseid: "id",
+  name: "name",
+  exercise: "name",
+  exercisename: "name",
+  bodyparts: "bodyParts",
+  bodypart: "bodyParts",
+  equipment: "equipment",
+  type: "modality",
+  modality: "modality",
+  technique: "technique",
+  trackweight: "trackWeight",
+  videourl: "videoUrl",
+  video: "videoUrl",
+};
+
+// The id is the exercise's identity, and — per import/video-spec.md — also its
+// video filename (<id>.mp4). So it has to survive being a filename and a URL
+// path segment: lowercase letters, digits, single hyphens between them.
+//
+// Chris authors these in Excel by lowercasing the name and swapping spaces for
+// hyphens, which is right for clean names but passes punctuation straight
+// through — "90/90 Hip Stretch" becomes "90/90-hip-stretch", and that slash
+// breaks the filename. So ids are validated rather than trusted, and a bad one
+// stops its row instead of importing something whose video can never be found.
+const EXERCISE_ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+function exerciseIdProblem(id) {
+  if (!id) return "missing Id";
+  if (EXERCISE_ID_PATTERN.test(id)) return null;
+  const illegal = [...new Set(id.split("").filter((ch) => !/[a-z0-9-]/.test(ch)))];
+  if (illegal.length) return `Id has characters that can't be in a filename: ${illegal.join(" ")}`;
+  if (id.includes("--")) return "Id has a double hyphen";
+  if (id.startsWith("-") || id.endsWith("-")) return "Id starts or ends with a hyphen";
+  return "Id isn't lowercase letters, digits and single hyphens";
+}
+
+// Fallback for a sheet with no Id column at all. Derives a clean slug and
+// de-duplicates against what's already taken, rather than appending a
+// timestamp the way this used to — a timestamped id can't be reproduced on a
+// re-import and never matches a video filename.
+function deriveExerciseId(name, taken) {
+  const base = String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "exercise";
+  let id = base, n = 2;
+  while (taken.has(id)) id = `${base}-${n++}`;
+  return id;
+}
+
 let exerciseUploadRows = []; // parsed + validated rows, held until Confirm Upload
+let exerciseUploadFields = []; // which columns the uploaded file actually carried
 
 function downloadExerciseTemplate() {
-  const sampleRow = ["Bulgarian Split Squats", "Quads;Glutes", "Dumbbells", "Strength", "Rear foot elevated behind you, lower straight down until the front thigh is parallel to the floor.", "Yes", ""];
+  const sampleRow = ["bulgarian-split-squats", "Bulgarian Split Squats", "Quads;Glutes", "Dumbbells", "Strength", "Rear foot elevated behind you, lower straight down until the front thigh is parallel to the floor.", "Yes", ""];
   const csv = [EXERCISE_UPLOAD_HEADERS, sampleRow].map(csvEscapeRow).join("\r\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
@@ -3508,37 +3573,101 @@ function handleExerciseUploadFile(file) {
       alert("That file has no rows to read.");
       return;
     }
-    // Header row is matched loosely by name/position — first row is always treated as headers.
-    const dataRows = rows.slice(1);
+
+    // Map header text -> column index, so the rest of this works on field
+    // names and never on position.
+    const headerCells = rows[0] || [];
+    const colOf = {};
+    headerCells.forEach((cell, i) => {
+      const key = String(cell || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const field = EXERCISE_UPLOAD_FIELDS[key];
+      if (field && colOf[field] === undefined) colOf[field] = i;
+    });
+    exerciseUploadFields = Object.keys(colOf);
+
+    if (colOf.name === undefined && colOf.id === undefined) {
+      alert("That file needs at least an Id or a Name column. Check the header row, or download the template.");
+      return;
+    }
+
+    const cellAt = (cells, field) => colOf[field] === undefined ? "" : String(cells[colOf[field]] ?? "").trim();
+    const hasCol = (field) => colOf[field] !== undefined;
+
+    // Ids already taken, so a derived fallback id can't collide with the
+    // library or with an earlier row in this same file.
+    const taken = new Set(EXERCISE_LIBRARY.map((x) => x.id));
+    const seenInFile = new Map(); // id -> first row number that used it
+
+    const dataRows = rows.slice(1).filter((cells) => cells.some((c) => String(c ?? "").trim() !== ""));
     exerciseUploadRows = dataRows.map((cells, i) => {
-      const [rawName, rawBodyParts, rawEquipment, rawType, rawTechnique, rawTrackWeight, rawVideo] = cells;
-      const name = (rawName || "").trim();
+      const rowNum = i + 2; // +2: 1-indexed, plus the header row
+      const name = cellAt(cells, "name");
       const warnings = [];
+      const errors = [];
 
-      const bodyPartsIn = (rawBodyParts || "").split(";").map((s) => s.trim()).filter(Boolean);
-      const bodyParts = bodyPartsIn.map((v) => matchTag(v, BODY_PART_TAGS)).filter(Boolean);
-      if (bodyPartsIn.length && bodyParts.length < bodyPartsIn.length) warnings.push("Unrecognized body part(s) dropped");
+      const rawId = cellAt(cells, "id");
+      let id = rawId.toLowerCase();
+      if (hasCol("id")) {
+        // Lowercasing rather than rejecting, but say so: the video file has to
+        // match, and while macOS filenames are case-insensitive, a URL path on
+        // the server is not — "Goblet-Squats.mp4" would 404 for a member.
+        if (rawId && rawId !== id) warnings.push(`Id lowercased to "${id}" — the video file must match`);
+        const problem = exerciseIdProblem(id);
+        if (problem) errors.push(problem);
+      } else if (name) {
+        id = deriveExerciseId(name, taken);
+        warnings.push(`No Id column — using "${id}"`);
+      }
 
-      const equipmentIn = (rawEquipment || "").split(";").map((s) => s.trim()).filter(Boolean);
-      const equipment = equipmentIn.map((v) => matchTag(v, EQUIPMENT_TAGS)).filter(Boolean);
-      if (equipmentIn.length && equipment.length < equipmentIn.length) warnings.push("Unrecognized equipment dropped");
+      if (id && !errors.length) {
+        if (seenInFile.has(id)) errors.push(`Duplicate Id — row ${seenInFile.get(id)} already used it`);
+        else seenInFile.set(id, rowNum);
+        taken.add(id);
+      }
 
-      const typeRaw = (rawType || "").trim();
-      const modality = matchTag(typeRaw, MODALITY_TAGS) || "Strength";
-      if (typeRaw && !matchTag(typeRaw, MODALITY_TAGS)) warnings.push(`Unrecognized type "${typeRaw}" — defaulted to Strength`);
+      const parsed = {};
+      if (hasCol("name")) parsed.name = name;
 
-      const technique = (rawTechnique || "").trim();
-      const trackWeight = parseBoolish(rawTrackWeight);
-      const videoUrl = (rawVideo || "").trim();
+      if (hasCol("bodyParts")) {
+        const incoming = cellAt(cells, "bodyParts").split(";").map((v) => v.trim()).filter(Boolean);
+        parsed.bodyParts = incoming.map((v) => matchTag(v, BODY_PART_TAGS)).filter(Boolean);
+        if (incoming.length && parsed.bodyParts.length < incoming.length) warnings.push("Unrecognized body part(s) dropped");
+      }
 
-      const existing = name ? EXERCISE_LIBRARY.find((x) => x.name.toLowerCase() === name.toLowerCase()) : null;
+      if (hasCol("equipment")) {
+        const incoming = cellAt(cells, "equipment").split(";").map((v) => v.trim()).filter(Boolean);
+        parsed.equipment = incoming.map((v) => matchTag(v, EQUIPMENT_TAGS)).filter(Boolean);
+        if (incoming.length && parsed.equipment.length < incoming.length) warnings.push("Unrecognized equipment dropped");
+      }
+
+      if (hasCol("modality")) {
+        const raw = cellAt(cells, "modality");
+        parsed.modality = matchTag(raw, MODALITY_TAGS) || "Strength";
+        if (raw && !matchTag(raw, MODALITY_TAGS)) warnings.push(`Unrecognized type "${raw}" — defaulted to Strength`);
+      }
+
+      if (hasCol("technique")) parsed.technique = cellAt(cells, "technique");
+      if (hasCol("trackWeight")) parsed.trackWeight = parseBoolish(cellAt(cells, "trackWeight"));
+      if (hasCol("videoUrl")) parsed.videoUrl = cellAt(cells, "videoUrl");
+
+      // Identity is the id. Name matching stays as a fallback for a sheet
+      // that has no Id column, but it's the weaker key — it's case-insensitive
+      // here while the member app matches exercise names exactly, so a sheet
+      // and a workout that disagree on capitalisation would match here and
+      // then show no technique in the app.
+      const existing = id ? EXERCISE_LIBRARY.find((x) => x.id === id) : null;
+      const byName = !existing && name ? EXERCISE_LIBRARY.find((x) => x.name.toLowerCase() === name.toLowerCase()) : null;
+      if (byName) warnings.push(`Matched "${byName.name}" by name — its Id (${byName.id}) will not change`);
+
+      const match = existing || byName;
+      if (!match && !hasCol("name")) errors.push("New exercise needs a Name");
+      if (!match && !name && hasCol("name")) errors.push("New exercise needs a Name");
 
       return {
-        rowNum: i + 2, // +2: 1-indexed, plus the header row
-        name, bodyParts, equipment, modality, technique, trackWeight, videoUrl,
-        warnings,
-        status: !name ? "error" : existing ? "update" : "new",
-        existingId: existing ? existing.id : null,
+        rowNum, id: match ? match.id : id, name: name || (match ? match.name : ""),
+        parsed, warnings, errors,
+        status: errors.length ? "error" : match ? "update" : "new",
+        existingId: match ? match.id : null,
       };
     });
     openExerciseUploadPreview();
@@ -3550,24 +3679,37 @@ function openExerciseUploadPreview() {
   const newCount = exerciseUploadRows.filter((r) => r.status === "new").length;
   const updateCount = exerciseUploadRows.filter((r) => r.status === "update").length;
   const errorCount = exerciseUploadRows.filter((r) => r.status === "error").length;
-  document.getElementById("exercise-upload-summary").textContent =
-    `${exerciseUploadRows.length} row(s): ${newCount} new, ${updateCount} will update an existing exercise` +
-    (errorCount ? `, ${errorCount} skipped (missing name)` : "") + ". Review below, then confirm.";
 
-  document.getElementById("exercise-upload-rows").innerHTML = exerciseUploadRows.map((r) => `
+  // Say which columns the file carried, because on an update that IS the
+  // behaviour — anything not listed here is left as it is.
+  const FIELD_LABELS = { id: "Id", name: "Name", bodyParts: "Body Parts", equipment: "Equipment", modality: "Type", technique: "Technique", trackWeight: "Track Weight", videoUrl: "Video URL" };
+  const carried = exerciseUploadFields.filter((f) => f !== "id").map((f) => FIELD_LABELS[f] || f);
+
+  document.getElementById("exercise-upload-summary").innerHTML =
+    `${exerciseUploadRows.length} row(s): ${newCount} new, ${updateCount} will update an existing exercise` +
+    (errorCount ? `, <strong>${errorCount} can't be imported</strong>` : "") + ". Review below, then confirm."
+    + `<br /><span class="exercise-upload-columns">This file sets: ${carried.join(", ") || "nothing"}. Any other field on an existing exercise is left untouched.</span>`;
+
+  document.getElementById("exercise-upload-rows").innerHTML = exerciseUploadRows.map((r) => {
+    const p = r.parsed;
+    const cell = (field, shown) => p[field] === undefined ? `<span class="exercise-upload-untouched">—</span>` : shown;
+    return `
     <tr class="${r.status === "error" ? "upload-row-error" : ""}">
       <td>${r.rowNum}</td>
+      <td><code>${r.id || "—"}</code></td>
       <td>${r.name || "<em>(missing)</em>"}</td>
-      <td>${r.bodyParts.join(", ") || "—"}</td>
-      <td>${r.equipment.join(", ") || "—"}</td>
-      <td>${r.modality}</td>
-      <td>${r.trackWeight ? "Yes" : "No"}</td>
+      <td>${cell("bodyParts", (p.bodyParts || []).join(", ") || "—")}</td>
+      <td>${cell("equipment", (p.equipment || []).join(", ") || "—")}</td>
+      <td>${cell("modality", p.modality)}</td>
+      <td>${cell("trackWeight", p.trackWeight ? "Yes" : "No")}</td>
       <td>
-        <span class="status-pill upload-${r.status}">${r.status === "new" ? "New" : r.status === "update" ? "Update" : "Skipped"}</span>
+        <span class="status-pill upload-${r.status}">${r.status === "new" ? "New" : r.status === "update" ? "Update" : "Blocked"}</span>
+        ${r.errors.map((e) => `<span class="exercise-upload-row-error">${e}</span>`).join("")}
         ${r.warnings.map((w) => `<span class="exercise-upload-row-warning">${w}</span>`).join("")}
       </td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
 
   document.getElementById("exercise-upload-overlay").classList.add("visible");
 }
@@ -3575,6 +3717,7 @@ function openExerciseUploadPreview() {
 function closeExerciseUploadPreview() {
   document.getElementById("exercise-upload-overlay").classList.remove("visible");
   exerciseUploadRows = [];
+  exerciseUploadFields = [];
   document.getElementById("exercise-upload-input").value = "";
 }
 
@@ -3584,20 +3727,32 @@ function confirmExerciseUpload() {
     if (r.status === "error") return;
     if (r.status === "update") {
       const ex = EXERCISE_LIBRARY.find((x) => x.id === r.existingId);
-      Object.assign(ex, { name: r.name, bodyParts: r.bodyParts, equipment: r.equipment, modality: r.modality, technique: r.technique, trackWeight: r.trackWeight, videoUrl: r.videoUrl });
+      if (!ex) return;
+      // Only the columns the file carried. This is the whole point of the
+      // header mapping: a technique-only sheet must not blank body parts,
+      // equipment, type and track-weight on its way past.
+      Object.assign(ex, r.parsed);
       updated++;
     } else {
       EXERCISE_LIBRARY.push({
-        id: r.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now() + "-" + added,
-        name: r.name, bodyParts: r.bodyParts, equipment: r.equipment, modality: r.modality, technique: r.technique, trackWeight: r.trackWeight, videoUrl: r.videoUrl,
+        id: r.id,
+        name: r.name,
+        bodyParts: r.parsed.bodyParts || [],
+        equipment: r.parsed.equipment || [],
+        modality: r.parsed.modality || "Strength",
+        technique: r.parsed.technique || "",
+        trackWeight: r.parsed.trackWeight || false,
+        videoUrl: r.parsed.videoUrl || "",
       });
       added++;
     }
   });
+  const blocked = exerciseUploadRows.filter((r) => r.status === "error").length;
   saveExerciseLibrary();
   closeExerciseUploadPreview();
   renderExerciseLibrary();
-  alert(`Upload complete: ${added} exercise(s) added, ${updated} updated.`);
+  alert(`Upload complete: ${added} exercise(s) added, ${updated} updated.`
+    + (blocked ? `\n\n${blocked} row(s) were not imported — fix the Ids and upload again.` : ""));
 }
 
 // ---------------- Exercise Library sidebar (embedded in the circuit builder) ----------------
