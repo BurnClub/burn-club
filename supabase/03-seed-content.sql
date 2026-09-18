@@ -1045,1011 +1045,1027 @@ on conflict (block_type) do update set body = excluded.body;
 -- to have fewer blocks must not keep the ones it no longer has.
 delete from workout_blocks;
 
--- workout_blocks (348), keyed for the block_exercises that follow
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$full-body-burn$s$, 1, $s$interval$s$, $s$Station Circuit$s$, 2, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$full-body-burn$s$, 2, $s$superset$s$, $s$Finisher Superset$s$, 3, null, 30, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$core-crusher$s$, 1, $s$straight$s$, $s$Straight Sets$s$, null, null, 30, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$core-crusher$s$, 2, $s$ladder$s$, $s$Rep Ladder$s$, null, null, 15, null, null, '{10,8,6,4,2,4,6,8,10}');
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$sweat-sculpt$s$, 1, $s$amrap$s$, $s$12-Minute AMRAP$s$, null, null, null, 720, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$sweat-sculpt$s$, 2, $s$emom$s$, $s$10-Minute EMOM$s$, null, null, null, 600, 60, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$power-hour$s$, 1, $s$interval$s$, $s$Power Stations$s$, 3, 30, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$foundations-intro$s$, 1, $s$straight$s$, $s$Straight Sets$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$stretch-mobility$s$, 1, $s$interval$s$, $s$Stretch Flow$s$, 1, 60, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ab-burn-10$s$, 1, $s$amrap$s$, $s$10-Minute Ab Burn$s$, null, null, null, 600, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$lower-body-blast$s$, 1, $s$straight$s$, $s$Straight Sets$s$, null, null, 30, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$cardio-kickstart$s$, 1, $s$amrap$s$, $s$20-Minute AMRAP$s$, null, null, null, 1200, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Bicycle Crunches$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Weighted Sit-Ups$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-back-biceps-home$s$, 1, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-back-biceps-home$s$, 2, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-back-biceps-home$s$, 3, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-back-biceps-gym$s$, 1, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-back-biceps-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-back-biceps-gym$s$, 3, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-chest-tris-home$s$, 1, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-chest-tris-home$s$, 2, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-chest-tris-home$s$, 3, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-chest-tris-gym$s$, 1, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-chest-tris-gym$s$, 2, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-chest-tris-gym$s$, 3, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-quads-glutes-home$s$, 1, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-quads-glutes-home$s$, 2, $s$straight$s$, $s$Squat Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-quads-glutes-home$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Barbell Back Squat$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 3, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w1-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 3, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Bicycle Crunches$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Dead Bug$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Weighted Sit-Ups$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-back-biceps-home$s$, 1, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-back-biceps-home$s$, 2, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-back-biceps-home$s$, 3, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-back-biceps-gym$s$, 1, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-back-biceps-gym$s$, 2, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-back-biceps-gym$s$, 3, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-chest-tris-home$s$, 1, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-chest-tris-home$s$, 2, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-chest-tris-home$s$, 3, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-chest-tris-gym$s$, 1, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-chest-tris-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-chest-tris-gym$s$, 3, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-quads-glutes-home$s$, 1, $s$straight$s$, $s$Squat Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-quads-glutes-home$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-quads-glutes-home$s$, 3, $s$straight$s$, $s$Jump Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 3, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w2-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 3, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Bicycle Crunches$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Dead Bug$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Weighted Sit-Ups$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-back-biceps-home$s$, 1, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-back-biceps-home$s$, 2, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-back-biceps-home$s$, 3, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-back-biceps-gym$s$, 1, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-back-biceps-gym$s$, 2, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-back-biceps-gym$s$, 3, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-chest-tris-home$s$, 1, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-chest-tris-home$s$, 2, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-chest-tris-home$s$, 3, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-chest-tris-gym$s$, 1, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-chest-tris-gym$s$, 2, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-chest-tris-gym$s$, 3, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-quads-glutes-home$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-quads-glutes-home$s$, 2, $s$straight$s$, $s$Jump Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-quads-glutes-home$s$, 3, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Barbell Back Squat$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 3, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w3-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 3, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Dead Bug$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-back-biceps-home$s$, 1, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-back-biceps-home$s$, 2, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-back-biceps-home$s$, 3, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-back-biceps-gym$s$, 1, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-back-biceps-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-back-biceps-gym$s$, 3, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-chest-tris-home$s$, 1, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-chest-tris-home$s$, 2, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-chest-tris-home$s$, 3, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-chest-tris-gym$s$, 1, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-chest-tris-gym$s$, 2, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-chest-tris-gym$s$, 3, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-quads-glutes-home$s$, 1, $s$straight$s$, $s$Jump Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-quads-glutes-home$s$, 2, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-quads-glutes-home$s$, 3, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Barbell Back Squat$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 4, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w4-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 4, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-back-biceps-home$s$, 1, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-back-biceps-home$s$, 2, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-back-biceps-home$s$, 3, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-back-biceps-gym$s$, 1, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-back-biceps-gym$s$, 2, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-back-biceps-gym$s$, 3, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-chest-tris-home$s$, 1, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-chest-tris-home$s$, 2, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-chest-tris-home$s$, 3, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-chest-tris-gym$s$, 1, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-chest-tris-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-chest-tris-gym$s$, 3, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-quads-glutes-home$s$, 1, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-quads-glutes-home$s$, 2, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-quads-glutes-home$s$, 3, $s$straight$s$, $s$Squat Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Barbell Back Squat$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 4, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w5-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 4, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Bicycle Crunches$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Weighted Sit-Ups$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-back-biceps-home$s$, 1, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-back-biceps-home$s$, 2, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-back-biceps-home$s$, 3, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-back-biceps-gym$s$, 1, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-back-biceps-gym$s$, 2, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-back-biceps-gym$s$, 3, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-chest-tris-home$s$, 1, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-chest-tris-home$s$, 2, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-chest-tris-home$s$, 3, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-chest-tris-gym$s$, 1, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-chest-tris-gym$s$, 2, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-chest-tris-gym$s$, 3, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-quads-glutes-home$s$, 1, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-quads-glutes-home$s$, 2, $s$straight$s$, $s$Squat Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-quads-glutes-home$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 4, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w6-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 4, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Bicycle Crunches$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Dead Bug$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Weighted Sit-Ups$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-back-biceps-home$s$, 1, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-back-biceps-home$s$, 2, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-back-biceps-home$s$, 3, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-back-biceps-gym$s$, 1, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-back-biceps-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-back-biceps-gym$s$, 3, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-chest-tris-home$s$, 1, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-chest-tris-home$s$, 2, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-chest-tris-home$s$, 3, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-chest-tris-gym$s$, 1, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-chest-tris-gym$s$, 2, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-chest-tris-gym$s$, 3, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-quads-glutes-home$s$, 1, $s$straight$s$, $s$Squat Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-quads-glutes-home$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-quads-glutes-home$s$, 3, $s$straight$s$, $s$Jump Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Barbell Back Squat$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 5, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w7-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 5, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Bicycle Crunches$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Dead Bug$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Weighted Sit-Ups$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-back-biceps-home$s$, 1, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-back-biceps-home$s$, 2, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-back-biceps-home$s$, 3, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-back-biceps-gym$s$, 1, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-back-biceps-gym$s$, 2, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-back-biceps-gym$s$, 3, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-chest-tris-home$s$, 1, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-chest-tris-home$s$, 2, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-chest-tris-home$s$, 3, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-chest-tris-gym$s$, 1, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-chest-tris-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-chest-tris-gym$s$, 3, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-quads-glutes-home$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-quads-glutes-home$s$, 2, $s$straight$s$, $s$Jump Squats$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-quads-glutes-home$s$, 3, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Barbell Back Squat$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 5, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$ff-w8-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 5, 40, 20, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w1-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w1-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w1-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w1-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w1-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w1-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w1-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w1-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w1-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w1-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w2-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w2-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w2-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w2-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w2-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w2-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w2-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w2-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w2-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w2-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w3-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w3-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w3-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w3-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w3-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w3-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w3-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w3-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w3-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w3-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 3, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w4-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w4-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w4-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w4-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w4-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w4-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w4-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w4-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w4-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w4-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w5-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w5-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w5-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w5-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w5-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w5-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w5-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w5-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w5-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w5-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w6-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w6-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w6-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w6-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w6-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w6-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w6-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w6-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w6-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w6-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 4, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w7-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w7-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w7-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w7-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w7-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w7-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w7-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w7-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w7-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w7-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w8-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w8-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w8-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w8-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w8-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w8-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w8-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w8-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w8-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 5, 45, 15, null, null, null);
-insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values ($s$tmb-w8-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 5, 45, 15, null, null, null);
+-- workout_blocks (348)
+insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values
+  ($s$full-body-burn$s$, 1, $s$interval$s$, $s$Station Circuit$s$, 2, 40, 20, null, null, null),
+  ($s$full-body-burn$s$, 2, $s$superset$s$, $s$Finisher Superset$s$, 3, null, 30, null, null, null),
+  ($s$core-crusher$s$, 1, $s$straight$s$, $s$Straight Sets$s$, null, null, 30, null, null, null),
+  ($s$core-crusher$s$, 2, $s$ladder$s$, $s$Rep Ladder$s$, null, null, 15, null, null, '{10,8,6,4,2,4,6,8,10}'),
+  ($s$sweat-sculpt$s$, 1, $s$amrap$s$, $s$12-Minute AMRAP$s$, null, null, null, 720, null, null),
+  ($s$sweat-sculpt$s$, 2, $s$emom$s$, $s$10-Minute EMOM$s$, null, null, null, 600, 60, null),
+  ($s$power-hour$s$, 1, $s$interval$s$, $s$Power Stations$s$, 3, 30, 15, null, null, null),
+  ($s$foundations-intro$s$, 1, $s$straight$s$, $s$Straight Sets$s$, null, null, 45, null, null, null),
+  ($s$stretch-mobility$s$, 1, $s$interval$s$, $s$Stretch Flow$s$, 1, 60, 15, null, null, null),
+  ($s$ab-burn-10$s$, 1, $s$amrap$s$, $s$10-Minute Ab Burn$s$, null, null, null, 600, null, null),
+  ($s$lower-body-blast$s$, 1, $s$straight$s$, $s$Straight Sets$s$, null, null, 30, null, null, null),
+  ($s$cardio-kickstart$s$, 1, $s$amrap$s$, $s$20-Minute AMRAP$s$, null, null, null, 1200, null, null),
+  ($s$ff-w1-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Bicycle Crunches$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Weighted Sit-Ups$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-back-biceps-home$s$, 1, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-back-biceps-home$s$, 2, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-back-biceps-home$s$, 3, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-back-biceps-gym$s$, 1, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-back-biceps-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-back-biceps-gym$s$, 3, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-chest-tris-home$s$, 1, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-chest-tris-home$s$, 2, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-chest-tris-home$s$, 3, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-chest-tris-gym$s$, 1, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-chest-tris-gym$s$, 2, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-chest-tris-gym$s$, 3, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-quads-glutes-home$s$, 1, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-quads-glutes-home$s$, 2, $s$straight$s$, $s$Squat Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-quads-glutes-home$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Barbell Back Squat$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w1-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 3, 40, 20, null, null, null),
+  ($s$ff-w1-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 3, 40, 20, null, null, null),
+  ($s$ff-w2-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Bicycle Crunches$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Dead Bug$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Weighted Sit-Ups$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-back-biceps-home$s$, 1, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-back-biceps-home$s$, 2, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-back-biceps-home$s$, 3, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-back-biceps-gym$s$, 1, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-back-biceps-gym$s$, 2, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-back-biceps-gym$s$, 3, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-chest-tris-home$s$, 1, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-chest-tris-home$s$, 2, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-chest-tris-home$s$, 3, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-chest-tris-gym$s$, 1, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-chest-tris-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-chest-tris-gym$s$, 3, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-quads-glutes-home$s$, 1, $s$straight$s$, $s$Squat Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-quads-glutes-home$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-quads-glutes-home$s$, 3, $s$straight$s$, $s$Jump Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w2-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 3, 40, 20, null, null, null),
+  ($s$ff-w2-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 3, 40, 20, null, null, null),
+  ($s$ff-w3-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Bicycle Crunches$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Dead Bug$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Weighted Sit-Ups$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-back-biceps-home$s$, 1, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-back-biceps-home$s$, 2, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-back-biceps-home$s$, 3, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-back-biceps-gym$s$, 1, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-back-biceps-gym$s$, 2, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-back-biceps-gym$s$, 3, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-chest-tris-home$s$, 1, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-chest-tris-home$s$, 2, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-chest-tris-home$s$, 3, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-chest-tris-gym$s$, 1, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-chest-tris-gym$s$, 2, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-chest-tris-gym$s$, 3, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-quads-glutes-home$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-quads-glutes-home$s$, 2, $s$straight$s$, $s$Jump Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-quads-glutes-home$s$, 3, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Barbell Back Squat$s$, null, null, 45, null, null, null),
+  ($s$ff-w3-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 3, 40, 20, null, null, null),
+  ($s$ff-w3-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 3, 40, 20, null, null, null),
+  ($s$ff-w4-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Dead Bug$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-back-biceps-home$s$, 1, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-back-biceps-home$s$, 2, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-back-biceps-home$s$, 3, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-back-biceps-gym$s$, 1, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-back-biceps-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-back-biceps-gym$s$, 3, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-chest-tris-home$s$, 1, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-chest-tris-home$s$, 2, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-chest-tris-home$s$, 3, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-chest-tris-gym$s$, 1, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-chest-tris-gym$s$, 2, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-chest-tris-gym$s$, 3, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-quads-glutes-home$s$, 1, $s$straight$s$, $s$Jump Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-quads-glutes-home$s$, 2, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-quads-glutes-home$s$, 3, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Barbell Back Squat$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w4-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 4, 40, 20, null, null, null),
+  ($s$ff-w4-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 4, 40, 20, null, null, null),
+  ($s$ff-w5-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-back-biceps-home$s$, 1, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-back-biceps-home$s$, 2, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-back-biceps-home$s$, 3, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-back-biceps-gym$s$, 1, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-back-biceps-gym$s$, 2, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-back-biceps-gym$s$, 3, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-chest-tris-home$s$, 1, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-chest-tris-home$s$, 2, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-chest-tris-home$s$, 3, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-chest-tris-gym$s$, 1, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-chest-tris-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-chest-tris-gym$s$, 3, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-quads-glutes-home$s$, 1, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-quads-glutes-home$s$, 2, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-quads-glutes-home$s$, 3, $s$straight$s$, $s$Squat Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Barbell Back Squat$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w5-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 4, 40, 20, null, null, null),
+  ($s$ff-w5-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 4, 40, 20, null, null, null),
+  ($s$ff-w6-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Bicycle Crunches$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Weighted Sit-Ups$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-back-biceps-home$s$, 1, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-back-biceps-home$s$, 2, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-back-biceps-home$s$, 3, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-back-biceps-gym$s$, 1, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-back-biceps-gym$s$, 2, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-back-biceps-gym$s$, 3, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-chest-tris-home$s$, 1, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-chest-tris-home$s$, 2, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-chest-tris-home$s$, 3, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-chest-tris-gym$s$, 1, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-chest-tris-gym$s$, 2, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-chest-tris-gym$s$, 3, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-quads-glutes-home$s$, 1, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-quads-glutes-home$s$, 2, $s$straight$s$, $s$Squat Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-quads-glutes-home$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null)
+on conflict (workout_id, position) do nothing;
+insert into workout_blocks (workout_id, position, type, label, rounds, work_sec, rest_sec, duration_sec, interval_sec, scheme) values
+  ($s$ff-w6-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w6-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 4, 40, 20, null, null, null),
+  ($s$ff-w6-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 4, 40, 20, null, null, null),
+  ($s$ff-w7-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Bicycle Crunches$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Dead Bug$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Weighted Sit-Ups$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-back-biceps-home$s$, 1, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-back-biceps-home$s$, 2, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-back-biceps-home$s$, 3, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-back-biceps-gym$s$, 1, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-back-biceps-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-back-biceps-gym$s$, 3, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-chest-tris-home$s$, 1, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-chest-tris-home$s$, 2, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-chest-tris-home$s$, 3, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-chest-tris-gym$s$, 1, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-chest-tris-gym$s$, 2, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-chest-tris-gym$s$, 3, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-quads-glutes-home$s$, 1, $s$straight$s$, $s$Squat Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-quads-glutes-home$s$, 2, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-quads-glutes-home$s$, 3, $s$straight$s$, $s$Jump Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Barbell Back Squat$s$, null, null, 45, null, null, null),
+  ($s$ff-w7-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 5, 40, 20, null, null, null),
+  ($s$ff-w7-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 5, 40, 20, null, null, null),
+  ($s$ff-w8-shoulders-abs-home$s$, 1, $s$straight$s$, $s$Bicycle Crunches$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-shoulders-abs-home$s$, 2, $s$straight$s$, $s$Dead Bug$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-shoulders-abs-home$s$, 3, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-shoulders-abs-gym$s$, 1, $s$straight$s$, $s$Weighted Sit-Ups$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-shoulders-abs-gym$s$, 2, $s$straight$s$, $s$Plank Hold$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-shoulders-abs-gym$s$, 3, $s$straight$s$, $s$Side Plank$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-hamstrings-glutes-home$s$, 1, $s$straight$s$, $s$Goblet Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-hamstrings-glutes-home$s$, 2, $s$straight$s$, $s$Kettlebell Swings$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-hamstrings-glutes-home$s$, 3, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-hamstrings-glutes-gym$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-hamstrings-glutes-gym$s$, 2, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-hamstrings-glutes-gym$s$, 3, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-back-biceps-home$s$, 1, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-back-biceps-home$s$, 2, $s$straight$s$, $s$Battle Ropes$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-back-biceps-home$s$, 3, $s$straight$s$, $s$Dumbbell Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-back-biceps-gym$s$, 1, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-back-biceps-gym$s$, 2, $s$straight$s$, $s$Barbell Deadlift$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-back-biceps-gym$s$, 3, $s$straight$s$, $s$Lat Pulldown$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-chest-tris-home$s$, 1, $s$straight$s$, $s$Push Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-chest-tris-home$s$, 2, $s$straight$s$, $s$Renegade Rows$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-chest-tris-home$s$, 3, $s$straight$s$, $s$Push-Ups$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-chest-tris-gym$s$, 1, $s$straight$s$, $s$Overhead Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-chest-tris-gym$s$, 2, $s$straight$s$, $s$Cable Row$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-chest-tris-gym$s$, 3, $s$straight$s$, $s$Barbell Bench Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-quads-glutes-home$s$, 1, $s$straight$s$, $s$Walking Lunges$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-quads-glutes-home$s$, 2, $s$straight$s$, $s$Jump Squats$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-quads-glutes-home$s$, 3, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-quads-glutes-gym$s$, 1, $s$straight$s$, $s$Box Jumps$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-quads-glutes-gym$s$, 2, $s$straight$s$, $s$Barbell Back Squat$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-quads-glutes-gym$s$, 3, $s$straight$s$, $s$Leg Press$s$, null, null, 45, null, null, null),
+  ($s$ff-w8-circuit-home$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 5, 40, 20, null, null, null),
+  ($s$ff-w8-circuit-gym$s$, 1, $s$interval$s$, $s$Conditioning Circuit$s$, 5, 40, 20, null, null, null),
+  ($s$tmb-w1-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w1-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w1-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w1-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w1-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w1-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w1-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w1-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w1-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w1-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w2-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w2-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w2-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w2-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w2-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w2-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w2-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w2-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w2-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w2-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w3-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w3-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w3-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w3-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w3-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w3-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w3-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w3-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w3-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w3-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 3, 45, 15, null, null, null),
+  ($s$tmb-w4-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w4-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w4-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w4-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w4-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w4-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w4-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w4-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w4-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w4-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w5-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w5-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w5-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w5-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w5-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w5-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w5-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w5-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w5-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w5-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w6-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w6-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w6-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w6-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w6-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w6-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w6-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w6-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w6-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w6-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 4, 45, 15, null, null, null),
+  ($s$tmb-w7-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w7-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w7-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w7-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w7-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w7-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w7-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w7-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w7-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w7-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w8-full-body-home$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w8-full-body-gym$s$, 1, $s$interval$s$, $s$Full Body Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w8-lower-home$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w8-lower-gym$s$, 1, $s$interval$s$, $s$Lower Body Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w8-upper-home$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w8-upper-gym$s$, 1, $s$interval$s$, $s$Upper Body Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w8-core-home$s$, 1, $s$interval$s$, $s$Core Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w8-core-gym$s$, 1, $s$interval$s$, $s$Core Burn$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w8-conditioning-home$s$, 1, $s$interval$s$, $s$Conditioning$s$, 5, 45, 15, null, null, null),
+  ($s$tmb-w8-conditioning-gym$s$, 1, $s$interval$s$, $s$Conditioning$s$, 5, 45, 15, null, null, null)
+on conflict (workout_id, position) do nothing;
 
 -- block_exercises (655)
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$jump-squats$s$, null, null from workout_blocks where workout_id = $s$full-body-burn$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$full-body-burn$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$full-body-burn$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$full-body-burn$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 5, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$full-body-burn$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, null, 15 from workout_blocks where workout_id = $s$full-body-burn$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$walking-lunges$s$, null, 12 from workout_blocks where workout_id = $s$full-body-burn$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$weighted-situps$s$, 3, 15 from workout_blocks where workout_id = $s$core-crusher$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$russian-twists$s$, null, null from workout_blocks where workout_id = $s$core-crusher$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, null, 15 from workout_blocks where workout_id = $s$sweat-sculpt$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$box-jumps$s$, null, 10 from workout_blocks where workout_id = $s$sweat-sculpt$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$push-press$s$, null, 12 from workout_blocks where workout_id = $s$sweat-sculpt$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$burpees$s$, null, 8 from workout_blocks where workout_id = $s$sweat-sculpt$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$goblet-squats$s$, null, 12 from workout_blocks where workout_id = $s$sweat-sculpt$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$power-hour$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$renegade-rows$s$, null, null from workout_blocks where workout_id = $s$power-hour$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$power-hour$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$goblet-squats$s$, 3, 10 from workout_blocks where workout_id = $s$foundations-intro$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$standing-hamstring-stretch$s$, null, null from workout_blocks where workout_id = $s$stretch-mobility$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$hip-flexor-stretch$s$, null, null from workout_blocks where workout_id = $s$stretch-mobility$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$childs-pose$s$, null, null from workout_blocks where workout_id = $s$stretch-mobility$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$cat-cow-stretch$s$, null, null from workout_blocks where workout_id = $s$stretch-mobility$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 5, $s$shoulder-and-chest-opener$s$, null, null from workout_blocks where workout_id = $s$stretch-mobility$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$bicycle-crunches$s$, null, 20 from workout_blocks where workout_id = $s$ab-burn-10$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$leg-raises$s$, null, 15 from workout_blocks where workout_id = $s$ab-burn-10$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$plank-hold$s$, null, 30 from workout_blocks where workout_id = $s$ab-burn-10$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$russian-twists$s$, null, 20 from workout_blocks where workout_id = $s$ab-burn-10$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$jump-squats$s$, 3, 15 from workout_blocks where workout_id = $s$lower-body-blast$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$burpees$s$, null, 10 from workout_blocks where workout_id = $s$cardio-kickstart$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$mountain-climbers$s$, null, 20 from workout_blocks where workout_id = $s$cardio-kickstart$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$jump-squats$s$, null, 15 from workout_blocks where workout_id = $s$cardio-kickstart$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-press$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-shoulders-abs-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$plank-hold$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-shoulders-abs-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$bicycle-crunches$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-shoulders-abs-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$overhead-press$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-shoulders-abs-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-shoulders-abs-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$weighted-situps$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-shoulders-abs-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-hamstrings-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-hamstrings-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-hamstrings-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-deadlift$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-hamstrings-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-press$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-hamstrings-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-hamstrings-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dumbbell-rows$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-back-biceps-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-back-biceps-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-back-biceps-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$lat-pulldown$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-back-biceps-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-back-biceps-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-deadlift$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-back-biceps-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-ups$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-chest-tris-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-press$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-chest-tris-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-chest-tris-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-bench-press$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-chest-tris-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$overhead-press$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-chest-tris-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-chest-tris-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$goblet-squats$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-quads-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$squat-jumps$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-quads-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-quads-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-back-squat$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-quads-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-press$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-quads-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w1-quads-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$ff-w1-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$ff-w1-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$ff-w1-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$ff-w1-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$ff-w1-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$ff-w1-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$ff-w1-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$ff-w1-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$plank-hold$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-shoulders-abs-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$bicycle-crunches$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-shoulders-abs-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dead-bug$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-shoulders-abs-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-shoulders-abs-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$weighted-situps$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-shoulders-abs-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$plank-hold$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-shoulders-abs-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-hamstrings-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-hamstrings-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$goblet-squats$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-hamstrings-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-press$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-hamstrings-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-hamstrings-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-hamstrings-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-back-biceps-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-back-biceps-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dumbbell-rows$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-back-biceps-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-back-biceps-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-deadlift$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-back-biceps-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$lat-pulldown$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-back-biceps-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-press$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-chest-tris-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-chest-tris-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-ups$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-chest-tris-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$overhead-press$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-chest-tris-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-chest-tris-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-bench-press$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-chest-tris-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$squat-jumps$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-quads-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-quads-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$jump-squats$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-quads-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-press$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-quads-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-quads-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 3, 10 from workout_blocks where workout_id = $s$ff-w2-quads-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$ff-w2-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$ff-w2-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$ff-w2-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$ff-w2-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$ff-w2-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$ff-w2-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$ff-w2-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$ff-w2-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$bicycle-crunches$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-shoulders-abs-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dead-bug$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-shoulders-abs-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$side-plank$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-shoulders-abs-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$weighted-situps$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-shoulders-abs-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$plank-hold$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-shoulders-abs-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$side-plank$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-shoulders-abs-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-hamstrings-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$goblet-squats$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-hamstrings-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-hamstrings-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-hamstrings-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-hamstrings-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-deadlift$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-hamstrings-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-back-biceps-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dumbbell-rows$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-back-biceps-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-back-biceps-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-deadlift$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-back-biceps-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$lat-pulldown$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-back-biceps-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-back-biceps-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-chest-tris-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-ups$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-chest-tris-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-press$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-chest-tris-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-chest-tris-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-bench-press$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-chest-tris-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$overhead-press$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-chest-tris-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-quads-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$jump-squats$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-quads-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-quads-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-quads-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-quads-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-back-squat$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w3-quads-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$ff-w3-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$ff-w3-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$ff-w3-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$ff-w3-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$ff-w3-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$ff-w3-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$ff-w3-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$ff-w3-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dead-bug$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-shoulders-abs-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$side-plank$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-shoulders-abs-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-press$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-shoulders-abs-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$plank-hold$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-shoulders-abs-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$side-plank$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-shoulders-abs-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$overhead-press$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-shoulders-abs-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$goblet-squats$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-hamstrings-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-hamstrings-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-hamstrings-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-hamstrings-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-deadlift$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-hamstrings-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-press$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-hamstrings-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dumbbell-rows$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-back-biceps-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-back-biceps-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-back-biceps-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$lat-pulldown$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-back-biceps-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-back-biceps-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-deadlift$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-back-biceps-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-ups$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-chest-tris-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-press$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-chest-tris-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-chest-tris-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-bench-press$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-chest-tris-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$overhead-press$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-chest-tris-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-chest-tris-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$jump-squats$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-quads-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-quads-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$goblet-squats$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-quads-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-quads-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-back-squat$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-quads-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-press$s$, 4, 10 from workout_blocks where workout_id = $s$ff-w4-quads-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$ff-w4-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$ff-w4-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$ff-w4-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$ff-w4-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$ff-w4-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$ff-w4-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$ff-w4-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$ff-w4-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$side-plank$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-shoulders-abs-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-press$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-shoulders-abs-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$plank-hold$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-shoulders-abs-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$side-plank$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-shoulders-abs-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$overhead-press$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-shoulders-abs-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-shoulders-abs-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-hamstrings-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-hamstrings-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-hamstrings-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-deadlift$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-hamstrings-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-press$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-hamstrings-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-hamstrings-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-back-biceps-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-back-biceps-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dumbbell-rows$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-back-biceps-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-back-biceps-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-deadlift$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-back-biceps-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$lat-pulldown$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-back-biceps-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-press$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-chest-tris-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-chest-tris-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-ups$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-chest-tris-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$overhead-press$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-chest-tris-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-chest-tris-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-bench-press$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-chest-tris-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-quads-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$goblet-squats$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-quads-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$squat-jumps$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-quads-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-back-squat$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-quads-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-press$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-quads-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w5-quads-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$ff-w5-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$ff-w5-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$ff-w5-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$ff-w5-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$ff-w5-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$ff-w5-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$ff-w5-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$ff-w5-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-press$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-shoulders-abs-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$plank-hold$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-shoulders-abs-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$bicycle-crunches$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-shoulders-abs-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$overhead-press$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-shoulders-abs-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-shoulders-abs-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$weighted-situps$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-shoulders-abs-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-hamstrings-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-hamstrings-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$goblet-squats$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-hamstrings-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-press$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-hamstrings-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-hamstrings-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-hamstrings-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-back-biceps-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dumbbell-rows$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-back-biceps-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-back-biceps-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-deadlift$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-back-biceps-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$lat-pulldown$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-back-biceps-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-back-biceps-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-chest-tris-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-ups$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-chest-tris-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-press$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-chest-tris-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-chest-tris-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-bench-press$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-chest-tris-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$overhead-press$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-chest-tris-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$goblet-squats$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-quads-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$squat-jumps$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-quads-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-quads-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-press$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-quads-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-quads-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 5, 10 from workout_blocks where workout_id = $s$ff-w6-quads-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$ff-w6-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$ff-w6-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$ff-w6-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$ff-w6-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$ff-w6-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$ff-w6-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$ff-w6-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$ff-w6-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$plank-hold$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-shoulders-abs-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$bicycle-crunches$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-shoulders-abs-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dead-bug$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-shoulders-abs-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-shoulders-abs-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$weighted-situps$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-shoulders-abs-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$plank-hold$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-shoulders-abs-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-hamstrings-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$goblet-squats$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-hamstrings-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-hamstrings-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-hamstrings-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-hamstrings-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-deadlift$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-hamstrings-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dumbbell-rows$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-back-biceps-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-back-biceps-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-back-biceps-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$lat-pulldown$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-back-biceps-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-back-biceps-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-deadlift$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-back-biceps-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-ups$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-chest-tris-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-press$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-chest-tris-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-chest-tris-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-bench-press$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-chest-tris-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$overhead-press$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-chest-tris-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-chest-tris-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$squat-jumps$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-quads-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-quads-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$jump-squats$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-quads-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-quads-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-quads-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-back-squat$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w7-quads-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$ff-w7-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$ff-w7-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$ff-w7-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$ff-w7-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$ff-w7-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$ff-w7-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$ff-w7-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$ff-w7-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$bicycle-crunches$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-shoulders-abs-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dead-bug$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-shoulders-abs-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$side-plank$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-shoulders-abs-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$weighted-situps$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-shoulders-abs-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$plank-hold$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-shoulders-abs-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$side-plank$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-shoulders-abs-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$goblet-squats$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-hamstrings-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-hamstrings-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-hamstrings-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-hamstrings-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-deadlift$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-hamstrings-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-press$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-hamstrings-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-back-biceps-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-back-biceps-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dumbbell-rows$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-back-biceps-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-back-biceps-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-deadlift$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-back-biceps-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$lat-pulldown$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-back-biceps-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-press$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-chest-tris-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-chest-tris-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-ups$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-chest-tris-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$overhead-press$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-chest-tris-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-chest-tris-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-bench-press$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-chest-tris-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-quads-glutes-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$jump-squats$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-quads-glutes-home$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-quads-glutes-home$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-quads-glutes-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-back-squat$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-quads-glutes-gym$s$ and position = 2;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-press$s$, 6, 10 from workout_blocks where workout_id = $s$ff-w8-quads-glutes-gym$s$ and position = 3;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$ff-w8-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$ff-w8-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$ff-w8-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$ff-w8-circuit-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$ff-w8-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$ff-w8-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$ff-w8-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$ff-w8-circuit-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$jump-squats$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$renegade-rows$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$push-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-bench-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$lat-pulldown$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$overhead-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$cable-row$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$bicycle-crunches$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$side-plank$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$dead-bug$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$weighted-situps$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$leg-raises$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$russian-twists$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w1-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$jump-squats$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$leg-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$push-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$lat-pulldown$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$overhead-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$cable-row$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$barbell-bench-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$side-plank$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$dead-bug$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$bicycle-crunches$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$leg-raises$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$russian-twists$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$weighted-situps$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w2-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$jump-squats$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$leg-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$renegade-rows$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$overhead-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$cable-row$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$barbell-bench-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$lat-pulldown$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$side-plank$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$dead-bug$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$bicycle-crunches$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-raises$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$russian-twists$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$weighted-situps$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w3-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$jump-squats$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$leg-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$renegade-rows$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$push-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$barbell-bench-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$lat-pulldown$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$overhead-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dead-bug$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$bicycle-crunches$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$side-plank$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$russian-twists$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$weighted-situps$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$leg-raises$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w4-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$jump-squats$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$renegade-rows$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$push-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-bench-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$lat-pulldown$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$overhead-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$cable-row$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$bicycle-crunches$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$side-plank$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$dead-bug$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$weighted-situps$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$leg-raises$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$russian-twists$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w5-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$jump-squats$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$leg-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$renegade-rows$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$push-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$lat-pulldown$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$overhead-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$cable-row$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$barbell-bench-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$side-plank$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$dead-bug$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$bicycle-crunches$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$leg-raises$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$russian-twists$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$weighted-situps$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w6-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$jump-squats$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$leg-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$push-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$renegade-rows$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$overhead-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$cable-row$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$barbell-bench-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$lat-pulldown$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$side-plank$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$dead-bug$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$bicycle-crunches$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$leg-raises$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$russian-twists$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$weighted-situps$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w7-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$squat-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-full-body-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-full-body-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$jump-squats$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-lower-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$walking-lunges$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$leg-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$barbell-back-squat$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$kettlebell-swings$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-lower-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$push-ups$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$renegade-rows$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$push-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-upper-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$cable-row$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$barbell-bench-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$lat-pulldown$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$overhead-press$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-upper-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$dead-bug$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$bicycle-crunches$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$side-plank$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-core-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$russian-twists$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$weighted-situps$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$plank-hold$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$leg-raises$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-core-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$mountain-climbers$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$high-knees$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$burpees$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-conditioning-home$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 1, $s$box-jumps$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 2, $s$rowing-machine$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 3, $s$battle-ropes$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-conditioning-gym$s$ and position = 1;
-insert into block_exercises (block_id, position, exercise_id, sets, reps) select id, 4, $s$sprint-intervals$s$, null, null from workout_blocks where workout_id = $s$tmb-w8-conditioning-gym$s$ and position = 1;
+insert into block_exercises (block_id, position, exercise_id, sets, reps)
+select b.id, v.position, v.exercise_id, v.sets, v.reps from (values
+  ($s$full-body-burn$s$, 1, 1, $s$jump-squats$s$, null, null),
+  ($s$full-body-burn$s$, 1, 2, $s$push-ups$s$, null, null),
+  ($s$full-body-burn$s$, 1, 3, $s$mountain-climbers$s$, null, null),
+  ($s$full-body-burn$s$, 1, 4, $s$plank-hold$s$, null, null),
+  ($s$full-body-burn$s$, 1, 5, $s$burpees$s$, null, null),
+  ($s$full-body-burn$s$, 2, 1, $s$kettlebell-swings$s$, null, 15),
+  ($s$full-body-burn$s$, 2, 2, $s$walking-lunges$s$, null, 12),
+  ($s$core-crusher$s$, 1, 1, $s$weighted-situps$s$, 3, 15),
+  ($s$core-crusher$s$, 2, 1, $s$russian-twists$s$, null, null),
+  ($s$sweat-sculpt$s$, 1, 1, $s$kettlebell-swings$s$, null, 15),
+  ($s$sweat-sculpt$s$, 1, 2, $s$box-jumps$s$, null, 10),
+  ($s$sweat-sculpt$s$, 1, 3, $s$push-press$s$, null, 12),
+  ($s$sweat-sculpt$s$, 2, 1, $s$burpees$s$, null, 8),
+  ($s$sweat-sculpt$s$, 2, 2, $s$goblet-squats$s$, null, 12),
+  ($s$power-hour$s$, 1, 1, $s$squat-jumps$s$, null, null),
+  ($s$power-hour$s$, 1, 2, $s$renegade-rows$s$, null, null),
+  ($s$power-hour$s$, 1, 3, $s$battle-ropes$s$, null, null),
+  ($s$foundations-intro$s$, 1, 1, $s$goblet-squats$s$, 3, 10),
+  ($s$stretch-mobility$s$, 1, 1, $s$standing-hamstring-stretch$s$, null, null),
+  ($s$stretch-mobility$s$, 1, 2, $s$hip-flexor-stretch$s$, null, null),
+  ($s$stretch-mobility$s$, 1, 3, $s$childs-pose$s$, null, null),
+  ($s$stretch-mobility$s$, 1, 4, $s$cat-cow-stretch$s$, null, null),
+  ($s$stretch-mobility$s$, 1, 5, $s$shoulder-and-chest-opener$s$, null, null),
+  ($s$ab-burn-10$s$, 1, 1, $s$bicycle-crunches$s$, null, 20),
+  ($s$ab-burn-10$s$, 1, 2, $s$leg-raises$s$, null, 15),
+  ($s$ab-burn-10$s$, 1, 3, $s$plank-hold$s$, null, 30),
+  ($s$ab-burn-10$s$, 1, 4, $s$russian-twists$s$, null, 20),
+  ($s$lower-body-blast$s$, 1, 1, $s$jump-squats$s$, 3, 15),
+  ($s$cardio-kickstart$s$, 1, 1, $s$burpees$s$, null, 10),
+  ($s$cardio-kickstart$s$, 1, 2, $s$mountain-climbers$s$, null, 20),
+  ($s$cardio-kickstart$s$, 1, 3, $s$jump-squats$s$, null, 15),
+  ($s$ff-w1-shoulders-abs-home$s$, 1, 1, $s$push-press$s$, 3, 10),
+  ($s$ff-w1-shoulders-abs-home$s$, 2, 1, $s$plank-hold$s$, 3, 10),
+  ($s$ff-w1-shoulders-abs-home$s$, 3, 1, $s$bicycle-crunches$s$, 3, 10),
+  ($s$ff-w1-shoulders-abs-gym$s$, 1, 1, $s$overhead-press$s$, 3, 10),
+  ($s$ff-w1-shoulders-abs-gym$s$, 2, 1, $s$cable-row$s$, 3, 10),
+  ($s$ff-w1-shoulders-abs-gym$s$, 3, 1, $s$weighted-situps$s$, 3, 10),
+  ($s$ff-w1-hamstrings-glutes-home$s$, 1, 1, $s$kettlebell-swings$s$, 3, 10),
+  ($s$ff-w1-hamstrings-glutes-home$s$, 2, 1, $s$walking-lunges$s$, 3, 10),
+  ($s$ff-w1-hamstrings-glutes-home$s$, 3, 1, $s$box-jumps$s$, 3, 10),
+  ($s$ff-w1-hamstrings-glutes-gym$s$, 1, 1, $s$barbell-deadlift$s$, 3, 10),
+  ($s$ff-w1-hamstrings-glutes-gym$s$, 2, 1, $s$leg-press$s$, 3, 10),
+  ($s$ff-w1-hamstrings-glutes-gym$s$, 3, 1, $s$kettlebell-swings$s$, 3, 10),
+  ($s$ff-w1-back-biceps-home$s$, 1, 1, $s$dumbbell-rows$s$, 3, 10),
+  ($s$ff-w1-back-biceps-home$s$, 2, 1, $s$renegade-rows$s$, 3, 10),
+  ($s$ff-w1-back-biceps-home$s$, 3, 1, $s$battle-ropes$s$, 3, 10),
+  ($s$ff-w1-back-biceps-gym$s$, 1, 1, $s$lat-pulldown$s$, 3, 10),
+  ($s$ff-w1-back-biceps-gym$s$, 2, 1, $s$cable-row$s$, 3, 10),
+  ($s$ff-w1-back-biceps-gym$s$, 3, 1, $s$barbell-deadlift$s$, 3, 10),
+  ($s$ff-w1-chest-tris-home$s$, 1, 1, $s$push-ups$s$, 3, 10),
+  ($s$ff-w1-chest-tris-home$s$, 2, 1, $s$push-press$s$, 3, 10),
+  ($s$ff-w1-chest-tris-home$s$, 3, 1, $s$renegade-rows$s$, 3, 10),
+  ($s$ff-w1-chest-tris-gym$s$, 1, 1, $s$barbell-bench-press$s$, 3, 10),
+  ($s$ff-w1-chest-tris-gym$s$, 2, 1, $s$overhead-press$s$, 3, 10),
+  ($s$ff-w1-chest-tris-gym$s$, 3, 1, $s$cable-row$s$, 3, 10),
+  ($s$ff-w1-quads-glutes-home$s$, 1, 1, $s$goblet-squats$s$, 3, 10),
+  ($s$ff-w1-quads-glutes-home$s$, 2, 1, $s$squat-jumps$s$, 3, 10),
+  ($s$ff-w1-quads-glutes-home$s$, 3, 1, $s$walking-lunges$s$, 3, 10),
+  ($s$ff-w1-quads-glutes-gym$s$, 1, 1, $s$barbell-back-squat$s$, 3, 10),
+  ($s$ff-w1-quads-glutes-gym$s$, 2, 1, $s$leg-press$s$, 3, 10),
+  ($s$ff-w1-quads-glutes-gym$s$, 3, 1, $s$walking-lunges$s$, 3, 10),
+  ($s$ff-w1-circuit-home$s$, 1, 1, $s$burpees$s$, null, null),
+  ($s$ff-w1-circuit-home$s$, 1, 2, $s$mountain-climbers$s$, null, null),
+  ($s$ff-w1-circuit-home$s$, 1, 3, $s$high-knees$s$, null, null),
+  ($s$ff-w1-circuit-home$s$, 1, 4, $s$sprint-intervals$s$, null, null),
+  ($s$ff-w1-circuit-gym$s$, 1, 1, $s$rowing-machine$s$, null, null),
+  ($s$ff-w1-circuit-gym$s$, 1, 2, $s$battle-ropes$s$, null, null),
+  ($s$ff-w1-circuit-gym$s$, 1, 3, $s$burpees$s$, null, null),
+  ($s$ff-w1-circuit-gym$s$, 1, 4, $s$box-jumps$s$, null, null),
+  ($s$ff-w2-shoulders-abs-home$s$, 1, 1, $s$plank-hold$s$, 3, 10),
+  ($s$ff-w2-shoulders-abs-home$s$, 2, 1, $s$bicycle-crunches$s$, 3, 10),
+  ($s$ff-w2-shoulders-abs-home$s$, 3, 1, $s$dead-bug$s$, 3, 10),
+  ($s$ff-w2-shoulders-abs-gym$s$, 1, 1, $s$cable-row$s$, 3, 10),
+  ($s$ff-w2-shoulders-abs-gym$s$, 2, 1, $s$weighted-situps$s$, 3, 10),
+  ($s$ff-w2-shoulders-abs-gym$s$, 3, 1, $s$plank-hold$s$, 3, 10),
+  ($s$ff-w2-hamstrings-glutes-home$s$, 1, 1, $s$walking-lunges$s$, 3, 10),
+  ($s$ff-w2-hamstrings-glutes-home$s$, 2, 1, $s$box-jumps$s$, 3, 10),
+  ($s$ff-w2-hamstrings-glutes-home$s$, 3, 1, $s$goblet-squats$s$, 3, 10),
+  ($s$ff-w2-hamstrings-glutes-gym$s$, 1, 1, $s$leg-press$s$, 3, 10),
+  ($s$ff-w2-hamstrings-glutes-gym$s$, 2, 1, $s$kettlebell-swings$s$, 3, 10),
+  ($s$ff-w2-hamstrings-glutes-gym$s$, 3, 1, $s$walking-lunges$s$, 3, 10),
+  ($s$ff-w2-back-biceps-home$s$, 1, 1, $s$renegade-rows$s$, 3, 10),
+  ($s$ff-w2-back-biceps-home$s$, 2, 1, $s$battle-ropes$s$, 3, 10),
+  ($s$ff-w2-back-biceps-home$s$, 3, 1, $s$dumbbell-rows$s$, 3, 10),
+  ($s$ff-w2-back-biceps-gym$s$, 1, 1, $s$cable-row$s$, 3, 10),
+  ($s$ff-w2-back-biceps-gym$s$, 2, 1, $s$barbell-deadlift$s$, 3, 10),
+  ($s$ff-w2-back-biceps-gym$s$, 3, 1, $s$lat-pulldown$s$, 3, 10),
+  ($s$ff-w2-chest-tris-home$s$, 1, 1, $s$push-press$s$, 3, 10),
+  ($s$ff-w2-chest-tris-home$s$, 2, 1, $s$renegade-rows$s$, 3, 10),
+  ($s$ff-w2-chest-tris-home$s$, 3, 1, $s$push-ups$s$, 3, 10),
+  ($s$ff-w2-chest-tris-gym$s$, 1, 1, $s$overhead-press$s$, 3, 10),
+  ($s$ff-w2-chest-tris-gym$s$, 2, 1, $s$cable-row$s$, 3, 10),
+  ($s$ff-w2-chest-tris-gym$s$, 3, 1, $s$barbell-bench-press$s$, 3, 10),
+  ($s$ff-w2-quads-glutes-home$s$, 1, 1, $s$squat-jumps$s$, 3, 10),
+  ($s$ff-w2-quads-glutes-home$s$, 2, 1, $s$walking-lunges$s$, 3, 10),
+  ($s$ff-w2-quads-glutes-home$s$, 3, 1, $s$jump-squats$s$, 3, 10),
+  ($s$ff-w2-quads-glutes-gym$s$, 1, 1, $s$leg-press$s$, 3, 10),
+  ($s$ff-w2-quads-glutes-gym$s$, 2, 1, $s$walking-lunges$s$, 3, 10),
+  ($s$ff-w2-quads-glutes-gym$s$, 3, 1, $s$box-jumps$s$, 3, 10),
+  ($s$ff-w2-circuit-home$s$, 1, 1, $s$mountain-climbers$s$, null, null),
+  ($s$ff-w2-circuit-home$s$, 1, 2, $s$high-knees$s$, null, null),
+  ($s$ff-w2-circuit-home$s$, 1, 3, $s$sprint-intervals$s$, null, null),
+  ($s$ff-w2-circuit-home$s$, 1, 4, $s$squat-jumps$s$, null, null),
+  ($s$ff-w2-circuit-gym$s$, 1, 1, $s$battle-ropes$s$, null, null),
+  ($s$ff-w2-circuit-gym$s$, 1, 2, $s$burpees$s$, null, null),
+  ($s$ff-w2-circuit-gym$s$, 1, 3, $s$box-jumps$s$, null, null),
+  ($s$ff-w2-circuit-gym$s$, 1, 4, $s$mountain-climbers$s$, null, null),
+  ($s$ff-w3-shoulders-abs-home$s$, 1, 1, $s$bicycle-crunches$s$, 4, 10),
+  ($s$ff-w3-shoulders-abs-home$s$, 2, 1, $s$dead-bug$s$, 4, 10),
+  ($s$ff-w3-shoulders-abs-home$s$, 3, 1, $s$side-plank$s$, 4, 10),
+  ($s$ff-w3-shoulders-abs-gym$s$, 1, 1, $s$weighted-situps$s$, 4, 10),
+  ($s$ff-w3-shoulders-abs-gym$s$, 2, 1, $s$plank-hold$s$, 4, 10),
+  ($s$ff-w3-shoulders-abs-gym$s$, 3, 1, $s$side-plank$s$, 4, 10),
+  ($s$ff-w3-hamstrings-glutes-home$s$, 1, 1, $s$box-jumps$s$, 4, 10),
+  ($s$ff-w3-hamstrings-glutes-home$s$, 2, 1, $s$goblet-squats$s$, 4, 10),
+  ($s$ff-w3-hamstrings-glutes-home$s$, 3, 1, $s$kettlebell-swings$s$, 4, 10),
+  ($s$ff-w3-hamstrings-glutes-gym$s$, 1, 1, $s$kettlebell-swings$s$, 4, 10),
+  ($s$ff-w3-hamstrings-glutes-gym$s$, 2, 1, $s$walking-lunges$s$, 4, 10),
+  ($s$ff-w3-hamstrings-glutes-gym$s$, 3, 1, $s$barbell-deadlift$s$, 4, 10),
+  ($s$ff-w3-back-biceps-home$s$, 1, 1, $s$battle-ropes$s$, 4, 10),
+  ($s$ff-w3-back-biceps-home$s$, 2, 1, $s$dumbbell-rows$s$, 4, 10),
+  ($s$ff-w3-back-biceps-home$s$, 3, 1, $s$renegade-rows$s$, 4, 10),
+  ($s$ff-w3-back-biceps-gym$s$, 1, 1, $s$barbell-deadlift$s$, 4, 10),
+  ($s$ff-w3-back-biceps-gym$s$, 2, 1, $s$lat-pulldown$s$, 4, 10),
+  ($s$ff-w3-back-biceps-gym$s$, 3, 1, $s$cable-row$s$, 4, 10),
+  ($s$ff-w3-chest-tris-home$s$, 1, 1, $s$renegade-rows$s$, 4, 10),
+  ($s$ff-w3-chest-tris-home$s$, 2, 1, $s$push-ups$s$, 4, 10),
+  ($s$ff-w3-chest-tris-home$s$, 3, 1, $s$push-press$s$, 4, 10),
+  ($s$ff-w3-chest-tris-gym$s$, 1, 1, $s$cable-row$s$, 4, 10),
+  ($s$ff-w3-chest-tris-gym$s$, 2, 1, $s$barbell-bench-press$s$, 4, 10),
+  ($s$ff-w3-chest-tris-gym$s$, 3, 1, $s$overhead-press$s$, 4, 10),
+  ($s$ff-w3-quads-glutes-home$s$, 1, 1, $s$walking-lunges$s$, 4, 10),
+  ($s$ff-w3-quads-glutes-home$s$, 2, 1, $s$jump-squats$s$, 4, 10),
+  ($s$ff-w3-quads-glutes-home$s$, 3, 1, $s$box-jumps$s$, 4, 10),
+  ($s$ff-w3-quads-glutes-gym$s$, 1, 1, $s$walking-lunges$s$, 4, 10),
+  ($s$ff-w3-quads-glutes-gym$s$, 2, 1, $s$box-jumps$s$, 4, 10),
+  ($s$ff-w3-quads-glutes-gym$s$, 3, 1, $s$barbell-back-squat$s$, 4, 10),
+  ($s$ff-w3-circuit-home$s$, 1, 1, $s$high-knees$s$, null, null),
+  ($s$ff-w3-circuit-home$s$, 1, 2, $s$sprint-intervals$s$, null, null),
+  ($s$ff-w3-circuit-home$s$, 1, 3, $s$squat-jumps$s$, null, null),
+  ($s$ff-w3-circuit-home$s$, 1, 4, $s$burpees$s$, null, null),
+  ($s$ff-w3-circuit-gym$s$, 1, 1, $s$burpees$s$, null, null),
+  ($s$ff-w3-circuit-gym$s$, 1, 2, $s$box-jumps$s$, null, null),
+  ($s$ff-w3-circuit-gym$s$, 1, 3, $s$mountain-climbers$s$, null, null),
+  ($s$ff-w3-circuit-gym$s$, 1, 4, $s$rowing-machine$s$, null, null),
+  ($s$ff-w4-shoulders-abs-home$s$, 1, 1, $s$dead-bug$s$, 4, 10),
+  ($s$ff-w4-shoulders-abs-home$s$, 2, 1, $s$side-plank$s$, 4, 10),
+  ($s$ff-w4-shoulders-abs-home$s$, 3, 1, $s$push-press$s$, 4, 10),
+  ($s$ff-w4-shoulders-abs-gym$s$, 1, 1, $s$plank-hold$s$, 4, 10),
+  ($s$ff-w4-shoulders-abs-gym$s$, 2, 1, $s$side-plank$s$, 4, 10),
+  ($s$ff-w4-shoulders-abs-gym$s$, 3, 1, $s$overhead-press$s$, 4, 10),
+  ($s$ff-w4-hamstrings-glutes-home$s$, 1, 1, $s$goblet-squats$s$, 4, 10),
+  ($s$ff-w4-hamstrings-glutes-home$s$, 2, 1, $s$kettlebell-swings$s$, 4, 10),
+  ($s$ff-w4-hamstrings-glutes-home$s$, 3, 1, $s$walking-lunges$s$, 4, 10),
+  ($s$ff-w4-hamstrings-glutes-gym$s$, 1, 1, $s$walking-lunges$s$, 4, 10),
+  ($s$ff-w4-hamstrings-glutes-gym$s$, 2, 1, $s$barbell-deadlift$s$, 4, 10),
+  ($s$ff-w4-hamstrings-glutes-gym$s$, 3, 1, $s$leg-press$s$, 4, 10),
+  ($s$ff-w4-back-biceps-home$s$, 1, 1, $s$dumbbell-rows$s$, 4, 10),
+  ($s$ff-w4-back-biceps-home$s$, 2, 1, $s$renegade-rows$s$, 4, 10),
+  ($s$ff-w4-back-biceps-home$s$, 3, 1, $s$battle-ropes$s$, 4, 10),
+  ($s$ff-w4-back-biceps-gym$s$, 1, 1, $s$lat-pulldown$s$, 4, 10),
+  ($s$ff-w4-back-biceps-gym$s$, 2, 1, $s$cable-row$s$, 4, 10),
+  ($s$ff-w4-back-biceps-gym$s$, 3, 1, $s$barbell-deadlift$s$, 4, 10),
+  ($s$ff-w4-chest-tris-home$s$, 1, 1, $s$push-ups$s$, 4, 10),
+  ($s$ff-w4-chest-tris-home$s$, 2, 1, $s$push-press$s$, 4, 10),
+  ($s$ff-w4-chest-tris-home$s$, 3, 1, $s$renegade-rows$s$, 4, 10),
+  ($s$ff-w4-chest-tris-gym$s$, 1, 1, $s$barbell-bench-press$s$, 4, 10),
+  ($s$ff-w4-chest-tris-gym$s$, 2, 1, $s$overhead-press$s$, 4, 10),
+  ($s$ff-w4-chest-tris-gym$s$, 3, 1, $s$cable-row$s$, 4, 10),
+  ($s$ff-w4-quads-glutes-home$s$, 1, 1, $s$jump-squats$s$, 4, 10),
+  ($s$ff-w4-quads-glutes-home$s$, 2, 1, $s$box-jumps$s$, 4, 10),
+  ($s$ff-w4-quads-glutes-home$s$, 3, 1, $s$goblet-squats$s$, 4, 10),
+  ($s$ff-w4-quads-glutes-gym$s$, 1, 1, $s$box-jumps$s$, 4, 10),
+  ($s$ff-w4-quads-glutes-gym$s$, 2, 1, $s$barbell-back-squat$s$, 4, 10),
+  ($s$ff-w4-quads-glutes-gym$s$, 3, 1, $s$leg-press$s$, 4, 10),
+  ($s$ff-w4-circuit-home$s$, 1, 1, $s$sprint-intervals$s$, null, null),
+  ($s$ff-w4-circuit-home$s$, 1, 2, $s$squat-jumps$s$, null, null),
+  ($s$ff-w4-circuit-home$s$, 1, 3, $s$burpees$s$, null, null),
+  ($s$ff-w4-circuit-home$s$, 1, 4, $s$mountain-climbers$s$, null, null),
+  ($s$ff-w4-circuit-gym$s$, 1, 1, $s$box-jumps$s$, null, null),
+  ($s$ff-w4-circuit-gym$s$, 1, 2, $s$mountain-climbers$s$, null, null),
+  ($s$ff-w4-circuit-gym$s$, 1, 3, $s$rowing-machine$s$, null, null),
+  ($s$ff-w4-circuit-gym$s$, 1, 4, $s$battle-ropes$s$, null, null),
+  ($s$ff-w5-shoulders-abs-home$s$, 1, 1, $s$side-plank$s$, 5, 10),
+  ($s$ff-w5-shoulders-abs-home$s$, 2, 1, $s$push-press$s$, 5, 10),
+  ($s$ff-w5-shoulders-abs-home$s$, 3, 1, $s$plank-hold$s$, 5, 10),
+  ($s$ff-w5-shoulders-abs-gym$s$, 1, 1, $s$side-plank$s$, 5, 10),
+  ($s$ff-w5-shoulders-abs-gym$s$, 2, 1, $s$overhead-press$s$, 5, 10),
+  ($s$ff-w5-shoulders-abs-gym$s$, 3, 1, $s$cable-row$s$, 5, 10),
+  ($s$ff-w5-hamstrings-glutes-home$s$, 1, 1, $s$kettlebell-swings$s$, 5, 10),
+  ($s$ff-w5-hamstrings-glutes-home$s$, 2, 1, $s$walking-lunges$s$, 5, 10),
+  ($s$ff-w5-hamstrings-glutes-home$s$, 3, 1, $s$box-jumps$s$, 5, 10),
+  ($s$ff-w5-hamstrings-glutes-gym$s$, 1, 1, $s$barbell-deadlift$s$, 5, 10),
+  ($s$ff-w5-hamstrings-glutes-gym$s$, 2, 1, $s$leg-press$s$, 5, 10),
+  ($s$ff-w5-hamstrings-glutes-gym$s$, 3, 1, $s$kettlebell-swings$s$, 5, 10),
+  ($s$ff-w5-back-biceps-home$s$, 1, 1, $s$renegade-rows$s$, 5, 10),
+  ($s$ff-w5-back-biceps-home$s$, 2, 1, $s$battle-ropes$s$, 5, 10),
+  ($s$ff-w5-back-biceps-home$s$, 3, 1, $s$dumbbell-rows$s$, 5, 10),
+  ($s$ff-w5-back-biceps-gym$s$, 1, 1, $s$cable-row$s$, 5, 10),
+  ($s$ff-w5-back-biceps-gym$s$, 2, 1, $s$barbell-deadlift$s$, 5, 10),
+  ($s$ff-w5-back-biceps-gym$s$, 3, 1, $s$lat-pulldown$s$, 5, 10),
+  ($s$ff-w5-chest-tris-home$s$, 1, 1, $s$push-press$s$, 5, 10),
+  ($s$ff-w5-chest-tris-home$s$, 2, 1, $s$renegade-rows$s$, 5, 10),
+  ($s$ff-w5-chest-tris-home$s$, 3, 1, $s$push-ups$s$, 5, 10),
+  ($s$ff-w5-chest-tris-gym$s$, 1, 1, $s$overhead-press$s$, 5, 10),
+  ($s$ff-w5-chest-tris-gym$s$, 2, 1, $s$cable-row$s$, 5, 10),
+  ($s$ff-w5-chest-tris-gym$s$, 3, 1, $s$barbell-bench-press$s$, 5, 10),
+  ($s$ff-w5-quads-glutes-home$s$, 1, 1, $s$box-jumps$s$, 5, 10),
+  ($s$ff-w5-quads-glutes-home$s$, 2, 1, $s$goblet-squats$s$, 5, 10),
+  ($s$ff-w5-quads-glutes-home$s$, 3, 1, $s$squat-jumps$s$, 5, 10),
+  ($s$ff-w5-quads-glutes-gym$s$, 1, 1, $s$barbell-back-squat$s$, 5, 10),
+  ($s$ff-w5-quads-glutes-gym$s$, 2, 1, $s$leg-press$s$, 5, 10),
+  ($s$ff-w5-quads-glutes-gym$s$, 3, 1, $s$walking-lunges$s$, 5, 10),
+  ($s$ff-w5-circuit-home$s$, 1, 1, $s$squat-jumps$s$, null, null),
+  ($s$ff-w5-circuit-home$s$, 1, 2, $s$burpees$s$, null, null),
+  ($s$ff-w5-circuit-home$s$, 1, 3, $s$mountain-climbers$s$, null, null),
+  ($s$ff-w5-circuit-home$s$, 1, 4, $s$high-knees$s$, null, null),
+  ($s$ff-w5-circuit-gym$s$, 1, 1, $s$mountain-climbers$s$, null, null),
+  ($s$ff-w5-circuit-gym$s$, 1, 2, $s$rowing-machine$s$, null, null),
+  ($s$ff-w5-circuit-gym$s$, 1, 3, $s$battle-ropes$s$, null, null),
+  ($s$ff-w5-circuit-gym$s$, 1, 4, $s$burpees$s$, null, null),
+  ($s$ff-w6-shoulders-abs-home$s$, 1, 1, $s$push-press$s$, 5, 10),
+  ($s$ff-w6-shoulders-abs-home$s$, 2, 1, $s$plank-hold$s$, 5, 10),
+  ($s$ff-w6-shoulders-abs-home$s$, 3, 1, $s$bicycle-crunches$s$, 5, 10),
+  ($s$ff-w6-shoulders-abs-gym$s$, 1, 1, $s$overhead-press$s$, 5, 10),
+  ($s$ff-w6-shoulders-abs-gym$s$, 2, 1, $s$cable-row$s$, 5, 10),
+  ($s$ff-w6-shoulders-abs-gym$s$, 3, 1, $s$weighted-situps$s$, 5, 10),
+  ($s$ff-w6-hamstrings-glutes-home$s$, 1, 1, $s$walking-lunges$s$, 5, 10),
+  ($s$ff-w6-hamstrings-glutes-home$s$, 2, 1, $s$box-jumps$s$, 5, 10),
+  ($s$ff-w6-hamstrings-glutes-home$s$, 3, 1, $s$goblet-squats$s$, 5, 10),
+  ($s$ff-w6-hamstrings-glutes-gym$s$, 1, 1, $s$leg-press$s$, 5, 10),
+  ($s$ff-w6-hamstrings-glutes-gym$s$, 2, 1, $s$kettlebell-swings$s$, 5, 10),
+  ($s$ff-w6-hamstrings-glutes-gym$s$, 3, 1, $s$walking-lunges$s$, 5, 10),
+  ($s$ff-w6-back-biceps-home$s$, 1, 1, $s$battle-ropes$s$, 5, 10),
+  ($s$ff-w6-back-biceps-home$s$, 2, 1, $s$dumbbell-rows$s$, 5, 10),
+  ($s$ff-w6-back-biceps-home$s$, 3, 1, $s$renegade-rows$s$, 5, 10),
+  ($s$ff-w6-back-biceps-gym$s$, 1, 1, $s$barbell-deadlift$s$, 5, 10),
+  ($s$ff-w6-back-biceps-gym$s$, 2, 1, $s$lat-pulldown$s$, 5, 10),
+  ($s$ff-w6-back-biceps-gym$s$, 3, 1, $s$cable-row$s$, 5, 10),
+  ($s$ff-w6-chest-tris-home$s$, 1, 1, $s$renegade-rows$s$, 5, 10),
+  ($s$ff-w6-chest-tris-home$s$, 2, 1, $s$push-ups$s$, 5, 10),
+  ($s$ff-w6-chest-tris-home$s$, 3, 1, $s$push-press$s$, 5, 10),
+  ($s$ff-w6-chest-tris-gym$s$, 1, 1, $s$cable-row$s$, 5, 10),
+  ($s$ff-w6-chest-tris-gym$s$, 2, 1, $s$barbell-bench-press$s$, 5, 10),
+  ($s$ff-w6-chest-tris-gym$s$, 3, 1, $s$overhead-press$s$, 5, 10),
+  ($s$ff-w6-quads-glutes-home$s$, 1, 1, $s$goblet-squats$s$, 5, 10),
+  ($s$ff-w6-quads-glutes-home$s$, 2, 1, $s$squat-jumps$s$, 5, 10),
+  ($s$ff-w6-quads-glutes-home$s$, 3, 1, $s$walking-lunges$s$, 5, 10),
+  ($s$ff-w6-quads-glutes-gym$s$, 1, 1, $s$leg-press$s$, 5, 10),
+  ($s$ff-w6-quads-glutes-gym$s$, 2, 1, $s$walking-lunges$s$, 5, 10)
+) as v(workout_id, block_position, position, exercise_id, sets, reps)
+join workout_blocks b on b.workout_id = v.workout_id and b.position = v.block_position;
+insert into block_exercises (block_id, position, exercise_id, sets, reps)
+select b.id, v.position, v.exercise_id, v.sets, v.reps from (values
+  ($s$ff-w6-quads-glutes-gym$s$, 3, 1, $s$box-jumps$s$, 5, 10),
+  ($s$ff-w6-circuit-home$s$, 1, 1, $s$burpees$s$, null, null),
+  ($s$ff-w6-circuit-home$s$, 1, 2, $s$mountain-climbers$s$, null, null),
+  ($s$ff-w6-circuit-home$s$, 1, 3, $s$high-knees$s$, null, null),
+  ($s$ff-w6-circuit-home$s$, 1, 4, $s$sprint-intervals$s$, null, null),
+  ($s$ff-w6-circuit-gym$s$, 1, 1, $s$rowing-machine$s$, null, null),
+  ($s$ff-w6-circuit-gym$s$, 1, 2, $s$battle-ropes$s$, null, null),
+  ($s$ff-w6-circuit-gym$s$, 1, 3, $s$burpees$s$, null, null),
+  ($s$ff-w6-circuit-gym$s$, 1, 4, $s$box-jumps$s$, null, null),
+  ($s$ff-w7-shoulders-abs-home$s$, 1, 1, $s$plank-hold$s$, 6, 10),
+  ($s$ff-w7-shoulders-abs-home$s$, 2, 1, $s$bicycle-crunches$s$, 6, 10),
+  ($s$ff-w7-shoulders-abs-home$s$, 3, 1, $s$dead-bug$s$, 6, 10),
+  ($s$ff-w7-shoulders-abs-gym$s$, 1, 1, $s$cable-row$s$, 6, 10),
+  ($s$ff-w7-shoulders-abs-gym$s$, 2, 1, $s$weighted-situps$s$, 6, 10),
+  ($s$ff-w7-shoulders-abs-gym$s$, 3, 1, $s$plank-hold$s$, 6, 10),
+  ($s$ff-w7-hamstrings-glutes-home$s$, 1, 1, $s$box-jumps$s$, 6, 10),
+  ($s$ff-w7-hamstrings-glutes-home$s$, 2, 1, $s$goblet-squats$s$, 6, 10),
+  ($s$ff-w7-hamstrings-glutes-home$s$, 3, 1, $s$kettlebell-swings$s$, 6, 10),
+  ($s$ff-w7-hamstrings-glutes-gym$s$, 1, 1, $s$kettlebell-swings$s$, 6, 10),
+  ($s$ff-w7-hamstrings-glutes-gym$s$, 2, 1, $s$walking-lunges$s$, 6, 10),
+  ($s$ff-w7-hamstrings-glutes-gym$s$, 3, 1, $s$barbell-deadlift$s$, 6, 10),
+  ($s$ff-w7-back-biceps-home$s$, 1, 1, $s$dumbbell-rows$s$, 6, 10),
+  ($s$ff-w7-back-biceps-home$s$, 2, 1, $s$renegade-rows$s$, 6, 10),
+  ($s$ff-w7-back-biceps-home$s$, 3, 1, $s$battle-ropes$s$, 6, 10),
+  ($s$ff-w7-back-biceps-gym$s$, 1, 1, $s$lat-pulldown$s$, 6, 10),
+  ($s$ff-w7-back-biceps-gym$s$, 2, 1, $s$cable-row$s$, 6, 10),
+  ($s$ff-w7-back-biceps-gym$s$, 3, 1, $s$barbell-deadlift$s$, 6, 10),
+  ($s$ff-w7-chest-tris-home$s$, 1, 1, $s$push-ups$s$, 6, 10),
+  ($s$ff-w7-chest-tris-home$s$, 2, 1, $s$push-press$s$, 6, 10),
+  ($s$ff-w7-chest-tris-home$s$, 3, 1, $s$renegade-rows$s$, 6, 10),
+  ($s$ff-w7-chest-tris-gym$s$, 1, 1, $s$barbell-bench-press$s$, 6, 10),
+  ($s$ff-w7-chest-tris-gym$s$, 2, 1, $s$overhead-press$s$, 6, 10),
+  ($s$ff-w7-chest-tris-gym$s$, 3, 1, $s$cable-row$s$, 6, 10),
+  ($s$ff-w7-quads-glutes-home$s$, 1, 1, $s$squat-jumps$s$, 6, 10),
+  ($s$ff-w7-quads-glutes-home$s$, 2, 1, $s$walking-lunges$s$, 6, 10),
+  ($s$ff-w7-quads-glutes-home$s$, 3, 1, $s$jump-squats$s$, 6, 10),
+  ($s$ff-w7-quads-glutes-gym$s$, 1, 1, $s$walking-lunges$s$, 6, 10),
+  ($s$ff-w7-quads-glutes-gym$s$, 2, 1, $s$box-jumps$s$, 6, 10),
+  ($s$ff-w7-quads-glutes-gym$s$, 3, 1, $s$barbell-back-squat$s$, 6, 10),
+  ($s$ff-w7-circuit-home$s$, 1, 1, $s$mountain-climbers$s$, null, null),
+  ($s$ff-w7-circuit-home$s$, 1, 2, $s$high-knees$s$, null, null),
+  ($s$ff-w7-circuit-home$s$, 1, 3, $s$sprint-intervals$s$, null, null),
+  ($s$ff-w7-circuit-home$s$, 1, 4, $s$squat-jumps$s$, null, null),
+  ($s$ff-w7-circuit-gym$s$, 1, 1, $s$battle-ropes$s$, null, null),
+  ($s$ff-w7-circuit-gym$s$, 1, 2, $s$burpees$s$, null, null),
+  ($s$ff-w7-circuit-gym$s$, 1, 3, $s$box-jumps$s$, null, null),
+  ($s$ff-w7-circuit-gym$s$, 1, 4, $s$mountain-climbers$s$, null, null),
+  ($s$ff-w8-shoulders-abs-home$s$, 1, 1, $s$bicycle-crunches$s$, 6, 10),
+  ($s$ff-w8-shoulders-abs-home$s$, 2, 1, $s$dead-bug$s$, 6, 10),
+  ($s$ff-w8-shoulders-abs-home$s$, 3, 1, $s$side-plank$s$, 6, 10),
+  ($s$ff-w8-shoulders-abs-gym$s$, 1, 1, $s$weighted-situps$s$, 6, 10),
+  ($s$ff-w8-shoulders-abs-gym$s$, 2, 1, $s$plank-hold$s$, 6, 10),
+  ($s$ff-w8-shoulders-abs-gym$s$, 3, 1, $s$side-plank$s$, 6, 10),
+  ($s$ff-w8-hamstrings-glutes-home$s$, 1, 1, $s$goblet-squats$s$, 6, 10),
+  ($s$ff-w8-hamstrings-glutes-home$s$, 2, 1, $s$kettlebell-swings$s$, 6, 10),
+  ($s$ff-w8-hamstrings-glutes-home$s$, 3, 1, $s$walking-lunges$s$, 6, 10),
+  ($s$ff-w8-hamstrings-glutes-gym$s$, 1, 1, $s$walking-lunges$s$, 6, 10),
+  ($s$ff-w8-hamstrings-glutes-gym$s$, 2, 1, $s$barbell-deadlift$s$, 6, 10),
+  ($s$ff-w8-hamstrings-glutes-gym$s$, 3, 1, $s$leg-press$s$, 6, 10),
+  ($s$ff-w8-back-biceps-home$s$, 1, 1, $s$renegade-rows$s$, 6, 10),
+  ($s$ff-w8-back-biceps-home$s$, 2, 1, $s$battle-ropes$s$, 6, 10),
+  ($s$ff-w8-back-biceps-home$s$, 3, 1, $s$dumbbell-rows$s$, 6, 10),
+  ($s$ff-w8-back-biceps-gym$s$, 1, 1, $s$cable-row$s$, 6, 10),
+  ($s$ff-w8-back-biceps-gym$s$, 2, 1, $s$barbell-deadlift$s$, 6, 10),
+  ($s$ff-w8-back-biceps-gym$s$, 3, 1, $s$lat-pulldown$s$, 6, 10),
+  ($s$ff-w8-chest-tris-home$s$, 1, 1, $s$push-press$s$, 6, 10),
+  ($s$ff-w8-chest-tris-home$s$, 2, 1, $s$renegade-rows$s$, 6, 10),
+  ($s$ff-w8-chest-tris-home$s$, 3, 1, $s$push-ups$s$, 6, 10),
+  ($s$ff-w8-chest-tris-gym$s$, 1, 1, $s$overhead-press$s$, 6, 10),
+  ($s$ff-w8-chest-tris-gym$s$, 2, 1, $s$cable-row$s$, 6, 10),
+  ($s$ff-w8-chest-tris-gym$s$, 3, 1, $s$barbell-bench-press$s$, 6, 10),
+  ($s$ff-w8-quads-glutes-home$s$, 1, 1, $s$walking-lunges$s$, 6, 10),
+  ($s$ff-w8-quads-glutes-home$s$, 2, 1, $s$jump-squats$s$, 6, 10),
+  ($s$ff-w8-quads-glutes-home$s$, 3, 1, $s$box-jumps$s$, 6, 10),
+  ($s$ff-w8-quads-glutes-gym$s$, 1, 1, $s$box-jumps$s$, 6, 10),
+  ($s$ff-w8-quads-glutes-gym$s$, 2, 1, $s$barbell-back-squat$s$, 6, 10),
+  ($s$ff-w8-quads-glutes-gym$s$, 3, 1, $s$leg-press$s$, 6, 10),
+  ($s$ff-w8-circuit-home$s$, 1, 1, $s$high-knees$s$, null, null),
+  ($s$ff-w8-circuit-home$s$, 1, 2, $s$sprint-intervals$s$, null, null),
+  ($s$ff-w8-circuit-home$s$, 1, 3, $s$squat-jumps$s$, null, null),
+  ($s$ff-w8-circuit-home$s$, 1, 4, $s$burpees$s$, null, null),
+  ($s$ff-w8-circuit-gym$s$, 1, 1, $s$burpees$s$, null, null),
+  ($s$ff-w8-circuit-gym$s$, 1, 2, $s$box-jumps$s$, null, null),
+  ($s$ff-w8-circuit-gym$s$, 1, 3, $s$mountain-climbers$s$, null, null),
+  ($s$ff-w8-circuit-gym$s$, 1, 4, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w1-full-body-home$s$, 1, 1, $s$burpees$s$, null, null),
+  ($s$tmb-w1-full-body-home$s$, 1, 2, $s$squat-jumps$s$, null, null),
+  ($s$tmb-w1-full-body-home$s$, 1, 3, $s$push-ups$s$, null, null),
+  ($s$tmb-w1-full-body-home$s$, 1, 4, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w1-full-body-gym$s$, 1, 1, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w1-full-body-gym$s$, 1, 2, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w1-full-body-gym$s$, 1, 3, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w1-full-body-gym$s$, 1, 4, $s$box-jumps$s$, null, null),
+  ($s$tmb-w1-lower-home$s$, 1, 1, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w1-lower-home$s$, 1, 2, $s$jump-squats$s$, null, null),
+  ($s$tmb-w1-lower-home$s$, 1, 3, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w1-lower-home$s$, 1, 4, $s$box-jumps$s$, null, null),
+  ($s$tmb-w1-lower-gym$s$, 1, 1, $s$leg-press$s$, null, null),
+  ($s$tmb-w1-lower-gym$s$, 1, 2, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w1-lower-gym$s$, 1, 3, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w1-lower-gym$s$, 1, 4, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w1-upper-home$s$, 1, 1, $s$push-ups$s$, null, null),
+  ($s$tmb-w1-upper-home$s$, 1, 2, $s$renegade-rows$s$, null, null),
+  ($s$tmb-w1-upper-home$s$, 1, 3, $s$push-press$s$, null, null),
+  ($s$tmb-w1-upper-home$s$, 1, 4, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w1-upper-gym$s$, 1, 1, $s$barbell-bench-press$s$, null, null),
+  ($s$tmb-w1-upper-gym$s$, 1, 2, $s$lat-pulldown$s$, null, null),
+  ($s$tmb-w1-upper-gym$s$, 1, 3, $s$overhead-press$s$, null, null),
+  ($s$tmb-w1-upper-gym$s$, 1, 4, $s$cable-row$s$, null, null),
+  ($s$tmb-w1-core-home$s$, 1, 1, $s$bicycle-crunches$s$, null, null),
+  ($s$tmb-w1-core-home$s$, 1, 2, $s$plank-hold$s$, null, null),
+  ($s$tmb-w1-core-home$s$, 1, 3, $s$side-plank$s$, null, null),
+  ($s$tmb-w1-core-home$s$, 1, 4, $s$dead-bug$s$, null, null),
+  ($s$tmb-w1-core-gym$s$, 1, 1, $s$weighted-situps$s$, null, null),
+  ($s$tmb-w1-core-gym$s$, 1, 2, $s$plank-hold$s$, null, null),
+  ($s$tmb-w1-core-gym$s$, 1, 3, $s$leg-raises$s$, null, null),
+  ($s$tmb-w1-core-gym$s$, 1, 4, $s$russian-twists$s$, null, null),
+  ($s$tmb-w1-conditioning-home$s$, 1, 1, $s$high-knees$s$, null, null),
+  ($s$tmb-w1-conditioning-home$s$, 1, 2, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w1-conditioning-home$s$, 1, 3, $s$burpees$s$, null, null),
+  ($s$tmb-w1-conditioning-home$s$, 1, 4, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w1-conditioning-gym$s$, 1, 1, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w1-conditioning-gym$s$, 1, 2, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w1-conditioning-gym$s$, 1, 3, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w1-conditioning-gym$s$, 1, 4, $s$box-jumps$s$, null, null),
+  ($s$tmb-w2-full-body-home$s$, 1, 1, $s$squat-jumps$s$, null, null),
+  ($s$tmb-w2-full-body-home$s$, 1, 2, $s$push-ups$s$, null, null),
+  ($s$tmb-w2-full-body-home$s$, 1, 3, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w2-full-body-home$s$, 1, 4, $s$burpees$s$, null, null),
+  ($s$tmb-w2-full-body-gym$s$, 1, 1, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w2-full-body-gym$s$, 1, 2, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w2-full-body-gym$s$, 1, 3, $s$box-jumps$s$, null, null),
+  ($s$tmb-w2-full-body-gym$s$, 1, 4, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w2-lower-home$s$, 1, 1, $s$jump-squats$s$, null, null),
+  ($s$tmb-w2-lower-home$s$, 1, 2, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w2-lower-home$s$, 1, 3, $s$box-jumps$s$, null, null),
+  ($s$tmb-w2-lower-home$s$, 1, 4, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w2-lower-gym$s$, 1, 1, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w2-lower-gym$s$, 1, 2, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w2-lower-gym$s$, 1, 3, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w2-lower-gym$s$, 1, 4, $s$leg-press$s$, null, null),
+  ($s$tmb-w2-upper-home$s$, 1, 1, $s$renegade-rows$s$, null, null),
+  ($s$tmb-w2-upper-home$s$, 1, 2, $s$push-press$s$, null, null),
+  ($s$tmb-w2-upper-home$s$, 1, 3, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w2-upper-home$s$, 1, 4, $s$push-ups$s$, null, null),
+  ($s$tmb-w2-upper-gym$s$, 1, 1, $s$lat-pulldown$s$, null, null),
+  ($s$tmb-w2-upper-gym$s$, 1, 2, $s$overhead-press$s$, null, null),
+  ($s$tmb-w2-upper-gym$s$, 1, 3, $s$cable-row$s$, null, null),
+  ($s$tmb-w2-upper-gym$s$, 1, 4, $s$barbell-bench-press$s$, null, null),
+  ($s$tmb-w2-core-home$s$, 1, 1, $s$plank-hold$s$, null, null),
+  ($s$tmb-w2-core-home$s$, 1, 2, $s$side-plank$s$, null, null),
+  ($s$tmb-w2-core-home$s$, 1, 3, $s$dead-bug$s$, null, null),
+  ($s$tmb-w2-core-home$s$, 1, 4, $s$bicycle-crunches$s$, null, null),
+  ($s$tmb-w2-core-gym$s$, 1, 1, $s$plank-hold$s$, null, null),
+  ($s$tmb-w2-core-gym$s$, 1, 2, $s$leg-raises$s$, null, null),
+  ($s$tmb-w2-core-gym$s$, 1, 3, $s$russian-twists$s$, null, null),
+  ($s$tmb-w2-core-gym$s$, 1, 4, $s$weighted-situps$s$, null, null),
+  ($s$tmb-w2-conditioning-home$s$, 1, 1, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w2-conditioning-home$s$, 1, 2, $s$burpees$s$, null, null),
+  ($s$tmb-w2-conditioning-home$s$, 1, 3, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w2-conditioning-home$s$, 1, 4, $s$high-knees$s$, null, null),
+  ($s$tmb-w2-conditioning-gym$s$, 1, 1, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w2-conditioning-gym$s$, 1, 2, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w2-conditioning-gym$s$, 1, 3, $s$box-jumps$s$, null, null),
+  ($s$tmb-w2-conditioning-gym$s$, 1, 4, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w3-full-body-home$s$, 1, 1, $s$push-ups$s$, null, null),
+  ($s$tmb-w3-full-body-home$s$, 1, 2, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w3-full-body-home$s$, 1, 3, $s$burpees$s$, null, null),
+  ($s$tmb-w3-full-body-home$s$, 1, 4, $s$squat-jumps$s$, null, null),
+  ($s$tmb-w3-full-body-gym$s$, 1, 1, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w3-full-body-gym$s$, 1, 2, $s$box-jumps$s$, null, null),
+  ($s$tmb-w3-full-body-gym$s$, 1, 3, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w3-full-body-gym$s$, 1, 4, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w3-lower-home$s$, 1, 1, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w3-lower-home$s$, 1, 2, $s$box-jumps$s$, null, null),
+  ($s$tmb-w3-lower-home$s$, 1, 3, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w3-lower-home$s$, 1, 4, $s$jump-squats$s$, null, null),
+  ($s$tmb-w3-lower-gym$s$, 1, 1, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w3-lower-gym$s$, 1, 2, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w3-lower-gym$s$, 1, 3, $s$leg-press$s$, null, null),
+  ($s$tmb-w3-lower-gym$s$, 1, 4, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w3-upper-home$s$, 1, 1, $s$push-press$s$, null, null),
+  ($s$tmb-w3-upper-home$s$, 1, 2, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w3-upper-home$s$, 1, 3, $s$push-ups$s$, null, null),
+  ($s$tmb-w3-upper-home$s$, 1, 4, $s$renegade-rows$s$, null, null),
+  ($s$tmb-w3-upper-gym$s$, 1, 1, $s$overhead-press$s$, null, null),
+  ($s$tmb-w3-upper-gym$s$, 1, 2, $s$cable-row$s$, null, null),
+  ($s$tmb-w3-upper-gym$s$, 1, 3, $s$barbell-bench-press$s$, null, null),
+  ($s$tmb-w3-upper-gym$s$, 1, 4, $s$lat-pulldown$s$, null, null),
+  ($s$tmb-w3-core-home$s$, 1, 1, $s$side-plank$s$, null, null),
+  ($s$tmb-w3-core-home$s$, 1, 2, $s$dead-bug$s$, null, null),
+  ($s$tmb-w3-core-home$s$, 1, 3, $s$bicycle-crunches$s$, null, null),
+  ($s$tmb-w3-core-home$s$, 1, 4, $s$plank-hold$s$, null, null),
+  ($s$tmb-w3-core-gym$s$, 1, 1, $s$leg-raises$s$, null, null),
+  ($s$tmb-w3-core-gym$s$, 1, 2, $s$russian-twists$s$, null, null),
+  ($s$tmb-w3-core-gym$s$, 1, 3, $s$weighted-situps$s$, null, null),
+  ($s$tmb-w3-core-gym$s$, 1, 4, $s$plank-hold$s$, null, null),
+  ($s$tmb-w3-conditioning-home$s$, 1, 1, $s$burpees$s$, null, null),
+  ($s$tmb-w3-conditioning-home$s$, 1, 2, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w3-conditioning-home$s$, 1, 3, $s$high-knees$s$, null, null),
+  ($s$tmb-w3-conditioning-home$s$, 1, 4, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w3-conditioning-gym$s$, 1, 1, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w3-conditioning-gym$s$, 1, 2, $s$box-jumps$s$, null, null),
+  ($s$tmb-w3-conditioning-gym$s$, 1, 3, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w3-conditioning-gym$s$, 1, 4, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w4-full-body-home$s$, 1, 1, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w4-full-body-home$s$, 1, 2, $s$burpees$s$, null, null),
+  ($s$tmb-w4-full-body-home$s$, 1, 3, $s$squat-jumps$s$, null, null),
+  ($s$tmb-w4-full-body-home$s$, 1, 4, $s$push-ups$s$, null, null),
+  ($s$tmb-w4-full-body-gym$s$, 1, 1, $s$box-jumps$s$, null, null),
+  ($s$tmb-w4-full-body-gym$s$, 1, 2, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w4-full-body-gym$s$, 1, 3, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w4-full-body-gym$s$, 1, 4, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w4-lower-home$s$, 1, 1, $s$box-jumps$s$, null, null),
+  ($s$tmb-w4-lower-home$s$, 1, 2, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w4-lower-home$s$, 1, 3, $s$jump-squats$s$, null, null),
+  ($s$tmb-w4-lower-home$s$, 1, 4, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w4-lower-gym$s$, 1, 1, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w4-lower-gym$s$, 1, 2, $s$leg-press$s$, null, null),
+  ($s$tmb-w4-lower-gym$s$, 1, 3, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w4-lower-gym$s$, 1, 4, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w4-upper-home$s$, 1, 1, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w4-upper-home$s$, 1, 2, $s$push-ups$s$, null, null),
+  ($s$tmb-w4-upper-home$s$, 1, 3, $s$renegade-rows$s$, null, null),
+  ($s$tmb-w4-upper-home$s$, 1, 4, $s$push-press$s$, null, null),
+  ($s$tmb-w4-upper-gym$s$, 1, 1, $s$cable-row$s$, null, null),
+  ($s$tmb-w4-upper-gym$s$, 1, 2, $s$barbell-bench-press$s$, null, null),
+  ($s$tmb-w4-upper-gym$s$, 1, 3, $s$lat-pulldown$s$, null, null),
+  ($s$tmb-w4-upper-gym$s$, 1, 4, $s$overhead-press$s$, null, null),
+  ($s$tmb-w4-core-home$s$, 1, 1, $s$dead-bug$s$, null, null),
+  ($s$tmb-w4-core-home$s$, 1, 2, $s$bicycle-crunches$s$, null, null),
+  ($s$tmb-w4-core-home$s$, 1, 3, $s$plank-hold$s$, null, null),
+  ($s$tmb-w4-core-home$s$, 1, 4, $s$side-plank$s$, null, null),
+  ($s$tmb-w4-core-gym$s$, 1, 1, $s$russian-twists$s$, null, null),
+  ($s$tmb-w4-core-gym$s$, 1, 2, $s$weighted-situps$s$, null, null),
+  ($s$tmb-w4-core-gym$s$, 1, 3, $s$plank-hold$s$, null, null),
+  ($s$tmb-w4-core-gym$s$, 1, 4, $s$leg-raises$s$, null, null),
+  ($s$tmb-w4-conditioning-home$s$, 1, 1, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w4-conditioning-home$s$, 1, 2, $s$high-knees$s$, null, null),
+  ($s$tmb-w4-conditioning-home$s$, 1, 3, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w4-conditioning-home$s$, 1, 4, $s$burpees$s$, null, null),
+  ($s$tmb-w4-conditioning-gym$s$, 1, 1, $s$box-jumps$s$, null, null),
+  ($s$tmb-w4-conditioning-gym$s$, 1, 2, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w4-conditioning-gym$s$, 1, 3, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w4-conditioning-gym$s$, 1, 4, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w5-full-body-home$s$, 1, 1, $s$burpees$s$, null, null),
+  ($s$tmb-w5-full-body-home$s$, 1, 2, $s$squat-jumps$s$, null, null),
+  ($s$tmb-w5-full-body-home$s$, 1, 3, $s$push-ups$s$, null, null),
+  ($s$tmb-w5-full-body-home$s$, 1, 4, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w5-full-body-gym$s$, 1, 1, $s$rowing-machine$s$, null, null)
+) as v(workout_id, block_position, position, exercise_id, sets, reps)
+join workout_blocks b on b.workout_id = v.workout_id and b.position = v.block_position;
+insert into block_exercises (block_id, position, exercise_id, sets, reps)
+select b.id, v.position, v.exercise_id, v.sets, v.reps from (values
+  ($s$tmb-w5-full-body-gym$s$, 1, 2, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w5-full-body-gym$s$, 1, 3, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w5-full-body-gym$s$, 1, 4, $s$box-jumps$s$, null, null),
+  ($s$tmb-w5-lower-home$s$, 1, 1, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w5-lower-home$s$, 1, 2, $s$jump-squats$s$, null, null),
+  ($s$tmb-w5-lower-home$s$, 1, 3, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w5-lower-home$s$, 1, 4, $s$box-jumps$s$, null, null),
+  ($s$tmb-w5-lower-gym$s$, 1, 1, $s$leg-press$s$, null, null),
+  ($s$tmb-w5-lower-gym$s$, 1, 2, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w5-lower-gym$s$, 1, 3, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w5-lower-gym$s$, 1, 4, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w5-upper-home$s$, 1, 1, $s$push-ups$s$, null, null),
+  ($s$tmb-w5-upper-home$s$, 1, 2, $s$renegade-rows$s$, null, null),
+  ($s$tmb-w5-upper-home$s$, 1, 3, $s$push-press$s$, null, null),
+  ($s$tmb-w5-upper-home$s$, 1, 4, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w5-upper-gym$s$, 1, 1, $s$barbell-bench-press$s$, null, null),
+  ($s$tmb-w5-upper-gym$s$, 1, 2, $s$lat-pulldown$s$, null, null),
+  ($s$tmb-w5-upper-gym$s$, 1, 3, $s$overhead-press$s$, null, null),
+  ($s$tmb-w5-upper-gym$s$, 1, 4, $s$cable-row$s$, null, null),
+  ($s$tmb-w5-core-home$s$, 1, 1, $s$bicycle-crunches$s$, null, null),
+  ($s$tmb-w5-core-home$s$, 1, 2, $s$plank-hold$s$, null, null),
+  ($s$tmb-w5-core-home$s$, 1, 3, $s$side-plank$s$, null, null),
+  ($s$tmb-w5-core-home$s$, 1, 4, $s$dead-bug$s$, null, null),
+  ($s$tmb-w5-core-gym$s$, 1, 1, $s$weighted-situps$s$, null, null),
+  ($s$tmb-w5-core-gym$s$, 1, 2, $s$plank-hold$s$, null, null),
+  ($s$tmb-w5-core-gym$s$, 1, 3, $s$leg-raises$s$, null, null),
+  ($s$tmb-w5-core-gym$s$, 1, 4, $s$russian-twists$s$, null, null),
+  ($s$tmb-w5-conditioning-home$s$, 1, 1, $s$high-knees$s$, null, null),
+  ($s$tmb-w5-conditioning-home$s$, 1, 2, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w5-conditioning-home$s$, 1, 3, $s$burpees$s$, null, null),
+  ($s$tmb-w5-conditioning-home$s$, 1, 4, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w5-conditioning-gym$s$, 1, 1, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w5-conditioning-gym$s$, 1, 2, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w5-conditioning-gym$s$, 1, 3, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w5-conditioning-gym$s$, 1, 4, $s$box-jumps$s$, null, null),
+  ($s$tmb-w6-full-body-home$s$, 1, 1, $s$squat-jumps$s$, null, null),
+  ($s$tmb-w6-full-body-home$s$, 1, 2, $s$push-ups$s$, null, null),
+  ($s$tmb-w6-full-body-home$s$, 1, 3, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w6-full-body-home$s$, 1, 4, $s$burpees$s$, null, null),
+  ($s$tmb-w6-full-body-gym$s$, 1, 1, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w6-full-body-gym$s$, 1, 2, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w6-full-body-gym$s$, 1, 3, $s$box-jumps$s$, null, null),
+  ($s$tmb-w6-full-body-gym$s$, 1, 4, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w6-lower-home$s$, 1, 1, $s$jump-squats$s$, null, null),
+  ($s$tmb-w6-lower-home$s$, 1, 2, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w6-lower-home$s$, 1, 3, $s$box-jumps$s$, null, null),
+  ($s$tmb-w6-lower-home$s$, 1, 4, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w6-lower-gym$s$, 1, 1, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w6-lower-gym$s$, 1, 2, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w6-lower-gym$s$, 1, 3, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w6-lower-gym$s$, 1, 4, $s$leg-press$s$, null, null),
+  ($s$tmb-w6-upper-home$s$, 1, 1, $s$renegade-rows$s$, null, null),
+  ($s$tmb-w6-upper-home$s$, 1, 2, $s$push-press$s$, null, null),
+  ($s$tmb-w6-upper-home$s$, 1, 3, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w6-upper-home$s$, 1, 4, $s$push-ups$s$, null, null),
+  ($s$tmb-w6-upper-gym$s$, 1, 1, $s$lat-pulldown$s$, null, null),
+  ($s$tmb-w6-upper-gym$s$, 1, 2, $s$overhead-press$s$, null, null),
+  ($s$tmb-w6-upper-gym$s$, 1, 3, $s$cable-row$s$, null, null),
+  ($s$tmb-w6-upper-gym$s$, 1, 4, $s$barbell-bench-press$s$, null, null),
+  ($s$tmb-w6-core-home$s$, 1, 1, $s$plank-hold$s$, null, null),
+  ($s$tmb-w6-core-home$s$, 1, 2, $s$side-plank$s$, null, null),
+  ($s$tmb-w6-core-home$s$, 1, 3, $s$dead-bug$s$, null, null),
+  ($s$tmb-w6-core-home$s$, 1, 4, $s$bicycle-crunches$s$, null, null),
+  ($s$tmb-w6-core-gym$s$, 1, 1, $s$plank-hold$s$, null, null),
+  ($s$tmb-w6-core-gym$s$, 1, 2, $s$leg-raises$s$, null, null),
+  ($s$tmb-w6-core-gym$s$, 1, 3, $s$russian-twists$s$, null, null),
+  ($s$tmb-w6-core-gym$s$, 1, 4, $s$weighted-situps$s$, null, null),
+  ($s$tmb-w6-conditioning-home$s$, 1, 1, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w6-conditioning-home$s$, 1, 2, $s$burpees$s$, null, null),
+  ($s$tmb-w6-conditioning-home$s$, 1, 3, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w6-conditioning-home$s$, 1, 4, $s$high-knees$s$, null, null),
+  ($s$tmb-w6-conditioning-gym$s$, 1, 1, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w6-conditioning-gym$s$, 1, 2, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w6-conditioning-gym$s$, 1, 3, $s$box-jumps$s$, null, null),
+  ($s$tmb-w6-conditioning-gym$s$, 1, 4, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w7-full-body-home$s$, 1, 1, $s$push-ups$s$, null, null),
+  ($s$tmb-w7-full-body-home$s$, 1, 2, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w7-full-body-home$s$, 1, 3, $s$burpees$s$, null, null),
+  ($s$tmb-w7-full-body-home$s$, 1, 4, $s$squat-jumps$s$, null, null),
+  ($s$tmb-w7-full-body-gym$s$, 1, 1, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w7-full-body-gym$s$, 1, 2, $s$box-jumps$s$, null, null),
+  ($s$tmb-w7-full-body-gym$s$, 1, 3, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w7-full-body-gym$s$, 1, 4, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w7-lower-home$s$, 1, 1, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w7-lower-home$s$, 1, 2, $s$box-jumps$s$, null, null),
+  ($s$tmb-w7-lower-home$s$, 1, 3, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w7-lower-home$s$, 1, 4, $s$jump-squats$s$, null, null),
+  ($s$tmb-w7-lower-gym$s$, 1, 1, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w7-lower-gym$s$, 1, 2, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w7-lower-gym$s$, 1, 3, $s$leg-press$s$, null, null),
+  ($s$tmb-w7-lower-gym$s$, 1, 4, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w7-upper-home$s$, 1, 1, $s$push-press$s$, null, null),
+  ($s$tmb-w7-upper-home$s$, 1, 2, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w7-upper-home$s$, 1, 3, $s$push-ups$s$, null, null),
+  ($s$tmb-w7-upper-home$s$, 1, 4, $s$renegade-rows$s$, null, null),
+  ($s$tmb-w7-upper-gym$s$, 1, 1, $s$overhead-press$s$, null, null),
+  ($s$tmb-w7-upper-gym$s$, 1, 2, $s$cable-row$s$, null, null),
+  ($s$tmb-w7-upper-gym$s$, 1, 3, $s$barbell-bench-press$s$, null, null),
+  ($s$tmb-w7-upper-gym$s$, 1, 4, $s$lat-pulldown$s$, null, null),
+  ($s$tmb-w7-core-home$s$, 1, 1, $s$side-plank$s$, null, null),
+  ($s$tmb-w7-core-home$s$, 1, 2, $s$dead-bug$s$, null, null),
+  ($s$tmb-w7-core-home$s$, 1, 3, $s$bicycle-crunches$s$, null, null),
+  ($s$tmb-w7-core-home$s$, 1, 4, $s$plank-hold$s$, null, null),
+  ($s$tmb-w7-core-gym$s$, 1, 1, $s$leg-raises$s$, null, null),
+  ($s$tmb-w7-core-gym$s$, 1, 2, $s$russian-twists$s$, null, null),
+  ($s$tmb-w7-core-gym$s$, 1, 3, $s$weighted-situps$s$, null, null),
+  ($s$tmb-w7-core-gym$s$, 1, 4, $s$plank-hold$s$, null, null),
+  ($s$tmb-w7-conditioning-home$s$, 1, 1, $s$burpees$s$, null, null),
+  ($s$tmb-w7-conditioning-home$s$, 1, 2, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w7-conditioning-home$s$, 1, 3, $s$high-knees$s$, null, null),
+  ($s$tmb-w7-conditioning-home$s$, 1, 4, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w7-conditioning-gym$s$, 1, 1, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w7-conditioning-gym$s$, 1, 2, $s$box-jumps$s$, null, null),
+  ($s$tmb-w7-conditioning-gym$s$, 1, 3, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w7-conditioning-gym$s$, 1, 4, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w8-full-body-home$s$, 1, 1, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w8-full-body-home$s$, 1, 2, $s$burpees$s$, null, null),
+  ($s$tmb-w8-full-body-home$s$, 1, 3, $s$squat-jumps$s$, null, null),
+  ($s$tmb-w8-full-body-home$s$, 1, 4, $s$push-ups$s$, null, null),
+  ($s$tmb-w8-full-body-gym$s$, 1, 1, $s$box-jumps$s$, null, null),
+  ($s$tmb-w8-full-body-gym$s$, 1, 2, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w8-full-body-gym$s$, 1, 3, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w8-full-body-gym$s$, 1, 4, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w8-lower-home$s$, 1, 1, $s$box-jumps$s$, null, null),
+  ($s$tmb-w8-lower-home$s$, 1, 2, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w8-lower-home$s$, 1, 3, $s$jump-squats$s$, null, null),
+  ($s$tmb-w8-lower-home$s$, 1, 4, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w8-lower-gym$s$, 1, 1, $s$walking-lunges$s$, null, null),
+  ($s$tmb-w8-lower-gym$s$, 1, 2, $s$leg-press$s$, null, null),
+  ($s$tmb-w8-lower-gym$s$, 1, 3, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w8-lower-gym$s$, 1, 4, $s$kettlebell-swings$s$, null, null),
+  ($s$tmb-w8-upper-home$s$, 1, 1, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w8-upper-home$s$, 1, 2, $s$push-ups$s$, null, null),
+  ($s$tmb-w8-upper-home$s$, 1, 3, $s$renegade-rows$s$, null, null),
+  ($s$tmb-w8-upper-home$s$, 1, 4, $s$push-press$s$, null, null),
+  ($s$tmb-w8-upper-gym$s$, 1, 1, $s$cable-row$s$, null, null),
+  ($s$tmb-w8-upper-gym$s$, 1, 2, $s$barbell-bench-press$s$, null, null),
+  ($s$tmb-w8-upper-gym$s$, 1, 3, $s$lat-pulldown$s$, null, null),
+  ($s$tmb-w8-upper-gym$s$, 1, 4, $s$overhead-press$s$, null, null),
+  ($s$tmb-w8-core-home$s$, 1, 1, $s$dead-bug$s$, null, null),
+  ($s$tmb-w8-core-home$s$, 1, 2, $s$bicycle-crunches$s$, null, null),
+  ($s$tmb-w8-core-home$s$, 1, 3, $s$plank-hold$s$, null, null),
+  ($s$tmb-w8-core-home$s$, 1, 4, $s$side-plank$s$, null, null),
+  ($s$tmb-w8-core-gym$s$, 1, 1, $s$russian-twists$s$, null, null),
+  ($s$tmb-w8-core-gym$s$, 1, 2, $s$weighted-situps$s$, null, null),
+  ($s$tmb-w8-core-gym$s$, 1, 3, $s$plank-hold$s$, null, null),
+  ($s$tmb-w8-core-gym$s$, 1, 4, $s$leg-raises$s$, null, null),
+  ($s$tmb-w8-conditioning-home$s$, 1, 1, $s$mountain-climbers$s$, null, null),
+  ($s$tmb-w8-conditioning-home$s$, 1, 2, $s$high-knees$s$, null, null),
+  ($s$tmb-w8-conditioning-home$s$, 1, 3, $s$sprint-intervals$s$, null, null),
+  ($s$tmb-w8-conditioning-home$s$, 1, 4, $s$burpees$s$, null, null),
+  ($s$tmb-w8-conditioning-gym$s$, 1, 1, $s$box-jumps$s$, null, null),
+  ($s$tmb-w8-conditioning-gym$s$, 1, 2, $s$rowing-machine$s$, null, null),
+  ($s$tmb-w8-conditioning-gym$s$, 1, 3, $s$battle-ropes$s$, null, null),
+  ($s$tmb-w8-conditioning-gym$s$, 1, 4, $s$sprint-intervals$s$, null, null)
+) as v(workout_id, block_position, position, exercise_id, sets, reps)
+join workout_blocks b on b.workout_id = v.workout_id and b.position = v.block_position;
 
 commit;

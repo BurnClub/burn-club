@@ -87,6 +87,9 @@ create table workout_blocks (
   duration_sec int,
   interval_sec int,
   scheme       int[],
+  -- Also the key block_exercises is seeded through: a block is identified by
+  -- its workout and its position, which lets the seed batch-insert instead of
+  -- issuing one statement per row to discover each generated id.
   unique (workout_id, position)
 );
 

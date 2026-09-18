@@ -100,27 +100,38 @@ def main():
     L += insert("block_format_notes", d["block_format_notes"], ["block_type","body"],
         "on conflict (block_type) do update set body = excluded.body")
 
-    # Blocks carry an identity primary key, so a re-run replaces them wholesale
-    # rather than upserting — a workout edited to have fewer blocks must not
-    # leave the extras behind.
+    # Blocks are replaced wholesale rather than upserted: a workout edited to
+    # have fewer blocks must not keep the ones it no longer has.
     L += ["", "-- blocks and their exercises are replaced, not upserted: a workout edited",
           "-- to have fewer blocks must not keep the ones it no longer has.",
           "delete from workout_blocks;"]
-    L += ["", "-- workout_blocks (%d), keyed for the block_exercises that follow" % len(d["blocks"])]
-    for b in d["blocks"]:
-        cols = ["workout_id","position","type","label","rounds","work_sec","rest_sec",
-                "duration_sec","interval_sec","scheme"]
-        L.append("insert into workout_blocks (%s) values (%s);"
-                 % (", ".join(cols), ", ".join(lit(b.get(c)) for c in cols)))
 
-    L += ["", "-- block_exercises (%d)" % len(d["block_exercises"])]
-    bykey = {b["key"]: (b["workout_id"], b["position"]) for b in d["blocks"]}
+    L += insert("workout_blocks", d["blocks"],
+        ["workout_id","position","type","label","rounds","work_sec","rest_sec",
+         "duration_sec","interval_sec","scheme"],
+        "on conflict (workout_id, position) do nothing")
+
+    # block_exercises needs each block's generated id, so the rows arrive as a
+    # VALUES list joined back to workout_blocks on (workout_id, position) —
+    # one statement per chunk instead of one per row, which is the difference
+    # between a file the SQL editor accepts and one it times out on.
+    bykey = {b["key"]: (b["workout_id"], b["position"]) for b in d["block_exercises"] and d["blocks"]}
+    rows = []
     for e in d["block_exercises"]:
-        wid, pos = bykey[e["block_key"]]
-        L.append("insert into block_exercises (block_id, position, exercise_id, sets, reps) "
-                 "select id, %s, %s, %s, %s from workout_blocks where workout_id = %s and position = %s;"
-                 % (lit(e["position"]), lit(e["exercise_id"]), lit(e.get("sets")), lit(e.get("reps")),
-                    lit(wid), lit(pos)))
+        wid, bpos = bykey[e["block_key"]]
+        rows.append((wid, bpos, e["position"], e["exercise_id"], e.get("sets"), e.get("reps")))
+    if rows:
+        L += ["", "-- block_exercises (%d)" % len(rows)]
+        CHUNK = 250
+        for i in range(0, len(rows), CHUNK):
+            part = rows[i:i+CHUNK]
+            L.append("insert into block_exercises (block_id, position, exercise_id, sets, reps)")
+            L.append("select b.id, v.position, v.exercise_id, v.sets, v.reps from (values")
+            L.append(",\n".join("  (%s, %s, %s, %s, %s, %s)"
+                                % (lit(r[0]), lit(r[1]), lit(r[2]), lit(r[3]), lit(r[4]), lit(r[5]))
+                                for r in part))
+            L.append(") as v(workout_id, block_position, position, exercise_id, sets, reps)")
+            L.append("join workout_blocks b on b.workout_id = v.workout_id and b.position = v.block_position;")
 
     L += ["", "commit;", ""]
 
