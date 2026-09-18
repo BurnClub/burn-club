@@ -1,0 +1,9 @@
+Week,Day,Variant,Title,Focus,Difficulty,Description,Block,Block Label,Block Type,Rounds,Work (sec),Rest (sec),Duration (min),EMOM Interval (sec),Exercise Id,Sets,Reps,Ladder Scheme
+1,1,Home,Full Body Strength,Full Body,Intermediate,Thirty minutes: two strength blocks into a short finisher.,1,Main Strength,Straight,,,60,,,goblet-squat,4,10,
+1,1,Home,,,,,1,,Straight,,,60,,,alternating-db-forward-lunge,3,12,
+1,1,Home,,,,,2,Push / Pull Superset,Superset,3,,45,,,decline-push-up,,12,
+1,1,Home,,,,,2,,Superset,,,,,,chest-supported-incline-db-row,,12,
+1,1,Home,,,,,3,8-Minute Finisher,AMRAP,,,,8,,american-kb-swing,,15,
+1,1,Home,,,,,3,,AMRAP,,,,,,burpee,,10,
+1,1,Gym,Full Body Strength,Full Body,Intermediate,,1,Main Strength,Straight,,,60,,,alternating-barbell-reverse-lunge,4,10,
+1,2,Home,Conditioning,Conditioning,Intermediate,,1,10-Minute EMOM,EMOM,,,,10,60,burpee,,8,
