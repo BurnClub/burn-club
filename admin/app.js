@@ -3454,6 +3454,8 @@ const EXERCISE_UPLOAD_HEADERS = ["Id", "Name", "Body Parts", "Equipment", "Type"
 const EXERCISE_UPLOAD_FIELDS = {
   id: "id",
   exerciseid: "id",
+  workoutid: "id", // what the sheet calls it
+  bodypart: "bodyParts", // "Body Part 1/2/3" after the trailing digit is stripped
   name: "name",
   exercise: "name",
   exercisename: "name",
@@ -3477,14 +3479,18 @@ const EXERCISE_UPLOAD_FIELDS = {
 // through — "90/90 Hip Stretch" becomes "90/90-hip-stretch", and that slash
 // breaks the filename. So ids are validated rather than trusted, and a bad one
 // stops its row instead of importing something whose video can never be found.
-const EXERCISE_ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+// Runs of hyphens are allowed (Chris, 2026-09-17): "w/ " in a name becomes
+// "w--" in the id, that's the convention going forward, and a double hyphen
+// is perfectly legal in both a filename and a URL path. What stays blocked is
+// what actually breaks — characters that can't be in a filename at all, and
+// leading/trailing hyphens, which only ever come from a stray space.
+const EXERCISE_ID_PATTERN = /^[a-z0-9]+(-+[a-z0-9]+)*$/;
 
 function exerciseIdProblem(id) {
   if (!id) return "missing Id";
   if (EXERCISE_ID_PATTERN.test(id)) return null;
   const illegal = [...new Set(id.split("").filter((ch) => !/[a-z0-9-]/.test(ch)))];
   if (illegal.length) return `Id has characters that can't be in a filename: ${illegal.join(" ")}`;
-  if (id.includes("--")) return "Id has a double hyphen";
   if (id.startsWith("-") || id.endsWith("-")) return "Id starts or ends with a hyphen";
   return "Id isn't lowercase letters, digits and single hyphens";
 }
@@ -3557,8 +3563,13 @@ function parseCSV(text) {
 }
 
 function matchTag(value, knownTags) {
-  const found = knownTags.find((t) => t.toLowerCase() === value.trim().toLowerCase());
-  return found || null;
+  const wanted = value.trim().toLowerCase();
+  const found = knownTags.find((t) => t.toLowerCase() === wanted);
+  if (found) return found;
+  // Long forms the seeded data used, singular/plural drift, and the one
+  // spelling slip in the sheet — see TAG_ALIASES in data.js.
+  const alias = TAG_ALIASES[wanted];
+  return (alias && knownTags.includes(alias)) ? alias : null;
 }
 
 function parseBoolish(value) {
@@ -3576,12 +3587,18 @@ function handleExerciseUploadFile(file) {
 
     // Map header text -> column index, so the rest of this works on field
     // names and never on position.
+    // A trailing number is stripped off the header, so "Body Part 1",
+    // "Body Part 2" and "Body Part 3" all resolve to the same field and are
+    // merged — Chris's sheet spreads tags across numbered columns rather than
+    // packing them into one semicolon-separated cell (2026-09-17). Several
+    // columns can therefore feed one field, so this collects indices.
     const headerCells = rows[0] || [];
     const colOf = {};
     headerCells.forEach((cell, i) => {
-      const key = String(cell || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const key = String(cell || "").toLowerCase().replace(/[^a-z0-9]/g, "").replace(/[0-9]+$/, "");
       const field = EXERCISE_UPLOAD_FIELDS[key];
-      if (field && colOf[field] === undefined) colOf[field] = i;
+      if (!field) return;
+      (colOf[field] = colOf[field] || []).push(i);
     });
     exerciseUploadFields = Object.keys(colOf);
 
@@ -3590,8 +3607,11 @@ function handleExerciseUploadFile(file) {
       return;
     }
 
-    const cellAt = (cells, field) => colOf[field] === undefined ? "" : String(cells[colOf[field]] ?? "").trim();
     const hasCol = (field) => colOf[field] !== undefined;
+    // Scalar fields read their first column; list fields read all of theirs.
+    const cellAt = (cells, field) => hasCol(field) ? String(cells[colOf[field][0]] ?? "").trim() : "";
+    const cellsAt = (cells, field) => !hasCol(field) ? []
+      : colOf[field].map((i) => String(cells[i] ?? "").trim()).filter(Boolean);
 
     // Ids already taken, so a derived fallback id can't collide with the
     // library or with an earlier row in this same file.
@@ -3629,13 +3649,13 @@ function handleExerciseUploadFile(file) {
       if (hasCol("name")) parsed.name = name;
 
       if (hasCol("bodyParts")) {
-        const incoming = cellAt(cells, "bodyParts").split(";").map((v) => v.trim()).filter(Boolean);
+        const incoming = cellsAt(cells, "bodyParts").flatMap((c) => c.split(";")).map((v) => v.trim()).filter(Boolean);
         parsed.bodyParts = incoming.map((v) => matchTag(v, BODY_PART_TAGS)).filter(Boolean);
         if (incoming.length && parsed.bodyParts.length < incoming.length) warnings.push("Unrecognized body part(s) dropped");
       }
 
       if (hasCol("equipment")) {
-        const incoming = cellAt(cells, "equipment").split(";").map((v) => v.trim()).filter(Boolean);
+        const incoming = cellsAt(cells, "equipment").flatMap((c) => c.split(";")).map((v) => v.trim()).filter(Boolean);
         parsed.equipment = incoming.map((v) => matchTag(v, EQUIPMENT_TAGS)).filter(Boolean);
         if (incoming.length && parsed.equipment.length < incoming.length) warnings.push("Unrecognized equipment dropped");
       }
