@@ -1402,7 +1402,7 @@ on conflict (workout_id, position) do nothing;
 -- block_exercises (655)
 insert into block_exercises (block_id, position, exercise_id, sets, reps)
 select b.id, v.position, v.exercise_id, v.sets, v.reps from (values
-  ($s$full-body-burn$s$, 1, 1, $s$jump-squats$s$, null, null),
+  ($s$full-body-burn$s$::text, 1::int, 1::int, $s$jump-squats$s$::text, null::int, null::int),
   ($s$full-body-burn$s$, 1, 2, $s$push-ups$s$, null, null),
   ($s$full-body-burn$s$, 1, 3, $s$mountain-climbers$s$, null, null),
   ($s$full-body-burn$s$, 1, 4, $s$plank-hold$s$, null, null),
@@ -1656,7 +1656,7 @@ select b.id, v.position, v.exercise_id, v.sets, v.reps from (values
 join workout_blocks b on b.workout_id = v.workout_id and b.position = v.block_position;
 insert into block_exercises (block_id, position, exercise_id, sets, reps)
 select b.id, v.position, v.exercise_id, v.sets, v.reps from (values
-  ($s$ff-w6-quads-glutes-gym$s$, 3, 1, $s$box-jumps$s$, 5, 10),
+  ($s$ff-w6-quads-glutes-gym$s$::text, 3::int, 1::int, $s$box-jumps$s$::text, 5::int, 10::int),
   ($s$ff-w6-circuit-home$s$, 1, 1, $s$burpees$s$, null, null),
   ($s$ff-w6-circuit-home$s$, 1, 2, $s$mountain-climbers$s$, null, null),
   ($s$ff-w6-circuit-home$s$, 1, 3, $s$high-knees$s$, null, null),
@@ -1910,7 +1910,7 @@ select b.id, v.position, v.exercise_id, v.sets, v.reps from (values
 join workout_blocks b on b.workout_id = v.workout_id and b.position = v.block_position;
 insert into block_exercises (block_id, position, exercise_id, sets, reps)
 select b.id, v.position, v.exercise_id, v.sets, v.reps from (values
-  ($s$tmb-w5-full-body-gym$s$, 1, 2, $s$barbell-back-squat$s$, null, null),
+  ($s$tmb-w5-full-body-gym$s$::text, 1::int, 2::int, $s$barbell-back-squat$s$::text, null::int, null::int),
   ($s$tmb-w5-full-body-gym$s$, 1, 3, $s$battle-ropes$s$, null, null),
   ($s$tmb-w5-full-body-gym$s$, 1, 4, $s$box-jumps$s$, null, null),
   ($s$tmb-w5-lower-home$s$, 1, 1, $s$walking-lunges$s$, null, null),

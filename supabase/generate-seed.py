@@ -193,9 +193,19 @@ def main():
             part = rows[i:i+CHUNK]
             L.append("insert into block_exercises (block_id, position, exercise_id, sets, reps)")
             L.append("select b.id, v.position, v.exercise_id, v.sets, v.reps from (values")
-            L.append(",\n".join("  (%s, %s, %s, %s, %s, %s)"
-                                % (lit(r[0]), lit(r[1]), lit(r[2]), lit(r[3]), lit(r[4]), lit(r[5]))
-                                for r in part))
+            # Postgres types a VALUES subquery's columns from its FIRST row, and
+            # there is no target table to infer from the way a plain INSERT has.
+            # sets and reps are null on most rows, so an untyped null in row one
+            # makes the whole column text and the insert fails on a type it was
+            # never given. Casting row one types the entire list.
+            CAST = ["::text", "::int", "::int", "::text", "::int", "::int"]
+            body = []
+            for n, r in enumerate(part):
+                vals = [lit(x) for x in r]
+                if n == 0:
+                    vals = [v + c for v, c in zip(vals, CAST)]
+                body.append("  (" + ", ".join(vals) + ")")
+            L.append(",\n".join(body))
             L.append(") as v(workout_id, block_position, position, exercise_id, sets, reps)")
             L.append("join workout_blocks b on b.workout_id = v.workout_id and b.position = v.block_position;")
 
