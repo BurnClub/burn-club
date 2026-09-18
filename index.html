@@ -958,6 +958,11 @@
   </div><!-- /app -->
 </div><!-- /phone-frame -->
 
+<!-- Supabase, pinned. UMD build because there is no bundler here — it defines
+     a `supabase` global, and supabase-client.js guards against it being absent
+     (blocked CDN, captive wifi, offline start) rather than throwing later. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+<script src="supabase-client.js"></script>
 <script src="data.js"></script>
 <script src="app.js"></script>
 </body>
