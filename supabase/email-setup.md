@@ -20,20 +20,56 @@ deliverability reputation for transactional mail. Either works. Avoid the
 free SendGrid tier; shared-IP reputation is a real problem for invites, which
 are exactly the sort of mail spam filters distrust.
 
-## What it needs from you
+## The domain: kellyyager.com
 
-1. **A domain you control the DNS for.** Invites sent from `@gmail.com` or
-   similar will be rejected outright — providers require a verified domain.
-   `burnclub.github.io` will not do; it needs a real domain.
-2. **Three DNS records**, which Resend generates for you:
-   - `SPF` — says Resend may send as your domain
-   - `DKIM` — signs each message so it can be verified
-   - `DMARC` — tells receivers what to do when the first two fail
-   Verification usually completes in minutes, occasionally hours. This is the
-   step that can silently eat a day, which is why it is worth doing now.
-3. **A from-address.** `noreply@` works; `hello@` or `coach@` gets opened more,
-   and a reply-to that reaches you means a confused member can just answer the
-   email instead of finding support.
+Checked 2026-09-18, and what is already there decides how this is set up:
+
+```
+A       23.227.38.32                        -> Shopify
+MX      aspmx.l.google.com, alt1, alt2 ...  -> Google Workspace
+TXT     v=spf1 include:_spf.google.com ~all -> one SPF record, Google only
+_dmarc  (nothing)                           -> no DMARC at all
+```
+
+**Send from a subdomain — `mail.kellyyager.com` — not the root.** Two reasons,
+and the second is the one that matters:
+
+1. **It never touches the existing SPF record.** A domain may have exactly one
+   SPF record; a second makes both fail (permerror), and the failure mode is
+   that Kelly's ordinary business email quietly stops being trusted. Merging
+   Resend into the existing record works, but it means editing the record her
+   live mail depends on. A subdomain carries its own SPF and leaves the root
+   untouched.
+2. **Sending reputation stays separate.** Invite mail is exactly what spam
+   filters distrust: a burst of near-identical messages to people who have not
+   corresponded with you before. If that gets flagged on the root domain it
+   damages deliverability for the real business correspondence going through
+   Google Workspace. On a subdomain the blast radius is the invites.
+
+So Resend verifies `mail.kellyyager.com`, and invites come from something like
+`coach@mail.kellyyager.com`.
+
+## DMARC
+
+There is no `_dmarc` record today. Worth adding, but **start at `p=none`**:
+
+```
+_dmarc.kellyyager.com  TXT  "v=DMARC1; p=none; rua=mailto:you@kellyyager.com"
+```
+
+`p=none` asks receivers to report rather than act. Go straight to `p=reject`
+with live Google Workspace mail and any legitimate sender that is not in the
+SPF record — a booking tool, a Shopify notification, a newsletter — starts
+bouncing, and the bounces are invisible to the sender. Watch the reports for a
+couple of weeks first.
+
+## From-address and naming
+
+Members bought through a Shopify store at kellyyager.com, so the name is
+familiar — but the app is called Burn Club, and an invite from a different
+name than the product is a reason to delete it. Make the from-name carry both:
+`Burn Club — Kelly Yager`. Set a reply-to that reaches a person, so a confused
+member can answer the email instead of hunting for support.
 
 ## Wiring it to Supabase
 
