@@ -395,14 +395,16 @@ function groupTreeNodeHtml(g) {
 function renderGroupTree() {
   const host = document.getElementById("group-tree");
   if (!host) return;
-  const section = (label, list) => list.length
-    ? `<p class="tree-section-label">${label}</p>${list.map(groupTreeNodeHtml).join("")}` : "";
+  // Labels carry the same type colour as the cards (2026-09-17), so the tree
+  // and the list read as one thing rather than two views that happen to agree.
+  const section = (label, list, type) => list.length
+    ? `<p class="tree-section-label group-label-${type}">${label}</p>${list.map(groupTreeNodeHtml).join("")}` : "";
   const teams = teamGroups();
   const byChallenge = [...new Set(teams.map((g) => g.challengeId))].map((id) => {
     const list = teams.filter((g) => g.challengeId === id);
-    return section(`Teams · ${list[0].challengeName}`, list);
+    return section(`Teams · ${list[0].challengeName}`, list, "team");
   }).join("");
-  host.innerHTML = section("Program groups", programGroups()) + section("Custom groups", customGroups()) + byChallenge
+  host.innerHTML = section("Program groups", programGroups(), "program") + section("Custom groups", customGroups(), "custom") + byChallenge
     || `<p class="tree-empty">No groups yet</p>`;
   const all = document.querySelector("#view-groups .tree-all");
   if (all) all.classList.toggle("active", groupsPane === "list");

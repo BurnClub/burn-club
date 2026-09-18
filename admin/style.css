@@ -1774,15 +1774,32 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
    border at all. Each colour clears 4.5:1 on white, so the same value does
    for the outline and for the eyebrow text above the name; colour is never
    the only signal, since that eyebrow already names the type in words. */
-.group-card.group-type-program { border-color: #2F5BD4; }
-.group-card.group-type-custom  { border-color: #9A6209; }
-.group-card.group-type-team    { border-color: #14704A; }
-.group-card.group-type-program .group-card-type { color: #2F5BD4; }
-.group-card.group-type-custom  .group-card-type { color: #9A6209; }
-.group-card.group-type-team    .group-card-type { color: #14704A; }
-.group-card.group-type-program:hover { border-color: #1E44AC; }
-.group-card.group-type-custom:hover  { border-color: #7A4D06; }
-.group-card.group-type-team:hover    { border-color: #0E5636; }
+:root {
+  --group-program: #2F5BD4;
+  --group-custom: #9A6209;
+  --group-team: #14704A;
+  --group-program-dark: #1E44AC;
+  --group-custom-dark: #7A4D06;
+  --group-team-dark: #0E5636;
+}
+.group-card.group-type-program { border-color: var(--group-program); }
+.group-card.group-type-custom  { border-color: var(--group-custom); }
+.group-card.group-type-team    { border-color: var(--group-team); }
+.group-card.group-type-program .group-card-type { color: var(--group-program); }
+.group-card.group-type-custom  .group-card-type { color: var(--group-custom); }
+.group-card.group-type-team    .group-card-type { color: var(--group-team); }
+.group-card.group-type-program:hover { border-color: var(--group-program-dark); }
+.group-card.group-type-custom:hover  { border-color: var(--group-custom-dark); }
+.group-card.group-type-team:hover    { border-color: var(--group-team-dark); }
+
+/* Tree labels, same tokens (2026-09-17). The darker variants, not because the
+   lighter ones fail — .workspace-tree is white and all three clear 4.5:1 on it
+   (5.89 / 5.09 / 6.09) — but because this label is 9px, far smaller than the
+   12px card eyebrow using the light values. Small text earns the extra
+   contrast: these land at 8.48 / 7.26 / 8.74 and stay legibly the same hue. */
+.tree-section-label.group-label-program { color: var(--group-program-dark); }
+.tree-section-label.group-label-custom  { color: var(--group-custom-dark); }
+.tree-section-label.group-label-team    { color: var(--group-team-dark); }
 .library-program-card:hover { border-color: var(--blue); transform: translateY(-1px); }
 .library-program-card h3 {
   margin: 2px 0 0;
