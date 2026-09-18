@@ -3777,6 +3777,437 @@ function confirmExerciseUpload() {
     + (blocked ? `\n\n${blocked} row(s) were not imported — fix the Ids and upload again.` : ""));
 }
 
+// ---------------- Workout & program upload (2026-09-18) ----------------
+// One row per exercise line; a workout spans several rows and a block within
+// it spans one row per exercise. See import/workouts.md for the authored spec.
+//
+// Identity is Week + Day + Variant, not an authored id. In a structured
+// program a workout IS "the Home version of week 3, day 2", so that triple is
+// already its name — nothing to type or keep unique, and retitling a session
+// doesn't change which workout it is. The opposite call from exercises, where
+// the id had to be authored because it names a video file.
+const WORKOUT_UPLOAD_FIELDS = {
+  week: "week", day: "day", variant: "variant",
+  title: "title", focus: "focus", difficulty: "difficulty",
+  description: "description", desc: "description",
+  block: "block", blocklabel: "blockLabel", blocktype: "blockType",
+  rounds: "rounds", worksec: "work", restsec: "rest",
+  durationmin: "durationMin", emomintervalsec: "emomInterval",
+  exerciseid: "exerciseId", sets: "sets", reps: "reps", ladderscheme: "scheme",
+};
+
+// Which timing columns each format needs, and whether its exercises carry reps.
+// Drives both validation and the block built at the end, so the two can't drift.
+const BLOCK_FORMATS = {
+  straight:  { label: "Straight",  needs: [],                        reps: true,  single: true },
+  superset:  { label: "Superset",  needs: ["rounds"],                reps: true },
+  amrap:     { label: "AMRAP",     needs: ["durationMin"],           reps: true },
+  emom:      { label: "EMOM",      needs: ["durationMin", "emomInterval"], reps: true },
+  interval:  { label: "Interval",  needs: ["rounds", "work"],        reps: false },
+  ladder:    { label: "Ladder",    needs: [],                        reps: false, single: true },
+};
+
+let workoutUploadRows = [];      // one per sheet row, with its parse errors
+let workoutUploadWorkouts = [];  // grouped into workouts, ready to build
+let workoutUploadProgramId = null;
+
+function downloadWorkoutTemplate() {
+  const headers = ["Week","Day","Variant","Title","Focus","Difficulty","Description",
+    "Block","Block Label","Block Type","Rounds","Work (sec)","Rest (sec)",
+    "Duration (min)","EMOM Interval (sec)","Exercise Id","Sets","Reps","Ladder Scheme"];
+  const sample = [
+    ["1","1","Home","Full Body Strength","Full Body","Intermediate","Thirty minutes: two strength blocks into a short finisher.","1","Main Strength","Straight","","","60","","","goblet-squat","4","10",""],
+    ["1","1","Home","","","","","1","","Straight","","","60","","","alternating-db-forward-lunge","3","12",""],
+    ["1","1","Home","","","","","2","Push / Pull Superset","Superset","3","","45","","","decline-push-up","","12",""],
+    ["1","1","Home","","","","","2","","Superset","","","","","","chest-supported-incline-db-row","","12",""],
+    ["1","1","Home","","","","","3","8-Minute Finisher","AMRAP","","","","8","","american-kb-swing","","15",""],
+  ];
+  const csv = [headers, ...sample].map(csvEscapeRow).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "burn-club-workout-template.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function handleWorkoutUploadFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const rows = parseCSV(String(reader.result));
+    if (rows.length < 2) { alert("That file has no rows to read."); return; }
+
+    const colOf = {};
+    (rows[0] || []).forEach((cell, i) => {
+      const key = String(cell || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const field = WORKOUT_UPLOAD_FIELDS[key];
+      if (field && colOf[field] === undefined) colOf[field] = i;
+    });
+    const missing = ["week", "day", "variant", "blockType", "exerciseId"].filter((f) => colOf[f] === undefined);
+    if (missing.length) {
+      alert(`That file is missing required column(s): ${missing.join(", ")}.\n\nDownload the template for the right headers.`);
+      return;
+    }
+
+    const at = (cells, f) => colOf[f] === undefined ? "" : String(cells[colOf[f]] ?? "").trim();
+    const num = (v) => v === "" ? null : (Number.isFinite(Number(v)) ? Number(v) : NaN);
+    const byId = {};
+    EXERCISE_LIBRARY.forEach((e) => { byId[e.id] = e; });
+
+    workoutUploadRows = rows.slice(1)
+      .filter((cells) => cells.some((c) => String(c ?? "").trim() !== ""))
+      .map((cells, i) => {
+        const rowNum = i + 2;
+        const errors = [];
+        const week = num(at(cells, "week"));
+        const day = num(at(cells, "day"));
+        const variantRaw = at(cells, "variant").toLowerCase();
+        const variant = variantRaw === "home" ? "home" : variantRaw === "gym" ? "gym" : null;
+        const typeRaw = at(cells, "blockType").toLowerCase().replace(/[^a-z]/g, "");
+        const format = BLOCK_FORMATS[typeRaw] ? typeRaw : null;
+        const exerciseId = at(cells, "exerciseId").toLowerCase();
+
+        if (!Number.isInteger(week) || week < 1) errors.push(`Week "${at(cells, "week")}" isn't a whole number`);
+        if (!Number.isInteger(day) || day < 1 || day > 7) errors.push(`Day "${at(cells, "day")}" must be 1-7 (within the week, not 1-56)`);
+        if (!variant) errors.push(`Variant "${at(cells, "variant")}" must be Home or Gym`);
+        if (!format) errors.push(`Block Type "${at(cells, "blockType")}" isn't one of ${Object.values(BLOCK_FORMATS).map((f) => f.label).join(", ")}`);
+        if (!exerciseId) errors.push("Exercise Id is missing");
+        else if (!byId[exerciseId]) errors.push(`Exercise Id "${exerciseId}" isn't in the library`);
+
+        return {
+          rowNum, errors, week, day, variant, format,
+          exerciseId, exerciseName: byId[exerciseId] ? byId[exerciseId].name : null,
+          block: num(at(cells, "block")) || 1,
+          blockLabel: at(cells, "blockLabel"),
+          title: at(cells, "title"), focus: at(cells, "focus"),
+          difficulty: at(cells, "difficulty"), description: at(cells, "description"),
+          rounds: num(at(cells, "rounds")), work: num(at(cells, "work")), rest: num(at(cells, "rest")),
+          durationMin: num(at(cells, "durationMin")), emomInterval: num(at(cells, "emomInterval")),
+          sets: num(at(cells, "sets")), reps: num(at(cells, "reps")), scheme: at(cells, "scheme"),
+        };
+      });
+
+    groupWorkoutUploadRows();
+    openWorkoutUploadPreview();
+  };
+  reader.readAsText(file);
+}
+
+// Rows -> workouts -> blocks. Grouping is where the cross-row checks live:
+// a single row can look fine and still be wrong because of what its
+// neighbours say.
+function groupWorkoutUploadRows() {
+  const workouts = new Map();
+  workoutUploadRows.forEach((r) => {
+    if (r.errors.length) return; // a broken row can't be trusted to group
+    const key = `${r.week}|${r.day}|${r.variant}`;
+    if (!workouts.has(key)) {
+      workouts.set(key, {
+        key, week: r.week, day: r.day, variant: r.variant,
+        rowNums: [], blocks: new Map(), errors: [], warnings: [],
+        title: "", focus: "", difficulty: "", description: "",
+        conflicts: new Set(),
+      });
+    }
+    const w = workouts.get(key);
+    w.rowNums.push(r.rowNum);
+
+    // Workout-level fields may be written once on the first row or filled
+    // down every row. First non-blank wins; a second, different value is a
+    // contradiction rather than something to silently pick between.
+    ["title", "focus", "difficulty", "description"].forEach((f) => {
+      if (!r[f]) return;
+      if (!w[f]) w[f] = r[f];
+      else if (w[f] !== r[f]) w.conflicts.add(f);
+    });
+
+    if (!w.blocks.has(r.block)) {
+      w.blocks.set(r.block, { n: r.block, format: r.format, label: r.blockLabel, rows: [] });
+    }
+    const b = w.blocks.get(r.block);
+    if (!b.label && r.blockLabel) b.label = r.blockLabel;
+    if (b.format !== r.format) w.errors.push(`Block ${r.block} has two different Block Types (row ${r.rowNum})`);
+    ["rounds", "work", "rest", "durationMin", "emomInterval"].forEach((f) => {
+      if (r[f] != null && !Number.isNaN(r[f]) && b[f] == null) b[f] = r[f];
+    });
+    b.rows.push(r);
+  });
+
+  workouts.forEach((w) => {
+    w.conflicts.forEach((f) => w.errors.push(`Rows disagree on ${f} — fix the sheet or leave it blank on all but the first row`));
+    if (!w.title) w.warnings.push("No Title — using the Focus, or a default");
+
+    const nums = [...w.blocks.keys()].sort((a, b) => a - b);
+    nums.forEach((n, i) => {
+      if (n !== i + 1) w.errors.push(`Block numbers jump (${nums.join(", ")}) — they should run 1, 2, 3 with none skipped`);
+    });
+
+    w.blocks.forEach((b) => {
+      const spec = BLOCK_FORMATS[b.format];
+      if (!spec) return;
+      spec.needs.forEach((need) => {
+        if (b[need] == null || Number.isNaN(b[need])) {
+          const human = { rounds: "Rounds", work: "Work (sec)", durationMin: "Duration (min)", emomInterval: "EMOM Interval (sec)" }[need];
+          w.errors.push(`Block ${b.n} (${spec.label}) needs ${human}`);
+        }
+      });
+    });
+  });
+
+  workoutUploadWorkouts = [...workouts.values()].sort((a, b) =>
+    a.week - b.week || a.day - b.day || (a.variant === "home" ? -1 : 1));
+
+  // Both variants or neither: a member who bought the other one would open
+  // that day to nothing, and nothing in the app would say why.
+  const seen = new Map();
+  workoutUploadWorkouts.forEach((w) => {
+    const slot = `${w.week}|${w.day}`;
+    seen.set(slot, (seen.get(slot) || new Set()).add(w.variant));
+  });
+  workoutUploadWorkouts.forEach((w) => {
+    const have = seen.get(`${w.week}|${w.day}`);
+    if (have.size < 2) {
+      w.warnings.push(`Only the ${w.variant === "home" ? "Home" : "Gym"} version exists for week ${w.week} day ${w.day} — members on the other one get an empty day`);
+    }
+  });
+}
+
+// Minutes in the sheet, seconds in the schema — nobody should be typing 720
+// for a 12-minute AMRAP.
+function workoutUploadBlockToSchema(b) {
+  const spec = BLOCK_FORMATS[b.format];
+  const label = b.label || spec.label;
+  const ex = (r) => {
+    const e = { name: r.exerciseName };
+    if (spec.reps && r.reps != null && !Number.isNaN(r.reps)) e.reps = r.reps;
+    return e;
+  };
+  if (b.format === "straight") {
+    // One exercise per straight-sets block, matching the schema — so a block
+    // of three exercises becomes three blocks, which is what it already is.
+    return b.rows.map((r) => ({
+      type: "straight", label,
+      exercise: { name: r.exerciseName },
+      sets: r.sets != null && !Number.isNaN(r.sets) ? r.sets : 3,
+      reps: r.reps != null && !Number.isNaN(r.reps) ? r.reps : 10,
+      rest: b.rest != null && !Number.isNaN(b.rest) ? b.rest : 60,
+    }));
+  }
+  if (b.format === "ladder") {
+    return b.rows.map((r) => ({
+      type: "ladder", label,
+      exercise: { name: r.exerciseName },
+      scheme: String(r.scheme || "").split(/[;,]/).map((n) => Number(n.trim())).filter((n) => Number.isFinite(n)),
+      rest: b.rest != null && !Number.isNaN(b.rest) ? b.rest : 15,
+    }));
+  }
+  const block = { type: b.format, label, exercises: b.rows.map(ex) };
+  if (b.format === "superset") { block.rounds = b.rounds; if (b.rest != null && !Number.isNaN(b.rest)) block.rest = b.rest; }
+  if (b.format === "interval") { block.rounds = b.rounds; block.work = b.work; if (b.rest != null && !Number.isNaN(b.rest)) block.rest = b.rest; }
+  if (b.format === "amrap") block.duration = Math.round(b.durationMin * 60);
+  if (b.format === "emom") { block.duration = Math.round(b.durationMin * 60); block.interval = b.emomInterval; }
+  return [block];
+}
+
+function openWorkoutUploadPreview() {
+  const rowErrors = workoutUploadRows.filter((r) => r.errors.length);
+  const bad = workoutUploadWorkouts.filter((w) => w.errors.length);
+  const ok = workoutUploadWorkouts.filter((w) => !w.errors.length);
+  const weeks = [...new Set(workoutUploadWorkouts.map((w) => w.week))].sort((a, b) => a - b);
+  const slots = new Set(workoutUploadWorkouts.map((w) => `${w.week}|${w.day}`));
+  const perWeek = weeks.map((wk) => [...slots].filter((s) => s.split("|")[0] === String(wk)).length);
+  const spread = [...new Set(perWeek)];
+
+  let splitCount = 0;
+  workoutUploadWorkouts.forEach((w) => w.blocks.forEach((b) => {
+    if (BLOCK_FORMATS[b.format] && BLOCK_FORMATS[b.format].single && b.rows.length > 1) splitCount += b.rows.length;
+  }));
+
+  const program = PROGRAMS.find((p) => p.id === workoutUploadProgramId);
+  document.getElementById("workout-upload-summary").innerHTML =
+    `<strong>${ok.length}</strong> workout(s) across <strong>${weeks.length}</strong> week(s), `
+    + `${spread.length === 1 ? spread[0] : perWeek.join("/")} session(s) per week.`
+    + (rowErrors.length ? ` <strong>${rowErrors.length} row(s) can't be read.</strong>` : "")
+    + (bad.length ? ` <strong>${bad.length} workout(s) blocked.</strong>` : "")
+    + (splitCount ? `<br /><span class="exercise-upload-columns">${splitCount} straight-sets exercise(s) become their own block each — that's how the format stores them, and it's what the member sees.</span>` : "")
+    + `<br /><span class="exercise-upload-columns">This replaces every workout currently in `
+    + `${program ? esc(program.name) : "this program"} and rebuilds its schedule from these rows. `
+    + `Days with no rows become rest days.</span>`;
+
+  const rowErrHtml = rowErrors.slice(0, 40).map((r) => `
+    <tr class="upload-row-error">
+      <td>row ${r.rowNum}</td><td colspan="4">${r.errors.map(esc).join(" · ")}</td>
+      <td><span class="status-pill upload-error">Blocked</span></td>
+    </tr>`).join("");
+
+  document.getElementById("workout-upload-rows").innerHTML = rowErrHtml + workoutUploadWorkouts.map((w) => {
+    const blockNums = [...w.blocks.keys()].sort((a, b) => a - b);
+    const shape = blockNums.map((n) => {
+      const b = w.blocks.get(n);
+      return `${BLOCK_FORMATS[b.format].label}×${b.rows.length}`;
+    }).join(" + ");
+    return `
+    <tr class="${w.errors.length ? "upload-row-error" : ""}">
+      <td>W${w.week} D${w.day}</td>
+      <td>${w.variant === "home" ? "Home" : "Gym"}</td>
+      <td>${esc(w.title || "(no title)")}</td>
+      <td>${shape || "—"}</td>
+      <td>${w.rowNums.length}</td>
+      <td>
+        <span class="status-pill upload-${w.errors.length ? "error" : "new"}">${w.errors.length ? "Blocked" : "Ready"}</span>
+        ${w.errors.map((e) => `<span class="exercise-upload-row-error">${esc(e)}</span>`).join("")}
+        ${w.warnings.map((x) => `<span class="exercise-upload-row-warning">${esc(x)}</span>`).join("")}
+      </td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById("workout-upload-confirm-btn").disabled = !ok.length || !!rowErrors.length || !!bad.length;
+  document.getElementById("workout-upload-overlay").classList.add("visible");
+}
+
+function closeWorkoutUploadPreview() {
+  document.getElementById("workout-upload-overlay").classList.remove("visible");
+  workoutUploadRows = [];
+  workoutUploadWorkouts = [];
+  const input = document.getElementById("workout-upload-input");
+  if (input) input.value = "";
+}
+
+function confirmWorkoutUpload() {
+  const programId = workoutUploadProgramId;
+  const program = PROGRAMS.find((p) => p.id === programId);
+  if (!program) return;
+  const prefix = programSlotPrefix(programId);
+
+  // A sheet with more weeks than the program had needs folders to land in —
+  // circuitProgramId() reads a structured circuit's program off its folder, so
+  // a missing one would orphan the workout from its own program.
+  const weeksNeeded = [...new Set(workoutUploadWorkouts.map((w) => w.week))].sort((a, b) => a - b);
+  weeksNeeded.forEach((week) => {
+    const id = `${prefix}-week-${week}`;
+    if (!FOLDERS.some((f) => f.id === id)) {
+      FOLDERS.push({ id, name: `${program.name} Week ${week}`, program: programId });
+    }
+  });
+
+  const built = [];
+  const template = [];
+  workoutUploadWorkouts.forEach((w) => {
+    const slotId = `${prefix}-w${w.week}-d${w.day}`;
+    const blocks = [...w.blocks.keys()].sort((a, b) => a - b)
+      .flatMap((n) => workoutUploadBlockToSchema(w.blocks.get(n)));
+    built.push({
+      id: `${slotId}-${w.variant}`,
+      slotId, variant: w.variant,
+      folderId: `${prefix}-week-${w.week}`,
+      category: "structured",
+      tag: `Week ${w.week}`,
+      title: w.title || w.focus || `Week ${w.week} Day ${w.day}`,
+      focus: w.focus || "Full Body",
+      difficulty: w.difficulty || "Intermediate",
+      desc: w.description || `Week ${w.week}, day ${w.day}.`,
+      blocks,
+    });
+  });
+
+  // The schedule is rebuilt from the sheet rather than patched: a day with no
+  // rows is a rest day, so a session that moved leaves nothing behind.
+  const maxWeek = Math.max(...workoutUploadWorkouts.map((w) => w.week));
+  const hasSession = new Set(workoutUploadWorkouts.map((w) => `${w.week}|${w.day}`));
+  for (let week = 1; week <= maxWeek; week++) {
+    for (let day = 1; day <= 7; day++) {
+      const absolute = (week - 1) * 7 + day;
+      template.push(hasSession.has(`${week}|${day}`)
+        ? { day: absolute, type: "workout", workoutId: `${prefix}-w${week}-d${day}` }
+        : { day: absolute, type: "rest" });
+    }
+  }
+
+  // Replace, not merge — Chris's call (2026-09-18). The placeholder seed for
+  // this program is 80 single-interval workouts that match nothing in the
+  // real sheet, so merging would leave orphans nobody would think to delete.
+  for (let i = CIRCUITS.length - 1; i >= 0; i--) {
+    if (circuitProgramId(CIRCUITS[i]) === programId) CIRCUITS.splice(i, 1);
+  }
+  CIRCUITS.push(...built);
+  SCHEDULE_TEMPLATES[programId] = template;
+  program.durationWeeks = maxWeek;
+  program.workoutsPerWeek = Math.round(hasSession.size / maxWeek);
+  program.circuitsPerWeek = program.workoutsPerWeek;
+
+  saveAdminCircuits();
+  built.forEach(syncCircuitToMemberApp);
+  closeWorkoutUploadPreview();
+  renderPrograms();
+  renderFolderGrid();
+  renderLibrary();
+  alert(`Imported ${built.length} workout(s) into ${program.name}: `
+    + `${maxWeek} weeks, ${program.workoutsPerWeek} sessions a week.`);
+}
+
+// "thirty-minute-burn" -> "tmb", "fit-functional" -> "ff". Matches the prefix
+// the seeded slot ids and week folders already use, so an import lands on the
+// same naming the rest of the program is built from rather than inventing a
+// second scheme alongside it.
+function programSlotPrefix(programId) {
+  return String(programId).split("-").map((part) => part[0]).join("");
+}
+
+// ---------------- Admin-side persistence (2026-09-18) ----------------
+// CIRCUITS was in-memory only: seeded from data.js at load and never written
+// anywhere. loadExerciseLibrary() had an equivalent, circuits didn't, so a
+// workout authored in the builder was gone on reload. That was survivable
+// while everything was seed data and isn't once a real program is imported.
+//
+// Same limitation as every other bridge here: this is one browser's
+// localStorage, so it survives a reload but not a different machine. A
+// backend is what makes it real.
+const ADMIN_PROGRAM_DATA_KEY = "burnclub-admin-programs";
+
+function saveAdminCircuits() {
+  try {
+    localStorage.setItem(ADMIN_PROGRAM_DATA_KEY, JSON.stringify({
+      circuits: CIRCUITS,
+      schedules: SCHEDULE_TEMPLATES,
+      folders: FOLDERS,
+      programMeta: PROGRAMS.map((p) => ({
+        id: p.id, durationWeeks: p.durationWeeks,
+        workoutsPerWeek: p.workoutsPerWeek, circuitsPerWeek: p.circuitsPerWeek,
+      })),
+    }));
+  } catch (e) {
+    // Quota is the realistic failure. Say so rather than letting the next
+    // reload quietly serve the seed as if nothing had been imported.
+    alert("Couldn't save the imported program to this browser — it may be out of storage. The import is live in this session but will be gone on reload.");
+  }
+}
+
+function loadAdminCircuits() {
+  const raw = localStorage.getItem(ADMIN_PROGRAM_DATA_KEY);
+  if (!raw) return;
+  try {
+    const saved = JSON.parse(raw);
+    if (Array.isArray(saved.circuits) && saved.circuits.length) {
+      CIRCUITS.length = 0;
+      CIRCUITS.push(...saved.circuits);
+    }
+    if (Array.isArray(saved.folders) && saved.folders.length) {
+      FOLDERS.length = 0;
+      FOLDERS.push(...saved.folders);
+    }
+    if (saved.schedules) Object.assign(SCHEDULE_TEMPLATES, saved.schedules);
+    (saved.programMeta || []).forEach((m) => {
+      const p = PROGRAMS.find((x) => x.id === m.id);
+      if (!p) return;
+      if (m.durationWeeks) p.durationWeeks = m.durationWeeks;
+      if (m.workoutsPerWeek) p.workoutsPerWeek = m.workoutsPerWeek;
+      if (m.circuitsPerWeek) p.circuitsPerWeek = m.circuitsPerWeek;
+    });
+  } catch (e) {
+    // Corrupt value — fall back to the seeded data rather than a blank admin.
+  }
+}
+
 // ---------------- Exercise Library sidebar (embedded in the circuit builder) ----------------
 // Always visible next to the workout form. With no slot active, clicking a card appends a new
 // straight-set station; clicking an existing "+ Choose Exercise" chip on a block first arms that
@@ -6029,6 +6460,7 @@ function renderPosts() {
 
 document.addEventListener("DOMContentLoaded", () => {
   loadExerciseLibrary();
+  loadAdminCircuits();
 
   populateProgramFilters();
   // Before anything that reads CONVERSATIONS — the dashboard's reply queue is
@@ -6236,6 +6668,28 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("exercise-modal-close-btn").addEventListener("click", closeExerciseModal);
   document.getElementById("exercise-modal-cancel-btn").addEventListener("click", closeExerciseModal);
   document.getElementById("exercise-modal-save-btn").addEventListener("click", saveExercise);
+  document.getElementById("workout-template-btn").addEventListener("click", downloadWorkoutTemplate);
+  document.getElementById("workout-upload-btn").addEventListener("click", () => {
+    // Structured only: the sheet is Week/Day/Variant, which a rolling program
+    // has no use for — its workouts carry dates instead.
+    const structured = PROGRAMS.filter((p) => p.scheduleType === "structured");
+    if (!structured.length) { alert("No structured programs to import into."); return; }
+    const names = structured.map((p, i) => `${i + 1}. ${p.name}`).join("\n");
+    const pick = structured.length === 1 ? "1"
+      : prompt(`Import workouts into which program?\n\n${names}\n\nEnter a number:`, "1");
+    if (pick === null) return;
+    const chosen = structured[Number(pick) - 1];
+    if (!chosen) { alert("That wasn't one of the listed numbers."); return; }
+    workoutUploadProgramId = chosen.id;
+    document.getElementById("workout-upload-input").click();
+  });
+  document.getElementById("workout-upload-input").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) handleWorkoutUploadFile(file);
+  });
+  document.getElementById("workout-upload-close-btn").addEventListener("click", closeWorkoutUploadPreview);
+  document.getElementById("workout-upload-cancel-btn").addEventListener("click", closeWorkoutUploadPreview);
+  document.getElementById("workout-upload-confirm-btn").addEventListener("click", confirmWorkoutUpload);
   document.getElementById("exercise-template-btn").addEventListener("click", downloadExerciseTemplate);
   document.getElementById("exercise-upload-btn").addEventListener("click", () => document.getElementById("exercise-upload-input").click());
   document.getElementById("exercise-upload-input").addEventListener("change", (e) => {

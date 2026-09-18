@@ -156,6 +156,9 @@
                 <p class="eyebrow">Offerings</p>
                 <h1>Programs</h1>
               </div>
+              <button class="btn-ghost-lg small" id="workout-template-btn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/></svg><span>Workout Template</span></button>
+              <button class="btn-ghost-lg small" id="workout-upload-btn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 18V8"/><path d="M8 11l4-4 4 4"/><path d="M4 19h16"/></svg><span>Upload Workouts</span></button>
+              <input type="file" id="workout-upload-input" accept=".csv,text/csv" style="display:none;" />
               <button class="btn-primary" id="new-program-btn">+ New Program</button>
             </header>
             <!-- Programs is the working surface: what's live now, and where new
@@ -410,6 +413,35 @@
     </div>
 
     <!-- ---------- EXERCISE UPLOAD PREVIEW MODAL ---------- -->
+    <!-- Workout import (2026-09-18). Replaces a structured program's workouts
+         and rebuilds its schedule from the sheet — see import/workouts.md. -->
+    <div class="builder-overlay" id="workout-upload-overlay">
+      <div class="builder-panel builder-panel-wide">
+        <header class="builder-header">
+          <h2>Upload Workouts</h2>
+          <button class="player-exit" id="workout-upload-close-btn">&#10005;</button>
+        </header>
+        <div class="builder-body">
+          <p class="exercise-upload-summary" id="workout-upload-summary"></p>
+          <div class="exercise-upload-table-wrap">
+            <table class="exercise-upload-table">
+              <thead>
+                <tr><th>Slot</th><th>Variant</th><th>Title</th><th>Blocks</th><th>Rows</th><th>Status</th></tr>
+              </thead>
+              <tbody id="workout-upload-rows"></tbody>
+            </table>
+          </div>
+        </div>
+        <footer class="builder-footer">
+          <span></span>
+          <div>
+            <button class="btn-ghost-lg" id="workout-upload-cancel-btn">Cancel</button>
+            <button class="btn-primary" id="workout-upload-confirm-btn">Confirm Import</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
     <div class="builder-overlay" id="exercise-upload-overlay">
       <div class="builder-panel builder-panel-wide">
         <header class="builder-header">
