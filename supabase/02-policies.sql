@@ -28,6 +28,24 @@ $$;
 revoke execute on function public.is_staff() from public;
 grant execute on function public.is_staff() to authenticated;
 
+-- ---------------------------------------------------------------- grants
+-- RLS decides which ROWS a caller sees; a GRANT decides whether it may touch
+-- the table at all, and the two are separate. Without these, a signed-in
+-- member gets "permission denied for table" before any policy is consulted —
+-- which is exactly what an anonymous probe returned against this database
+-- before they were added. Supabase sets default privileges for tables made
+-- through the dashboard; tables created by a script cannot rely on that, so
+-- the grants are explicit here.
+--
+-- Broad grants to authenticated are correct BECAUSE RLS is on: the policies
+-- below are the real gate, and a grant without a matching policy still
+-- returns nothing. anon is granted nothing at all — the app requires sign-in.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+-- Identity columns draw from sequences; without this an insert fails on the
+-- sequence rather than the table, which is a confusing place to land.
+grant usage, select on all sequences in schema public to authenticated;
+
 -- ---------------------------------------------------------------- content
 -- Any signed-in member reads. Only staff write. Applied in a loop so that a
 -- table added later cannot quietly miss one of the four policies.
