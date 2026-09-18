@@ -172,6 +172,42 @@ syncs them.
 
 ## Agreed, not yet built
 
+- **Median RPE per workout, in admin** (Chris, 2026-09-17). On every workout in
+  every program, so he can see whether he's pitching them hard enough or too
+  hard. Median rather than mean is the right call and his own — RPE is an
+  ordinal 1-10 scale where one brutal outlier would drag an average around.
+
+  **The display is the easy half.** RPE is already captured properly: the
+  member sets it on the completion screen and `saveCompletions()` persists it,
+  so it is real member-entered data, not a placeholder. Aggregating and
+  rendering it is maybe an afternoon.
+
+  **The blocker is that admin cannot see it.** Member completions live in the
+  member's own `localStorage` under `burnclub-completions`, and there is no
+  bridge to admin — unlike circuits, messages, teams and benchmarks, which all
+  have one. This is not an oversight to patch with another bridge: a member's
+  completion history is *their* device's data, and every member's has to reach
+  one place for a median across a workout to mean anything. It needs the
+  backend. Filed here rather than under "blocked on a backend" only because
+  the aggregation and the UI can be built and tested against seeded data first.
+
+  **What's there to test against is thin.** `ACTIVITY_FEED` carries
+  `workoutTitle` and `rpe`, but it is 12 entries across 5 workouts — so
+  **180 of 185 circuits have no RPE at all**, and of the five that do, the
+  medians rest on 1 to 4 data points. Building it against today's seed would
+  show nothing on 97% of workouts. Either seed richer demo activity first
+  (and say so in the UI), or wait for the backend.
+
+  **Show the sample count next to the median, always.** The entire point is
+  deciding whether to change a workout, and "median 8, n=2" is not a reason to
+  change anything while "median 8, n=40" is. A median with no n invites exactly
+  the wrong call. Worth a minimum-n threshold below which it says "not enough
+  data yet" rather than printing a number that looks authoritative.
+
+  One more thing to settle when it's built: `ACTIVITY_FEED` joins to workouts
+  by **title string**, not id — the same weak key as everywhere else. Renaming
+  a workout would silently orphan its RPE history.
+
 - **Workout & program import spreadsheet** (Chris, 2026-09-15). A defined
   spreadsheet format that the admin app can read to create programs and
   workouts in bulk. Two distinct jobs, and they pull the design in different
