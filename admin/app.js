@@ -422,9 +422,9 @@ function renderGroupList() {
     const msgs = conversationMessages(groupConversationId(g));
     const unread = msgs.filter((m) => !m.isStaff && !m.read).length;
     return `
-      <div class="library-program-card" data-action="open-group" data-group-id="${g.id}">
+      <div class="library-program-card group-card group-type-${g.type}" data-action="open-group" data-group-id="${g.id}">
         <div class="library-program-card-main">
-          <p class="eyebrow">${g.type === "team" ? `Team · ${esc(g.challengeName)}` : (GROUP_TYPE_LABEL[g.type] || "Group")}</p>
+          <p class="eyebrow group-card-type">${g.type === "team" ? `Team · ${esc(g.challengeName)}` : (GROUP_TYPE_LABEL[g.type] || "Group")}</p>
           <h3>${g.name}</h3>
           <p class="library-program-card-count">${members.length} member${members.length === 1 ? "" : "s"}</p>
         </div>

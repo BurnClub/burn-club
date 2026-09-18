@@ -1763,6 +1763,26 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   cursor: pointer;
   transition: border-color 0.15s, transform 0.15s;
 }
+
+/* ---------- Group types (2026-09-17) ----------
+   Chris asked for the three kinds of group to be told apart at a glance.
+   Programs stay blue because they're the core one and the admin already
+   reads blue; custom is amber; challenge teams are green.
+
+   Hues are 70-172 degrees apart, which is what actually makes them separable
+   — the old shared --periwinkle outline was 1.48:1 on white and barely a
+   border at all. Each colour clears 4.5:1 on white, so the same value does
+   for the outline and for the eyebrow text above the name; colour is never
+   the only signal, since that eyebrow already names the type in words. */
+.group-card.group-type-program { border-color: #2F5BD4; }
+.group-card.group-type-custom  { border-color: #9A6209; }
+.group-card.group-type-team    { border-color: #14704A; }
+.group-card.group-type-program .group-card-type { color: #2F5BD4; }
+.group-card.group-type-custom  .group-card-type { color: #9A6209; }
+.group-card.group-type-team    .group-card-type { color: #14704A; }
+.group-card.group-type-program:hover { border-color: #1E44AC; }
+.group-card.group-type-custom:hover  { border-color: #7A4D06; }
+.group-card.group-type-team:hover    { border-color: #0E5636; }
 .library-program-card:hover { border-color: var(--blue); transform: translateY(-1px); }
 .library-program-card h3 {
   margin: 2px 0 0;
