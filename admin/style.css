@@ -7,9 +7,13 @@
   --white: #ffffff;
   --field-bg: #E3ECFF;
   --bg: #f4f6ff;
-  --radius-lg: 20px;
-  --radius-md: 14px;
-  --radius-sm: 10px;
+  /* One radius everywhere (Chris, 2026-09-17): "any button or view that has a
+     curved corner make it 5pt". The three names are kept rather than collapsed
+     into one so the scale is still there to restore if the flat look is too
+     severe — change these three values and the whole admin follows. */
+  --radius-lg: 5px;
+  --radius-md: 5px;
+  --radius-sm: 5px;
 }
 
 * { box-sizing: border-box; }
@@ -47,7 +51,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   background: var(--blue);
   color: white;
   border: none;
-  border-radius: 999px;
+  border-radius: 5px;
   padding: 9px 18px;
   font-size: 13px;
   font-weight: 800;
@@ -59,7 +63,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   background: white;
   border: 2px solid var(--periwinkle);
   color: var(--blue);
-  border-radius: 999px;
+  border-radius: 5px;
   padding: 8px 16px;
   font-size: 13px;
   font-weight: 800;
@@ -156,7 +160,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   height: 18px;
   padding: 0 5px;
   margin-left: 6px;
-  border-radius: 999px;
+  border-radius: 5px;
   background: #e0435f;
   color: white;
   font-size: 10px;
@@ -265,7 +269,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   color: white;
   font-size: 10px;
   font-weight: 800;
-  border-radius: 999px;
+  border-radius: 5px;
   padding: 1px 7px;
 }
 .unread-row-preview {
@@ -330,7 +334,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .activity-col-track { flex: 1; width: 100%; display: flex; align-items: flex-end; }
 .activity-col-bar {
   width: 100%;
-  border-radius: 8px 8px 0 0;
+  border-radius: 5px 5px 0 0;
   background: linear-gradient(180deg, #6f8bff, var(--blue));
   min-height: 2px;
 }
@@ -434,7 +438,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   color: var(--blue);
   background: rgba(0,87,255,0.1);
   padding: 3px 9px;
-  border-radius: 999px;
+  border-radius: 5px;
   white-space: nowrap;
 }
 .activity-feed-time { font-size: 12px; font-weight: 700; color: var(--deepblue); white-space: nowrap; }
@@ -453,7 +457,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .program-card.color-green { border-top-color: #1a8a44; }
 .program-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
 .program-card h3 { font-size: 16px; }
-.status-pill { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.5px; }
+.status-pill { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 5px; letter-spacing: 0.5px; }
 .status-pill.active { background: #dff5e3; color: #1a8a44; }
 .status-pill.draft { background: var(--periwinkle); color: var(--blue); }
 .status-pill.upcoming { background: var(--yellow); color: #8a6400; }
@@ -470,7 +474,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   background: white;
   border: 1px solid var(--periwinkle);
   color: var(--deepblue);
-  border-radius: 999px;
+  border-radius: 5px;
   padding: 6px 13px;
   font-size: 12px;
   font-weight: 700;
@@ -540,7 +544,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .point-adjust-btn {
   width: 26px;
   height: 26px;
-  border-radius: 8px;
+  border-radius: 5px;
   border: none;
   background: var(--periwinkle);
   color: var(--blue);
@@ -640,7 +644,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   display: inline-block;
   min-width: 16px;
   padding: 1px 5px;
-  border-radius: 9px;
+  border-radius: 5px;
   background: #e0435f;
   color: white;
   font-size: 9px;
@@ -883,7 +887,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   background: white;
   border: 2px solid var(--periwinkle);
   color: var(--deepblue);
-  border-radius: 999px;
+  border-radius: 5px;
   padding: 8px 16px;
   font-weight: 700;
   font-size: 13px;
@@ -914,7 +918,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  border-radius: 999px;
+  border-radius: 5px;
   background: var(--blue);
   color: white;
   font-size: 11px;
@@ -948,7 +952,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .exercise-card-play {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 5px;
   background: rgba(255,255,255,0.25);
   border: none;
   color: white;
@@ -1003,7 +1007,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .admin-player-video-play {
   width: 52px;
   height: 52px;
-  border-radius: 50%;
+  border-radius: 5px;
   background: rgba(255,255,255,0.25);
   display: flex;
   align-items: center;
@@ -1044,7 +1048,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .exercise-upload-table .status-pill.upload-error { background: #fbe0e0; color: #b23; }
 .exercise-upload-untouched { color: var(--muted, #8894ab); }
 .exercise-upload-columns { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--muted, #8894ab); }
-.exercise-upload-table code { font-size: 11px; background: var(--periwinkle); padding: 1px 5px; border-radius: 4px; }
+.exercise-upload-table code { font-size: 11px; background: var(--periwinkle); padding: 1px 5px; border-radius: 5px; }
 
 .modal-field-label { display: block; margin-bottom: 2px; }
 .modal-field-hint { font-weight: 600; text-transform: none; letter-spacing: normal; color: #9aa5c9; font-size: 11px; }
@@ -1055,7 +1059,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   gap: 6px;
   background: var(--bg);
   border: 2px solid var(--periwinkle);
-  border-radius: 999px;
+  border-radius: 5px;
   padding: 6px 12px;
   font-size: 12px;
   font-weight: 700;
@@ -1107,7 +1111,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   font-weight: 700;
   color: var(--ink);
   background: var(--bg);
-  border-radius: 10px;
+  border-radius: 5px;
   padding: 10px 12px;
   margin: 0;
   line-height: 1.6;
@@ -1409,7 +1413,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--field-bg);
   border: 1px dashed var(--periwinkle);
   color: var(--deepblue);
@@ -1603,7 +1607,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   border: none;
   width: 34px;
   height: 34px;
-  border-radius: 50%;
+  border-radius: 5px;
   font-size: 15px;
   cursor: pointer;
 }
@@ -1628,7 +1632,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .post-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .post-actions button {
   border: none;
-  border-radius: 999px;
+  border-radius: 5px;
   padding: 7px 14px;
   font-size: 12px;
   font-weight: 800;
@@ -1667,7 +1671,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .conversation-icon {
   width: 34px;
   height: 34px;
-  border-radius: 50%;
+  border-radius: 5px;
   background: var(--periwinkle);
   color: var(--blue);
   display: flex;
@@ -1844,7 +1848,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 3px 9px;
-  border-radius: 999px;
+  border-radius: 5px;
   margin-left: 6px;
   vertical-align: middle;
 }
@@ -1866,7 +1870,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
      first try and disappeared against the card. */
   opacity: 0.6;
   padding: 2px;
-  border-radius: 4px;
+  border-radius: 5px;
 }
 .drag-handle:hover { opacity: 1; background: var(--field-bg); }
 .drag-handle:active { cursor: grabbing; }
