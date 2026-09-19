@@ -5285,14 +5285,126 @@ function renderCalendarTab() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+// ---------------- Entering the app ----------------
+// One way in for a real member, so the profile is loaded and the tour and
+// check-in prompts fire in the same order however they arrived — a fresh
+// sign-in, an invite link, or a session restored from last time.
+async function enterAsAuthedMember() {
+  applyAuthMemberToProfile();
   init();
+  showTab("tab-home");
+  onEnterApp();
+}
+
+// Maps the members row onto the profile shape the app already reads, rather
+// than changing 5,000 lines to a new one. The app keeps working from
+// CURRENT_MEMBER exactly as before; only where it comes from has changed.
+function applyAuthMemberToProfile() {
+  if (!AUTH_MEMBER) return;
+  const program = AUTH_PROGRAM;
+  CURRENT_MEMBER = {
+    ...CURRENT_MEMBER,
+    id: AUTH_MEMBER.id,
+    name: [AUTH_MEMBER.first_name, AUTH_MEMBER.last_name].filter(Boolean).join(" ") || AUTH_MEMBER.email,
+    email: AUTH_MEMBER.email,
+    programId: AUTH_MEMBER.program_id || CURRENT_MEMBER.programId,
+    scheduleType: program ? program.schedule_type : CURRENT_MEMBER.scheduleType,
+    memberSince: AUTH_MEMBER.member_since || CURRENT_MEMBER.memberSince,
+    badge: AUTH_MEMBER.badge || "",
+  };
+}
+
+// Decides what the member sees before anything renders: the set-password form
+// if they came from an emailed link, the app if they already have a session,
+// otherwise sign-in. Runs before init() so a signed-in member never sees the
+// login screen flash past.
+async function routeOnLoad() {
+  if (!supabaseReady()) return false;          // demo mode; login screen stands
+  if (arrivedFromEmailLink()) {
+    document.getElementById("login-form").hidden = true;
+    document.getElementById("forgot-btn").hidden = true;
+    document.getElementById("login-demo").hidden = true;
+    document.getElementById("set-password-form").hidden = false;
+    return true;
+  }
+  const session = await currentSession();
+  if (!session) return false;
+  const res = await loadAuthMember(session.user);
+  if (res.error) {
+    const err = document.getElementById("login-error");
+    err.textContent = res.error;
+    err.hidden = false;
+    await signOut();
+    return false;
+  }
+  await enterAsAuthedMember();
+  return true;
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const routed = await routeOnLoad();
+  if (!routed) init();
   wireStaticControls();
 
-  document.getElementById("login-form").addEventListener("submit", (e) => {
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    showTab("tab-home");
-    onEnterApp();
+    const btn = document.getElementById("login-submit");
+    const err = document.getElementById("login-error");
+    err.hidden = true;
+    // Disabled while the request is in flight: a member on gym wifi will
+    // otherwise tap Log In three times and fire three sign-ins.
+    btn.disabled = true;
+    btn.textContent = "Signing in…";
+    const res = await signIn(
+      document.getElementById("login-email").value,
+      document.getElementById("login-password").value
+    );
+    btn.disabled = false;
+    btn.textContent = "Log In";
+    if (res.error) {
+      err.textContent = res.error;
+      err.hidden = false;
+      return;
+    }
+    await enterAsAuthedMember();
+  });
+
+  document.getElementById("forgot-btn").addEventListener("click", async () => {
+    const email = document.getElementById("login-email").value.trim();
+    const err = document.getElementById("login-error");
+    if (!email) {
+      err.textContent = "Type your email above first, then tap this.";
+      err.hidden = false;
+      return;
+    }
+    const res = await sendPasswordReset(email);
+    err.textContent = res.error
+      || "If that address is a Burn Club account, a reset link is on its way.";
+    err.hidden = false;
+  });
+
+  document.getElementById("set-password-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("set-password-submit");
+    const err = document.getElementById("set-password-error");
+    const value = document.getElementById("new-password").value;
+    err.hidden = true;
+    if (value.length < 8) {
+      err.textContent = "Use at least 8 characters.";
+      err.hidden = false;
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+    const res = await setPassword(value);
+    btn.disabled = false;
+    btn.textContent = "Save and continue";
+    if (res.error) {
+      err.textContent = res.error;
+      err.hidden = false;
+      return;
+    }
+    await enterAsAuthedMember();
   });
 
   document.getElementById("guest-btn").addEventListener("click", () => {
@@ -5436,10 +5548,15 @@ document.addEventListener("DOMContentLoaded", () => {
     Player.persist();
   });
 
-  document.getElementById("logout-btn").addEventListener("click", () => {
+  document.getElementById("logout-btn").addEventListener("click", async () => {
     Player.stop();
+    // Ends the Supabase session, not just the screen. Without this, Log Out
+    // hides the app while the session stays in storage and the next visit
+    // walks straight back in — which on a shared phone is the whole problem.
+    await signOut();
     document.getElementById("main-app").classList.remove("visible");
     document.getElementById("bottom-nav").style.display = "none";
+    document.getElementById("login-password").value = "";
     showScreen("screen-login");
   });
 });

@@ -33,16 +33,41 @@
         <form class="login-form" id="login-form">
           <label class="field">
             <span>Email</span>
-            <input type="email" placeholder="you@email.com" />
+            <input type="email" id="login-email" autocomplete="username" placeholder="you@email.com" required />
           </label>
           <label class="field">
             <span>Password</span>
-            <input type="password" placeholder="••••••••" />
+            <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••" required />
           </label>
-          <button type="submit" class="btn-primary">Log In</button>
+          <!-- role="alert" so a screen reader announces a failed sign-in;
+               without it the message appears silently for anyone not looking. -->
+          <p class="login-error" id="login-error" role="alert" hidden></p>
+          <button type="submit" class="btn-primary" id="login-submit">Log In</button>
         </form>
-        <button class="btn-ghost" id="guest-btn">Continue as Guest</button>
-        <button class="btn-ghost" id="guest-ff-btn">Preview as Fit &amp; Functional member</button>
+        <button class="btn-ghost" id="forgot-btn">Forgot your password?</button>
+
+        <!-- Shown when a member arrives from an invite or reset link. The
+             session already exists at that point (detectSessionInUrl); all
+             that is left is choosing a password. -->
+        <form class="login-form" id="set-password-form" hidden>
+          <p class="login-intro" id="set-password-intro">Welcome to Burn Club. Choose a password to finish setting up your account.</p>
+          <label class="field">
+            <span>New password</span>
+            <input type="password" id="new-password" autocomplete="new-password" placeholder="At least 8 characters" required minlength="8" />
+          </label>
+          <p class="login-error" id="set-password-error" role="alert" hidden></p>
+          <button type="submit" class="btn-primary" id="set-password-submit">Save and continue</button>
+        </form>
+
+        <!-- Demo entries. These never touch Supabase — they run the app on the
+             seeded data in data.js, which is what makes them useful for a
+             walkthrough and what makes them unacceptable once real members
+             exist. On the go-live checklist. -->
+        <div class="login-demo" id="login-demo">
+          <p class="login-demo-label">Demo</p>
+          <button class="btn-ghost" id="guest-btn">Continue as Guest</button>
+          <button class="btn-ghost" id="guest-ff-btn">Preview as Fit &amp; Functional member</button>
+        </div>
       </div>
     </section>
 

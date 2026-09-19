@@ -3665,3 +3665,44 @@ h1, h2, h3 {
 .nb-month-caret { font-size: 9px; color: var(--paper-label); width: 10px; flex-shrink: 0; }
 .nb-month-name { font-size: 11px; font-weight: 800; color: var(--paper-head); text-transform: uppercase; letter-spacing: .04em; }
 .nb-month-count { margin-left: auto; font-size: 10px; font-weight: 700; color: var(--paper-label); }
+
+/* ---------- Sign-in (2026-09-18) ----------
+   Real auth replaced a handler that was e.preventDefault() and nothing else.
+   The error line is role="alert" in the markup so a failed sign-in is
+   announced rather than only shown. */
+.login-error {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--danger);
+  text-align: center;
+  line-height: 1.4;
+}
+.login-intro {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.45;
+}
+/* The demo entries are walled off rather than sitting level with Log In, so
+   nobody taps "Continue as Guest" meaning to sign in. They go entirely before
+   real members arrive — see the go-live checklist. */
+.login-demo {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.login-demo-label {
+  margin: 0 0 4px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--subtext-color);
+  text-align: center;
+}
+#login-submit[disabled], #set-password-submit[disabled] { opacity: 0.6; cursor: default; }
