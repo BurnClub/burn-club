@@ -1,5 +1,13 @@
 # Email sending
 
+> **Status (2026-09-18): deferred.** Running on Supabase's built-in mailer for
+> the tester trial, which is enough for a dozen invites. Everything below
+> happens before real members are imported, and is on the go-live checklist at
+> the top of NOTES.md. The reason for deferring is that it blocks nothing:
+> auth can be built and tested against a handful of accounts, and the DNS work
+> can happen in parallel.
+
+
 Supabase's built-in mailer is rate-limited to a few messages an hour and is
 explicitly not for production. It's fine while there are a dozen tester
 accounts; it will not deliver 200 invites on import day. So this gets set up

@@ -4,6 +4,102 @@ Things deliberately left undone, and why. Not a bug list — everything here
 works as built; these are decisions deferred or work blocked on something
 outside the prototype.
 
+## Before we go live
+
+Started 2026-09-18. One list of everything that must be true before real
+members are let in, so none of it is remembered on the day. The detailed
+reasoning for most items lives in its own section further down; this is the
+checklist, not the argument.
+
+An item is here because **launching without it causes a problem**, not because
+it would be nice. Things that can follow launch belong in the sections below.
+
+### Accounts and money — Chris's to do, not mine
+
+- [ ] **Supabase paid tier** ($25/mo). The free tier **pauses the project after
+      a week of inactivity** — which is exactly what a quiet week before launch
+      looks like, and it comes back only when someone visits the dashboard.
+      It also has **no automatic backups**: today the entire content library
+      exists in one free-tier database and in `data.js`, and only the second of
+      those is versioned. Pro adds daily backups with 7-day retention, no
+      pausing, and 100GB of file storage, which is where the 633 videos go.
+- [ ] **Email sending** — a real provider before invites go out. Resend on
+      `mail.kellyyager.com`, ~$20/mo. **Supabase's built-in mailer is capped at
+      a few messages an hour**, which is fine for a dozen testers and cannot
+      deliver 200 invites. Deferred deliberately on 2026-09-18 so testers
+      aren't blocked; see `supabase/email-setup.md` for the DNS, and note the
+      subdomain matters — it keeps invite spam risk off Kelly's live business
+      mail.
+- [ ] **DMARC record.** `kellyyager.com` has none. Start at `p=none` and watch
+      the reports; going straight to `p=reject` would bounce legitimate senders
+      missing from SPF, invisibly.
+- [ ] **Rewrite the invite email.** Supabase's default says "Accept the invite"
+      over a bare link with no mention of Burn Club. An unexplained link from
+      an unfamiliar domain is what people have been correctly trained to delete.
+
+### Security — the sharpest items
+
+- [ ] **Neither login authenticates.** The member app's handler is
+      `e.preventDefault()` and nothing else. Real auth is phase 2 and in
+      progress.
+- [ ] **`admin/` is on the same public URL as the member app.** Anyone with the
+      link has full access to every admin screen today. Harmless with seed
+      data; not on import day.
+- [ ] **A security pass over the auth surface** once it exists — not a read of
+      the code, an attempt to break it. Sign in as one member and try to reach
+      another's rows.
+
+### Content
+
+- [ ] **Technique text.** 661 of 663 exercises have none. It is also what the
+      app reads aloud, so an empty field is a silently missing feature rather
+      than a blank line.
+- [ ] **Videos** — convert `.mov` to `.mp4` (633 files), run the 12 renames in
+      `~/Desktop/burn-club-rename-videos.sh`, and upload to Supabase Storage at
+      `<exercise-id>.mp4`.
+- [ ] **Five placeholder stretches** I added on 2026-09-18 so the seed would
+      hold together: Cat-Cow Stretch, Child's Pose, Hip Flexor Stretch,
+      Shoulder & Chest Opener, Standing Hamstring Stretch. They have no
+      technique and no real authoring. Either write them properly or take them
+      out of the Stretch & Core circuit.
+- [ ] **30 Minute Burn is still placeholder** — 80 workouts of a single timed
+      interval block each, which matches none of the formats Chris actually
+      uses. The importer is built and the sheet format is specified; the
+      content isn't written.
+- [ ] **Member import.** There's a documented CSV template and no importer.
+      Members are added one at a time through a modal today.
+
+### Accessibility
+
+- [ ] Reflow at 200% text, reduced-motion coverage, and native VoiceOver /
+      TalkBack testing. The measurable contrast failures are fixed; these are
+      the ones that need a device and a person.
+- [ ] **The brand blue.** White on `#788CE3` is 3.15:1 — below the 4.5:1 floor —
+      on the primary button, Profile rows and the unread badge. Waiting on
+      Chris and his partner.
+
+### App Store
+
+- [ ] **A permanent demo account** for review, that never expires and always
+      has data in it.
+- [ ] **Nothing in the app may link to, mention, or hint at buying elsewhere.**
+      Purchase happens on the website; Apple rejects apps that point at it.
+- [ ] **A free-trial Burn Club program** so a reviewer can see the app work
+      without a purchase.
+
+### Known limits to close or accept
+
+- [ ] **Offline writes.** Members are in gyms with bad wifi. The player already
+      writes to browser storage first; that needs to become a queue that syncs
+      on reconnect, designed before the storage rewire rather than after.
+- [ ] **Admin and staff apps are still on browser storage.** Content is seeded
+      into Supabase from `data.js`, so editing a workout in admin will not
+      reach members until those apps move too. Acceptable for a tester trial —
+      content should be stable while people hammer it — and wrong for live
+      members.
+- [ ] **Messaging, groups and challenge teams have no tables yet.** Phase 2 of
+      the schema.
+
 ## Security — a hard look before the real app
 
 Chris's call (2026-08-30): before this becomes a downloadable app with real
