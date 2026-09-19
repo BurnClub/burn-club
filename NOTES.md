@@ -37,16 +37,26 @@ it would be nice. Things that can follow launch belong in the sections below.
       library, every program and every workout. Member data stays protected by
       RLS; the content *is* the product. Burn Club is invite-only, so this
       should be off. Authentication -> Sign In / Providers -> Email.
-- [ ] **DMARC record.** `kellyyager.com` still has none. Optional for Resend,
-      worth having. Note it is the one record that sits on the **root** domain
-      rather than the `mail.` subdomain, so it applies to Kelly's Workspace
-      mail too. Start at `p=none` **with a `rua=` address** — without one the
-      reports go nowhere and running it achieves nothing. Never move to
-      `p=reject` before reading them: with live Workspace mail, any legitimate
-      sender missing from SPF would bounce invisibly.
-- [ ] **Rewrite the invite email.** Supabase's default says "Accept the invite"
-      over a bare link with no mention of Burn Club. An unexplained link from
-      an unfamiliar domain is what people have been correctly trained to delete.
+- [ ] **DMARC record — required, not optional.** The first real invite landed
+      in Gmail's spam folder on 2026-09-18 and this is why: SPF and DKIM both
+      pass, but there is no DMARC record on either the root or the `mail.`
+      subdomain, and **Google has required all three from volume senders since
+      early 2024**. Two out of three is not a partial pass. Resend labels DMARC
+      optional because Resend does not need it; Gmail does.
+      Fix: TXT at `_dmarc.mail` with
+      `v=DMARC1; p=none; rua=mailto:dmarc@kellyyager.com`. Receivers check the
+      subdomain first, so this satisfies Gmail while putting no policy on
+      `kellyyager.com` itself and leaving Kelly's Workspace mail untouched.
+- [ ] **Rewrite the invite email template.** Supabase's default is "Accept the
+      invite" over a bare link with no sender name, product name or
+      explanation — structurally identical to phishing, and scored that way.
+- [ ] **Point a real domain at the app.** Mail comes from
+      `mail.kellyyager.com` and the invite link goes to `burnclub.github.io`.
+      Different registrable domains, which filters weigh and members notice.
+      `app.kellyyager.com` as a CNAME to GitHub Pages fixes both.
+- [ ] **Warm the sending domain.** Don't send 200 invites in an hour from a
+      domain with no history — that is the shape of a spam run. Spread the
+      import across several days.
 
 ### Security — the sharpest items
 
