@@ -16,23 +16,34 @@ it would be nice. Things that can follow launch belong in the sections below.
 
 ### Accounts and money — Chris's to do, not mine
 
-- [ ] **Supabase paid tier** ($25/mo). The free tier **pauses the project after
+- [x] **Supabase paid tier** — upgraded 2026-09-18. The free tier **pauses the project after
       a week of inactivity** — which is exactly what a quiet week before launch
       looks like, and it comes back only when someone visits the dashboard.
       It also has **no automatic backups**: today the entire content library
       exists in one free-tier database and in `data.js`, and only the second of
       those is versioned. Pro adds daily backups with 7-day retention, no
       pausing, and 100GB of file storage, which is where the 633 videos go.
-- [ ] **Email sending** — a real provider before invites go out. Resend on
-      `mail.kellyyager.com`, ~$20/mo. **Supabase's built-in mailer is capped at
-      a few messages an hour**, which is fine for a dozen testers and cannot
-      deliver 200 invites. Deferred deliberately on 2026-09-18 so testers
-      aren't blocked; see `supabase/email-setup.md` for the DNS, and note the
-      subdomain matters — it keeps invite spam risk off Kelly's live business
-      mail.
-- [ ] **DMARC record.** `kellyyager.com` has none. Start at `p=none` and watch
-      the reports; going straight to `p=reject` would bounce legitimate senders
-      missing from SPF, invisibly.
+- [x] **Email sending** — done 2026-09-18, ahead of plan. Resend verified on
+      `mail.kellyyager.com` (DKIM plus two CNAMEs; the root SPF, MX and A
+      records were never touched, so Kelly's Workspace mail is unaffected) and
+      wired into Supabase SMTP. Test send landed.
+      **Still before import day:** Resend's free tier is 100/day and 200
+      invites in an afternoon exceeds it — upgrade to the $20 tier, or send
+      across three days.
+- [ ] **Turn off open signup.** `disable_signup` was `false` on 2026-09-18:
+      anyone holding the publishable key — which ships in the app's own
+      JavaScript — can create an account, and the content policies grant read
+      to any authenticated user. That hands a stranger the entire exercise
+      library, every program and every workout. Member data stays protected by
+      RLS; the content *is* the product. Burn Club is invite-only, so this
+      should be off. Authentication -> Sign In / Providers -> Email.
+- [ ] **DMARC record.** `kellyyager.com` still has none. Optional for Resend,
+      worth having. Note it is the one record that sits on the **root** domain
+      rather than the `mail.` subdomain, so it applies to Kelly's Workspace
+      mail too. Start at `p=none` **with a `rua=` address** — without one the
+      reports go nowhere and running it achieves nothing. Never move to
+      `p=reject` before reading them: with live Workspace mail, any legitimate
+      sender missing from SPF would bounce invisibly.
 - [ ] **Rewrite the invite email.** Supabase's default says "Accept the invite"
       over a bare link with no mention of Burn Club. An unexplained link from
       an unfamiliar domain is what people have been correctly trained to delete.
