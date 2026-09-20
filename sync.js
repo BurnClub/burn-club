@@ -1,0 +1,370 @@
+// ---------------- Member data sync (2026-09-19) ----------------
+// Local-first. localStorage stays the working store during a session, exactly
+// as before, and Supabase becomes the durable copy behind it. That shape was
+// chosen over reading the database directly for two reasons:
+//
+//   1. Members are in gyms with bad wifi. Writes have to land instantly and
+//      survive the connection dropping mid-workout.
+//   2. It leaves the app's 5,000 lines untouched. Every loadX() still reads
+//      localStorage synchronously; what changed is that localStorage is filled
+//      from the server on sign-in, and every saveX() also pushes.
+//
+// So the two ends are: hydrate on sign-in (server wins — it is the copy that
+// survived the last reinstall), and push on save (queued, retried).
+
+const SYNC_STATE = { queue: new Set(), running: false, lastError: null, online: true };
+
+// Each store: the localStorage key base, the table, and the two mappers.
+// Written against what the app actually stores, verified by dumping every
+// localStorage key the running app writes — reading the code a function at a
+// time had already produced ten wrong guesses.
+function syncStores() {
+  const me = () => AUTH_MEMBER.id;
+  return {
+    completions: {
+      key: COMPLETIONS_STORAGE_KEY, table: "completions",
+      toRows: (list) => list.map((c) => ({
+        member_id: me(), client_id: c.id, workout_id: c.workoutId || null,
+        slot_id: c.slotId || null, title: c.title, category: c.category,
+        performed_on: c.date, minutes: c.minutes, calories: c.caloriesBurned,
+        avg_heart_rate: c.avgHeartRate, rpe: c.rpe,
+      })),
+      onConflict: "member_id,client_id",
+      fromRows: (rows) => rows.map((r) => ({
+        id: r.client_id || `srv-${r.id}`, workoutId: r.workout_id, slotId: r.slot_id,
+        title: r.title, category: r.category, date: r.performed_on,
+        minutes: r.minutes, caloriesBurned: r.calories, avgHeartRate: r.avg_heart_rate,
+        rpe: r.rpe, weights: null,
+      })),
+      order: "performed_on",
+    },
+    checkins: {
+      key: CHECKIN_STORAGE_KEY, table: "checkins",
+      toRows: (list) => list.map((c) => ({
+        member_id: me(), performed_on: c.date, mental: c.mental, physical: c.physical,
+        sleep_hours: c.sleepHours, sleep_quality: c.sleepQuality,
+        note: c.note || null, shared_at: c.sharedAt || null,
+      })),
+      onConflict: "member_id,performed_on",
+      fromRows: (rows) => rows.map((r) => ({
+        date: r.performed_on, mental: r.mental, physical: r.physical,
+        sleepHours: r.sleep_hours, sleepQuality: r.sleep_quality,
+        note: r.note || "", sharedAt: r.shared_at,
+      })),
+      order: "performed_on",
+    },
+    dailyStats: {
+      key: DAILY_STATS_STORAGE_KEY, table: "daily_stats",
+      toRows: (list) => list.map((d) => ({
+        member_id: me(), stat_date: d.date, steps: d.steps,
+        calories: d.calories, resting_hr: d.restingHR,
+      })),
+      onConflict: "member_id,stat_date",
+      fromRows: (rows) => rows.map((r) => ({
+        date: r.stat_date, steps: r.steps, calories: r.calories, restingHR: r.resting_hr,
+      })),
+      order: "stat_date",
+    },
+    myHabits: {
+      key: MY_HABITS_STORAGE_KEY, table: "member_habits",
+      toRows: (list) => list.map((h, i) => ({
+        member_id: me(), habit_id: h.id, label: h.label,
+        auto: h.auto || null, target: h.target || null, position: i,
+      })),
+      onConflict: "member_id,habit_id",
+      fromRows: (rows) => rows.map((r) => {
+        const h = { id: r.habit_id, label: r.label };
+        // Only set when present: the app checks `habit.auto === "steps"`, and
+        // an explicit null would be a different shape from the seed's absent
+        // key for no reason.
+        if (r.auto) h.auto = r.auto;
+        if (r.target != null) h.target = r.target;
+        return h;
+      }),
+      order: "position",
+    },
+    showcasedPRs: {
+      key: SHOWCASED_PRS_KEY, table: "showcased_prs",
+      toRows: (list) => list.map((name) => ({ member_id: me(), exercise_name: name })),
+      onConflict: "member_id,exercise_name",
+      fromRows: (rows) => rows.map((r) => r.exercise_name),
+      order: "exercise_name",
+      replace: true,   // unpinning a PR is a delete, not an update
+    },
+    benchmarkResults: {
+      key: BENCHMARK_RESULTS_STORAGE_KEY, table: "benchmark_results",
+      toRows: (list) => list.map((b) => ({
+        member_id: me(), client_id: b.id, benchmark_id: b.benchmarkId,
+        performed_on: b.date, score: b.score,
+      })),
+      onConflict: "member_id,client_id",
+      fromRows: (rows) => rows.map((r) => ({
+        id: r.client_id || `srv-${r.id}`, benchmarkId: r.benchmark_id,
+        date: r.performed_on, score: Number(r.score),
+      })),
+      order: "performed_on",
+    },
+  };
+}
+
+// HABIT_CHECKS, NOTEBOOK_NOTES and SESSION_NOTES are nested objects rather
+// than arrays, so they get their own mapping rather than being forced into
+// the shape above.
+function habitChecksToRows(log) {
+  const rows = [];
+  Object.keys(log).forEach((date) => {
+    Object.keys(log[date]).forEach((habitId) => {
+      // false is stored, not skipped — it is an override of the wearable.
+      rows.push({ member_id: AUTH_MEMBER.id, habit_id: habitId, checked_on: date, checked: !!log[date][habitId] });
+    });
+  });
+  return rows;
+}
+function habitChecksFromRows(rows) {
+  const log = {};
+  rows.forEach((r) => {
+    if (!log[r.checked_on]) log[r.checked_on] = {};
+    log[r.checked_on][r.habit_id] = r.checked;
+  });
+  return log;
+}
+function notebookNotesToRows(notes) {
+  const rows = [];
+  ["coach", "other"].forEach((kind) => {
+    (notes[kind] || []).forEach((body, i) => {
+      rows.push({ member_id: AUTH_MEMBER.id, kind, position: i, body });
+    });
+  });
+  return rows;
+}
+function notebookNotesFromRows(rows) {
+  const out = { coach: [], other: [] };
+  rows.slice().sort((a, b) => a.position - b.position)
+      .forEach((r) => { if (out[r.kind]) out[r.kind].push(r.body); });
+  return out;
+}
+function sessionNotesToRows(map) {
+  return Object.keys(map).map((id) => ({
+    member_id: AUTH_MEMBER.id, completion_client_id: id, body: map[id],
+  }));
+}
+function sessionNotesFromRows(rows) {
+  const out = {};
+  rows.forEach((r) => { out[r.completion_client_id] = r.body; });
+  return out;
+}
+
+// ---------------- Hydrate ----------------
+// Runs once on sign-in, before init(), so every loadX() below it reads a
+// localStorage already filled from the server. The server wins here on
+// purpose: it is the copy that survived the reinstall, and a fresh browser's
+// empty localStorage is not an opinion about the member's history.
+//
+// Nothing is written locally unless the server actually returned rows. A
+// member who has never synced keeps their seeded local data rather than
+// having it blanked by an empty table.
+async function hydrateMemberData() {
+  if (!SB || !AUTH_MEMBER) return { ok: false, reason: "not signed in" };
+  const stores = syncStores();
+  const report = {};
+
+  const pulls = Object.keys(stores).map(async (name) => {
+    const s = stores[name];
+    const { data, error } = await SB.from(s.table).select("*").order(s.order, { ascending: true });
+    if (error) { report[name] = "error: " + error.message; return; }
+    if (!data || !data.length) { report[name] = "empty — kept local"; return; }
+    localStorage.setItem(memberKey(s.key), JSON.stringify(s.fromRows(data)));
+    report[name] = `${data.length} rows`;
+  });
+
+  const nested = [
+    ["habitChecks", "habit_checks", HABIT_CHECKS_STORAGE_KEY, habitChecksFromRows],
+    ["notebookNotes", "notebook_notes", NOTEBOOK_NOTES_KEY, notebookNotesFromRows],
+    ["sessionNotes", "session_notes", SESSION_NOTES_KEY, sessionNotesFromRows],
+  ].map(async ([name, table, key, from]) => {
+    const { data, error } = await SB.from(table).select("*");
+    if (error) { report[name] = "error: " + error.message; return; }
+    if (!data || !data.length) { report[name] = "empty — kept local"; return; }
+    localStorage.setItem(memberKey(key), JSON.stringify(from(data)));
+    report[name] = `${data.length} rows`;
+  });
+
+  // Preferences are one row of scalars rather than a list, and they are the
+  // reason several of these exist at all: a reinstall used to replay the tour
+  // and re-ask about check-ins because the flags were per-browser.
+  const prefs = (async () => {
+    const { data, error } = await SB.from("member_preferences").select("*").maybeSingle();
+    if (error || !data) { report.preferences = error ? "error: " + error.message : "none"; return; }
+    if (data.theme) localStorage.setItem(THEME_KEY, data.theme);
+    if (data.tour_seen) localStorage.setItem(memberKey(TOUR_SEEN_KEY), String(Date.now()));
+    localStorage.setItem(memberKey(CHECKIN_ENABLED_KEY), data.checkin_enabled ? "1" : "0");
+    if (data.checkin_dismissed_on) localStorage.setItem(memberKey(CHECKIN_DISMISS_KEY), data.checkin_dismissed_on);
+    if (data.notification_prefs && Object.keys(data.notification_prefs).length) {
+      localStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify(data.notification_prefs));
+    }
+    if (data.wearable && Object.keys(data.wearable).length) {
+      localStorage.setItem(memberKey(WEARABLE_STORAGE_KEY), JSON.stringify(data.wearable));
+    }
+    report.preferences = "loaded";
+  })();
+
+  const extras = (async () => {
+    const { data: sched } = await SB.from("scheduled_items").select("*");
+    if (sched && sched.length) {
+      localStorage.setItem(SCHEDULED_ITEMS_STORAGE_PREFIX + AUTH_MEMBER.id,
+                           JSON.stringify(scheduledItemsFromRows(sched)));
+      report.scheduledItems = `${sched.length} rows`;
+    }
+    const { data: hp } = await SB.from("health_profile").select("*").maybeSingle();
+    if (hp && hp.profile && Object.keys(hp.profile).length) {
+      // Merge into the shared bridge object rather than replacing it, so a
+      // profile belonging to another member in this browser survives.
+      const all = (typeof loadHealthProfiles === "function") ? loadHealthProfiles() : {};
+      all[AUTH_MEMBER.id] = hp.profile;
+      localStorage.setItem(LIVE_HEALTH_PROFILES_KEY, JSON.stringify(all));
+      report.healthProfile = "loaded";
+    }
+  })();
+
+  await Promise.all([...pulls, ...nested, prefs, extras]);
+  SYNC_STATE.lastError = Object.values(report).find((v) => String(v).startsWith("error")) || null;
+  return { ok: !SYNC_STATE.lastError, report };
+}
+
+// ---------------- Push ----------------
+// Called by saveX() after it has written locally, so a failure here never
+// costs the member their work — it is already on the device.
+function queueSync(storeName) {
+  if (!SB || !AUTH_MEMBER) return;          // demo mode writes nowhere
+  SYNC_STATE.queue.add(storeName);
+  drainSyncQueue();
+}
+
+let drainTimer = null;
+async function drainSyncQueue() {
+  if (SYNC_STATE.running || !SYNC_STATE.queue.size) return;
+  SYNC_STATE.running = true;
+  const names = [...SYNC_STATE.queue];
+  SYNC_STATE.queue.clear();
+
+  let failed = [];
+  for (const name of names) {
+    const ok = await pushStore(name);
+    if (!ok) failed.push(name);
+  }
+  SYNC_STATE.running = false;
+
+  if (failed.length) {
+    // Put them back and try again later. The member's work is on the device
+    // either way; this is about the copy that survives losing the device.
+    failed.forEach((n) => SYNC_STATE.queue.add(n));
+    SYNC_STATE.online = false;
+    clearTimeout(drainTimer);
+    drainTimer = setTimeout(drainSyncQueue, 30000);
+  } else {
+    SYNC_STATE.online = true;
+    if (SYNC_STATE.queue.size) drainSyncQueue();
+  }
+}
+
+async function pushStore(name) {
+  if (!SB || !AUTH_MEMBER) return true;
+  try {
+    if (name === "habitChecks") return await pushRows("habit_checks", habitChecksToRows(HABIT_CHECKS), "member_id,habit_id,checked_on");
+    if (name === "notebookNotes") return await pushReplace("notebook_notes", notebookNotesToRows(NOTEBOOK_NOTES));
+    if (name === "sessionNotes") return await pushRows("session_notes", sessionNotesToRows(SESSION_NOTES), "member_id,completion_client_id");
+    if (name === "preferences") return await pushPreferences();
+    if (name === "healthProfile") return await pushHealthProfile();
+    if (name === "scheduledItems") return await pushScheduledItems();
+
+    const s = syncStores()[name];
+    if (!s) return true;
+    const local = JSON.parse(localStorage.getItem(memberKey(s.key)) || "null");
+    if (!local) return true;
+    const rows = s.toRows(local);
+    return s.replace ? await pushReplace(s.table, rows) : await pushRows(s.table, rows, s.onConflict);
+  } catch (e) {
+    console.warn(`[sync] ${name}:`, e.message);
+    return false;
+  }
+}
+
+async function pushRows(table, rows, onConflict) {
+  if (!rows.length) return true;
+  const { error } = await SB.from(table).upsert(rows, { onConflict });
+  if (error) { console.warn(`[sync] ${table}:`, error.message); return false; }
+  return true;
+}
+
+// For stores where removal is meaningful — unpinning a PR, deleting a note.
+// An upsert alone would leave the removed rows behind, so the member's list
+// and the server's would quietly diverge.
+async function pushReplace(table, rows) {
+  const { error: delError } = await SB.from(table).delete().eq("member_id", AUTH_MEMBER.id);
+  if (delError) { console.warn(`[sync] ${table} clear:`, delError.message); return false; }
+  if (!rows.length) return true;
+  const { error } = await SB.from(table).insert(rows);
+  if (error) { console.warn(`[sync] ${table}:`, error.message); return false; }
+  return true;
+}
+
+async function pushPreferences() {
+  const row = {
+    member_id: AUTH_MEMBER.id,
+    theme: localStorage.getItem(THEME_KEY) || "system",
+    tour_seen: !!localStorage.getItem(memberKey(TOUR_SEEN_KEY)),
+    checkin_enabled: localStorage.getItem(memberKey(CHECKIN_ENABLED_KEY)) !== "0",
+    checkin_dismissed_on: localStorage.getItem(memberKey(CHECKIN_DISMISS_KEY)) || null,
+    notification_prefs: JSON.parse(localStorage.getItem(NOTIF_PREFS_KEY) || "{}"),
+    wearable: JSON.parse(localStorage.getItem(memberKey(WEARABLE_STORAGE_KEY)) || "{}"),
+  };
+  const { error } = await SB.from("member_preferences").upsert(row, { onConflict: "member_id" });
+  if (error) { console.warn("[sync] preferences:", error.message); return false; }
+  return true;
+}
+
+// A member who finishes a workout on a dying connection should not lose it
+// when the tab wakes up on wifi.
+// Two stores that are not arrays under memberKey, so they sit outside the
+// registry: the health profile (one jsonb blob) and scheduled cardio (its own
+// key prefix, since it predates memberKey).
+function scheduledItemsToRows(list) {
+  return list.map((i) => ({
+    member_id: AUTH_MEMBER.id, client_id: i.id, item_date: i.date,
+    kind: i.type || "cardio",
+    payload: { activity: i.activity || null, completed: i.completed || false },
+  }));
+}
+function scheduledItemsFromRows(rows) {
+  return rows.map((r) => ({
+    id: r.client_id, type: r.kind, date: r.item_date,
+    activity: (r.payload || {}).activity,
+    ...((r.payload || {}).completed ? { completed: true } : {}),
+  }));
+}
+
+async function pushHealthProfile() {
+  // Not a memberKey store: the health profile lives inside the shared
+  // LIVE_HEALTH_PROFILES_KEY object, keyed by member id, because it doubles as
+  // the same-browser bridge to admin. Only this member's entry is pushed —
+  // that object can hold other members' profiles when demo profiles have been
+  // switched in the same browser, and those are not ours to send.
+  const all = (typeof loadHealthProfiles === "function") ? loadHealthProfiles() : {};
+  const profile = all[AUTH_MEMBER.id];
+  if (!profile) return true;
+  const { error } = await SB.from("health_profile")
+    .upsert({ member_id: AUTH_MEMBER.id, profile, updated_at: new Date().toISOString() },
+            { onConflict: "member_id" });
+  if (error) { console.warn("[sync] health_profile:", error.message); return false; }
+  return true;
+}
+
+async function pushScheduledItems() {
+  const raw = localStorage.getItem(SCHEDULED_ITEMS_STORAGE_PREFIX + AUTH_MEMBER.id);
+  const list = raw ? JSON.parse(raw) : [];
+  // Replace rather than upsert: removing a scheduled session is the common
+  // edit, and an upsert would leave it on the calendar of every other device.
+  return await pushReplace("scheduled_items", scheduledItemsToRows(list));
+}
+
+window.addEventListener("online", () => { SYNC_STATE.online = true; drainSyncQueue(); });

@@ -167,6 +167,21 @@ let progressRange = "week"; // "week" | "month" | "year"
 let currentCompletionEntry = null; // the just-logged completion, for the RPE slider to update
 let currentBenchmarkId = null; // set on finish() when the just-completed circuit is a benchmark
 
+// ---------------- Demo seeding, and who must never get it ----------------
+// The loaders below invent history when localStorage is empty: 229
+// completions going back to 2025, 23 check-ins, 401 days of step counts, six
+// benchmark scores, two pinned PRs and a wearable marked as connected. That
+// is what makes the demo worth looking at, and it must never reach a real
+// member.
+//
+// A signed-in member with no history HAS no history. Seeding it would tell
+// them they had trained 229 times when they had not, and every number
+// downstream — streak, personal bests, challenge points, the progress chart —
+// would be computed from it and look entirely ordinary.
+function isDemoSession() {
+  return typeof AUTH_MEMBER === "undefined" || !AUTH_MEMBER;
+}
+
 function loadCompletions() {
   const stored = localStorage.getItem(memberKey(COMPLETIONS_STORAGE_KEY));
   if (stored) {
@@ -176,13 +191,14 @@ function loadCompletions() {
       // fall through and reseed
     }
   }
+  if (!isDemoSession()) return [];
   const seeded = buildSeedCompletionsForMember(CURRENT_MEMBER);
   localStorage.setItem(memberKey(COMPLETIONS_STORAGE_KEY), JSON.stringify(seeded));
   return seeded;
 }
 
 function saveCompletions() {
-  localStorage.setItem(memberKey(COMPLETIONS_STORAGE_KEY), JSON.stringify(COMPLETIONS));
+  localStorage.setItem(memberKey(COMPLETIONS_STORAGE_KEY), JSON.stringify(COMPLETIONS));  queueSync("completions");
 }
 
 // Benchmark scores persist per member exactly like completions (2026-08-17).
@@ -198,6 +214,7 @@ function loadBenchmarkResults() {
       // fall through and reseed
     }
   }
+  if (!isDemoSession()) return [];
   const seeded = buildSeedBenchmarkResults();
   localStorage.setItem(memberKey(BENCHMARK_RESULTS_STORAGE_KEY), JSON.stringify(seeded));
   return seeded;
@@ -205,6 +222,7 @@ function loadBenchmarkResults() {
 
 function saveBenchmarkResults() {
   localStorage.setItem(memberKey(BENCHMARK_RESULTS_STORAGE_KEY), JSON.stringify(BENCHMARK_RESULTS));
+  queueSync("benchmarkResults");
 }
 
 // Most recent completion of this specific workout, for the "✓ Completed"
@@ -342,6 +360,7 @@ function loadShowcasedPRs() {
       // fall through and reseed
     }
   }
+  if (!isDemoSession()) return [];
   localStorage.setItem(memberKey(SHOWCASED_PRS_KEY), JSON.stringify(SHOWCASED_PRS_SEED));
   return [...SHOWCASED_PRS_SEED];
 }
@@ -350,6 +369,7 @@ let SHOWCASED_PRS = [];
 
 function saveShowcasedPRs() {
   localStorage.setItem(memberKey(SHOWCASED_PRS_KEY), JSON.stringify(SHOWCASED_PRS));
+  queueSync("showcasedPRs");
 }
 
 function isShowcased(name) {
@@ -554,6 +574,7 @@ function loadCheckins() {
       // fall through and reseed
     }
   }
+  if (!isDemoSession()) return [];
   const seeded = buildSeedCheckins();
   localStorage.setItem(memberKey(CHECKIN_STORAGE_KEY), JSON.stringify(seeded));
   return seeded;
@@ -561,6 +582,7 @@ function loadCheckins() {
 
 function saveCheckins() {
   localStorage.setItem(memberKey(CHECKIN_STORAGE_KEY), JSON.stringify(CHECKINS));
+  queueSync("checkins");
 }
 
 function checkinFor(dateStr) {
@@ -629,6 +651,7 @@ function loadNotebookNotes() {
 let NOTEBOOK_NOTES = { coach: [], other: [] };
 function saveNotebookNotes() {
   localStorage.setItem(memberKey(NOTEBOOK_NOTES_KEY), JSON.stringify(NOTEBOOK_NOTES));
+  queueSync("notebookNotes");
 }
 
 // A note attached to one workout, keyed by the completion entry's id.
@@ -640,6 +663,7 @@ function loadSessionNotes() {
 let SESSION_NOTES = {};
 function saveSessionNotes() {
   localStorage.setItem(memberKey(SESSION_NOTES_KEY), JSON.stringify(SESSION_NOTES));
+  queueSync("sessionNotes");
 }
 function sessionNoteFor(entryId) {
   return (SESSION_NOTES[entryId] || "").trim();
@@ -923,6 +947,7 @@ function applyTheme(theme) {
 function setTheme(theme) {
   localStorage.setItem(THEME_KEY, theme);
   applyTheme(theme);
+  queueSync("preferences");
 }
 
 const CHECKIN_ENABLED_KEY = "burnclub-checkin-enabled";
@@ -935,6 +960,7 @@ function setCheckinEnabled(on) {
   localStorage.setItem(memberKey(CHECKIN_ENABLED_KEY), on ? "1" : "0");
   renderCheckinAffordances();
   renderCheckinSection();
+  queueSync("preferences");
 }
 
 // Asked once a day at most. Dismissing is remembered for that day only, so
@@ -945,6 +971,7 @@ function checkinPromptDismissedToday() {
 
 function dismissCheckinPrompt() {
   localStorage.setItem(memberKey(CHECKIN_DISMISS_KEY), dateKey(new Date()));
+  queueSync("preferences");
 }
 
 // ---- capture ---------------------------------------------------------------
@@ -2219,12 +2246,14 @@ function loadWearableState() {
       // fall through and reseed
     }
   }
+  if (!isDemoSession()) return { provider: null };
   localStorage.setItem(memberKey(WEARABLE_STORAGE_KEY), JSON.stringify(WEARABLE_DEFAULT));
   return { ...WEARABLE_DEFAULT };
 }
 
 function saveWearableState() {
   localStorage.setItem(memberKey(WEARABLE_STORAGE_KEY), JSON.stringify(WEARABLE));
+  queueSync("preferences");
 }
 
 function loadDailyStats() {
@@ -2243,6 +2272,7 @@ function loadDailyStats() {
       // fall through and reseed
     }
   }
+  if (!isDemoSession()) return [];
   const seeded = buildSeedDailyStats();
   localStorage.setItem(memberKey(DAILY_STATS_STORAGE_KEY), JSON.stringify(seeded));
   return seeded;
@@ -2348,12 +2378,16 @@ function loadMyHabits() {
       // fall through and reseed
     }
   }
+  // No isDemoSession() guard here, unlike every other loader: three default
+  // habits are a sensible starting set rather than invented history. They
+  // start unchecked, so a real member is told nothing untrue.
   localStorage.setItem(memberKey(MY_HABITS_STORAGE_KEY), JSON.stringify(MY_HABITS_DEFAULT));
   return [...MY_HABITS_DEFAULT];
 }
 
 function saveMyHabits() {
   localStorage.setItem(memberKey(MY_HABITS_STORAGE_KEY), JSON.stringify(MY_HABITS));
+  queueSync("myHabits");
 }
 
 function loadHabitChecks() {
@@ -2368,6 +2402,7 @@ function loadHabitChecks() {
 
 function saveHabitChecks() {
   localStorage.setItem(memberKey(HABIT_CHECKS_STORAGE_KEY), JSON.stringify(HABIT_CHECKS));
+  queueSync("habitChecks");
 }
 
 // Auto habits (steps) derive from real wearable data unless the member has
@@ -2539,6 +2574,7 @@ function saveHealthProfile(memberId, data) {
   const all = loadHealthProfiles();
   all[memberId] = { ...data, updatedAt: new Date().toISOString() };
   localStorage.setItem(LIVE_HEALTH_PROFILES_KEY, JSON.stringify(all));
+  queueSync("healthProfile");
 }
 
 function openHealthProfileScreen() {
@@ -2593,6 +2629,7 @@ function loadNotifPrefs() {
 
 function saveNotifPrefs() {
   localStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify(NOTIF_PREFS));
+  queueSync("preferences");
 }
 
 function renderNotifPrefs() {
@@ -3279,6 +3316,7 @@ function endTour(afterAction) {
   // Only on a real first run: a replay from Help & Support shouldn't drag the
   // daily check-in up with it.
   if (!tourIsReplay && !afterAction) maybePromptCheckin();
+  queueSync("preferences");
 }
 
 function bindTour() {
@@ -5049,6 +5087,7 @@ function loadScheduledItems(memberId) {
 
 function saveScheduledItems(memberId, list) {
   localStorage.setItem(SCHEDULED_ITEMS_STORAGE_PREFIX + memberId, JSON.stringify(list));
+  queueSync("scheduledItems");
 }
 
 function scheduledItemsOnDate(dateStr) {
@@ -5300,6 +5339,15 @@ async function enterAsAuthedMember() {
     return;
   }
   applyAuthMemberToProfile();
+  // Before init(), deliberately: every loadX() reads localStorage
+  // synchronously, so the server's copy has to be in place first. A fresh
+  // browser's empty localStorage is not an opinion about the member's history.
+  if (typeof hydrateMemberData === "function") {
+    const h = await hydrateMemberData();
+    if (!h.ok && h.reason !== "not signed in") {
+      console.warn("[sync] hydrate incomplete:", h.report);
+    }
+  }
   // A structured program is a day-by-day sequence projected from each member's
   // own start date. Without one there is no way to say which day they are on,
   // so the account is half set up rather than ready — and showing a calendar
