@@ -168,6 +168,19 @@ async function hydrateMemberData() {
   const stores = syncStores();
   const report = {};
 
+  // Push before pulling, always. Hydrate replaces a local store wholesale when
+  // the server returns rows, so anything local that never synced would be
+  // destroyed by the pull that was meant to restore it — a member with one
+  // synced workout and one stranded would lose the stranded one on their next
+  // sign-in, on the device that still had it.
+  //
+  // This is also the only thing that retries a failed push across a reload:
+  // the queue is in memory and dies with the page, so without this a
+  // completion that failed once would sit on the phone until the member
+  // happened to save something else.
+  const reconciled = await reconcileLocalUp();
+  report.__pushedFirst = reconciled;
+
   const pulls = Object.keys(stores).map(async (name) => {
     const s = stores[name];
     const { data, error } = await SB.from(s.table).select("*").order(s.order, { ascending: true });
@@ -237,6 +250,24 @@ async function hydrateMemberData() {
   await Promise.all([...pulls, ...nested, prefs, extras]);
   SYNC_STATE.lastError = Object.values(report).find((v) => String(v).startsWith("error")) || null;
   return { ok: !SYNC_STATE.lastError, report };
+}
+
+// Everything the device holds, pushed once. Upserts are keyed on client_id or
+// on a date, so re-sending what the server already has costs a round trip and
+// changes nothing.
+async function reconcileLocalUp() {
+  const names = Object.keys(syncStores())
+    .concat(["habitChecks", "notebookNotes", "sessionNotes", "preferences", "healthProfile", "scheduledItems"]);
+  const results = {};
+  for (const n of names) {
+    // Only push stores that actually have something locally, so a fresh
+    // device does not fire fifteen empty requests on every sign-in.
+    results[n] = await pushStore(n);
+  }
+  const failed = Object.keys(results).filter((n) => !results[n]);
+  failed.forEach((n) => SYNC_STATE.queue.add(n));
+  if (failed.length) drainSyncQueue();
+  return failed.length ? `failed: ${failed.join(", ")}` : "ok";
 }
 
 // ---------------- Push ----------------
