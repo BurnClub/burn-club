@@ -5290,10 +5290,52 @@ function renderCalendarTab() {
 // check-in prompts fire in the same order however they arrived — a fresh
 // sign-in, an invite link, or a session restored from last time.
 async function enterAsAuthedMember() {
+  // A member can exist without a program: invites go out before anyone is
+  // assigned, so this is an ordinary state, not an error. Saying so beats
+  // rendering a program-shaped app built from whichever demo profile happened
+  // to be first in data.js — which is what happened on the first three real
+  // accounts, and looked correct purely because that profile is rolling.
+  if (AUTH_MEMBER && !AUTH_MEMBER.program_id) {
+    showUnassignedScreen();
+    return;
+  }
   applyAuthMemberToProfile();
   init();
   showTab("tab-home");
   onEnterApp();
+}
+
+// Deliberately a dead end rather than a degraded app. There is nothing a
+// member can usefully do here, and letting them wander a half-populated app
+// invites "why is my program empty" questions that have nothing to do with
+// the program.
+function showUnassignedScreen() {
+  const name = AUTH_MEMBER.first_name || "there";
+  const host = document.getElementById("screen-login");
+  document.getElementById("login-form").hidden = true;
+  document.getElementById("forgot-btn").hidden = true;
+  document.getElementById("set-password-form").hidden = true;
+  const demo = document.getElementById("login-demo");
+  if (demo) demo.hidden = true;
+
+  let box = document.getElementById("unassigned-note");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "unassigned-note";
+    box.className = "login-unassigned";
+    host.querySelector(".login-wrap").appendChild(box);
+  }
+  box.innerHTML = `
+    <h2>You're signed in, ${esc(name)}</h2>
+    <p>Your coach hasn't put you on a program yet. As soon as they do, your
+       workouts show up here — nothing else for you to do.</p>
+    <button class="btn-ghost" id="unassigned-signout">Sign out</button>`;
+  box.hidden = false;
+  document.getElementById("unassigned-signout").addEventListener("click", async () => {
+    await signOut();
+    window.location.reload();
+  });
+  showScreen("screen-login");
 }
 
 // Maps the members row onto the profile shape the app already reads, rather

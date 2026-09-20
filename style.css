@@ -3706,3 +3706,18 @@ h1, h2, h3 {
   text-align: center;
 }
 #login-submit[disabled], #set-password-submit[disabled] { opacity: 0.6; cursor: default; }
+
+/* A signed-in member with no program yet (2026-09-19). Invites go out before
+   anyone is assigned, so this is an ordinary state and gets a plain answer
+   rather than a half-populated app. */
+.login-unassigned {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: center;
+}
+.login-unassigned h2 { margin: 0; font-size: 18px; }
+.login-unassigned p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-muted); }

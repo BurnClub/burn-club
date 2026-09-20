@@ -105,6 +105,15 @@ it would be nice. Things that can follow launch belong in the sections below.
 
 ### Content
 
+- [ ] **Assign programs to the three real accounts.** chris@worthitcandy.com,
+      kelly@kellyyager.com and k_yager@yahoo.com all have `program_id` null,
+      so they hit the "not on a program yet" screen. Set them in SQL or through
+      admin once the members table is editable there.
+- [ ] **Make Chris's account `role = 'admin'`.** All three real accounts are
+      `member`, which is the right default — but nothing can currently pass
+      `is_staff()`, so no one can read another member's rows or write content
+      through the API. Needed before the admin app moves to the backend.
+
 - [ ] **Technique text.** 661 of 663 exercises have none. It is also what the
       app reads aloud, so an empty field is a silently missing feature rather
       than a blank line.
