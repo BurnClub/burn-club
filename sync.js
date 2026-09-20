@@ -173,7 +173,15 @@ async function hydrateMemberData() {
     const { data, error } = await SB.from(s.table).select("*").order(s.order, { ascending: true });
     if (error) { report[name] = "error: " + error.message; return; }
     if (!data || !data.length) { report[name] = "empty — kept local"; return; }
-    localStorage.setItem(memberKey(s.key), JSON.stringify(s.fromRows(data)));
+    let mapped = s.fromRows(data);
+    if (name === "completions") {
+      const { data: lifts } = await SB.from("lifts").select("*");
+      if (lifts && lifts.length) {
+        mapped = liftsOntoCompletions(mapped, lifts);
+        report.lifts = `${lifts.length} rows`;
+      }
+    }
+    localStorage.setItem(memberKey(s.key), JSON.stringify(mapped));
     report[name] = `${data.length} rows`;
   });
 
@@ -259,10 +267,20 @@ async function drainSyncQueue() {
     // either way; this is about the copy that survives losing the device.
     failed.forEach((n) => SYNC_STATE.queue.add(n));
     SYNC_STATE.online = false;
+    SYNC_STATE.failures = (SYNC_STATE.failures || 0) + 1;
+    // Retrying in silence forever is how a member's first workout sat on one
+    // phone looking saved while the server had nothing. A dropped connection
+    // is ordinary and should stay quiet; the same failure over and over is
+    // not, and is worth saying out loud before a month of history is only
+    // ever on one device.
+    if (SYNC_STATE.failures === 5 && typeof showToast === "function") {
+      showToast("Your workouts are saved on this phone but aren't backing up. Tell your coach if this keeps showing.");
+    }
     clearTimeout(drainTimer);
     drainTimer = setTimeout(drainSyncQueue, 30000);
   } else {
     SYNC_STATE.online = true;
+    SYNC_STATE.failures = 0;
     if (SYNC_STATE.queue.size) drainSyncQueue();
   }
 }
@@ -282,11 +300,48 @@ async function pushStore(name) {
     const local = JSON.parse(localStorage.getItem(memberKey(s.key)) || "null");
     if (!local) return true;
     const rows = s.toRows(local);
-    return s.replace ? await pushReplace(s.table, rows) : await pushRows(s.table, rows, s.onConflict);
+    const ok = s.replace ? await pushReplace(s.table, rows) : await pushRows(s.table, rows, s.onConflict);
+    // Weights go with the completions they belong to, and only if the
+    // completions themselves landed — a lift whose completion never arrived
+    // would be an orphan nothing could show.
+    if (ok && name === "completions") {
+      return await pushRows("lifts", liftsToRows(local), "member_id,completion_client_id,exercise_name");
+    }
+    return ok;
   } catch (e) {
     console.warn(`[sync] ${name}:`, e.message);
     return false;
   }
+}
+
+// Weights ride with their completion. They are the numbers a member actually
+// came for — a personal best is computed from them — and until now they were
+// the one thing that never left the phone.
+function liftsToRows(completions) {
+  const rows = [];
+  completions.forEach((c) => {
+    if (!c.weights) return;
+    Object.keys(c.weights).forEach((name) => {
+      const weight = Number(c.weights[name]);
+      if (!Number.isFinite(weight)) return;
+      rows.push({
+        member_id: AUTH_MEMBER.id, completion_client_id: c.id,
+        exercise_name: name, weight, performed_on: c.date,
+      });
+    });
+  });
+  return rows;
+}
+function liftsOntoCompletions(completions, liftRows) {
+  const byCompletion = {};
+  liftRows.forEach((r) => {
+    if (!r.completion_client_id) return;
+    (byCompletion[r.completion_client_id] = byCompletion[r.completion_client_id] || {})[r.exercise_name] = Number(r.weight);
+  });
+  completions.forEach((c) => {
+    if (byCompletion[c.id]) c.weights = byCompletion[c.id];
+  });
+  return completions;
 }
 
 async function pushRows(table, rows, onConflict) {

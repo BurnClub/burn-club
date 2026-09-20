@@ -178,18 +178,28 @@ create table completions (
   client_id      text,
   created_at     timestamptz not null default now()
 );
-create unique index on completions (member_id, client_id) where client_id is not null;
+-- A real unique constraint, not a partial index: ON CONFLICT can only infer a
+-- partial index when the statement carries a matching WHERE clause, which the
+-- client never sends. Nulls stay distinct, so rows without a client_id are fine.
+alter table completions add constraint completions_member_client unique (member_id, client_id);
 create index on completions (member_id, performed_on desc);
 create index on completions (workout_id) where rpe is not null;  -- the RPE median
 
 create table lifts (
-  id            bigint generated always as identity primary key,
-  member_id     uuid not null references members(id) on delete cascade,
-  completion_id bigint references completions(id) on delete cascade,
-  exercise_id   text not null references exercises(id),
-  weight        numeric(6,2) not null,
-  reps          int,
-  performed_on  date not null
+  id                   bigint generated always as identity primary key,
+  member_id            uuid not null references members(id) on delete cascade,
+  -- The client's completion id, not the server's: weights are written the
+  -- moment a workout ends, before any server id exists.
+  completion_client_id text,
+  completion_id        bigint references completions(id) on delete cascade,
+  -- The name, for the same reason showcased_prs uses one — the app works in
+  -- exercise names, and resolving to an id would fail silently.
+  exercise_name        text,
+  exercise_id          text references exercises(id),
+  weight               numeric(6,2) not null,
+  reps                 int,
+  performed_on         date not null,
+  unique (member_id, completion_client_id, exercise_name)
 );
 -- Personal bests and the progress chart are queries over this, not a second
 -- stored copy that can disagree with it.
@@ -247,7 +257,7 @@ create table benchmark_results (
   score        numeric not null,
   client_id    text
 );
-create unique index on benchmark_results (member_id, client_id) where client_id is not null;
+alter table benchmark_results add constraint benchmark_results_member_client unique (member_id, client_id);
 create index on benchmark_results (member_id, benchmark_id, performed_on desc);
 
 create table notebook_notes (
