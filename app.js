@@ -5296,10 +5296,18 @@ async function enterAsAuthedMember() {
   // to be first in data.js — which is what happened on the first three real
   // accounts, and looked correct purely because that profile is rolling.
   if (AUTH_MEMBER && !AUTH_MEMBER.program_id) {
-    showUnassignedScreen();
+    showUnassignedScreen("no-program");
     return;
   }
   applyAuthMemberToProfile();
+  // A structured program is a day-by-day sequence projected from each member's
+  // own start date. Without one there is no way to say which day they are on,
+  // so the account is half set up rather than ready — and showing a calendar
+  // built from a default would be wrong in a way nobody would notice.
+  if (CURRENT_MEMBER.scheduleType === "structured" && !CURRENT_MEMBER.startDate) {
+    showUnassignedScreen("no-start-date");
+    return;
+  }
   init();
   showTab("tab-home");
   onEnterApp();
@@ -5309,7 +5317,7 @@ async function enterAsAuthedMember() {
 // member can usefully do here, and letting them wander a half-populated app
 // invites "why is my program empty" questions that have nothing to do with
 // the program.
-function showUnassignedScreen() {
+function showUnassignedScreen(reason) {
   const name = AUTH_MEMBER.first_name || "there";
   const host = document.getElementById("screen-login");
   document.getElementById("login-form").hidden = true;
@@ -5325,10 +5333,15 @@ function showUnassignedScreen() {
     box.className = "login-unassigned";
     host.querySelector(".login-wrap").appendChild(box);
   }
+  const body = reason === "no-start-date"
+    ? `Your program is set, but it doesn't have a start date yet — that's what
+       decides which week you begin on. Your coach can set it; nothing else for
+       you to do.`
+    : `Your coach hasn't put you on a program yet. As soon as they do, your
+       workouts show up here — nothing else for you to do.`;
   box.innerHTML = `
     <h2>You're signed in, ${esc(name)}</h2>
-    <p>Your coach hasn't put you on a program yet. As soon as they do, your
-       workouts show up here — nothing else for you to do.</p>
+    <p>${body}</p>
     <button class="btn-ghost" id="unassigned-signout">Sign out</button>`;
   box.hidden = false;
   document.getElementById("unassigned-signout").addEventListener("click", async () => {
@@ -5353,6 +5366,21 @@ function applyAuthMemberToProfile() {
     scheduleType: program ? program.schedule_type : CURRENT_MEMBER.scheduleType,
     memberSince: AUTH_MEMBER.member_since || CURRENT_MEMBER.memberSince,
     badge: AUTH_MEMBER.badge || "",
+    // Both of these were missing and both fall through the spread above to the
+    // demo profile if they are not set explicitly. start_date is the worse of
+    // the two: memberProgramDay() counts from it, so an unmapped one put a
+    // real member on the demo member's week — which renders perfectly and is
+    // wrong. null rather than undefined so the guard below can see it.
+    startDate: AUTH_MEMBER.start_date || null,
+    access: AUTH_MEMBER.access || "both",
+    // Lives in member_private, which members cannot read by design, so there
+    // is nothing to map it from — zero rather than the demo member's value,
+    // which would otherwise credit a real member with someone else's manual
+    // points adjustment.
+    pointAdjustment: 0,
+    // The program's display name, shown on Profile, the calendar label and the
+    // group chat title. null would render the word "null" in three places.
+    program: program ? program.name : CURRENT_MEMBER.program,
   };
 }
 
