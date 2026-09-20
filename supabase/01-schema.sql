@@ -239,7 +239,8 @@ create table benchmark_results (
   member_id    uuid not null references members(id) on delete cascade,
   benchmark_id text not null references benchmarks(id) on delete cascade,
   performed_on date not null,
-  score        text not null,
+  -- A number for both score types: rounds completed, or a time in seconds.
+  score        numeric not null,
   client_id    text
 );
 create unique index on benchmark_results (member_id, client_id) where client_id is not null;
@@ -247,21 +248,33 @@ create index on benchmark_results (member_id, benchmark_id, performed_on desc);
 
 create table notebook_notes (
   member_id uuid not null references members(id) on delete cascade,
-  note_date date not null,
-  body      text not null default '',
-  primary key (member_id, note_date)
+  -- Two ordered lists of plain strings, "coach" and "other" — the app puts no
+  -- dates on notes at all, and position is the only ordering there is.
+  kind      text not null check (kind in ('coach','other')),
+  position  int not null,
+  body      text not null,
+  primary key (member_id, kind, position)
 );
 
 create table session_notes (
-  completion_id bigint primary key references completions(id) on delete cascade,
-  member_id     uuid not null references members(id) on delete cascade,
-  body          text not null default ''
+  member_id            uuid not null references members(id) on delete cascade,
+  -- The app's own completion id, not the server's. A session note is written
+  -- the moment a workout finishes, before any server id exists and often
+  -- before the completion has synced — so this has to key on what the client
+  -- already has.
+  completion_client_id text not null,
+  body                 text not null default '',
+  primary key (member_id, completion_client_id)
 );
 
 create table showcased_prs (
-  member_id   uuid not null references members(id) on delete cascade,
-  exercise_id text not null references exercises(id) on delete cascade,
-  primary key (member_id, exercise_id)
+  member_id     uuid not null references members(id) on delete cascade,
+  -- The name, not a reference to exercises(id). That is what a workout block
+  -- names and what a personal best is computed against; mapping to an id on
+  -- the way in would fail silently for anything that did not resolve, and the
+  -- failure mode is a member's pinned PR quietly disappearing.
+  exercise_name text not null,
+  primary key (member_id, exercise_name)
 );
 
 create table daily_stats (
