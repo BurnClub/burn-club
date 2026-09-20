@@ -47,9 +47,42 @@ it would be nice. Things that can follow launch belong in the sections below.
       `v=DMARC1; p=none; rua=mailto:dmarc@kellyyager.com`. Receivers check the
       subdomain first, so this satisfies Gmail while putting no policy on
       `kellyyager.com` itself and leaving Kelly's Workspace mail untouched.
-- [ ] **Rewrite the invite email template.** Supabase's default is "Accept the
-      invite" over a bare link with no sender name, product name or
-      explanation — structurally identical to phishing, and scored that way.
+- [ ] **Rewrite the invite email template — now the main suspect.**
+      Tested 2026-09-19 after DMARC went in: invites to a Gmail address **and**
+      a Yahoo address both still landed in spam. Authentication is no longer
+      the problem — SPF, DKIM and a DMARC record are all in place — so what is
+      left is content and reputation.
+
+      Supabase's default is "Accept the invite" over a bare link, with no
+      sender name, no product name and no explanation of why it arrived. That
+      is structurally what phishing looks like, and filters score it that way
+      regardless of who actually sent it.
+
+      What a rewritten invite needs:
+      - Who it is from, in words: Kelly Yager / KY Fit, and that this is Burn
+        Club — the thing they paid for.
+      - Why they are getting it now, referring to their purchase.
+      - What the link does: sets their password. A link with no stated purpose
+        is the single strongest phishing signal in a short email.
+      - Real text, not one button on an empty page. A body with almost no
+        content and one link scores badly on its own.
+      - A plain-text alternative alongside the HTML. HTML-only mail is
+        penalised by both Gmail and Yahoo.
+      - A reply-to that reaches a person.
+
+      **Next diagnostic before rewriting:** open one of the spam copies and
+      read the headers (Gmail: "Show original"). `Authentication-Results` says
+      plainly whether SPF, DKIM and DMARC each passed for that specific
+      message. If any says fail, that is a configuration fault worth fixing
+      first — most likely the From address not aligning with the DMARC domain.
+      If all three pass, the cause is content and reputation and the rewrite is
+      the fix. Guessing between those two is wasted work; the headers say
+      which.
+
+      Reputation is the other half and it only comes with time: a domain that
+      has never sent mail gets no benefit of the doubt. Sending a few real
+      messages a day for a couple of weeks before the import does more than any
+      template change.
 - [ ] **Point a real domain at the app.** Mail comes from
       `mail.kellyyager.com` and the invite link goes to `burnclub.github.io`.
       Different registrable domains, which filters weigh and members notice.
