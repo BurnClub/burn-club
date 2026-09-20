@@ -231,6 +231,10 @@ create table habit_checks (
   -- every check already recorded against it.
   habit_id   text not null,
   checked_on date not null,
+  -- False is meaningful, not just an absent row. An auto habit ticks itself
+  -- from the wearable's step count; unticking it is an override that has to
+  -- beat the watch, and the app reads presence-in-the-log as the signal.
+  checked    boolean not null default true,
   primary key (member_id, habit_id, checked_on)
 );
 
