@@ -428,6 +428,21 @@ rules, which are real logic rather than config and want their own design pass.
 
 ## Decisions still open
 
+- **What the app is actually called** (raised 2026-09-19, parked by Chris until
+  it matters). Working assumption: **Burn Club by KY Fit**. Code now uses it
+  consistently, so there is one name rather than four drifting variants — but
+  it is provisional, not settled.
+
+  It stops being cosmetic at two moments. It becomes the **App Store listing
+  name**, which is what members search for and what has to match what they were
+  sold. And it is the **email sender name**, where a mismatch between the brand
+  someone bought from and the name in their inbox is part of why an invite gets
+  filtered — the first one landed in spam.
+
+  The underlying question is which name members actually say. Burn Club is the
+  program, KY Fit / Kelly Yager is the brand, and they bought through
+  kellyyager.com. Chris and Kelly decide; don't arrive with a preference.
+
 - **What the notes feature could be — Chris wants a longer conversation**
   (2026-08-30). Raised straight after the daily check-in got a member-facing
   on/off switch. Deferred deliberately; he leads this one, so don't arrive
