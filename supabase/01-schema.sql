@@ -172,8 +172,13 @@ create table completions (
   calories       int,
   avg_heart_rate int,
   rpe            int check (rpe between 1 and 10),
+  -- The app mints its own id before a completion reaches the server. Carrying
+  -- it lets a retried sync recognise a row it already wrote rather than insert
+  -- it twice, which is what a flaky gym connection produces.
+  client_id      text,
   created_at     timestamptz not null default now()
 );
+create unique index on completions (member_id, client_id) where client_id is not null;
 create index on completions (member_id, performed_on desc);
 create index on completions (workout_id) where rpe is not null;  -- the RPE median
 
@@ -193,26 +198,40 @@ create index on lifts (member_id, exercise_id, performed_on desc);
 create table checkins (
   member_id     uuid not null references members(id) on delete cascade,
   performed_on  date not null,
-  energy        int check (energy between 1 and 10),
-  soreness      int check (soreness between 1 and 10),
-  mood          int check (mood between 1 and 10),
+  -- The app asks exactly two scales, "Mentally" and "Physically". Admin can
+  -- retitle them but cannot add a third, so fixed columns are right.
+  mental        int check (mental between 1 and 10),
+  physical      int check (physical between 1 and 10),
   sleep_hours   numeric(3,1) check (sleep_hours between 0 and 10),
-  sleep_quality text check (sleep_quality in ('Bad','OK','Good','Great')),
+  -- Lowercase: that is what the app stores. Capitalised values here would
+  -- reject every insert.
+  sleep_quality text check (sleep_quality in ('bad','ok','good','great')),
   note          text,
+  -- A check-in the member chose to share with their coach.
+  shared_at     timestamptz,
   primary key (member_id, performed_on)       -- one per member per day
 );
 
 create table member_habits (
   member_id uuid not null references members(id) on delete cascade,
+  habit_id  text not null,
   label     text not null,
-  primary key (member_id, label)
+  -- `auto` ties a habit to a wearable metric so it ticks itself, and `target`
+  -- is the threshold that counts as done. Without them an imported habit
+  -- quietly stops being automatic.
+  auto      text,
+  target    int,
+  position  int not null default 0,
+  primary key (member_id, habit_id)
 );
 
 create table habit_checks (
   member_id  uuid not null references members(id) on delete cascade,
-  label      text not null,
+  -- Keyed on habit_id, not label: a renamed habit would otherwise orphan
+  -- every check already recorded against it.
+  habit_id   text not null,
   checked_on date not null,
-  primary key (member_id, label, checked_on)
+  primary key (member_id, habit_id, checked_on)
 );
 
 create table benchmark_results (
@@ -220,8 +239,10 @@ create table benchmark_results (
   member_id    uuid not null references members(id) on delete cascade,
   benchmark_id text not null references benchmarks(id) on delete cascade,
   performed_on date not null,
-  score        text not null
+  score        text not null,
+  client_id    text
 );
+create unique index on benchmark_results (member_id, client_id) where client_id is not null;
 create index on benchmark_results (member_id, benchmark_id, performed_on desc);
 
 create table notebook_notes (
