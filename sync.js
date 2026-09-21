@@ -166,6 +166,41 @@ function sessionNotesFromRows(rows) {
   return out;
 }
 
+// ---------------- Reset counter ----------------
+// A reset on the server bumps members.data_epoch. Each device remembers the
+// last value it saw. If the server's is HIGHER, this device's copy predates
+// the reset and has to be thrown away — uploading it would quietly undo the
+// reset, which is what happened twice when a phone was cleared by hand and the
+// clear missed.
+//
+// An unset local value counts as 0, which is also the server's default, so a
+// member who has never been reset is never touched: 0 is not greater than 0.
+// Only an explicit reset ever makes the comparison true.
+function epochKey() { return `burnclub-epoch-${AUTH_MEMBER.id}`; }
+function localEpoch() { return Number(localStorage.getItem(epochKey()) || 0); }
+
+function discardLocalMemberData() {
+  const id = AUTH_MEMBER.id;
+  const removed = [];
+  Object.keys(localStorage).forEach((k) => {
+    // Never the sign-in itself: discarding that would sign the member out in
+    // the middle of signing them in.
+    if (k.startsWith("sb-")) return;
+    if (k.endsWith("-" + id) || k === dirtyKey() || k === SCHEDULED_ITEMS_STORAGE_PREFIX + id) {
+      localStorage.removeItem(k);
+      removed.push(k);
+    }
+  });
+  // The health profile sits in a shared object keyed by member id, not under a
+  // member key — remove this member's entry and leave anyone else's.
+  try {
+    const all = JSON.parse(localStorage.getItem(LIVE_HEALTH_PROFILES_KEY) || "{}");
+    if (all[id]) { delete all[id]; localStorage.setItem(LIVE_HEALTH_PROFILES_KEY, JSON.stringify(all)); }
+  } catch (e) {}
+  SYNC_STATE.queue.clear();
+  return removed.length;
+}
+
 // ---------------- Hydrate ----------------
 // Runs once on sign-in, before init(), so every loadX() below it reads a
 // localStorage already filled from the server. The server wins here on
@@ -190,8 +225,18 @@ async function hydrateMemberData() {
   // the queue is in memory and dies with the page, so without this a
   // completion that failed once would sit on the phone until the member
   // happened to save something else.
-  const reconciled = await reconcileLocalUp();
-  report.__pushedFirst = reconciled;
+  const serverEpoch = Number(AUTH_MEMBER.data_epoch || 0);
+  if (serverEpoch > localEpoch()) {
+    // This device's copy predates a reset. Discard it and skip the upload
+    // entirely — pushing first is exactly what would bring the old data back.
+    const n = discardLocalMemberData();
+    localStorage.setItem(epochKey(), String(serverEpoch));
+    report.__reset = `discarded ${n} local store(s): reset to epoch ${serverEpoch}`;
+  } else {
+    if (!localStorage.getItem(epochKey())) localStorage.setItem(epochKey(), String(serverEpoch));
+    const reconciled = await reconcileLocalUp();
+    report.__pushedFirst = reconciled;
+  }
 
   // A store still dirty after reconcile is one whose push failed. Its local
   // copy is newer than anything the server has, so pulling over it would lose

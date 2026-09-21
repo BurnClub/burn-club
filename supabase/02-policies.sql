@@ -74,6 +74,39 @@ create policy "read own profile" on members
 create policy "update own profile" on members
   for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
 
+-- That policy is row-level, so on its own it would let a member change ANY
+-- column of their own row — role included, which makes them staff and opens
+-- every other member's data. This trigger narrows it to what a member may
+-- actually edit about themselves: their name. Staff and direct database
+-- sessions (auth.uid() is null) pass.
+create or replace function public.protect_member_columns()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is not null and not is_staff() then
+    if new.role         is distinct from old.role
+    or new.program_id   is distinct from old.program_id
+    or new.start_date   is distinct from old.start_date
+    or new.access       is distinct from old.access
+    or new.email        is distinct from old.email
+    or new.member_since is distinct from old.member_since
+    or new.badge        is distinct from old.badge
+    or new.data_epoch   is distinct from old.data_epoch
+    or new.id           is distinct from old.id then
+      raise exception 'Only your coach can change that.' using errcode = '42501';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger protect_member_columns
+  before update on members
+  for each row execute function public.protect_member_columns();
+
 create policy "staff read all members" on members
   for select to authenticated using (is_staff());
 

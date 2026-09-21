@@ -140,6 +140,9 @@ create table members (
   -- Default is the least privileged value on purpose: a row created by any
   -- path that forgets to set this is a member, never staff.
   role         text not null default 'member' check (role in ('member','staff','admin')),
+  -- Bumped by a reset. Each device remembers the last value it saw, and a
+  -- higher one here tells it to discard its local copy rather than upload it.
+  data_epoch   int not null default 0,
   created_at   timestamptz not null default now()
 );
 

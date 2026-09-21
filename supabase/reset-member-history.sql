@@ -1,10 +1,10 @@
 -- Wipe one member's training history and start them fresh.
 -- Keeps the account itself: sign-in, program, start date, role, preferences.
 --
--- IMPORTANT: clear the app's data on every device this member has used
--- BEFORE they sign in again. Sign-in pushes local data up before pulling, so
--- a device that still holds the old history will re-upload it and quietly
--- undo this.
+-- Devices do NOT need clearing by hand. This bumps members.data_epoch, and
+-- each device compares it at sign-in: a higher value makes it discard its
+-- local copy rather than upload it. (Requires 10-reset-epoch-and-lock-members
+-- to have been run.)
 
 do $$
 declare
@@ -31,6 +31,11 @@ begin
   delete from daily_stats         where member_id = v_member;
   delete from in_progress_workout where member_id = v_member;
   delete from health_profile      where member_id = v_member;
+
+  -- Tell every device this member has used that its copy is stale. On their
+  -- next sign-in each one discards its local data instead of uploading it,
+  -- which is what makes a reset stick without clearing phones by hand.
+  update members set data_epoch = data_epoch + 1 where id = v_member;
 end $$;
 
 -- Every count should be zero. The member row and preferences are kept.
@@ -40,4 +45,5 @@ union all select 'checkins',       count(*) from checkins       x join members m
 union all select 'showcased_prs',  count(*) from showcased_prs  x join members m on m.id = x.member_id where m.email = 'chris@worthitcandy.com'
 union all select 'member_habits',  count(*) from member_habits  x join members m on m.id = x.member_id where m.email = 'chris@worthitcandy.com'
 union all select 'notebook_notes', count(*) from notebook_notes x join members m on m.id = x.member_id where m.email = 'chris@worthitcandy.com'
-union all select 'account kept',   count(*) from members where email = 'chris@worthitcandy.com';
+union all select 'account kept',   count(*) from members where email = 'chris@worthitcandy.com'
+union all select 'data_epoch now', data_epoch from members where email = 'chris@worthitcandy.com';
