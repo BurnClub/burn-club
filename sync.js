@@ -201,6 +201,36 @@ function discardLocalMemberData() {
   return removed.length;
 }
 
+// A reset can happen while a tab is already open and signed in. That tab
+// never passes through sign-in again, so the check in hydrateMemberData never
+// sees it — and it goes on pushing its stale copy, undoing the reset. That is
+// exactly what happened: an open PC tab put three check-ins back on the server
+// minutes after they were wiped.
+//
+// So the counter is checked before every push as well. The answer is cached
+// briefly, so a burst of saves costs one query rather than one each.
+let epochCheckedAt = 0;
+async function epochStillCurrent() {
+  if (!SB || !AUTH_MEMBER) return true;
+  if (Date.now() - epochCheckedAt < 15000) return true;
+  const { data, error } = await SB.from("members").select("data_epoch").eq("id", AUTH_MEMBER.id).maybeSingle();
+  // If the check itself fails, carry on: this is about a deliberate reset, not
+  // a flaky connection, and blocking every push offline would lose real work.
+  if (error || !data) return true;
+  epochCheckedAt = Date.now();
+  const server = Number(data.data_epoch || 0);
+  if (server <= localEpoch()) return true;
+
+  // Reset while this tab was open. Discarding storage is not enough on its
+  // own — the stale data is also in memory (CHECKINS, COMPLETIONS and the
+  // rest), and the next save would write it straight back. Reloading rebuilds
+  // memory from the now-clean storage, and sign-in then pulls fresh.
+  discardLocalMemberData();
+  localStorage.setItem(epochKey(), String(server));
+  if (typeof location !== "undefined" && location.reload) location.reload();
+  return false;
+}
+
 // ---------------- Hydrate ----------------
 // Runs once on sign-in, before init(), so every loadX() below it reads a
 // localStorage already filled from the server. The server wins here on
@@ -424,6 +454,12 @@ let drainTimer = null;
 async function drainSyncQueue() {
   if (SYNC_STATE.running || !SYNC_STATE.queue.size) return;
   SYNC_STATE.running = true;
+  // Before anything goes up: has this account been reset since the tab opened?
+  if (!(await epochStillCurrent())) {
+    SYNC_STATE.queue.clear();
+    SYNC_STATE.running = false;
+    return;
+  }
   const names = [...SYNC_STATE.queue];
   SYNC_STATE.queue.clear();
 

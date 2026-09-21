@@ -16,6 +16,7 @@ Every test here exists because the case it covers was broken:
 | `last-item-removed` | Removing the *last* pin never reached other devices — an empty list was read as "nothing synced yet" |
 | `offline-notes` | The rule that fixed the above could delete notes written offline; proves it doesn't |
 | `reset-counter` | Wiping an account on the server was undone by the first device to sign in, which re-uploaded its old copy |
+| `open-tab-during-reset` | A tab already open and signed in during a reset never passed through sign-in again, so it kept pushing its stale copy and undid the reset |
 
 **Run them before changing `sync.js`.** Its failures are silent by design —
 work is saved on the device either way — which is exactly why a regression
