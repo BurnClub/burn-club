@@ -8,27 +8,29 @@
 
 do $$
 declare
-  target uuid := (select id from members where email = 'chris@worthitcandy.com');
+  -- Prefixed so it cannot collide with a column: member_habits has its own
+  -- `target` (the habit threshold), which is what broke the first version.
+  v_member uuid := (select id from members where email = 'chris@worthitcandy.com');
 begin
-  if target is null then
+  if v_member is null then
     raise exception 'no member with that email';
   end if;
 
   -- Lifts first: they key on the client's completion id rather than a foreign
   -- key to completions, so deleting completions would not cascade to them.
-  delete from lifts               where member_id = target;
-  delete from session_notes       where member_id = target;
-  delete from completions         where member_id = target;
-  delete from checkins            where member_id = target;
-  delete from benchmark_results   where member_id = target;
-  delete from showcased_prs       where member_id = target;
-  delete from member_habits       where member_id = target;
-  delete from habit_checks        where member_id = target;
-  delete from notebook_notes      where member_id = target;
-  delete from scheduled_items     where member_id = target;
-  delete from daily_stats         where member_id = target;
-  delete from in_progress_workout where member_id = target;
-  delete from health_profile      where member_id = target;
+  delete from lifts               where member_id = v_member;
+  delete from session_notes       where member_id = v_member;
+  delete from completions         where member_id = v_member;
+  delete from checkins            where member_id = v_member;
+  delete from benchmark_results   where member_id = v_member;
+  delete from showcased_prs       where member_id = v_member;
+  delete from member_habits       where member_id = v_member;
+  delete from habit_checks        where member_id = v_member;
+  delete from notebook_notes      where member_id = v_member;
+  delete from scheduled_items     where member_id = v_member;
+  delete from daily_stats         where member_id = v_member;
+  delete from in_progress_workout where member_id = v_member;
+  delete from health_profile      where member_id = v_member;
 end $$;
 
 -- Every count should be zero. The member row and preferences are kept.
