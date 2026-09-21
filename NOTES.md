@@ -93,15 +93,22 @@ it would be nice. Things that can follow launch belong in the sections below.
 
 ### Security — the sharpest items
 
-- [ ] **Neither login authenticates.** The member app's handler is
-      `e.preventDefault()` and nothing else. Real auth is phase 2 and in
-      progress.
+- [x] **The member app authenticates.** Done 2026-09-19: real Supabase
+      sign-in replaced a handler that was `e.preventDefault()` and nothing else.
+      Invite-only — open signup is closed and confirmed refused by the server.
+- [ ] **The admin app still doesn't.** Its login is still decorative. Moves
+      when admin goes onto the backend (phase 6).
 - [ ] **`admin/` is on the same public URL as the member app.** Anyone with the
       link has full access to every admin screen today. Harmless with seed
       data; not on import day.
-- [ ] **A security pass over the auth surface** once it exists — not a read of
-      the code, an attempt to break it. Sign in as one member and try to reach
-      another's rows.
+- [ ] **A security pass over the auth surface** — not a read of the code, an
+      attempt to break it. Started, and it has already paid for itself: on
+      2026-09-21 a member could set their own `role` to `admin` from the browser
+      console, because the policy letting members edit their profile covered
+      every column. Closed by a trigger (`10-reset-epoch-and-lock-members.sql`)
+      and **proven closed** by running that exact exploit against a real
+      signed-in session: refused. Still to do: sign in as one member and try to
+      read another's rows, and the same for storage once videos are there.
 
 ### Content
 
@@ -162,6 +169,36 @@ it would be nice. Things that can follow launch belong in the sections below.
       members.
 - [ ] **Messaging, groups and challenge teams have no tables yet.** Phase 2 of
       the schema.
+
+## Backend progress
+
+Supabase, member-app-first. As of 2026-09-21:
+
+- **Phase 1 — schema and content: done.** 25 tables, RLS on all of them, 663
+  exercises and 185 workouts seeded from `data.js` by `supabase/generate-seed.py`.
+- **Phase 2 — auth: done.** Real sign-in, invites, set-your-own-password,
+  sign-out that actually ends the session.
+- **Phase 3 — member data sync: done.** A member's history follows them between
+  devices — proven with a weight logged on a phone appearing on a PC.
+  Local-first: the device writes instantly, which matters in a gym with bad
+  wifi, and syncs behind it.
+- **Phase 4 — offline and states** and **phase 5 — hardening and testers** are
+  next. **Phase 6 — admin onto the backend** is after testers, by Chris's call.
+
+**Before changing `sync.js`, run `tests/sync/run.sh`.** Sync failures are
+silent by design — the work is always saved on the device — so a regression
+there does not show up from using the app. Every one of the 24 tests exists
+because the case it covers was broken at some point.
+
+**Test the backend as a real signed-in member, not a demo profile.** The demo
+profiles filled every gap with seeded data, which is precisely what hid most of
+what was wrong: an unmapped field inherited the demo value and rendered fine.
+Eight real faults in phase 3 were found only by Chris signing in and using it.
+
+**To reset a test account:** reload every device first (so none is running old
+code), then `supabase/reset-member-history.sql`. It bumps a counter that makes
+each device discard its local copy rather than upload it. No clearing phones by
+hand — that failed twice, and there is no way to see whether it worked.
 
 ## Security — a hard look before the real app
 
