@@ -193,7 +193,13 @@ async function hydrateMemberData() {
   const reconciled = await reconcileLocalUp();
   report.__pushedFirst = reconciled;
 
+  // A store still dirty after reconcile is one whose push failed. Its local
+  // copy is newer than anything the server has, so pulling over it would lose
+  // the member's edit — leave it and let the queue retry.
+  const stillDirty = loadDirty();
+
   const pulls = Object.keys(stores).map(async (name) => {
+    if (stillDirty.has(name)) { report[name] = "unsynced local edit — kept"; return; }
     const s = stores[name];
     const { data, error } = await SB.from(s.table).select("*").order(s.order, { ascending: true });
     if (error) { report[name] = "error: " + error.message; return; }
@@ -240,6 +246,7 @@ async function hydrateMemberData() {
     ["notebookNotes", "notebook_notes", NOTEBOOK_NOTES_KEY, notebookNotesFromRows],
     ["sessionNotes", "session_notes", SESSION_NOTES_KEY, sessionNotesFromRows],
   ].map(async ([name, table, key, from]) => {
+    if (stillDirty.has(name)) { report[name] = "unsynced local edit — kept"; return; }
     const { data, error } = await SB.from(table).select("*");
     if (error) { report[name] = "error: " + error.message; return; }
     if (!data || !data.length) { report[name] = "empty — kept local"; return; }
@@ -268,7 +275,7 @@ async function hydrateMemberData() {
 
   const extras = (async () => {
     const { data: sched } = await SB.from("scheduled_items").select("*");
-    if (sched && sched.length) {
+    if (sched && sched.length && !stillDirty.has("scheduledItems")) {
       localStorage.setItem(SCHEDULED_ITEMS_STORAGE_PREFIX + AUTH_MEMBER.id,
                            JSON.stringify(scheduledItemsFromRows(sched)));
       report.scheduledItems = `${sched.length} rows`;
@@ -296,10 +303,15 @@ async function reconcileLocalUp() {
   const names = Object.keys(syncStores())
     .concat(["habitChecks", "notebookNotes", "sessionNotes", "preferences", "healthProfile", "scheduledItems"]);
   const results = {};
+  const dirty = loadDirty();
   for (const n of names) {
-    // Only push stores that actually have something locally, so a fresh
-    // device does not fire fifteen empty requests on every sign-in.
+    // Merging stores (completions, check-ins and the rest) upsert, so pushing
+    // them costs a round trip and changes nothing the server already has.
+    // Replacing stores are different: pushing one DELETES what the server
+    // holds, so a device may only do that for a list it actually edited.
+    if (REPLACE_STORES.has(n) && !dirty.has(n)) { results[n] = true; continue; }
     results[n] = await pushStore(n);
+    if (results[n]) clearDirty(n);
   }
   const failed = Object.keys(results).filter((n) => !results[n]);
   failed.forEach((n) => SYNC_STATE.queue.add(n));
@@ -307,11 +319,33 @@ async function reconcileLocalUp() {
   return failed.length ? `failed: ${failed.join(", ")}` : "ok";
 }
 
+// ---------------- Dirty stores ----------------
+// Which stores THIS device has edited and not yet synced, kept in
+// localStorage so it survives the page closing. The in-memory queue alone
+// could not do that, and "unsynced" has to outlive a closed tab.
+//
+// It matters most for the three stores that push by replacing: pinned PRs,
+// notebook notes and scheduled cardio. Replacing is right when the member
+// actually changed the list here, and badly wrong when they did not — a stale
+// device signing in would delete everything newer on the server and pull its
+// own old list back. Chris hit exactly that: a PR pinned on his phone was
+// erased by his PC signing in afterwards.
+const REPLACE_STORES = new Set(["showcasedPRs", "notebookNotes", "scheduledItems"]);
+function dirtyKey() { return `burnclub-sync-dirty-${AUTH_MEMBER ? AUTH_MEMBER.id : "demo"}`; }
+function loadDirty() {
+  try { return new Set(JSON.parse(localStorage.getItem(dirtyKey()) || "[]")); }
+  catch (e) { return new Set(); }
+}
+function saveDirty(set) { localStorage.setItem(dirtyKey(), JSON.stringify([...set])); }
+function markDirty(name) { const d = loadDirty(); d.add(name); saveDirty(d); }
+function clearDirty(name) { const d = loadDirty(); d.delete(name); saveDirty(d); }
+
 // ---------------- Push ----------------
 // Called by saveX() after it has written locally, so a failure here never
 // costs the member their work — it is already on the device.
 function queueSync(storeName) {
   if (!SB || !AUTH_MEMBER) return;          // demo mode writes nowhere
+  markDirty(storeName);
   SYNC_STATE.queue.add(storeName);
   drainSyncQueue();
 }
@@ -326,7 +360,8 @@ async function drainSyncQueue() {
   let failed = [];
   for (const name of names) {
     const ok = await pushStore(name);
-    if (!ok) failed.push(name);
+    if (ok) clearDirty(name);
+    else failed.push(name);
   }
   SYNC_STATE.running = false;
 
