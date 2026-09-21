@@ -203,7 +203,21 @@ async function hydrateMemberData() {
     const s = stores[name];
     const { data, error } = await SB.from(s.table).select("*").order(s.order, { ascending: true });
     if (error) { report[name] = "error: " + error.message; return; }
-    if (!data || !data.length) { report[name] = "empty — kept local"; return; }
+    if (!data || !data.length) {
+      // For a merging store, an empty table means nothing has synced yet, so
+      // the local copy is kept. For a replacing store it is a real answer —
+      // the member has no pins — and keeping the local list would mean the
+      // last pin removed on one device never disappears from another. Safe
+      // because a replacing store with an unsynced local edit is dirty, and
+      // dirty stores were already skipped above.
+      if (REPLACE_STORES.has(name)) {
+        localStorage.setItem(memberKey(s.key), JSON.stringify(s.fromRows([])));
+        report[name] = "empty on server — cleared";
+      } else {
+        report[name] = "empty — kept local";
+      }
+      return;
+    }
     let mapped = s.fromRows(data);
     if (name === "completions") {
       const { data: lifts } = await SB.from("lifts").select("*");
@@ -249,7 +263,15 @@ async function hydrateMemberData() {
     if (stillDirty.has(name)) { report[name] = "unsynced local edit — kept"; return; }
     const { data, error } = await SB.from(table).select("*");
     if (error) { report[name] = "error: " + error.message; return; }
-    if (!data || !data.length) { report[name] = "empty — kept local"; return; }
+    if (!data || !data.length) {
+      if (REPLACE_STORES.has(name)) {
+        localStorage.setItem(memberKey(key), JSON.stringify(from([])));
+        report[name] = "empty on server — cleared";
+      } else {
+        report[name] = "empty — kept local";
+      }
+      return;
+    }
     localStorage.setItem(memberKey(key), JSON.stringify(from(data)));
     report[name] = `${data.length} rows`;
   });
@@ -274,11 +296,14 @@ async function hydrateMemberData() {
   })();
 
   const extras = (async () => {
-    const { data: sched } = await SB.from("scheduled_items").select("*");
-    if (sched && sched.length && !stillDirty.has("scheduledItems")) {
+    const { data: sched, error: schedErr } = await SB.from("scheduled_items").select("*");
+    // Same rule as the other replacing stores: when this device has no
+    // unsynced edit, the server's list is the truth — including when it is
+    // empty, which is how a removed last session reaches every device.
+    if (!schedErr && !stillDirty.has("scheduledItems")) {
       localStorage.setItem(SCHEDULED_ITEMS_STORAGE_PREFIX + AUTH_MEMBER.id,
-                           JSON.stringify(scheduledItemsFromRows(sched)));
-      report.scheduledItems = `${sched.length} rows`;
+                           JSON.stringify(scheduledItemsFromRows(sched || [])));
+      report.scheduledItems = `${(sched || []).length} rows`;
     }
     const { data: hp } = await SB.from("health_profile").select("*").maybeSingle();
     if (hp && hp.profile && Object.keys(hp.profile).length) {
