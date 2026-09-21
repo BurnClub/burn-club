@@ -12,7 +12,19 @@
 // So the two ends are: hydrate on sign-in (server wins — it is the copy that
 // survived the last reinstall), and push on save (queued, retried).
 
-const SYNC_STATE = { queue: new Set(), running: false, lastError: null, online: true };
+const SYNC_STATE = { queue: new Set(), running: false, lastError: null, online: true, errors: {} };
+
+// The last failure reason per table, so a sync that fails can be asked why
+// rather than guessed at. console.warn alone is invisible on a phone, and a
+// guess about why a push failed has already been wrong once here.
+function recordSyncError(table, message) {
+  SYNC_STATE.errors[table] = { message, at: new Date().toISOString() };
+  console.warn(`[sync] ${table}:`, message);
+}
+function syncStatus() {
+  return { queued: [...SYNC_STATE.queue], failures: SYNC_STATE.failures || 0,
+           online: SYNC_STATE.online, errors: SYNC_STATE.errors };
+}
 
 // Each store: the localStorage key base, the table, and the two mappers.
 // Written against what the app actually stores, verified by dumping every
@@ -193,6 +205,31 @@ async function hydrateMemberData() {
         mapped = liftsOntoCompletions(mapped, lifts);
         report.lifts = `${lifts.length} rows`;
       }
+      // Never let a pull destroy weights the server does not have. If the
+      // completion's push landed but its lifts push did not, the server row is
+      // weightless — and replacing the local copy with it would erase the
+      // member's numbers from the one device that still held them. Push-first
+      // exists to stop exactly that, and a partial failure would defeat it.
+      const local = JSON.parse(localStorage.getItem(memberKey(s.key)) || "[]");
+      const localWeights = {};
+      local.forEach((c) => { if (c.weights && Object.keys(c.weights).length) localWeights[c.id] = c.weights; });
+      let kept = 0;
+      mapped.forEach((c) => {
+        if ((!c.weights || !Object.keys(c.weights).length) && localWeights[c.id]) {
+          c.weights = localWeights[c.id];
+          kept++;
+        }
+      });
+      // Completions that exist only locally — never pushed — survive too,
+      // rather than being dropped because the server has not heard of them.
+      const serverIds = new Set(mapped.map((c) => c.id));
+      const localOnly = local.filter((c) => !serverIds.has(c.id));
+      if (localOnly.length) mapped = mapped.concat(localOnly);
+      if (kept || localOnly.length) {
+        report.keptLocal = `${kept} weight set(s), ${localOnly.length} unsynced completion(s)`;
+        // They are still unsynced, so make sure they get another attempt.
+        SYNC_STATE.queue.add("completions");
+      }
     }
     localStorage.setItem(memberKey(s.key), JSON.stringify(mapped));
     report[name] = `${data.length} rows`;
@@ -340,7 +377,7 @@ async function pushStore(name) {
     }
     return ok;
   } catch (e) {
-    console.warn(`[sync] ${name}:`, e.message);
+    recordSyncError(name, "exception: " + e.message);
     return false;
   }
 }
@@ -378,7 +415,8 @@ function liftsOntoCompletions(completions, liftRows) {
 async function pushRows(table, rows, onConflict) {
   if (!rows.length) return true;
   const { error } = await SB.from(table).upsert(rows, { onConflict });
-  if (error) { console.warn(`[sync] ${table}:`, error.message); return false; }
+  if (error) { recordSyncError(table, error.message); return false; }
+  delete SYNC_STATE.errors[table];
   return true;
 }
 
@@ -387,10 +425,11 @@ async function pushRows(table, rows, onConflict) {
 // and the server's would quietly diverge.
 async function pushReplace(table, rows) {
   const { error: delError } = await SB.from(table).delete().eq("member_id", AUTH_MEMBER.id);
-  if (delError) { console.warn(`[sync] ${table} clear:`, delError.message); return false; }
+  if (delError) { recordSyncError(table, "clear: " + delError.message); return false; }
   if (!rows.length) return true;
   const { error } = await SB.from(table).insert(rows);
-  if (error) { console.warn(`[sync] ${table}:`, error.message); return false; }
+  if (error) { recordSyncError(table, error.message); return false; }
+  delete SYNC_STATE.errors[table];
   return true;
 }
 
@@ -405,7 +444,7 @@ async function pushPreferences() {
     wearable: JSON.parse(localStorage.getItem(memberKey(WEARABLE_STORAGE_KEY)) || "{}"),
   };
   const { error } = await SB.from("member_preferences").upsert(row, { onConflict: "member_id" });
-  if (error) { console.warn("[sync] preferences:", error.message); return false; }
+  if (error) { recordSyncError("member_preferences", error.message); return false; }
   return true;
 }
 
@@ -441,7 +480,7 @@ async function pushHealthProfile() {
   const { error } = await SB.from("health_profile")
     .upsert({ member_id: AUTH_MEMBER.id, profile, updated_at: new Date().toISOString() },
             { onConflict: "member_id" });
-  if (error) { console.warn("[sync] health_profile:", error.message); return false; }
+  if (error) { recordSyncError("health_profile", error.message); return false; }
   return true;
 }
 
