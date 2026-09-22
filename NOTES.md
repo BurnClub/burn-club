@@ -383,6 +383,18 @@ syncs them.
 
 ## Agreed, not yet built
 
+- **The workout flow is the most important thing in the app** (Chris,
+  2026-09-21). How a member moves through a workout must be as intuitive as
+  possible, and it gets reworked before phase 5 (testers). His main concerns
+  are straight sets and, above all, **supersets, which the programs use
+  constantly**. Settle the workout data structure as part of this work, because
+  after testers start logging, changing it means converting real history.
+- **Whole-workout overview button** (Chris, 2026-09-21). A button near the top
+  of every workout that opens a pop-up of the entire workout, start to finish.
+  It's like the workout's opening page but more drawn out, with finished
+  exercises crossed out or faded. It's for a member who gets lost, or who just
+  likes seeing their progress. Build it as part of the workout-flow rework.
+
 - **Median RPE per workout, in admin** (Chris, 2026-09-17). On every workout in
   every program, so he can see whether he's pitching them hard enough or too
   hard. Median rather than mean is the right call and his own — RPE is an
