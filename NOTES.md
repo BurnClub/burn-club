@@ -185,6 +185,21 @@ Supabase, member-app-first. As of 2026-09-21:
 - **Phase 4 — offline and states** and **phase 5 — hardening and testers** are
   next. **Phase 6 — admin onto the backend** is after testers, by Chris's call.
 
+**Design assumption: members use one device.** Chris expects nearly everyone to
+use one phone. "One device" still means a new device when the phone is lost,
+replaced or the app is reinstalled, so the backend's main job is that **the
+history survives the phone**. What that means for the work ahead:
+
+- **Offline comes first.** One phone in a gym with bad wifi is the normal case,
+  not the edge case. Phase 4 should be built around it.
+- **The "not backing up" warning carries real weight.** A one-device member can't
+  spot a sync failure by comparing devices; that warning is the only way they
+  find out before the phone is gone. It must be hard to miss and must not cry wolf.
+- **Two-device conflict handling is done and good enough.** It's built and
+  tested (the dirty set, replace-store rules), so don't spend more on it.
+  Keep testing with two devices anyway, because the second device is how we
+  stand in for "the replacement phone".
+
 **Before changing `sync.js`, run `tests/sync/run.sh`.** Sync failures are
 silent by design — the work is always saved on the device — so a regression
 there does not show up from using the app. Every one of the 24 tests exists
