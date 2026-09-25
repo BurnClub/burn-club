@@ -1,5 +1,41 @@
 # Burn Club — open notes
 
+## Start the next session here (2026-09-24)
+
+**First job, before anything else: finish naming the exercise videos.** Chris's
+call — it comes before phase 4 and before the workout-flow rework.
+
+1. **`~/Desktop/burn-club-video-matches.csv`** — 127 clips that don't match an
+   exercise id. 54 have a likely match to confirm, 72 match nothing. Chris
+   fills in the last column; then rename the files and re-run the audit.
+2. **Install ffmpeg** — `brew install ffmpeg`. Homebrew got as far as the
+   password prompt on 2026-09-24 and never went in, so neither is installed.
+3. **Compress** — `import/compress-videos.sh`, written and untested because
+   ffmpeg isn't there yet. 28 GB of camera files down to roughly 1 GB.
+4. **Then upload** to Supabase Storage as `<exercise-id>.mp4`, and point
+   `videoUrl` at it.
+
+### Where we are with the videos
+
+On the external drive at **`/Volumes/Extreme SSD/EXERCISE LIBRARY`** (98% full):
+
+- **396 clips in the main folder. 269 match an exercise id exactly** — 229 of
+  them from Chris's own renaming, 40 renamed on 2026-09-24 for convention only
+  (`with` → `w--`, plurals).
+- **127 need naming**, in the CSV above.
+- **`_duplicates/`** — 15 files ending `-2`, Chris confirmed they're duplicates.
+  Moved rather than deleted, so a better take is still recoverable. Safe to
+  delete. `spring-ig-2.mp4` was left in place: no matching main file, and it
+  looks like an Instagram clip rather than an exercise.
+- **`_too-long/`** — 29 clips over 45 seconds, 15 GB. Chris is re-cutting these.
+  The worst is `db-fire-hydrants-hip-extension-lateral-band-steps.mp4` at 11
+  minutes and 1.9 GB, clearly a raw take.
+- **`._*` files** — 429 of them, macOS sidecar files that appear when copying to
+  an exFAT drive. Junk. Every script here skips them; never upload them.
+- **Sizes are the whole problem.** The median clip is 14 seconds and 30 MB
+  (~18 Mbps). macOS's built-in `avconvert` only gets that to ~7 MB; ffmpeg gets
+  it to ~2 MB with audio dropped, which is why ffmpeg is worth installing.
+
 Things deliberately left undone, and why. Not a bug list — everything here
 works as built; these are decisions deferred or work blocked on something
 outside the prototype.
@@ -124,9 +160,16 @@ it would be nice. Things that can follow launch belong in the sections below.
 - [ ] **Technique text.** 661 of 663 exercises have none. It is also what the
       app reads aloud, so an empty field is a silently missing feature rather
       than a blank line.
-- [ ] **Videos** — convert `.mov` to `.mp4` (633 files), run the 12 renames in
-      `~/Desktop/burn-club-rename-videos.sh`, and upload to Supabase Storage at
-      `<exercise-id>.mp4`.
+- [ ] **Videos** — compress, then upload to Supabase Storage at
+      `<exercise-id>.mp4`. See "Where we are with the videos" below; 269 of 663
+      are named and ready, 127 still need naming.
+- [ ] **Reload the exercises table in Supabase.** Ten misspelled ids were
+      fixed in `data.js` on 2026-09-24 (`peck-deck` → `pec-deck`,
+      `dd-reverse-crunch` → `db-`, `eg-extension` → `leg-`, `posts-march` →
+      `psoas-march`, `sumo-db-db-squat` → one `db`, plus `rdlto`, `rdl-ro` and
+      `5-secon`). The seeded table still has the old ones. Harmless today —
+      nothing reads exercises from the server yet — and wrong the moment
+      anything does.
 - [ ] **Five placeholder stretches** I added on 2026-09-18 so the seed would
       hold together: Cat-Cow Stretch, Child's Pose, Hip Flexor Stretch,
       Shoulder & Chest Opener, Standing Hamstring Stretch. They have no
