@@ -1,19 +1,23 @@
 # Burn Club — open notes
 
-## Start the next session here (2026-09-24)
+## Start the next session here (2026-09-29)
 
 **First job, before anything else: finish naming the exercise videos.** Chris's
 call — it comes before phase 4 and before the workout-flow rework.
 
-1. **`~/Desktop/burn-club-video-matches.csv`** — 127 clips that don't match an
-   exercise id. 54 have a likely match to confirm, 72 match nothing. Chris
-   fills in the last column; then rename the files and re-run the audit.
-2. **Install ffmpeg** — `brew install ffmpeg`. Homebrew got as far as the
-   password prompt on 2026-09-24 and never went in, so neither is installed.
-3. **Compress** — `import/compress-videos.sh`, written and untested because
-   ffmpeg isn't there yet. 28 GB of camera files down to roughly 1 GB.
-4. **Then upload** to Supabase Storage as `<exercise-id>.mp4`, and point
-   `videoUrl` at it.
+1. **`import/video-naming-remaining.md`** — the 38 clips left, with my pick and
+   the alternatives for each. Chris answers by number in chat; apply the answers
+   by renaming on the drive or moving to `_not-in-library/` or `_duplicates/`.
+   He stopped mid-list on 2026-09-29, having answered nothing in this set yet.
+2. **Plug the drive in first** — `/Volumes/Extreme SSD/EXERCISE LIBRARY`. It was
+   unplugged at the end of the last session.
+3. **Re-run `import/compress-videos.sh`** once the renames are done, and clear
+   any output whose name no longer exists on the drive.
+4. **Then upload** to Supabase Storage as `<exercise-id>.mp4` and point
+   `videoUrl` at it. Nothing has been uploaded yet.
+
+ffmpeg 9 is installed via Homebrew, and Chris approved the compression quality
+from a sample.
 
 ### Where we are with the videos
 
