@@ -29,17 +29,22 @@ for f in "$SRC"/*.mp4; do
   case "$name" in ._*) continue;; esac     # macOS sidecar files on exFAT drives
   if [ -f "$OUT/$name" ]; then skip_n=$((skip_n+1)); continue; fi
 
+  # Write to a temp name first, so an interrupted run never leaves a half file
+  # that a later run would skip. It keeps the .mp4 extension: ffmpeg picks the
+  # output format from it, and rejects a name it doesn't recognise.
+  part="$OUT/.part-$name"
   if ffmpeg -nostdin -loglevel error -i "$f" \
       -vf "scale='if(gt(iw,ih),-2,720)':'if(gt(iw,ih),720,-2)',fps=30" \
       -c:v libx264 -crf 26 -preset slow -pix_fmt yuv420p \
       -an -movflags +faststart \
-      "$OUT/$name.part" 2>/dev/null; then
-    mv -- "$OUT/$name.part" "$OUT/$name"
+      "$part" -y 2>"$OUT/.last-error"; then
+    mv -- "$part" "$OUT/$name"
     i=$(stat -f %z "$f"); o=$(stat -f %z "$OUT/$name")
     total_in=$((total_in+i)); total_out=$((total_out+o)); done_n=$((done_n+1))
     printf "%4d  %7.1fMB -> %5.1fMB  %s\n" "$done_n" "$(echo "$i/1048576" | bc -l)" "$(echo "$o/1048576" | bc -l)" "$name"
   else
-    rm -f -- "$OUT/$name.part"; fail_n=$((fail_n+1)); echo "FAILED: $name"
+    rm -f -- "$part"; fail_n=$((fail_n+1))
+    echo "FAILED: $name"; sed 's/^/        /' "$OUT/.last-error" | head -3
   fi
 done
 

@@ -17,28 +17,28 @@ call — it comes before phase 4 and before the workout-flow rework.
 
 ### Where we are with the videos
 
-On the external drive at **`/Volumes/Extreme SSD/EXERCISE LIBRARY`** (98% full):
+On the external drive at **`/Volumes/Extreme SSD/EXERCISE LIBRARY`** (98% full).
+As of 2026-09-28:
 
-- **396 clips in the main folder. 269 match an exercise id exactly** — 229 of
-  them from Chris's own renaming, 40 renamed on 2026-09-24 for convention only
-  (`with` → `w--`, plurals).
-- **127 need naming**, in the CSV above.
-- **`_duplicates/`** — 15 files ending `-2`, Chris confirmed they're duplicates.
-  Moved rather than deleted, so a better take is still recoverable. Safe to
-  delete. `spring-ig-2.mp4` was left in place: no matching main file, and it
-  looks like an Instagram clip rather than an exercise.
-- **`_too-long/`** — 29 clips over 45 seconds, 15 GB. Chris is re-cutting these.
-  The worst is `db-fire-hydrants-hip-extension-lateral-band-steps.mp4` at 11
-  minutes and 1.9 GB, clearly a raw take.
+- **388 clips in the main folder, 331 named to match an exercise id.** 57 still
+  to name, worked through with Chris in batches in chat — faster than the
+  spreadsheet, which is now stale.
+- **Compressed copies: `~/Desktop/burn-club-videos`, all 388, 433 MB.**
+  `import/compress-videos.sh` with ffmpeg 9: 720p, CRF 26, no audio, faststart.
+  11.4 GB in, 0.4 GB out, about 1.1 MB a clip, nothing failed. Chris approved
+  the quality from a sample. Re-run it after any rename: it skips names already
+  done, so delete outputs whose name no longer exists in the source folder.
+- **Holding folders on the drive**, all Chris's to empty:
+  `_duplicates/` (17, spares and second takes), `_too-long/` (29 over 45s,
+  15 GB, he is re-cutting them), `_not-in-library/` (7 clips whose exercise
+  doesn't exist yet).
 - **`._*` files** — 429 of them, macOS sidecar files that appear when copying to
   an exFAT drive. Junk. Every script here skips them; never upload them.
-- **Sizes are the whole problem.** The median clip is 14 seconds and 30 MB
-  (~18 Mbps). macOS's built-in `avconvert` only gets that to ~7 MB; ffmpeg gets
-  it to ~2 MB with audio dropped, which is why ffmpeg is worth installing.
-
-Things deliberately left undone, and why. Not a bug list — everything here
-works as built; these are decisions deferred or work blocked on something
-outside the prototype.
+- **Exercise count is now 664:** Alternating Reverse DB Lunge was added on
+  2026-09-28 from a video with no matching exercise. **Its tags are copied from
+  Alternating Barbell Reverse Lunge and Chris has not checked them.**
+- Sizes were the whole problem: the median camera clip is 14 seconds and 30 MB
+  (~18 Mbps), which is why nothing can be uploaded straight off the drive.
 
 ## Before we go live
 
