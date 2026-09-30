@@ -1,23 +1,19 @@
 # Burn Club — open notes
 
-## Start the next session here (2026-09-29)
+## Start the next session here (2026-09-30)
 
-**First job, before anything else: finish naming the exercise videos.** Chris's
-call — it comes before phase 4 and before the workout-flow rework.
+**Videos: naming is all but done — 374 of 674 exercises have one, 2 clips left.**
+Both are clips whose exercise already has a video, waiting on Chris to say spare,
+replace, or a different exercise:
+`single-arm-preacher-curl-on-bench` and `supinated-grip-cross-body-front-raise`.
 
-1. **`import/video-naming-remaining.md`** — the 38 clips left, with my pick and
-   the alternatives for each. Chris answers by number in chat; apply the answers
-   by renaming on the drive or moving to `_not-in-library/` or `_duplicates/`.
-   He stopped mid-list on 2026-09-29, having answered nothing in this set yet.
-2. **Plug the drive in first** — `/Volumes/Extreme SSD/EXERCISE LIBRARY`. It was
-   unplugged at the end of the last session.
-3. **Re-run `import/compress-videos.sh`** once the renames are done, and clear
-   any output whose name no longer exists on the drive.
-4. **Then upload** to Supabase Storage as `<exercise-id>.mp4` and point
-   `videoUrl` at it. Nothing has been uploaded yet.
+Then:
 
-ffmpeg 9 is installed via Homebrew, and Chris approved the compression quality
-from a sample.
+1. **Upload** `~/Desktop/burn-club-videos` (376 files, 340 MB) to Supabase
+   Storage as `<exercise-id>.mp4`, and point `videoUrl` at it. Nothing is
+   uploaded yet.
+2. **Check the tags on the 11 exercises added from videos** — see below.
+3. Then phase 4, and the workout-flow rework.
 
 ### Where we are with the videos
 
@@ -38,9 +34,14 @@ As of 2026-09-28:
   doesn't exist yet).
 - **`._*` files** — 429 of them, macOS sidecar files that appear when copying to
   an exFAT drive. Junk. Every script here skips them; never upload them.
-- **Exercise count is now 664:** Alternating Reverse DB Lunge was added on
-  2026-09-28 from a video with no matching exercise. **Its tags are copied from
-  Alternating Barbell Reverse Lunge and Chris has not checked them.**
+- **Exercise count is now 674, up from 663.** Eleven were added from videos with
+  no matching exercise: Alternating Reverse DB Lunge, Pronated to Supinated Cable
+  Tricep Extension, Pulse Squat, Banded Squat, Reverse Lunge to Kick, Single Arm
+  DB Snatch, Single Arm DB Upright Row w/ Front Raise, Single Arm Lat Pulldown
+  Complex, Supinated DB Chest Press, Supinated DB Curl, Supinated DB Row.
+  **Every one has tags copied from its nearest sibling and no technique text.
+  Chris has not checked them.** Banded Squat was his `resistance-band-squat`
+  file, renamed to match the library's "Banded" convention — his to veto.
 - Sizes were the whole problem: the median camera clip is 14 seconds and 30 MB
   (~18 Mbps), which is why nothing can be uploaded straight off the drive.
 
