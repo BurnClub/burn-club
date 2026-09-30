@@ -6,6 +6,13 @@
 playing: silent, looping, starting on their own when the frame appears. The 299
 exercises with no video keep the old placeholder frame.
 
+**Held back, unpushed: commit 2aa2f22** — resuming a demo when the app returns
+to the foreground. It could not be verified locally (the test browser keeps the
+page hidden, and a hidden page cannot start playback, which is the state it
+recovers from). Chris is checking it on his phone: start a workout, lock the
+screen for a few seconds, come back, and see whether the demo carries on by
+itself. Push once he says it works, or fix it if it doesn't.
+
 Next:
 
 1. **Check the tags on the 11 exercises added from videos** — see below.
