@@ -3570,6 +3570,17 @@ function tryPlayDemo(video) {
   if (played && played.catch) played.catch(() => {});   // autoplay refused: the frame still shows
 }
 
+// Phones pause video the moment the app goes to the background, and do not
+// resume it on the way back. Mid-workout that is normal behaviour — a member
+// answers a message, locks the screen, puts the phone down between sets — and
+// without this they would return to a demo frozen on whatever frame it stopped
+// at, looking broken.
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) return;
+  document.querySelectorAll(".player-video.has-video .player-video-el")
+    .forEach((v) => { if (v.paused && v.getAttribute("src")) tryPlayDemo(v); });
+});
+
 // The kinds that show one exercise at a time — timed circuits, straight sets,
 // rep ladders and EMOM — have the persistent video panel rather than the
 // per-row play buttons a superset or AMRAP list gets. Until now that panel was
