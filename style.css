@@ -1297,6 +1297,23 @@ h1, h2, h3 {
   position: relative;
   overflow: hidden;
 }
+/* The demo itself (2026-09-30). It fills the frame and sits above the gradient
+   placeholder, so an exercise with no video keeps the ▶ and the label it always
+   had — 299 of 674 still have none, and a black rectangle would look broken. */
+.player-video-el {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+  z-index: 2;
+}
+.player-video.has-video .player-video-el { display: block; }
+.player-video.has-video .player-video-play,
+.player-video.has-video .player-video-label,
+.player-video.has-video::after { display: none; }
+
 /* Only the panel that knows which exercise it's showing invites a tap
    (2026-08-19) — the one inside the popup itself is not clickable. */
 .player-video.is-playable { cursor: pointer; }

@@ -3516,11 +3516,58 @@ function openExerciseVideo(name) {
   document.getElementById("exercise-video-name").textContent = name;
   const ex = EXERCISE_LIBRARY.find((x) => x.name === name);
   document.getElementById("exercise-video-technique").textContent = ex ? ex.technique : "";
+  // Show the overlay first: a video inside a hidden element won't start
+  // playing, and it would sit there on frame one until the member tapped it.
   document.getElementById("exercise-video-overlay").classList.add("visible");
+  showDemoVideo("exercise-video-frame", "exercise-video-el", ex);
 }
 
 function closeExerciseVideo() {
   document.getElementById("exercise-video-overlay").classList.remove("visible");
+  showDemoVideo("exercise-video-frame", "exercise-video-el", null);
+}
+
+// ---------------- The demo videos themselves (2026-09-30) ----------------
+// Silent, looping, and started the moment the frame is shown: a member glancing
+// at a demo mid-set wants to see the movement, not to press play with one hand
+// full of dumbbell. Muted and playsinline are what let a phone autoplay at all.
+//
+// An exercise with no video keeps the placeholder frame it always had. So does
+// one whose video fails to load, which is why the error handler undoes the
+// class rather than leaving a black rectangle where the demo should be.
+function showDemoVideo(frameId, videoId, ex) {
+  const frame = document.getElementById(frameId);
+  const video = document.getElementById(videoId);
+  if (!frame || !video) return;
+
+  const url = ex && ex.videoUrl ? ex.videoUrl : "";
+  if (!url) {
+    frame.classList.remove("has-video");
+    video.pause();
+    video.removeAttribute("src");
+    video.load();                       // drops the buffered data
+    return;
+  }
+  if (video.dataset.url !== url) {
+    video.dataset.url = url;
+    video.src = url;
+    video.load();                       // after a reset, setting src alone can leave it idle
+    video.onerror = () => {
+      frame.classList.remove("has-video");
+      delete video.dataset.url;
+    };
+  }
+  frame.classList.add("has-video");
+  // Start it when the file is ready rather than immediately: on a cold load
+  // there is nothing to play yet, and that first attempt is simply ignored.
+  // oncanplay also covers the panel being shown a tick after this runs.
+  video.oncanplay = () => tryPlayDemo(video);
+  tryPlayDemo(video);
+}
+
+function tryPlayDemo(video) {
+  const played = video.play();
+  if (played && played.catch) played.catch(() => {});   // autoplay refused: the frame still shows
 }
 
 // The kinds that show one exercise at a time — timed circuits, straight sets,
@@ -3536,11 +3583,14 @@ function setPlayerVideo(exerciseName) {
     delete panel.dataset.exName;
     panel.classList.remove("is-playable");
     label.textContent = "Demo Video Placeholder";
+    showDemoVideo("player-video", "player-video-el", null);
     return;
   }
   panel.dataset.exName = exerciseName;
   panel.classList.add("is-playable");
   label.textContent = `Demo Video — ${exerciseName}`;
+  showDemoVideo("player-video", "player-video-el",
+    EXERCISE_LIBRARY.find((x) => x.name === exerciseName));
 }
 
 // Whether the Straight Sets / Rep Ladder checklist shows a weight field for

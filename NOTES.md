@@ -2,20 +2,17 @@
 
 ## Start the next session here (2026-09-30)
 
-**Video naming is done.** 375 of 674 exercises have a named video, every clip on
-the drive matches an exercise id, and all 375 are compressed and ready.
+**The videos are live in the app.** All 375 are uploaded to Supabase Storage and
+playing: silent, looping, starting on their own when the frame appears. The 299
+exercises with no video keep the old placeholder frame.
 
 Next:
 
-1. **Upload** `~/Desktop/burn-club-videos` (375 files, 339 MB) to Supabase
-   Storage as `<exercise-id>.mp4`, and point `videoUrl` at it. Nothing is
-   uploaded yet, so no video has ever appeared in the app.
-2. **Check the tags on the 11 exercises added from videos** — see below.
-3. Then phase 4 (offline and states), and the workout-flow rework, which is
+1. **Check the tags on the 11 exercises added from videos** — see below.
+2. **Phase 4** (offline and states), then **the workout-flow rework**, which is
    Chris's top pre-tester priority.
-
-The remaining 299 exercises without a video are ones Chris hasn't filmed or
-renamed yet, not a naming problem.
+3. Film or rename the remaining 299. Not a naming problem — those clips don't
+   exist yet.
 
 ### Where we are with the videos
 
@@ -27,6 +24,11 @@ As of 2026-09-28:
   he replies with only the numbers that are wrong. Far faster than the
   spreadsheet, which is stale and can be deleted
   (`~/Desktop/burn-club-video-matches.csv`).
+- **Uploaded and serving.** All 375 are in the public `exercise-videos` bucket
+  (`supabase/11-video-bucket.sql`), pushed there by `import/upload-videos.sh`,
+  which Chris runs himself with the service key in his environment. Every one
+  was fetched back from its public URL to confirm. `videoUrl` in both data files
+  points at them.
 - **Compressed copies: `~/Desktop/burn-club-videos`, all 375, 339 MB.**
   `import/compress-videos.sh` with ffmpeg 9: 720p, CRF 26, no audio, faststart.
   11.4 GB in, 0.4 GB out, about 1.1 MB a clip, nothing failed. Chris approved
