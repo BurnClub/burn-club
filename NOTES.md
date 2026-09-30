@@ -2,36 +2,40 @@
 
 ## Start the next session here (2026-09-30)
 
-**Videos: naming is all but done — 374 of 674 exercises have one, 2 clips left.**
-Both are clips whose exercise already has a video, waiting on Chris to say spare,
-replace, or a different exercise:
-`single-arm-preacher-curl-on-bench` and `supinated-grip-cross-body-front-raise`.
+**Video naming is done.** 375 of 674 exercises have a named video, every clip on
+the drive matches an exercise id, and all 375 are compressed and ready.
 
-Then:
+Next:
 
-1. **Upload** `~/Desktop/burn-club-videos` (376 files, 340 MB) to Supabase
+1. **Upload** `~/Desktop/burn-club-videos` (375 files, 339 MB) to Supabase
    Storage as `<exercise-id>.mp4`, and point `videoUrl` at it. Nothing is
-   uploaded yet.
+   uploaded yet, so no video has ever appeared in the app.
 2. **Check the tags on the 11 exercises added from videos** — see below.
-3. Then phase 4, and the workout-flow rework.
+3. Then phase 4 (offline and states), and the workout-flow rework, which is
+   Chris's top pre-tester priority.
+
+The remaining 299 exercises without a video are ones Chris hasn't filmed or
+renamed yet, not a naming problem.
 
 ### Where we are with the videos
 
 On the external drive at **`/Volumes/Extreme SSD/EXERCISE LIBRARY`** (98% full).
 As of 2026-09-28:
 
-- **388 clips in the main folder, 331 named to match an exercise id.** 57 still
-  to name, worked through with Chris in batches in chat — faster than the
-  spreadsheet, which is now stale.
-- **Compressed copies: `~/Desktop/burn-club-videos`, all 388, 433 MB.**
+- **375 clips in the main folder, every one named to match an exercise id.**
+  Worked through with Chris in batches of ~20 in chat: my best guess per clip,
+  he replies with only the numbers that are wrong. Far faster than the
+  spreadsheet, which is stale and can be deleted
+  (`~/Desktop/burn-club-video-matches.csv`).
+- **Compressed copies: `~/Desktop/burn-club-videos`, all 375, 339 MB.**
   `import/compress-videos.sh` with ffmpeg 9: 720p, CRF 26, no audio, faststart.
   11.4 GB in, 0.4 GB out, about 1.1 MB a clip, nothing failed. Chris approved
   the quality from a sample. Re-run it after any rename: it skips names already
   done, so delete outputs whose name no longer exists in the source folder.
 - **Holding folders on the drive**, all Chris's to empty:
-  `_duplicates/` (17, spares and second takes), `_too-long/` (29 over 45s,
-  15 GB, he is re-cutting them), `_not-in-library/` (7 clips whose exercise
-  doesn't exist yet).
+  `_duplicates/` (21, spares and second takes), `_too-long/` (29 over 45s,
+  15 GB, he is re-cutting them), `_not-in-library/` (17 clips whose exercise
+  doesn't exist, including `spring-ig-2.mp4`, which isn't an exercise at all).
 - **`._*` files** — 429 of them, macOS sidecar files that appear when copying to
   an exFAT drive. Junk. Every script here skips them; never upload them.
 - **Exercise count is now 674, up from 663.** Eleven were added from videos with
