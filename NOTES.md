@@ -26,6 +26,14 @@ the cream page background (`--cream` #FAF7F2)** but is shipping it to see what
 Kelly thinks — he is discussing it with her and will decide next session. It is
 one value in `palette.css`; changing it moves the whole app.
 
+**Card titles need resizing or more breathing room (Chris, 2026-10-01).**
+"Community Buzz" looks like it is hanging off the edge of its card. Those two
+Home cards (Daily Habits and Community Buzz) sit side by side at half width, and
+Nunito is wider than the condensed face it replaced, so a 16px title nearly
+fills the card. Fix by some combination of title size, card padding (18px now)
+and letting the longer ones wrap — check every card title at phone width, not
+just these two. Kelly flagged the same risk in her handoff.
+
 Three grounds were previewed for him on 2026-10-01 (browser only, nothing
 committed): cream #FAF7F2, pure white #FFFFFF, and a barely-off-white #FCFBF9.
 **If pure white wins, check the white cards first** — `--card-white` is #FFFFFF,
