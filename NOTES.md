@@ -23,7 +23,14 @@ they didn't agree to.
 **Palette (2026-10-01).** Kelly's new palette is in — `palette.css` holds her
 tokens, `style.css` maps the app's own 91 names onto them. **Chris doesn't like
 the cream page background (`--cream` #FAF7F2)** but is shipping it to see what
-Kelly thinks. It is one value in `palette.css`; changing it moves the whole app.
+Kelly thinks — he is discussing it with her and will decide next session. It is
+one value in `palette.css`; changing it moves the whole app.
+
+Three grounds were previewed for him on 2026-10-01 (browser only, nothing
+committed): cream #FAF7F2, pure white #FFFFFF, and a barely-off-white #FCFBF9.
+**If pure white wins, check the white cards first** — `--card-white` is #FFFFFF,
+so those surfaces lose their separation from the page and need their own edge.
+#FCFBF9 avoids that at 1.02:1, which is why his old #FDFBF7 worked.
 Still open: the admin app is untouched (its own 82 colours — follow or not?),
 the three fonts load from Google's CDN which breaks offline and the App Store
 build, and red still marks "down" deltas.
