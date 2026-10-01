@@ -6,12 +6,11 @@
 playing: silent, looping, starting on their own when the frame appears. The 299
 exercises with no video keep the old placeholder frame.
 
-**Held back, unpushed: commit 2aa2f22** — resuming a demo when the app returns
-to the foreground. It could not be verified locally (the test browser keeps the
-page hidden, and a hidden page cannot start playback, which is the state it
-recovers from). Chris is checking it on his phone: start a workout, lock the
-screen for a few seconds, come back, and see whether the demo carries on by
-itself. Push once he says it works, or fix it if it doesn't.
+Resuming a demo when the app returns to the foreground **works — Chris
+confirmed it on his phone on 2026-09-30.** It could not be tested here at all:
+the browser pane keeps the page hidden, and a hidden page cannot start playback,
+which is the very state the code recovers from. Anything touching
+backgrounding, autoplay or screen lock needs a real phone, not this browser.
 
 Next:
 
