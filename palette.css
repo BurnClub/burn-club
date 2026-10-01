@@ -1,0 +1,150 @@
+/* Burn Club design tokens — from Kelly's palette handoff (2026-09-30).
+   Loaded before style.css, which maps the app's own token names onto these.
+
+   Four deliberate departures from the file she sent, all of them accessibility
+   fixes measured against the real surfaces rather than guessed:
+
+   1. --slate      #6B6F86 -> #656980   secondary text on an oat card was 4.21:1,
+                                        under the 4.5 minimum. Now 4.59 on oat,
+                                        5.06 on cream.
+   2. --persimmon-700 #A85A30 -> #A4562C  accent text on its own tint was 4.32.
+                                        Now 4.57.
+   3. --jade-500   added                 the jade she specified for progress fills
+                                        is 1.69:1 against its own track — invisible
+                                        as a bar. jade-400 stays for decoration;
+                                        bars that carry meaning use jade-500 (3.01).
+   4. --team-gold-text added             gold on cream is 1.66:1. The swatch colour
+                                        stays for the team dot; anything that has to
+                                        be read uses the darker one (3.02).
+
+   Also left out on purpose: her file set --radius-md/lg/xl, which would have
+   reshaped every corner in the app. Geometry isn't the palette's job, and the
+   radii here are already settled. */
+
+:root {
+  /* Blues */
+  --blue-500: #6B8AF9;   /* brand periwinkle: icons, illustrations, large elements */
+  --blue-600: #4F6BD0;   /* buttons and hero cards (white text passes at 4.83) */
+  --blue-800: #2F3F82;   /* headings, dark accents */
+  --blue-100: #D7EFFF;   /* cool blue tint */
+  --blue-50:  #E8EDFD;   /* mist */
+
+  /* Jade */
+  --jade-400: #9DBFA8;   /* decorative fills and graphics */
+  --jade-500: #6D8F78;   /* progress bars — readable against their own track */
+  --jade-700: #3F7A5E;   /* green text and check marks on light */
+  --jade-100: #E3EEE6;   /* soft green tint */
+
+  /* Persimmon (the one warm accent) */
+  --persimmon-400: #F1A17F;
+  --persimmon-700: #A4562C;
+  --persimmon-100: #FBEBDD;
+
+  /* Neutrals */
+  --cream: #FAF7F2;
+  --oat: #F1ECE3;
+  --slate: #656980;
+  --night: #1E2237;
+  --night-surface: #2A3050;
+  --warm-white: #F4F1EA;
+  --night-muted: #A3A9C4;
+
+  /* Team colours (tied to team names) */
+  --team-red: #D9776B;
+  --team-blue: #6B8AF9;
+  --team-green: #3F7A5E;
+  --team-gold: #E3BE6A;
+  --team-gold-text: #AF8A36;
+
+  /* Chart colours */
+  --chart-1: #6B8AF9;
+  --chart-2: #9DBFA8;
+  --chart-3: #F1A17F;
+  --chart-4: #2F3F82;
+
+  /* Fonts */
+  --font-heading: 'Nunito', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-numeric: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+
+  /* Roles — what components should reach for */
+  --color-bg: var(--cream);
+  --color-surface: var(--oat);
+  --color-text: #2A2E42;
+  --color-text-muted: var(--slate);
+
+  --color-brand: var(--blue-500);        /* large elements only, not small text */
+  --color-action: var(--blue-600);       /* buttons, links, anything carrying text */
+  --color-on-action: #FFFFFF;
+  --color-focus-ring: var(--blue-500);
+
+  --color-hero: var(--blue-600);
+  --color-on-hero: #FFFFFF;
+  --color-hero-cta: var(--persimmon-400);
+  --color-on-hero-cta: #2A2E42;          /* ink, never white: white on persimmon is 2.07 */
+
+  --color-tag-bg: var(--blue-50);
+  --color-tag-text: var(--blue-800);
+  --color-outline: var(--blue-100);
+  --color-outline-text: var(--blue-800);
+
+  --color-progress: var(--jade-500);
+  --color-progress-soft: var(--jade-400);
+  --color-success-text: var(--jade-700);
+
+  --color-accent: var(--persimmon-400);
+  --color-on-accent: #2A2E42;
+  --color-accent-tint: var(--persimmon-100);
+  --color-accent-text: var(--persimmon-700);
+
+  /* Section tints: blue = workouts, jade = habits and recovery, warm = community */
+  --tint-workouts: var(--blue-50);
+  --tint-habits: var(--jade-100);
+  --tint-community: var(--persimmon-100);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: var(--night);
+    --color-surface: var(--night-surface);
+    --color-text: var(--warm-white);
+    --color-text-muted: var(--night-muted);
+
+    --color-tag-bg: var(--blue-800);
+    --color-tag-text: var(--blue-100);
+    --color-outline: var(--blue-800);
+    --color-outline-text: var(--blue-100);
+
+    --color-progress: var(--jade-400);
+    --color-success-text: var(--jade-400);
+
+    --color-accent-tint: rgba(241, 161, 127, 0.16);
+    --color-accent-text: var(--persimmon-400);
+
+    --tint-workouts: rgba(107, 138, 249, 0.16);
+    --tint-habits: rgba(157, 191, 168, 0.16);
+    --tint-community: rgba(241, 161, 127, 0.16);
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-bg: var(--night);
+  --color-surface: var(--night-surface);
+  --color-text: var(--warm-white);
+  --color-text-muted: var(--night-muted);
+
+  --color-tag-bg: var(--blue-800);
+  --color-tag-text: var(--blue-100);
+  --color-outline: var(--blue-800);
+  --color-outline-text: var(--blue-100);
+
+  --color-progress: var(--jade-400);
+  --color-success-text: var(--jade-400);
+
+  --color-accent-tint: rgba(241, 161, 127, 0.16);
+  --color-accent-text: var(--persimmon-400);
+
+  --tint-workouts: rgba(107, 138, 249, 0.16);
+  --tint-habits: rgba(157, 191, 168, 0.16);
+  --tint-community: rgba(241, 161, 127, 0.16);
+}

@@ -2,11 +2,11 @@
    values only, not the mockup's layout/sizing (which he flagged as outdated)
    or its light-tabs/dark-overlay split (not adopted, his call). */
 :root {
-  --blue: #788CE3;
-  --periwinkle: #c7d3ff;
-  --deepblue: #5C7A99;
-  --ink: #17243F;
-  --yellow: #E6B400;
+  --blue: var(--blue-600);
+  --periwinkle: var(--blue-50);
+  --deepblue: var(--blue-800);
+  --ink: #2A2E42;
+  --yellow: var(--team-gold);
   /* Was cream #F7F3E6 until 2026-08-21 — Chris: "forget this cream color;
      I don't want to see it any more." Retired app-wide by changing the
      value here rather than editing the 11 surfaces that reference it.
@@ -14,7 +14,7 @@
      (1.09:1 vs 1.11:1), so every card keeps the weight it had and only
      the hue moves warm -> cool. The name stays --white; it now actually
      describes the value. */
-  --white: #F2F5FD;
+  --white: var(--oat);
   --card-white: #FFFFFF;
   /* Page ground (Chris, 2026-09-07). Was #FFFFFF. A warm off-white at 98%
      lightness, hue 40 — the same family as the notebook paper (#F7EFD3,
@@ -27,19 +27,19 @@
      off pure white it does about half the card-lifting a darker grey would.
      Every surface that must match the page reads var(--bg), so changing it
      again is a one-line edit. */
-  --bg: #FDFBF7;
-  --danger: #E8746A;
-  --pink: #F2B4F5;
-  --purple: #A78BFA;
-  --green: #B8F2C9;
-  --kawaii-blue: #AEE1F9;
-  --field-bg: #E3ECFF;
+  --bg: var(--cream);
+  --danger: var(--team-red);
+  --pink: var(--persimmon-100);
+  --purple: var(--blue-500);
+  --green: var(--jade-100);
+  --kawaii-blue: var(--blue-100);
+  --field-bg: var(--blue-50);
   /* Darker gradient-stop variants — subtle top-to-bottom shade on the Home
      section cards for dimension (Chris's 2026-08-06 "too flat" feedback). */
-  --green-dark: #A6DAB5;
-  --kawaii-blue-dark: #9DCBE0;
-  --pink-dark: #DAA2DD;
-  --periwinkle-dark: #B3BEE5;
+  --green-dark: var(--jade-700);
+  --kawaii-blue-dark: var(--blue-800);
+  --pink-dark: var(--persimmon-700);
+  --periwinkle-dark: var(--blue-100);
 
   /* ---- Official brand palette (Chris, 2026-08-07) ----
      Lime, White, Floral Blue, Kawaii Blue, Navy. Rolling out section by
@@ -49,17 +49,17 @@
      of a duplicate variable; --lime and --floral are genuinely new. Text
      rule: Navy text on Lime/White/Floral backgrounds, White text on
      Kawaii/Navy backgrounds. */
-  --lime: #DFF478;
-  --lime-dark: #C7DC6A;
-  --floral: #92BAD5;
-  --floral-dark: #83A7C0;
-  --blue-dark: #6577CC; /* Kawaii Blue's gradient-dark stop */
+  --lime: var(--jade-100);
+  --lime-dark: var(--jade-700);
+  --floral: var(--persimmon-100);
+  --floral-dark: var(--persimmon-700);
+  --blue-dark: var(--blue-800); /* Kawaii Blue's gradient-dark stop */
   /* Comm Buzz moved off Floral (2026-08-07) — Chris felt it clashed once
      Tracker went Navy. Not one of the 5 official palette colors, just a
      one-off for this card; Navy text, same as Floral used. First try was
      #848252, corrected to this bright yellow same session. */
-  --lemon: #FDFF32;
-  --lemon-dark: #E3E62D;
+  --lemon: var(--persimmon-100);
+  --lemon-dark: var(--persimmon-700);
 
   /* ---- New palette pass (2026-08-08): "Wisteria/Space/Spring/Emerald/
      Alice" — a different site's names for this round, per Chris. Wisteria
@@ -68,11 +68,11 @@
      the same as --ink/Navy from the last pass (#27293F vs #17243F) — don't
      conflate them. Text rule: White text on Wisteria/Space/Emerald, Space
      (Indigo) text on Alice (white) and Spring backgrounds. */
-  --indigo: #27293F; /* "Space Indigo" */
-  --spring: #37FF8B; /* "Spring Green" */
-  --spring-dark: #2FE47B;
-  --emerald: #13673F; /* "Dark Emerald" */
-  --alice: #F4FAFF; /* "Alice Blue" */
+  --indigo: var(--blue-800); /* "Space Indigo" */
+  --spring: var(--jade-100); /* "Spring Green" */
+  --spring-dark: var(--jade-700);
+  --emerald: var(--jade-700); /* "Dark Emerald" */
+  --alice: var(--blue-50); /* "Alice Blue" */
 
   /* ---- 2026-08-08, second pass same day — Chris found a combo he wants to
      sit with "for a little while". No names given this round, just hex
@@ -83,15 +83,15 @@
      same as --ink (#17243F) or --indigo (#27293F) from earlier passes.
      Three similar-looking navy darks now exist; don't conflate them. */
   --slate: #172A3A;
-  --chartreuse: #B8F2C9; /* Daily Habits card (2026-08-09 pass #4c) — same as --green, used by Stretch & Core Library */
-  --chartreuse-dark: #A6DAB5;
-  --turquoise: #F0A6CA; /* Community Buzz card (2026-08-09 pass #4) */
-  --turquoise-dark: #D895B6;
+  --chartreuse: var(--jade-100); /* Daily Habits card (2026-08-09 pass #4c) — same as --green, used by Stretch & Core Library */
+  --chartreuse-dark: var(--jade-700);
+  --turquoise: var(--persimmon-100); /* Community Buzz card (2026-08-09 pass #4) */
+  --turquoise-dark: var(--persimmon-700);
   --radius-lg: 20px;
   --radius-md: 14px;
   --radius-sm: 10px;
-  --font-heading: 'Barlow Condensed', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-heading: 'Nunito', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
   /* Type system — one weight + color per text tier (Chris's 2026-08-06
      request, partner flagged inconsistent weights/colors/styles across
      sections). Sizes still vary by hierarchy; weight/color don't.
@@ -115,13 +115,13 @@
 
      Rule for the coloured cards below: keep the hue, drop the lightness. A
      dark mint is still recognisably the mint card; a grey one isn't. */
-  --text: #17243F;        /* was color: var(--ink) / var(--slate) */
-  --text-muted: #4E6580;  /* was color: var(--deepblue), which failed 4.5:1 on every surface */
+  --text: var(--color-text);        /* was color: var(--ink) / var(--slate) */
+  --text-muted: var(--color-text-muted);  /* was color: var(--deepblue), which failed 4.5:1 on every surface */
   --border: rgba(23, 36, 63, 0.08);
   --border-strong: rgba(23, 36, 63, 0.14);
   --shadow: rgba(23, 36, 63, 0.05);
   --shadow-lift: rgba(23, 36, 63, 0.12);
-  --surface-blue: #788CE3; /* the Workouts / Benchmarks card fill, split from
+  --surface-blue: var(--blue-50); /* the Workouts / Benchmarks card fill, split from
                               --blue so the card can recede in dark mode while
                               buttons and links keep the vivid brand blue */
   /* Strong-emphasis marks — the YOU chip, the toast, a running hold button,
@@ -132,7 +132,7 @@
      and 3.81 on the dark periwinkle in the new one. Links and ghost buttons
      get their own value that passes on each theme's surfaces; the brand fill
      itself is untouched. */
-  --accent-text: #4F62B8;
+  --accent-text: var(--color-action);
   /* Notebook paper. Its own set rather than reusing the app palette: it's
      meant to read as a different object sitting on top of the app. */
   --trainer: #D42A1F;
@@ -149,47 +149,47 @@
   --chip: #17243F;
   --chip-text: #FFFFFF;
   --bubble-in: #E9E9EB;   /* incoming message bubble */
-  --positive: #166534;    /* "up" deltas — see the dark value for why it moves */
-  --habit-done: rgba(23, 42, 58, 0.45);
+  --positive: var(--jade-700);    /* "up" deltas — see the dark value for why it moves */
+  --habit-done: var(--jade-700);
 }
 
 /* Dark theme. Applied by [data-theme="dark"] on <html>, which the member sets
    in Profile. The media query below it is the "follow my phone" default, and
    is written so an explicit light choice still wins. */
 :root[data-theme="dark"] {
-  --bg: #12161F;
-  --card-white: #1B2130;
-  --white: #222A3A;
-  --alice: #1B2130;
-  --field-bg: #252E40;
+  --bg: var(--night);
+  --card-white: var(--night-surface);
+  --white: var(--night-surface);
+  --alice: rgba(107, 138, 249, 0.16);
+  --field-bg: var(--night-surface);
 
-  --text: #EDF1F8;
-  --text-muted: #9FB2CA;
+  --text: var(--warm-white);
+  --text-muted: var(--night-muted);
   --border: rgba(255, 255, 255, 0.10);
   --border-strong: rgba(255, 255, 255, 0.18);
   --shadow: rgba(0, 0, 0, 0.40);
   --shadow-lift: rgba(0, 0, 0, 0.55);
 
   /* Same hues, lower lightness — the cards stay identifiable. */
-  --green: #1E4433;
-  --green-dark: #18382A;
-  --chartreuse: #1E4433;
-  --chartreuse-dark: #18382A;
-  --turquoise: #4A2739;      /* the Community/Activity pink */
-  --turquoise-dark: #3D2030;
-  --pink: #43254A;
-  --pink-dark: #371E3D;
-  --periwinkle: #2B3557;
-  --periwinkle-dark: #232B47;
+  --green: rgba(157, 191, 168, 0.16);
+  --green-dark: var(--jade-400);
+  --chartreuse: rgba(157, 191, 168, 0.16);
+  --chartreuse-dark: var(--jade-400);
+  --turquoise: rgba(241, 161, 127, 0.16);      /* the Community/Activity pink */
+  --turquoise-dark: var(--persimmon-400);
+  --pink: rgba(241, 161, 127, 0.16);
+  --pink-dark: var(--persimmon-400);
+  --periwinkle: rgba(107, 138, 249, 0.16);
+  --periwinkle-dark: var(--blue-100);
   --kawaii-blue: #1E3A4A;
   --kawaii-blue-dark: #18303D;
-  --floral: #2A4152;
-  --floral-dark: #223544;
-  --lime: #3F4A18;
-  --lime-dark: #333C13;
-  --lemon: #4A4A0F;
-  --lemon-dark: #3C3C0C;
-  --purple: #4B3A7A;
+  --floral: rgba(241, 161, 127, 0.16);
+  --floral-dark: var(--persimmon-400);
+  --lime: rgba(157, 191, 168, 0.16);
+  --lime-dark: var(--jade-400);
+  --lemon: rgba(241, 161, 127, 0.16);
+  --lemon-dark: var(--persimmon-400);
+  --purple: var(--blue-800);
   --bubble-in: #2C3444;
   /* #166534 is 7.1:1 on white and only 1.9:1 on the dark card — a green
      that reads as 'up' has to get lighter, not darker, when the ground does
@@ -224,38 +224,38 @@
   /* :not([data-theme="light"]) so a member who has explicitly chosen light
      keeps light even on a dark phone. */
   :root:not([data-theme="light"]) {
-    --bg: #12161F;
-    --card-white: #1B2130;
-    --white: #222A3A;
-    --alice: #1B2130;
-    --field-bg: #252E40;
+    --bg: var(--night);
+    --card-white: var(--night-surface);
+    --white: var(--night-surface);
+    --alice: rgba(107, 138, 249, 0.16);
+    --field-bg: var(--night-surface);
 
-    --text: #EDF1F8;
-    --text-muted: #9FB2CA;
+    --text: var(--warm-white);
+    --text-muted: var(--night-muted);
     --border: rgba(255, 255, 255, 0.10);
     --border-strong: rgba(255, 255, 255, 0.18);
     --shadow: rgba(0, 0, 0, 0.40);
     --shadow-lift: rgba(0, 0, 0, 0.55);
 
-    --green: #1E4433;
-    --green-dark: #18382A;
-    --chartreuse: #1E4433;
-    --chartreuse-dark: #18382A;
-    --turquoise: #4A2739;
-    --turquoise-dark: #3D2030;
-    --pink: #43254A;
-    --pink-dark: #371E3D;
-    --periwinkle: #2B3557;
-    --periwinkle-dark: #232B47;
+    --green: rgba(157, 191, 168, 0.16);
+    --green-dark: var(--jade-400);
+    --chartreuse: rgba(157, 191, 168, 0.16);
+    --chartreuse-dark: var(--jade-400);
+    --turquoise: rgba(241, 161, 127, 0.16);
+    --turquoise-dark: var(--persimmon-400);
+    --pink: rgba(241, 161, 127, 0.16);
+    --pink-dark: var(--persimmon-400);
+    --periwinkle: rgba(107, 138, 249, 0.16);
+    --periwinkle-dark: var(--blue-100);
     --kawaii-blue: #1E3A4A;
     --kawaii-blue-dark: #18303D;
-    --floral: #2A4152;
-    --floral-dark: #223544;
-    --lime: #3F4A18;
-    --lime-dark: #333C13;
-    --lemon: #4A4A0F;
-    --lemon-dark: #3C3C0C;
-    --purple: #4B3A7A;
+    --floral: rgba(241, 161, 127, 0.16);
+    --floral-dark: var(--persimmon-400);
+    --lime: rgba(157, 191, 168, 0.16);
+    --lime-dark: var(--jade-400);
+    --lemon: rgba(241, 161, 127, 0.16);
+    --lemon-dark: var(--persimmon-400);
+    --purple: var(--blue-800);
     --bubble-in: #2C3444;
     /* #166534 is 7.1:1 on white and only 1.9:1 on the dark card — a green
        that reads as 'up' has to get lighter, not darker, when the ground does
@@ -729,7 +729,10 @@ h1, h2, h3 {
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.25;
+  /* 0.25 was tuned against the old saturated blue card. On the new pale
+     workouts tint the same value reads as a grey smudge rather than a
+     watermark, so it drops with the card (2026-09-30). */
+  opacity: 0.1;
   pointer-events: none;
   z-index: 0;
 }
@@ -761,8 +764,11 @@ h1, h2, h3 {
   padding-left: 14px;
   font-size: 24px;
   font-weight: var(--title-weight);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  /* Sentence case as of the Nunito pass (2026-09-30): the rounded face is
+     wider than the condensed one it replaced, and all-caps on top of that
+     wrapped the longer section titles. Small labels and tags stay uppercase —
+     they read as labels, not headings. */
+  letter-spacing: 0;
   color: var(--title-color);
 }
 /* Accent bar instead of a box/underline/stroke (Chris's 2026-08-06 ask for
@@ -788,8 +794,10 @@ h1, h2, h3 {
    the buzz-text rules further down for Community's title/name/message vs.
    time/dot split. card-green/card-pink/card-white keep the original
    deepblue title color — not part of this pass. */
-.card-blue .home-section-title { color: white; }
-.card-blue .home-section-title::before { background: white; }
+/* Dark text since the Workouts card became a pale tint (2026-09-30): white on
+   --tint-workouts is 1.1:1, effectively invisible. */
+.card-blue .home-section-title { color: var(--text); }
+.card-blue .home-section-title::before { background: var(--color-action); }
 .card-habits .home-section-title,
 .card-community .home-section-title { color: var(--text); }
 .card-habits .home-section-title::before,
@@ -896,7 +904,9 @@ h1, h2, h3 {
   align-items: center;
   gap: 1px;
 }
-.circuit-check { color: var(--danger); font-size: 17px; font-weight: 800; line-height: 1; }
+/* Jade, not coral: "done" is a success state, and the new system keeps coral
+   for teams only (2026-09-30). */
+.circuit-check { color: var(--color-success-text); font-size: 17px; font-weight: 800; line-height: 1; }
 .circuit-completed-date {
   font-size: 9px;
   font-weight: var(--subtext-weight);
