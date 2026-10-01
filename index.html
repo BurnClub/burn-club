@@ -86,6 +86,12 @@
           </div>
         </header>
 
+        <!-- ---------- UNFINISHED WORKOUT (2026-09-30, Chris) ---------- -->
+        <!-- Leaving a workout already saved it, but the only sign was a toast
+             that vanished — you found out by reopening the app and being asked.
+             This says so on the way past, on both screens a member might look. -->
+        <div class="resume-banner" id="resume-banner-home" style="display:none;"></div>
+
         <!-- ---------- THIS WEEK SNAPSHOT (2026-08-10) ---------- -->
         <!-- Copied from the Progress tab's Week calendar per Chris's request —
              week-only (no Month/Year toggle), and deliberately NOT wrapped in
@@ -184,6 +190,7 @@
           </div>
           <div class="topbar-actions"><button class="msg-icon-btn" data-action="open-notebook" aria-label="Notebook" title="Notebook"><span class="msg-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M8 4v16"/></svg></span><span class="checkin-done-dot" data-role="checkin-done-dot" style="display:none;"></span></button><button class="msg-icon-btn" data-action="open-messages" aria-label="Messages"><span class="msg-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button></div>
         </header>
+        <div class="resume-banner" id="resume-banner-workouts" style="display:none;"></div>
         <div class="home-section-card card-blue">
           <span class="workouts-bg-icon"></span>
           <h2 class="home-section-title">This Week's Workouts</h2>

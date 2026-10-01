@@ -12,6 +12,14 @@ the browser pane keeps the page hidden, and a hidden page cannot start playback,
 which is the very state the code recovers from. Anything touching
 backgrounding, autoplay or screen lock needs a real phone, not this browser.
 
+**Unfinished-workout banner (2026-09-30, Chris).** Leaving a workout always
+saved it, but the only sign was a toast that vanished — you found out by
+reopening the app. Home and Workouts now carry a banner: the workout, which
+block you're on, and how long the resume is still offered. Past that window it
+becomes the log-as-partial-or-discard question the overlay already asked.
+**Nothing auto-logs** — Chris's call, so a member's record never gains an entry
+they didn't agree to.
+
 Next:
 
 1. **Check the tags on the 11 exercises added from videos** — see below.

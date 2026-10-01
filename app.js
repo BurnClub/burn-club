@@ -3030,7 +3030,7 @@ function showTab(tabId) {
   if (tabId === "tab-progress") renderProgressTab();
   if (tabId === "tab-community") renderChallengeCard();
   renderTeamChallengeCard();
-  if (tabId === "tab-home" || tabId === "tab-circuits") renderCircuitLists();
+  if (tabId === "tab-home" || tabId === "tab-circuits") { renderCircuitLists(); renderResumeBanner(); }
   if (tabId === "tab-home") renderHomeWeekSnapshot();
   if (tabId === "tab-circuits" || tabId === "tab-home") renderCardioLog();
   if (tabId === "tab-progress") { renderCheckinSection(); renderPersonalBests(); }
@@ -3085,6 +3085,10 @@ function loadInProgress() {
 
 function clearInProgress() {
   localStorage.removeItem(memberKey(IN_PROGRESS_STORAGE_KEY));
+  // Every path that bins a session goes through here — finishing it, starting
+  // over, discarding, a workout that no longer exists. Redrawing from this one
+  // place is what keeps the banner from outliving the thing it describes.
+  renderResumeBanner();
 }
 
 // How many whole blocks were finished before the phase they stopped on.
@@ -3166,6 +3170,107 @@ function maybeOfferResume() {
     onSecondary: () => { clearInProgress(); },
   });
   return true;
+}
+
+// ---------------- Unfinished workout banner (2026-09-30, Chris) ----------------
+// Leaving a workout already saved it, and the resume prompt already existed —
+// but it only appeared on the way back INTO the app, so between those two
+// moments there was nothing on screen saying a workout was waiting. The toast
+// on the way out said it once and vanished.
+//
+// The countdown is the time left on the resume window, not a countdown to
+// anything being logged. Nothing is logged without the member choosing it:
+// past the window the same banner turns into the log-or-discard question that
+// the overlay has always asked.
+
+function resumeBannerEls() {
+  return [document.getElementById("resume-banner-home"),
+          document.getElementById("resume-banner-workouts")].filter(Boolean);
+}
+
+// "1h 42m" / "8m" — minutes only under an hour, because a seconds counter on a
+// two-hour window would be a ticking clock on a screen nobody is watching.
+function formatResumeLeft(ms) {
+  const mins = Math.max(0, Math.round(ms / 60000));
+  if (mins >= 60) {
+    const h = Math.floor(mins / 60);
+    return `${h}h ${mins - h * 60}m`;
+  }
+  return `${Math.max(1, mins)}m`;
+}
+
+function renderResumeBanner() {
+  const els = resumeBannerEls();
+  if (!els.length || typeof CIRCUITS === "undefined" || !CIRCUITS) return;
+  const rec = loadInProgress();
+  const circuit = rec && CIRCUITS.find((c) => c.id === rec.circuitId);
+  if (!rec || !circuit) {
+    els.forEach((el) => { el.style.display = "none"; el.innerHTML = ""; });
+    return;
+  }
+
+  const phases = buildPhaseQueue(circuit);
+  const blocksDone = blocksCompletedAt(phases, rec.index);
+  const left = RESUME_WINDOW_MS - (Date.now() - (rec.lastSeenAt || 0));
+  const onBlock = Math.min(blocksDone + 1, circuit.blocks.length);
+
+  // Past the window with nothing finished there is no decision to put to the
+  // member — the resume path drops these silently, and so does this.
+  if (left <= 0 && blocksDone < 1) {
+    els.forEach((el) => { el.style.display = "none"; el.innerHTML = ""; });
+    return;
+  }
+
+  const html = left > 0
+    ? `<div class="resume-banner-top">
+         <p class="resume-banner-eyebrow">Workout in progress</p>
+         <p class="resume-banner-countdown">Resume for ${formatResumeLeft(left)}</p>
+       </div>
+       <p class="resume-banner-title">${circuit.title}</p>
+       <p class="resume-banner-sub">Block ${onBlock} of ${circuit.blocks.length}</p>
+       <div class="resume-banner-actions">
+         <button class="resume-banner-btn" data-resume-action="resume">Pick up where you left off</button>
+       </div>`
+    : `<div class="resume-banner-top">
+         <p class="resume-banner-eyebrow">Unfinished workout</p>
+       </div>
+       <p class="resume-banner-title">${circuit.title}</p>
+       <p class="resume-banner-sub">You finished ${blocksDone} of ${circuit.blocks.length} blocks, then left.</p>
+       <div class="resume-banner-actions">
+         <button class="resume-banner-btn" data-resume-action="log">Log as partial</button>
+         <button class="resume-banner-btn is-secondary" data-resume-action="discard">Discard</button>
+       </div>`;
+
+  els.forEach((el) => { el.innerHTML = html; el.style.display = "flex"; });
+}
+
+function handleResumeBannerAction(action) {
+  const rec = loadInProgress();
+  const circuit = rec && CIRCUITS.find((c) => c.id === rec.circuitId);
+  if (!rec || !circuit) { renderResumeBanner(); return; }
+
+  if (action === "resume") { Player.resume(circuit, rec); return; }
+  if (action === "log") {
+    logPartialCompletion(circuit, rec, blocksCompletedAt(buildPhaseQueue(circuit), rec.index));
+    clearInProgress();
+    init();
+    showTab("tab-home");
+    showToast("Logged as a partial workout.");
+    return;
+  }
+  clearInProgress();
+  renderResumeBanner();
+  showToast("Unfinished workout discarded.");
+}
+
+// A minute is the finest the countdown shows, so refreshing on the minute is
+// enough — and it only matters while the app is open and on a tab that has one.
+let resumeBannerTimer = null;
+function startResumeBannerTicker() {
+  if (resumeBannerTimer) return;
+  resumeBannerTimer = setInterval(() => {
+    if (!document.hidden) renderResumeBanner();
+  }, 60000);
 }
 
 // An unfinished workout outranks the daily check-in nudge — it's the more
@@ -4029,6 +4134,7 @@ const Player = {
     this.closeSkipConfirm();
     closeBlockNotes();
     showTab("tab-home");
+    renderResumeBanner();
     if (worthKeeping) showToast("Saved — pick up where you left off.");
   },
 
@@ -4930,6 +5036,8 @@ function init() {
   LAST_WEIGHTS = loadLastWeights();
   renderCircuitLists();
   renderHomeWeekSnapshot();
+  renderResumeBanner();
+  startResumeBannerTicker();
 
   // Community tab's Activity Feed and Home's Community Buzz share the same
   // .buzz-row markup (2026-08-11). Both read the same program-scoped list
@@ -4976,6 +5084,12 @@ function init() {
 // Calendar" save the same session twice (2026-08-12).
 function wireStaticControls() {
   bindTour();
+  // Delegated: the banner's buttons are re-rendered every minute, so handlers
+  // bound to them directly would be thrown away with the markup.
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-resume-action]");
+    if (btn) handleResumeBannerAction(btn.dataset.resumeAction);
+  });
   // Straight into the staff thread rather than the inbox — the whole point of
   // the card is to start that conversation, and the inbox is one more step
   // between the member and it.

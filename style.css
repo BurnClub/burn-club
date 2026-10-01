@@ -621,6 +621,50 @@ h1, h2, h3 {
    its own card with the title inside — replaces the old bare h2-then-list
    pattern. Colored per-section per Chris's follow-up correction (2026-08-04):
    app background is white now, cards carry the color instead of the page. */
+/* ---------- UNFINISHED WORKOUT BANNER (2026-09-30, Chris) ----------
+   Yellow because it wants noticing without alarming: a saved workout is a
+   good thing, not an error. It sits above everything else on both screens —
+   the one piece of state that is mid-flight and that nothing else explains. */
+.resume-banner {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--yellow);
+  background: color-mix(in srgb, var(--yellow) 14%, var(--card-white));
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.resume-banner-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.resume-banner-eyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+/* The countdown is the quiet half of the line: it says how long the resume is
+   still on offer, and it must never read as a threat. */
+.resume-banner-countdown { margin: 0; font-size: 11px; font-weight: 700; color: var(--text-muted); }
+.resume-banner-title { margin: 0; font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--text); }
+.resume-banner-sub { margin: 0; font-size: 13px; color: var(--text-muted); }
+.resume-banner-actions { display: flex; gap: 8px; }
+.resume-banner-btn {
+  flex: 1;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 11px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  background: var(--ink);
+  color: #FFFFFF;
+}
+.resume-banner-btn.is-secondary { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+.resume-banner-btn:active { transform: scale(0.99); }
+
 .home-section-card {
   position: relative;
   border-radius: var(--radius-lg);
