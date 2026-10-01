@@ -20,6 +20,14 @@ becomes the log-as-partial-or-discard question the overlay already asked.
 **Nothing auto-logs** — Chris's call, so a member's record never gains an entry
 they didn't agree to.
 
+**Palette (2026-10-01).** Kelly's new palette is in — `palette.css` holds her
+tokens, `style.css` maps the app's own 91 names onto them. **Chris doesn't like
+the cream page background (`--cream` #FAF7F2)** but is shipping it to see what
+Kelly thinks. It is one value in `palette.css`; changing it moves the whole app.
+Still open: the admin app is untouched (its own 82 colours — follow or not?),
+the three fonts load from Google's CDN which breaks offline and the App Store
+build, and red still marks "down" deltas.
+
 Next:
 
 1. **Check the tags on the 11 exercises added from videos** — see below.
