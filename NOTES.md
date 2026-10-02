@@ -34,13 +34,32 @@ fills the card. Fix by some combination of title size, card padding (18px now)
 and letting the longer ones wrap — check every card title at phone width, not
 just these two. Kelly flagged the same risk in her handoff.
 
-**Card strength (Chris, 2026-10-01): a mix.** Kelly's palette specifies the
-lightest tint for every card, which read as washed out — his first reaction was
-"everything is too pale". Workouts now takes a solid `blue-600` fill with white
-title, as it always had; the cards below it (Daily Habits, Community Buzz,
-Stretch & Core, Last Week) sit at **half strength** via `--jade-200` and
-`--persimmon-200`. Same colours as Kelly's, more of them. **This departs from
-her intent, not her palette** — worth raising with her rather than slipping past.
+**Where the palette landed (2026-10-01).** Kelly's colours throughout, but a
+good way from her intent, which puts every card on its lightest tint. Chris's
+first reaction was "everything is too pale".
+
+- **Workouts card: solid `blue-500`**, the brand blue itself, white title at
+  3.17:1. The lightest blue a white title survives — nothing smaller may sit on it.
+- **Every other card: pale tints**, `jade-100` and `#FBEADC`.
+- **Icon badges on all 13 sections** — this is what makes the pale cards work.
+  One saturated mark each, **coloured by the card it sits on, not by subject**,
+  scoped by card class in `style.css`. Two exceptions: white badge on the solid
+  blue card, blue badge on a white card, the only cases where matching the
+  background hides the badge.
+- **Gold is retired.** Surfaces that were gold take the community fill; marks
+  take `#F1A07F`. The Gold *team* keeps its own colour in `data.js` — don't
+  recolour a team called Gold.
+- **Category chips are off the workout cards**; only the tick and date remain.
+  The scheduled-day label on upcoming cards was kept: it says *when*, not *what kind*.
+- **The bright accent works on filled shapes, not on words.** `#F1A07F` is
+  1.78:1 on a pale card, so dots and badges can take it and 11px text cannot.
+  Small text in that family uses `--persimmon-800` (#8A4522).
+- **Empty states don't get cards** — the wearable prompt sits on the page.
+
+**Kelly hasn't been told** we moved away from her tint-only system. Her mockup
+anchors Home with a strong "Today's pick" hero card and keeps everything else
+pale; Chris chose not to build the hero, which is why the Workouts card carries
+the weight instead.
 
 Three grounds were previewed for him on 2026-10-01 (browser only, nothing
 committed): cream #FAF7F2, pure white #FFFFFF, and a barely-off-white #FCFBF9.
