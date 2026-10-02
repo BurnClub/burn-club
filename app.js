@@ -3786,6 +3786,63 @@ function exerciseTracksWeight(name) {
   return ex ? !!ex.trackWeight : false;
 }
 
+
+// The strip of demos on a superset screen. Only the one in view plays: the
+// others keep their src so a sideways flick starts them instantly, but a
+// paused video downloads nothing more (2026-10-02).
+function renderDemoStrip(exercises) {
+  const strip = document.getElementById("player-demo-strip");
+  if (!strip) return;
+  strip.innerHTML = exercises.map((e, i) => {
+    const ex = EXERCISE_LIBRARY.find((x) => x.name === e.name);
+    const url = ex && ex.videoUrl;
+    return `
+      <div class="demo-card">
+        <div class="demo-card-frame">
+          ${url
+            ? `<video muted loop playsinline preload="none" src="${url}"></video>`
+            : `<span class="demo-card-empty">No demo yet</span>`}
+        </div>
+        <p class="demo-card-name">
+          <span class="demo-card-num">${i + 1}</span>
+          <span>${esc(e.name)}</span>
+          ${e.reps ? `<span class="demo-card-reps">${e.reps} reps</span>` : ""}
+        </p>
+      </div>`;
+  }).join("");
+  strip.style.display = "flex";
+  strip.scrollLeft = 0;
+  playVisibleDemo(strip);
+  strip.onscroll = () => {
+    clearTimeout(strip._settle);
+    // After the flick settles, not during it: switching video on every scroll
+    // event would thrash play/pause a dozen times across one swipe.
+    strip._settle = setTimeout(() => playVisibleDemo(strip), 120);
+  };
+}
+
+function playVisibleDemo(strip) {
+  const mid = strip.scrollLeft + strip.clientWidth / 2;
+  let best = null, bestDist = Infinity;
+  strip.querySelectorAll(".demo-card").forEach((card) => {
+    const centre = card.offsetLeft + card.offsetWidth / 2;
+    const dist = Math.abs(centre - mid);
+    if (dist < bestDist) { bestDist = dist; best = card; }
+  });
+  strip.querySelectorAll("video").forEach((v) => {
+    const isBest = best && best.contains(v);
+    if (isBest) {
+      // preload="none" means there is nothing to play on the first attempt and
+      // the call is simply ignored — the same cold-start that caught the demo
+      // popup. Start on the video's own ready event as well.
+      v.oncanplay = () => tryPlayDemo(v);
+      if (v.paused) tryPlayDemo(v);
+    } else if (!v.paused) {
+      v.pause();
+    }
+  });
+}
+
 const Player = {
   circuit: null,
   phases: [],
@@ -4509,6 +4566,14 @@ const Player = {
     document.getElementById("player-superset-list").style.display = "none";
     document.getElementById("player-weight-log").style.display = "none";
     document.getElementById("player-round-line").style.display = "none";
+    const stripEl = document.getElementById("player-demo-strip");
+    if (stripEl) {
+      // Stop anything playing before the screen changes, or a demo keeps
+      // streaming behind a rest timer nobody can see it from.
+      stripEl.querySelectorAll("video").forEach((v) => v.pause());
+      stripEl.style.display = "none";
+      stripEl.innerHTML = "";
+    }
     document.getElementById("player-emom-weight").style.display = "none";
     document.getElementById("player-cardio-picker").style.display = "none";
     setPlayerExerciseReps(null);
@@ -4568,6 +4633,7 @@ const Player = {
       const roundLine = document.getElementById("player-round-line");
       roundLine.textContent = phase.progressLabel;
       roundLine.style.display = "block";
+      renderDemoStrip(phase.exercises);
       document.getElementById("player-video").style.display = "none";
       setPlayerExerciseTechnique(null);
       const supersetListEl = document.getElementById("player-superset-list");
