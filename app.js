@@ -1261,7 +1261,7 @@ function recordWeights(weights) {
 
 let LAST_WEIGHTS = {};
 
-function logCompletion(circuit, weights) {
+function logCompletion(circuit, weights, setWeights) {
   // No circuit means there's nothing to write, and writing a completion with
   // a null workoutId would put a junk row in the member's history that every
   // stat then has to count around. Returning null rather than throwing:
@@ -1284,6 +1284,11 @@ function logCompletion(circuit, weights) {
     rpe: 5,
     // What they lifted, per exercise. Empty for bodyweight-only sessions.
     weights: weights && Object.keys(weights).length ? { ...weights } : null,
+    // And per set, from the end-of-block screens (2026-10-02). `weights` keeps
+    // the top number per exercise because personal bests, the notebook and
+    // every completion written before today read it; this is the detail
+    // underneath, and is absent on anything older.
+    setWeights: setWeights && Object.keys(setWeights).length ? { ...setWeights } : null,
   };
   COMPLETIONS.push(entry);
   saveCompletions();
@@ -3114,7 +3119,7 @@ function logPartialCompletion(circuit, rec, blocksDone) {
     // away for hours, so the elapsed clock is meaningless here.
     meta: `${Math.max(1, Math.round((parseInt(circuit.meta, 10) || 20) * blocksDone / circuit.blocks.length))} min`,
   };
-  return logCompletion(partial, rec.sessionWeights || {});
+  return logCompletion(partial, rec.sessionWeights || {}, rec.setWeights || {});
 }
 
 function showResumeOverlay({ title, body, primary, secondary, onPrimary, onSecondary }) {
@@ -3452,6 +3457,44 @@ function bindTour() {
 //
 // One action stays one row in the checklist — a plain 3x12, or a hold-only
 // set, has no sequence to communicate.
+
+// ---------------- Weight logging, once per block (2026-10-02, Chris) ----------------
+// Weight used to be typed mid-set — inline on a superset row, in the rest
+// popup on straight sets. Chris's call: get it off the working screen
+// entirely. One screen at the end of each block, every set listed, every
+// field already carrying a number.
+//
+// Pre-filling is the part that makes this honest rather than lossy. A member
+// asked to remember four rounds of a descending scheme will round it off or
+// skip it; a member shown "135, 135, 135, 135" and asked to correct the one
+// that was 115 will get it right. The numbers come from last session, and
+// from the earlier rounds of this one as they are filled in.
+function weightEntriesForBlock(block, blockIndex) {
+  const entries = [];
+  const add = (name, label, reps) => {
+    if (!exerciseTracksWeight(name)) return;
+    entries.push({ name, label, reps, blockIndex });
+  };
+  if (block.type === "straight" && block.exercise) {
+    for (let i = 1; i <= block.sets; i++) add(block.exercise.name, `Set ${i}`, block.reps);
+  } else if (block.type === "ladder" && block.exercise) {
+    block.scheme.forEach((reps, i) => add(block.exercise.name, `Set ${i + 1}`, reps));
+  } else if (block.type === "superset" && block.exercises) {
+    for (let round = 1; round <= block.rounds; round++) {
+      block.exercises.forEach((e) => {
+        // A hold is held at whatever the lift was done at, and a drop is
+        // lighter than the set before by definition — neither takes a number
+        // of its own (Chris, 2026-08-23).
+        if (e.hold || e.drop) return;
+        add(e.name, `Round ${round}`, Array.isArray(e.scheme) ? e.scheme[round - 1] : e.reps);
+      });
+    }
+  }
+  // AMRAP and EMOM deliberately keep their inline fields: the number of rounds
+  // isn't known until the clock stops, so there is no set list to pre-fill.
+  return entries;
+}
+
 function pushSetPhases(phases, blockMeta, block, sets) {
   const compound = sets.some((set) => set.reps && set.hold);
   if (!compound) {
@@ -3623,6 +3666,18 @@ function buildPhaseQueue(circuit) {
         progressLabel: "Every Minute On the Minute",
       });
     }
+
+    // One logging screen per block, and only where there is something to log:
+    // a bodyweight block never asks.
+    const weightEntries = weightEntriesForBlock(block, blockIndex);
+    if (weightEntries.length) {
+      phases.push({
+        ...blockMeta,
+        kind: "log-weights",
+        entries: weightEntries,
+        progressLabel: "Log your weights",
+      });
+    }
   });
 
   return phases;
@@ -3768,6 +3823,9 @@ const Player = {
     this.deadlineAt = null;
     this.lastShownRemaining = null;
     this.sessionWeights = {};
+    // Per set, keyed block|exercise|label — sessionWeights keeps the top
+    // number for personal bests, this keeps what was actually lifted each set.
+    this.setWeights = {};
     this.cardioChoice = null;
     this.cardioMinutes = 0;
     // Reset per workout, so the explainers come back for the next session.
@@ -3819,6 +3877,7 @@ const Player = {
       lastSeenAt: Date.now(),
       amrapRounds: this.amrapRounds,
       sessionWeights: this.sessionWeights,
+      setWeights: this.setWeights,
       setsChecked: this.setsChecked,
       cardioChoice: this.cardioChoice,
       cardioMinutes: this.cardioMinutes,
@@ -3851,6 +3910,7 @@ const Player = {
     this.amrapRounds = rec.amrapRounds || 0;
     this.startedAt = rec.startedAt || Date.now();
     this.sessionWeights = rec.sessionWeights || {};
+    this.setWeights = rec.setWeights || {};
     this.cardioChoice = rec.cardioChoice || null;
     this.cardioMinutes = rec.cardioMinutes || 0;
     this.notesShownFor = new Set(rec.notesShownFor || []);
@@ -4108,7 +4168,7 @@ const Player = {
     // Before logCompletion, deliberately: once this session is written its own
     // weights are part of the history and nothing can look like a PR.
     const prs = newPersonalBests(this.sessionWeights);
-    const entry = logCompletion(this.circuit, this.sessionWeights);
+    const entry = logCompletion(this.circuit, this.sessionWeights, this.setWeights);
     renderPRBanner(prs);
     // A previous session's note must not be sitting in the box.
     resetSessionNoteField();
@@ -4462,6 +4522,7 @@ const Player = {
     document.getElementById("player-total-clock").style.display = "none";
     document.getElementById("player-sets-list").style.display = "none";
     document.getElementById("player-superset-list").style.display = "none";
+    document.getElementById("player-weight-log").style.display = "none";
     document.getElementById("player-emom-weight").style.display = "none";
     document.getElementById("player-cardio-picker").style.display = "none";
     setPlayerExerciseReps(null);
@@ -4561,11 +4622,6 @@ const Player = {
             </div>
             <div class="amrap-row-line2">
               ${e.reps ? `<span class="amrap-reps">${e.reps} reps</span>` : ""}
-              ${tracks ? `<input type="number" class="superset-weight-input" inputmode="numeric"
-                    data-ex-name="${esc(e.name)}"
-                    value="${this.sessionWeights[e.name] || ""}"
-                    placeholder="${last ? last + " lb" : "add weight"}"
-                    title="${last ? `Last time: ${last} lbs` : "Weight used"}" />` : ""}
               ${holdBtnHtml(e.hold)}
             </div>
           </div>
@@ -4578,9 +4634,6 @@ const Player = {
       wireHoldButtons(supersetListEl);
       // Held on the player, not the DOM, so it survives the re-render between
       // rounds and carries into the completion record.
-      supersetListEl.querySelectorAll(".superset-weight-input").forEach((input) => {
-        input.addEventListener("input", () => this.noteWeight(input.dataset.exName, input.value));
-      });
       supersetListEl.querySelectorAll(".superset-done-btn").forEach((b) => {
         b.addEventListener("click", () => this.toggleSupersetExercise(Number(b.dataset.exIndex)));
       });
@@ -4590,6 +4643,75 @@ const Player = {
       const roundBtn = document.getElementById("player-complete-set-btn");
       roundBtn.textContent = "Finish round ✓";
       roundBtn.style.display = "block";
+    }
+
+    if (phase.kind === "log-weights") {
+      document.getElementById("player-exercise-name").textContent = "Weights";
+      document.getElementById("player-sub-pill").textContent = phase.blockLabel || "This block";
+      const logEl = document.getElementById("player-weight-log");
+      logEl.style.display = "flex";
+
+      // Group by exercise so the member reads down one movement's sets rather
+      // than hopping between two in a superset.
+      const byExercise = [];
+      phase.entries.forEach((e) => {
+        let g = byExercise.find((x) => x.name === e.name);
+        if (!g) { g = { name: e.name, rows: [] }; byExercise.push(g); }
+        g.rows.push(e);
+      });
+
+      logEl.innerHTML = byExercise.map((g) => {
+        const last = lastWeightFor(g.name);
+        return `
+          <div class="weight-log-group">
+            <p class="weight-log-ex">${esc(g.name)}</p>
+            ${g.rows.map((row, i) => {
+              const key = `${row.blockIndex}|${g.name}|${row.label}`;
+              const prefill = this.setWeights[key] != null ? this.setWeights[key]
+                            : (i > 0 ? this.setWeights[`${row.blockIndex}|${g.name}|${g.rows[i - 1].label}`] : null)
+                            ?? last ?? "";
+              return `
+              <label class="weight-log-row">
+                <span class="weight-log-label">${esc(row.label)}${row.reps ? ` · ${row.reps} reps` : ""}</span>
+                <input type="number" inputmode="numeric" class="weight-log-input"
+                       data-key="${esc(key)}" data-ex-name="${esc(g.name)}"
+                       value="${prefill}" placeholder="lb" />
+              </label>`;
+            }).join("")}
+          </div>`;
+      }).join("");
+
+      // Written as they type: a member who walks away mid-screen still has
+      // what they entered, and the next row's pre-fill follows the last one.
+      const inputs = [...logEl.querySelectorAll(".weight-log-input")];
+      inputs.forEach((input) => {
+        input.addEventListener("input", () => {
+          const val = Number(input.value);
+          input.dataset.touched = "1";
+          if (Number.isFinite(val) && val > 0) {
+            this.setWeights[input.dataset.key] = val;
+            this.noteWeight(input.dataset.exName, val);
+            // Carry it down this exercise's later sets, stopping at the first
+            // one the member has set themselves. Without this, a member with
+            // no history types the same number four times — the pre-fill only
+            // helped people who had lifted before, which is the wrong half.
+            let seen = false;
+            inputs.forEach((other) => {
+              if (other === input) { seen = true; return; }
+              if (!seen || other.dataset.exName !== input.dataset.exName) return;
+              if (other.dataset.touched === "1") return;
+              other.value = val;
+              this.setWeights[other.dataset.key] = val;
+            });
+          } else {
+            delete this.setWeights[input.dataset.key];
+          }
+        });
+      });
+
+      const logBtn = document.getElementById("player-complete-set-btn");
+      logBtn.textContent = "Save and continue →";
+      logBtn.style.display = "block";
     }
 
     if (phase.kind === "sets") {

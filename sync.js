@@ -575,7 +575,7 @@ async function pushStore(name) {
     // completions themselves landed — a lift whose completion never arrived
     // would be an orphan nothing could show.
     if (ok && name === "completions") {
-      return await pushRows("lifts", liftsToRows(local), "member_id,completion_client_id,exercise_name");
+      return await pushRows("lifts", liftsToRows(local), "member_id,completion_client_id,exercise_name,set_number");
     }
     return ok;
   } catch (e) {
@@ -590,6 +590,30 @@ async function pushStore(name) {
 function liftsToRows(completions) {
   const rows = [];
   completions.forEach((c) => {
+    // Per set where we have it (2026-10-02), one row per exercise where we
+    // don't. setWeights keys are "blockIndex|Exercise Name|Set 2"; the label
+    // is what the member saw, so it is what gets stored rather than an index
+    // they would have to decode.
+    if (c.setWeights && Object.keys(c.setWeights).length) {
+      let n = 0;
+      const before = rows.length;
+      Object.keys(c.setWeights).forEach((key) => {
+        const weight = Number(c.setWeights[key]);
+        if (!Number.isFinite(weight) || weight <= 0) return;
+        const parts = key.split("|");
+        const name = parts[1];
+        if (!name) return;
+        rows.push({
+          member_id: AUTH_MEMBER.id, completion_client_id: c.id,
+          exercise_name: name, weight, performed_on: c.date,
+          set_number: ++n, set_label: parts[2] || null,
+        });
+      });
+      // Only this completion's rows count — `rows` is the accumulator for all
+      // of them, so testing it directly would skip every later completion once
+      // any one had per-set weights.
+      if (rows.length > before) return;
+    }
     if (!c.weights) return;
     Object.keys(c.weights).forEach((name) => {
       const weight = Number(c.weights[name]);
@@ -597,6 +621,7 @@ function liftsToRows(completions) {
       rows.push({
         member_id: AUTH_MEMBER.id, completion_client_id: c.id,
         exercise_name: name, weight, performed_on: c.date,
+        set_number: 1, set_label: null,
       });
     });
   });

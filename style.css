@@ -667,6 +667,42 @@ h1, h2, h3 {
 
 
 
+
+/* ---------- WEIGHT LOG, END OF BLOCK (2026-10-02) ----------
+   Every set of the block on one screen, pre-filled. Wide fields and big rows:
+   this is tapped with one hand, standing up, probably sweating. */
+.player-weight-log { display: none; flex-direction: column; gap: 18px; margin-top: 4px; }
+.weight-log-group { display: flex; flex-direction: column; gap: 6px; }
+.weight-log-ex {
+  margin: 0 0 2px;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+}
+.weight-log-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+}
+.weight-log-label { font-size: 13px; font-weight: 700; color: var(--text-muted); }
+.weight-log-input {
+  width: 92px;
+  text-align: center;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  background: var(--card-white);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 8px 6px;
+}
+
 /* ---------- SUPERSET ROWS (2026-10-02) ----------
    Chris coaches a superset as one movement into the next with no break, then
    rest. The screen has to answer "which of these am I on" without being read:

@@ -201,8 +201,14 @@ create table lifts (
   exercise_id          text references exercises(id),
   weight               numeric(6,2) not null,
   reps                 int,
+  -- Per set, not per exercise (2026-10-02): a descending scheme usually means
+  -- a different weight each set, and the member logs each one. set_label is
+  -- what they saw on screen — "Round 2", "Set 3" — so history reads back in
+  -- their words. See supabase/12-per-set-lifts.sql for the migration.
+  set_number           int not null default 1,
+  set_label            text,
   performed_on         date not null,
-  unique (member_id, completion_client_id, exercise_name)
+  unique (member_id, completion_client_id, exercise_name, set_number)
 );
 -- Personal bests and the progress chart are queries over this, not a second
 -- stored copy that can disagree with it.
