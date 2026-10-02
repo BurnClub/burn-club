@@ -1034,10 +1034,17 @@ h1, h2, h3 {
    one-color-per-card rule the last few passes used). */
 /* White was right on the old saturated card; on the lighter persimmon fill it
    is 1.2:1 — a dot nobody can see and a timestamp nobody can read (2026-10-01). */
-.card-community .buzz-dot { background: var(--persimmon-800); }
+/* The dot is a shape, not words, so it can carry the bright accent the badge
+   uses — 7px of it at 1.78:1 would vanish, so it goes up to 9px and takes the
+   same #F1A07F (2026-10-01). The timestamp beside it cannot: at 11px that
+   colour is 1.78:1, unreadable, so it stays the dark persimmon. */
+.card-community .buzz-dot { background: #F1A07F; width: 9px; height: 9px; margin-top: 5px; }
 .card-community .buzz-text p,
 .card-community .buzz-text strong { color: var(--text); }
-.card-community .buzz-text p.buzz-time { color: var(--persimmon-800); }
+/* Weight matched to the Daily Habits labels beside it (Chris, 2026-10-01):
+   they are 12px/400, this was 11px/700 and read as a heavier column than its
+   neighbour. */
+.card-community .buzz-text p.buzz-time { color: var(--persimmon-800); font-weight: 400; }
 
 /* ---------- ARCHIVE ---------- */
 /* ---------- STAT BUBBLES (2026-08-11) ---------- */
