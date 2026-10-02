@@ -548,12 +548,15 @@ h1, h2, h3 {
 .today-stat-delta.tone-down { color: var(--danger); }
 .today-stat-delta.tone-flat { color: var(--subtext-color); }
 .today-stat-label { font-size: 10px; font-weight: var(--subtext-weight); color: var(--subtext-color); margin: 2px 0 0; }
+/* Not a card (Chris, 2026-10-01). An empty state is the absence of content,
+   and giving it a card's background made it look like another section
+   competing with the real ones — a box whose only job is to say there is
+   nothing in it. It sits on the page as plain text now. */
 .wearable-prompt-card {
-  background: var(--white);
-  border-radius: var(--radius-sm);
-  padding: 14px;
+  background: none;
+  padding: 10px 14px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--text-muted);
   text-align: center;
   flex: 1;
