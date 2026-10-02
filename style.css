@@ -691,14 +691,26 @@ h1, h2, h3 {
   color: #FFFFFF;
 }
 .section-icon svg { width: 19px; height: 19px; display: block; }
+/* The badge takes its colour from the card it sits on, not from what the
+   section is about (Chris, 2026-10-01). A jade badge on a warm card looked
+   like a mistake even when the icon was right. Two exceptions he kept: white
+   on the solid blue card, and blue on a white one — the only two cases where
+   matching the background would make the badge disappear into it.
+
+   Scoped by card class rather than per section, so a section moved to a
+   different card gets the right badge without anyone remembering to change it. */
 .section-icon-habits { background: var(--jade-700); }
-/* Persimmon-400 rather than -700 (Chris, 2026-10-01: the darker one read as
-   brown). White on it is 2.07:1, so this badge takes a dark glyph — ink at
-   6.47:1 — instead. The jade badge keeps white; it is dark enough to carry it. */
 .section-icon-community { background: #F1A07F; color: var(--color-text); }
 .section-icon-workouts { background: var(--color-action); }
-/* On the one card that is itself a solid blue, a blue badge disappears into
-   it. Inverted there: white disc, blue glyph (2026-10-01). */
+
+/* Jade cards */
+.card-habits .section-icon,
+.card-green .section-icon { background: var(--jade-700); color: #FFFFFF; }
+/* Warm cards. Persimmon-400 rather than -700 — the darker one read as brown —
+   so the glyph goes dark: white on it is 2.08:1. */
+.card-community .section-icon,
+.card-last-week .section-icon { background: #F1A07F; color: var(--color-text); }
+/* The solid blue card: inverted, or the badge vanishes into it. */
 .card-blue .section-icon { background: #FFFFFF; color: var(--color-action); }
 
 /* ---------- UNFINISHED WORKOUT BANNER (2026-09-30, Chris) ----------
