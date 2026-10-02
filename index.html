@@ -364,7 +364,11 @@
       <section class="screen player-screen" id="screen-player" data-screen>
         <header class="player-header">
           <button class="player-exit" id="player-exit-btn">✕</button>
-          <span class="detail-tag" id="player-block-label">Block</span>
+          <!-- The block pill is the way into the whole workout (2026-10-02,
+               Chris): tapping it shows every block, with the ones behind you
+               faded. It replaces the pill rather than adding a control,
+               because the pill was already saying which block you are on. -->
+          <button class="detail-tag player-block-btn" id="player-block-label" type="button">Block</button>
           <span class="player-progress-text" id="player-progress-text">1 / 1</span>
         </header>
         <div class="player-progress-track"><div class="player-progress-fill" id="player-progress-fill"></div></div>
@@ -508,6 +512,23 @@
             <button class="btn-ghost-lg" id="skip-confirm-cancel-btn">Keep Going</button>
             <button class="btn-primary" id="skip-confirm-yes-btn">Skip</button>
           </div>
+        </div>
+      </div>
+
+      <!-- ---------- WORKOUT OVERVIEW (2026-10-02) ---------- -->
+      <!-- The whole session at a glance, for a member who has lost their place
+           or just wants to see what is left. Opens over the player without
+           stopping anything. -->
+      <div class="overview-overlay" id="overview-overlay">
+        <div class="overview-card">
+          <div class="overview-head">
+            <div>
+              <p class="overview-eyebrow">Workout</p>
+              <h2 class="overview-title" id="overview-title">Workout</h2>
+            </div>
+            <button class="player-exit" id="overview-close-btn" type="button">✕</button>
+          </div>
+          <div class="overview-list" id="overview-list"></div>
         </div>
       </div>
 

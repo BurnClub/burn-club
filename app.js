@@ -3864,6 +3864,43 @@ function playVisibleDemo(strip) {
   });
 }
 
+
+// ---------------- Workout overview (2026-10-02, Chris) ----------------
+// Every block of the session in one list, opened from the block pill at the
+// top of the player. Blocks behind you are faded and ticked, the one you are
+// on is marked, the rest read as what is coming. It is the preview page with
+// the sales copy taken out: a member mid-workout wants the shape of what is
+// left, not the description they already read.
+function openWorkoutOverview() {
+  const circuit = Player.circuit;
+  if (!circuit) return;
+  const phase = Player.currentPhase();
+  const currentBlock = phase ? phase.blockIndex : 0;
+
+  document.getElementById("overview-title").textContent = circuit.title;
+  document.getElementById("overview-list").innerHTML = circuit.blocks.map((block, i) => {
+    const state = i < currentBlock ? "is-done" : i === currentBlock ? "is-current" : "";
+    const names = blockExerciseNames(block).map((n) => `<li>${esc(n)}</li>`).join("");
+    return `
+      <div class="overview-block ${state}">
+        <div class="overview-block-top">
+          <span class="overview-block-num">${i < currentBlock ? "✓" : i + 1}</span>
+          <div>
+            <p class="overview-block-name">${esc(block.label || blockTypeLabel(block.type))}</p>
+            <p class="overview-block-line">${blockSummaryLine(block)}</p>
+          </div>
+        </div>
+        <ul class="overview-block-names">${names}</ul>
+      </div>`;
+  }).join("");
+
+  document.getElementById("overview-overlay").classList.add("visible");
+}
+
+function closeWorkoutOverview() {
+  document.getElementById("overview-overlay").classList.remove("visible");
+}
+
 const Player = {
   circuit: null,
   phases: [],
@@ -4569,6 +4606,9 @@ const Player = {
     clearHoldTimers();
 
     document.getElementById("player-block-label").textContent = phase.blockLabel;
+    // Closed on every phase change: an overview left open over a rest timer
+    // hides the clock the member is waiting on.
+    closeWorkoutOverview();
     document.getElementById("player-progress-text").textContent =
       `Block ${phase.blockIndex + 1} of ${phase.totalBlocks}`;
     const pct = Math.round(((this.index) / this.phases.length) * 100);
@@ -6023,6 +6063,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("player-start-btn").addEventListener("click", () => Player.beginPhaseTimer());
   document.getElementById("player-back-btn").addEventListener("click", () => Player.back());
   document.getElementById("exercise-video-close-btn").addEventListener("click", closeExerciseVideo);
+  document.getElementById("player-block-label").addEventListener("click", openWorkoutOverview);
+  document.getElementById("overview-close-btn").addEventListener("click", closeWorkoutOverview);
+  // Tapping the dimmed area closes it too: it is a glance, not a screen to be
+  // navigated out of.
+  document.getElementById("overview-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "overview-overlay") closeWorkoutOverview();
+  });
   // Same contract as the per-row play buttons: opens over the running clock,
   // closes independently, never pauses anything.
   document.getElementById("player-video").addEventListener("click", () => {
