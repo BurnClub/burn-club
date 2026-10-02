@@ -668,6 +668,15 @@ h1, h2, h3 {
 
 
 
+.player-round-line {
+  margin: 0 0 12px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
 /* ---------- WEIGHT LOG, END OF BLOCK (2026-10-02) ----------
    Every set of the block on one screen, pre-filled. Wide fields and big rows:
    this is tapped with one hand, standing up, probably sweating. */

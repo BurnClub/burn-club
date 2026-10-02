@@ -4508,6 +4508,7 @@ const Player = {
     document.getElementById("player-sets-list").style.display = "none";
     document.getElementById("player-superset-list").style.display = "none";
     document.getElementById("player-weight-log").style.display = "none";
+    document.getElementById("player-round-line").style.display = "none";
     document.getElementById("player-emom-weight").style.display = "none";
     document.getElementById("player-cardio-picker").style.display = "none";
     setPlayerExerciseReps(null);
@@ -4560,7 +4561,13 @@ const Player = {
       const names = new Set(phase.exercises.map((e) => e.name));
       document.getElementById("player-exercise-name").textContent =
         names.size === 1 ? [...names][0] : `${phase.exercises.length}-Exercise Superset`;
-      document.getElementById("player-sub-pill").textContent = phase.progressLabel;
+      // The round moves under the heading, right above the list it governs
+      // (2026-10-02, Chris) — on a descending scheme the round IS what
+      // changes. The pill above keeps the block's name.
+      document.getElementById("player-sub-pill").textContent = phase.blockLabel || "";
+      const roundLine = document.getElementById("player-round-line");
+      roundLine.textContent = phase.progressLabel;
+      roundLine.style.display = "block";
       document.getElementById("player-video").style.display = "none";
       setPlayerExerciseTechnique(null);
       const supersetListEl = document.getElementById("player-superset-list");
