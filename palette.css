@@ -30,12 +30,16 @@
   --blue-50:  #E8EDFD;   /* mist */
 
   /* Jade */
+  --jade-200: #CCDBCD;   /* jade-400 at half strength over cream — card fills */
   --jade-400: #9DBFA8;   /* decorative fills and graphics */
   --jade-500: #6D8F78;   /* progress bars — readable against their own track */
   --jade-700: #3F7A5E;   /* green text and check marks on light */
   --jade-100: #E3EEE6;   /* soft green tint */
 
   /* Persimmon (the one warm accent) */
+  --persimmon-200: #F6D0BE;   /* persimmon-400 at 45% over cream — card fills */
+  --persimmon-800: #8A4522;   /* small text on persimmon-200: 4.97:1, where
+                                 persimmon-700 manages only 3.72 */
   --persimmon-400: #F1A17F;
   --persimmon-700: #A4562C;
   --persimmon-100: #FBEBDD;
@@ -97,10 +101,19 @@
   --color-accent-tint: var(--persimmon-100);
   --color-accent-text: var(--persimmon-700);
 
-  /* Section tints: blue = workouts, jade = habits and recovery, warm = community */
+  /* Section tints: blue = workouts, jade = habits and recovery, warm = community.
+     Kelly's palette specifies the lightest step for all three. On real screens
+     that read as washed out with nothing for the eye to land on, so Chris chose
+     (2026-10-01) a mix: Workouts keeps a solid fill as the anchor it always was,
+     and the cards below it sit at half strength rather than the faintest tint.
+     Same colours, more of them — a departure from her intent, not her palette. */
   --tint-workouts: var(--blue-50);
   --tint-habits: var(--jade-100);
   --tint-community: var(--persimmon-100);
+
+  --card-workouts: var(--blue-600);      /* solid, white text at 4.83:1 */
+  --card-habits: var(--jade-200);        /* ink text at 9.3:1 */
+  --card-community: var(--persimmon-200);
 }
 
 @media (prefers-color-scheme: dark) {

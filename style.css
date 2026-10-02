@@ -31,7 +31,7 @@
   --danger: var(--team-red);
   --pink: var(--persimmon-100);
   --purple: var(--blue-500);
-  --green: var(--jade-100);
+  --green: var(--card-habits);
   --kawaii-blue: var(--blue-100);
   --field-bg: var(--blue-50);
   /* Darker gradient-stop variants — subtle top-to-bottom shade on the Home
@@ -83,9 +83,9 @@
      same as --ink (#17243F) or --indigo (#27293F) from earlier passes.
      Three similar-looking navy darks now exist; don't conflate them. */
   --slate: #172A3A;
-  --chartreuse: var(--jade-100); /* Daily Habits card (2026-08-09 pass #4c) — same as --green, used by Stretch & Core Library */
+  --chartreuse: var(--card-habits); /* Daily Habits card (2026-08-09 pass #4c) — same as --green, used by Stretch & Core Library */
   --chartreuse-dark: var(--jade-700);
-  --turquoise: var(--persimmon-100); /* Community Buzz card (2026-08-09 pass #4) */
+  --turquoise: var(--card-community); /* Community Buzz card (2026-08-09 pass #4) */
   --turquoise-dark: var(--persimmon-700);
   --radius-lg: 20px;
   --radius-md: 14px;
@@ -121,7 +121,7 @@
   --border-strong: rgba(23, 36, 63, 0.14);
   --shadow: rgba(23, 36, 63, 0.05);
   --shadow-lift: rgba(23, 36, 63, 0.12);
-  --surface-blue: var(--blue-50); /* the Workouts / Benchmarks card fill, split from
+  --surface-blue: var(--card-workouts); /* the Workouts / Benchmarks card fill, split from
                               --blue so the card can recede in dark mode while
                               buttons and links keep the vivid brand blue */
   /* Strong-emphasis marks — the YOU chip, the toast, a running hold button,
@@ -758,10 +758,10 @@ h1, h2, h3 {
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
-  /* 0.25 was tuned against the old saturated blue card. On the new pale
-     workouts tint the same value reads as a grey smudge rather than a
-     watermark, so it drops with the card (2026-09-30). */
-  opacity: 0.1;
+  /* Back up with the card (2026-10-01): on a solid blue fill this reads as the
+     watermark it was meant to be. It was dropped to 0.1 only while the card was
+     a pale tint, where the same value looked like a grey smudge. */
+  opacity: 0.22;
   pointer-events: none;
   z-index: 0;
 }
@@ -823,10 +823,11 @@ h1, h2, h3 {
    the buzz-text rules further down for Community's title/name/message vs.
    time/dot split. card-green/card-pink/card-white keep the original
    deepblue title color — not part of this pass. */
-/* Dark text since the Workouts card became a pale tint (2026-09-30): white on
-   --tint-workouts is 1.1:1, effectively invisible. */
-.card-blue .home-section-title { color: var(--text); }
-.card-blue .home-section-title::before { background: var(--color-action); }
+/* White again (2026-10-01): the Workouts card went back to a solid fill, where
+   white reads at 4.83:1. It was dark text only for the week the card was a pale
+   tint — on that, white was 1.1:1 and effectively invisible. */
+.card-blue .home-section-title { color: white; }
+.card-blue .home-section-title::before { background: white; }
 .card-habits .home-section-title,
 .card-community .home-section-title { color: var(--text); }
 .card-habits .home-section-title::before,
@@ -991,10 +992,12 @@ h1, h2, h3 {
 /* Community: turquoise (2026-08-08 pass #2) — title/name/message in
    --slate, but the dot and the time stay White (a split, not the usual
    one-color-per-card rule the last few passes used). */
-.card-community .buzz-dot { background: white; }
+/* White was right on the old saturated card; on the lighter persimmon fill it
+   is 1.2:1 — a dot nobody can see and a timestamp nobody can read (2026-10-01). */
+.card-community .buzz-dot { background: var(--persimmon-800); }
 .card-community .buzz-text p,
 .card-community .buzz-text strong { color: var(--text); }
-.card-community .buzz-text p.buzz-time { color: white; }
+.card-community .buzz-text p.buzz-time { color: var(--persimmon-800); }
 
 /* ---------- ARCHIVE ---------- */
 /* ---------- STAT BUBBLES (2026-08-11) ---------- */

@@ -34,6 +34,14 @@ fills the card. Fix by some combination of title size, card padding (18px now)
 and letting the longer ones wrap — check every card title at phone width, not
 just these two. Kelly flagged the same risk in her handoff.
 
+**Card strength (Chris, 2026-10-01): a mix.** Kelly's palette specifies the
+lightest tint for every card, which read as washed out — his first reaction was
+"everything is too pale". Workouts now takes a solid `blue-600` fill with white
+title, as it always had; the cards below it (Daily Habits, Community Buzz,
+Stretch & Core, Last Week) sit at **half strength** via `--jade-200` and
+`--persimmon-200`. Same colours as Kelly's, more of them. **This departs from
+her intent, not her palette** — worth raising with her rather than slipping past.
+
 Three grounds were previewed for him on 2026-10-01 (browser only, nothing
 committed): cream #FAF7F2, pure white #FFFFFF, and a barely-off-white #FCFBF9.
 **If pure white wins, check the white cards first** — `--card-white` is #FFFFFF,
