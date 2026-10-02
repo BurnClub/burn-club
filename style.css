@@ -495,7 +495,14 @@ h1, h2, h3 {
 /* Daily Habits / Community Buzz sit in a narrower split card than the other
    sections, so the shared 24px title wraps to 2 lines — sized down here
    (scoped to this row only) to fit on one line (2026-08-09 Chris ask). */
-.home-split-row .home-section-title { font-size: 16px; white-space: nowrap; }
+/* Half-width cards: the title has roughly 150px to work in. nowrap was fine
+   for a condensed face with no icon beside it; with Nunito and a 34px badge
+   "Community Buzz" ran off the card. It wraps now, and the badge shrinks
+   (2026-10-01). */
+.home-split-row .home-section-title { font-size: 15px; line-height: 1.15; white-space: normal; }
+.home-split-row .section-head { gap: 8px; align-items: flex-start; }
+.home-split-row .section-icon { width: 28px; height: 28px; }
+.home-split-row .section-icon svg { width: 16px; height: 16px; }
 .habit-streak-footer {
   position: relative;
   z-index: 1;
@@ -649,6 +656,36 @@ h1, h2, h3 {
   animation: boot-note-in 0.3s ease 1.2s forwards;
 }
 @keyframes boot-note-in { to { opacity: 1; } }
+
+
+/* ---------- SECTION ICON BADGES (2026-10-01, Chris) ----------
+   A pale card has nothing for the eye to catch, and the answer Kelly's mockup
+   uses is not a louder card but one small saturated mark per section. The badge
+   carries the section's colour at full strength; the card behind it stays
+   quiet. The accent bar is dropped where a badge appears — two markers on one
+   title is one too many. */
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.section-head .home-section-title { margin: 0; padding-left: 0; }
+.home-section-title.has-icon::before { display: none; }
+.section-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+}
+.section-icon svg { width: 19px; height: 19px; display: block; }
+.section-icon-habits { background: var(--jade-700); }
+.section-icon-community { background: var(--persimmon-700); }
+.section-icon-workouts { background: var(--color-action); }
 
 /* ---------- UNFINISHED WORKOUT BANNER (2026-09-30, Chris) ----------
    Yellow because it wants noticing without alarming: a saved workout is a

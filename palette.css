@@ -111,9 +111,17 @@
   --tint-habits: var(--jade-100);
   --tint-community: var(--persimmon-100);
 
-  --card-workouts: var(--blue-600);      /* solid, white text at 4.83:1 */
-  --card-habits: var(--jade-200);        /* ink text at 9.3:1 */
-  --card-community: var(--persimmon-200);
+  --card-workouts: var(--blue-500);      /* Chris, 2026-10-01: the brand blue
+                                            itself, one step lighter than
+                                            blue-600. White title is 3.17:1 —
+                                            fine for a 24px bold heading, and
+                                            the lightest blue where white still
+                                            works at all. Nothing smaller may
+                                            ever sit on this fill. */
+  /* Back to Kelly's pale tints for the two lower cards (Chris, 2026-10-01).
+     #FBEADC is his value and is her persimmon-100 to the eye (#FBEBDD). */
+  --card-habits: var(--jade-100);
+  --card-community: #FBEADC;
 }
 
 @media (prefers-color-scheme: dark) {
