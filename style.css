@@ -683,7 +683,10 @@ h1, h2, h3 {
 .player-block-btn:active { transform: scale(0.98); }
 
 .overview-overlay {
-  position: fixed;
+  /* absolute, not fixed: .app is the positioned ancestor and every other
+     overlay is bounded by it. Fixed escaped to the viewport, so the sheet was
+     wider than the phone it belongs to (2026-10-02). */
+  position: absolute;
   inset: 0;
   z-index: 70;
   background: rgba(23, 36, 63, 0.55);
@@ -698,7 +701,7 @@ h1, h2, h3 {
   overflow-y: auto;
   background: var(--bg);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  padding: 20px 18px calc(20px + env(safe-area-inset-bottom, 0px));
+  padding: 20px 18px 24px;
   display: flex;
   flex-direction: column;
   gap: 14px;
