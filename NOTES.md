@@ -43,6 +43,30 @@ Still open: the admin app is untouched (its own 82 colours — follow or not?),
 the three fonts load from Google's CDN which breaks offline and the App Store
 build, and red still marks "down" deltas.
 
+**Phase 4 — offline, done 2026-10-01.** Five things:
+
+1. **Opening with no signal no longer signs a member out.** A network failure
+   during the member lookup was being read as a bad account, and `signOut()`
+   stranded them: they could not sign back in without the connection they
+   didn't have. The profile and program are now cached (`burnclub-auth-cache`,
+   cleared on sign-out, never handed to a different user id), and only a real
+   account error signs anyone out.
+2. **The app itself opens offline** — `sw.js`, registered from `index.html`.
+   Network-first with a cache fallback, so a deploy is never masked by a stale
+   cache; fonts are cache-first. Supabase is never cached: a cached API response
+   would be a lie about what is saved. **Bump `CACHE` in `sw.js` when editing it.**
+3. **The "not backing up" warning stopped crying wolf.** It fired after five
+   retries at 30s — two and a half minutes without signal, every gym session.
+   Offline failures no longer count. Instead, work stranded for 24h warns once,
+   which is the case a one-device member can never spot for themselves.
+4. **Reconnecting uploads immediately** rather than waiting out the 30s timer,
+   and re-queues anything a previous page load left dirty.
+5. **A boot screen** replaces the login form flashing before auto sign-in.
+
+`tests/sync/run.sh` is 34 tests now. **It also catches crashed test files:** an
+exception inside the async body prints nothing, so a broken test used to count
+as "0 passed, 0 failed" and read as success.
+
 Next:
 
 1. **Check the tags on the 11 exercises added from videos** — see below.

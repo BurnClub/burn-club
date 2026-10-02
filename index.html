@@ -29,6 +29,15 @@
   <div class="app" id="app">
 
     <!-- ============ LOGIN SCREEN ============ -->
+    <!-- Boot screen (2026-10-01). Deciding whether a member is signed in needs
+         the network, which took a second or two — and in that gap the app
+         showed a login form to someone who was already signed in, then
+         replaced it. This holds the gap instead, and removes itself either way. -->
+    <div class="boot-screen" id="boot-screen">
+      <img class="login-logo" src="assets/burn-club-smiley.png" alt="Burn Club by KY Fit" />
+      <p class="boot-note" id="boot-note">Loading…</p>
+    </div>
+
     <section class="screen visible" id="screen-login" data-screen>
       <div class="login-wrap">
         <img class="login-logo" src="assets/burn-club-smiley.png" alt="Burn Club by KY Fit" />
@@ -1004,5 +1013,15 @@
 <script src="app.js"></script>
 <!-- After app.js: the store registry references its KEY constants. -->
 <script src="sync.js"></script>
+<script>
+  // Offline app shell (2026-10-01). Registered last and deliberately not
+  // awaited: if it fails — an old browser, a private window, a blocked
+  // registration — the app is exactly as it was before, just online-only.
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
+</script>
 </body>
 </html>

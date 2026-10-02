@@ -5620,23 +5620,64 @@ async function routeOnLoad() {
     document.getElementById("set-password-form").hidden = false;
     return true;
   }
-  const session = await currentSession();
-  if (!session) return false;
+  let session = null;
+  try {
+    session = await currentSession();
+  } catch (e) {
+    session = null;                 // reading the session can itself need the network
+  }
+
+  if (!session) {
+    // No session usually means "not signed in", and the login screen is right.
+    // Offline it can also mean the token refresh couldn't reach the server — in
+    // which case this member IS signed in, on a phone that holds their whole
+    // program, and showing them a login form they cannot complete is the one
+    // answer that helps nobody.
+    const cached = navigator.onLine === false ? loadCachedAuthMember() : null;
+    if (!cached) return false;
+    AUTH_MEMBER = cached.member;
+    AUTH_PROGRAM = cached.program || null;
+    OFFLINE_ENTRY = true;
+    await enterAsAuthedMember();
+    return true;
+  }
+
   const res = await loadAuthMember(session.user);
   if (res.error) {
     const err = document.getElementById("login-error");
     err.textContent = res.error;
     err.hidden = false;
-    await signOut();
+    // Only an account problem signs anyone out. A dead connection is not one,
+    // and signing out offline strands the member: they cannot sign back in
+    // until they have signal.
+    if (!isOfflineError(null)) await signOut();
     return false;
   }
   await enterAsAuthedMember();
   return true;
 }
 
+// The boot screen comes down once there is something real to show, whichever
+// way routing went — signed in, signed out, or failed. A cover that can outlive
+// the thing it covers is worse than no cover at all, so this runs in a finally.
+function endBoot() {
+  const el = document.getElementById("boot-screen");
+  if (el) el.classList.add("is-done");
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
-  const routed = await routeOnLoad();
-  if (!routed) init();
+  let routed = false;
+  try {
+    routed = await routeOnLoad();
+    if (!routed) init();
+  } catch (e) {
+    // Never leave a member staring at a logo because something threw on the
+    // way in. Fall back to the login screen, which at least they can act on.
+    console.warn("[boot] routing failed:", e);
+    init();
+  } finally {
+    endBoot();
+  }
   wireStaticControls();
 
   document.getElementById("login-form").addEventListener("submit", async (e) => {

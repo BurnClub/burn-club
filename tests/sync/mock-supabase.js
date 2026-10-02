@@ -38,7 +38,15 @@ var DEVICES = { phone: new Store(), pc: new Store() };
 var localStorage = DEVICES.phone;
 function onDevice(name) { localStorage = DEVICES[name]; }
 
-var window = { addEventListener: function () {} };
+// Listeners are kept so a test can fire "online"/"offline" the way a phone
+// does; navigator.onLine is what sync.js reads to tell a dead connection apart
+// from a server that is refusing us.
+var LISTENERS = {};
+var window = {
+  addEventListener: function (name, fn) { (LISTENERS[name] = LISTENERS[name] || []).push(fn); },
+};
+function fireEvent(name) { (LISTENERS[name] || []).forEach(function (fn) { fn(); }); }
+var navigator = { onLine: true };
 function setTimeout() {}  function clearTimeout() {}
 var console = { warn: function () {}, log: print };
 var AUTH_MEMBER = { id: "chris" };
@@ -52,4 +60,5 @@ var COMPLETIONS_STORAGE_KEY="c", CHECKIN_STORAGE_KEY="ck", DAILY_STATS_STORAGE_K
     SCHEDULED_ITEMS_STORAGE_PREFIX="sched-";
 var HABIT_CHECKS = {}, NOTEBOOK_NOTES = { coach: [], other: [] }, SESSION_NOTES = {};
 function loadHealthProfiles() { return {}; }
-function showToast() {}
+var TOASTS = [];
+function showToast(msg) { TOASTS.push(msg); }

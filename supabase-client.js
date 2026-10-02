@@ -68,6 +68,44 @@ async function dbSelect(table, build) {
 
 // Set once a real session exists. Demo mode leaves it null, which is how the
 // rest of the app can tell the two apart.
+
+// ---------------- Offline entry (phase 4, 2026-10-01) ----------------
+// A member in a gym with no signal must still get into their app. Everything
+// they need is already on the phone; the only thing the network was doing at
+// startup was confirming who they are, which this caches so a dead connection
+// stops being a locked door.
+const AUTH_CACHE_KEY = "burnclub-auth-cache";
+let OFFLINE_ENTRY = false;          // true when we entered from the cache
+
+function cacheAuthMember(member, program) {
+  try {
+    localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify({ member, program: program || null }));
+  } catch (e) { /* a full or blocked store is not worth failing sign-in over */ }
+}
+
+function loadCachedAuthMember(userId) {
+  try {
+    const c = JSON.parse(localStorage.getItem(AUTH_CACHE_KEY) || "null");
+    if (!c || !c.member) return null;
+    // Never hand one member's cache to another account on a shared device.
+    if (userId && c.member.id !== userId) return null;
+    return c;
+  } catch (e) { return null; }
+}
+
+function clearAuthCache() {
+  try { localStorage.removeItem(AUTH_CACHE_KEY); } catch (e) {}
+}
+
+// Telling "the network is down" apart from "this account has a problem" is the
+// whole point: the first must never sign anyone out, the second must.
+function isOfflineError(error) {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+  if (!error) return false;
+  const text = `${error.message || ""} ${error.details || ""} ${error.name || ""}`;
+  return /failed to fetch|networkerror|load failed|network request failed|timeout|typeerror/i.test(text);
+}
+
 let AUTH_MEMBER = null;
 let AUTH_PROGRAM = null;
 
@@ -104,6 +142,7 @@ async function signIn(email, password) {
 }
 
 async function signOut() {
+  clearAuthCache();
   AUTH_MEMBER = null;
   AUTH_PROGRAM = null;
   if (SB) await SB.auth.signOut();
@@ -114,8 +153,28 @@ async function signOut() {
 // forget here — the database will not serve anyone else's.
 async function loadAuthMember(user) {
   if (!SB || !user) return { error: "Not signed in." };
-  const { data, error } = await SB.from("members").select("*").eq("id", user.id).maybeSingle();
-  if (error) return { error: friendlyDbError(error) };
+  let data, error;
+  try {
+    ({ data, error } = await SB.from("members").select("*").eq("id", user.id).maybeSingle());
+  } catch (e) {
+    error = e;                      // supabase-js throws rather than returns on some network faults
+  }
+  if (error) {
+    // Offline: enter from the cached profile. The member's history is already
+    // on this device, and refusing to show it because a lookup failed is the
+    // worst possible answer to bad signal.
+    if (isOfflineError(error)) {
+      const cached = loadCachedAuthMember(user.id);
+      if (cached) {
+        AUTH_MEMBER = cached.member;
+        AUTH_PROGRAM = cached.program || null;
+        OFFLINE_ENTRY = true;
+        return { member: cached.member, offline: true };
+      }
+      return { error: "Can't reach the server, and this device has nothing saved to open yet." };
+    }
+    return { error: friendlyDbError(error) };
+  }
   if (!data) {
     // An auth user with no profile row. The trigger should make this
     // impossible; saying so plainly beats rendering an app with no member.
@@ -127,9 +186,16 @@ async function loadAuthMember(user) {
   // shows Workouts or Calendar, so taking it from the seeded demo profile
   // would put a real member in the wrong shape of app entirely.
   if (data.program_id) {
-    const { data: prog } = await SB.from("programs").select("*").eq("id", data.program_id).maybeSingle();
-    if (prog) AUTH_PROGRAM = prog;
+    try {
+      const { data: prog } = await SB.from("programs").select("*").eq("id", data.program_id).maybeSingle();
+      if (prog) AUTH_PROGRAM = prog;
+    } catch (e) {
+      const cached = loadCachedAuthMember(user.id);
+      if (cached && cached.program) AUTH_PROGRAM = cached.program;
+    }
   }
+  OFFLINE_ENTRY = false;
+  cacheAuthMember(data, AUTH_PROGRAM);
   return { member: data };
 }
 

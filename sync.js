@@ -440,6 +440,57 @@ function saveDirty(set) { localStorage.setItem(dirtyKey(), JSON.stringify([...se
 function markDirty(name) { const d = loadDirty(); d.add(name); saveDirty(d); }
 function clearDirty(name) { const d = loadDirty(); d.delete(name); saveDirty(d); }
 
+
+// ---------------- "Not backing up" (phase 4, 2026-10-01) ----------------
+// Chris expects members to use one phone, so nobody will notice a sync problem
+// by comparing devices. This is the only thing that tells them, which is
+// exactly why it must not fire for ordinary bad signal: a warning that cries
+// wolf every gym session is one nobody reads on the day it matters.
+const STALE_WARN_AFTER_MS = 24 * 60 * 60 * 1000;
+let staleWarnedThisSession = false;
+
+function staleKey() { return `burnclub-sync-stale-since-${AUTH_MEMBER ? AUTH_MEMBER.id : "demo"}`; }
+
+function markUnsynced() {
+  // First failure of a run starts the clock; later ones leave it alone, so the
+  // age measured is how long the work has actually been stranded.
+  if (!localStorage.getItem(staleKey())) localStorage.setItem(staleKey(), String(Date.now()));
+}
+
+function clearUnsynced() {
+  localStorage.removeItem(staleKey());
+  staleWarnedThisSession = false;
+}
+
+function warnIfStale() {
+  if (staleWarnedThisSession) return;
+  const since = Number(localStorage.getItem(staleKey()) || 0);
+  if (!since || Date.now() - since < STALE_WARN_AFTER_MS) return;
+  staleWarnedThisSession = true;
+  if (typeof showToast === "function") {
+    const days = Math.max(1, Math.round((Date.now() - since) / (24 * 60 * 60 * 1000)));
+    showToast(`Your workouts haven't backed up for ${days} day${days > 1 ? "s" : ""}. They're safe on this phone — tell your coach.`);
+  }
+}
+
+// Reconnecting is the moment to try again, not thirty seconds later. The phone
+// knows before any timer does.
+if (typeof window !== "undefined") {
+  window.addEventListener("online", () => {
+    SYNC_STATE.online = true;
+    SYNC_STATE.failures = 0;        // whatever failed before, the reason is gone
+    if (SYNC_STATE.queue.size) {
+      drainSyncQueue();
+    } else {
+      // Nothing queued in memory, but a previous page load may have left work
+      // marked dirty and never got it up. Re-queue those stores.
+      const dirty = loadDirty();
+      if (dirty.size) { dirty.forEach((n) => SYNC_STATE.queue.add(n)); drainSyncQueue(); }
+    }
+  });
+  window.addEventListener("offline", () => { SYNC_STATE.online = false; });
+}
+
 // ---------------- Push ----------------
 // Called by saveX() after it has written locally, so a failure here never
 // costs the member their work — it is already on the device.
@@ -476,20 +527,30 @@ async function drainSyncQueue() {
     // either way; this is about the copy that survives losing the device.
     failed.forEach((n) => SYNC_STATE.queue.add(n));
     SYNC_STATE.online = false;
-    SYNC_STATE.failures = (SYNC_STATE.failures || 0) + 1;
-    // Retrying in silence forever is how a member's first workout sat on one
-    // phone looking saved while the server had nothing. A dropped connection
-    // is ordinary and should stay quiet; the same failure over and over is
-    // not, and is worth saying out loud before a month of history is only
-    // ever on one device.
-    if (SYNC_STATE.failures === 5 && typeof showToast === "function") {
+    markUnsynced();
+
+    // Being offline is ordinary — a gym basement, a lift, a dead patch on the
+    // drive — and must stay silent. Five retries at 30s used to mean a member
+    // got warned after two and a half minutes without signal, every session,
+    // until they stopped reading it. Only count failures that happen while the
+    // phone believes it has a connection; those are the ones that mean
+    // something is actually wrong.
+    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+    if (!offline) SYNC_STATE.failures = (SYNC_STATE.failures || 0) + 1;
+
+    if (!offline && SYNC_STATE.failures === 5 && typeof showToast === "function") {
       showToast("Your workouts are saved on this phone but aren't backing up. Tell your coach if this keeps showing.");
     }
+    // The other half of the problem: a member with one device never finds out
+    // by comparing phones. If work has sat unsynced for a day, say so once —
+    // whatever the reason, that is now worth knowing about.
+    warnIfStale();
     clearTimeout(drainTimer);
     drainTimer = setTimeout(drainSyncQueue, 30000);
   } else {
     SYNC_STATE.online = true;
     SYNC_STATE.failures = 0;
+    clearUnsynced();
     if (SYNC_STATE.queue.size) drainSyncQueue();
   }
 }
