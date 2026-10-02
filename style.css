@@ -697,6 +697,9 @@ h1, h2, h3 {
    6.47:1 — instead. The jade badge keeps white; it is dark enough to carry it. */
 .section-icon-community { background: #F1A07F; color: var(--color-text); }
 .section-icon-workouts { background: var(--color-action); }
+/* On the one card that is itself a solid blue, a blue badge disappears into
+   it. Inverted there: white disc, blue glyph (2026-10-01). */
+.card-blue .section-icon { background: #FFFFFF; color: var(--color-action); }
 
 /* ---------- UNFINISHED WORKOUT BANNER (2026-09-30, Chris) ----------
    Yellow because it wants noticing without alarming: a saved workout is a
