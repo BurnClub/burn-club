@@ -6,7 +6,12 @@
   --periwinkle: var(--blue-50);
   --deepblue: var(--blue-800);
   --ink: #2A2E42;
-  --yellow: var(--team-gold);
+  /* Was --team-gold (#E3BE6A) until 2026-10-01, when Chris retired that gold
+     from the app. Small marks take the accent orange; the two surfaces that
+     were card-like take the community fill — see .motivation-card and the
+     unfinished-workout banner. The Gold TEAM keeps its own colour in data.js
+     and is not affected. */
+  --yellow: #F1A07F;
   /* Was cream #F7F3E6 until 2026-08-21 — Chris: "forget this cream color;
      I don't want to see it any more." Retired app-wide by changing the
      value here rather than editing the 11 surfaces that reference it.
@@ -700,7 +705,7 @@ h1, h2, h3 {
 .resume-banner {
   border-radius: var(--radius-lg);
   border: 1px solid var(--yellow);
-  background: color-mix(in srgb, var(--yellow) 14%, var(--card-white));
+  background: var(--card-community);
   padding: 14px 16px;
   margin-bottom: 12px;
   display: flex;
@@ -2447,7 +2452,7 @@ h1, h2, h3 {
 
 .motivation-card {
   margin-top: 20px;
-  background: var(--yellow);
+  background: var(--card-community);
   border-radius: var(--radius-md);
   padding: 16px;
   font-weight: 700;
