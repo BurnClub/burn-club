@@ -3800,7 +3800,8 @@ function renderDemoStrip(exercises) {
       <div class="demo-card">
         <div class="demo-card-frame">
           ${url
-            ? `<video muted loop playsinline preload="none" src="${url}"></video>`
+            ? `<video muted loop playsinline preload="none" src="${url}"></video>
+               <button class="demo-pause-btn" type="button" aria-label="Pause demo">❚❚</button>`
             : `<span class="demo-card-empty">No demo yet</span>`}
         </div>
         <p class="demo-card-name">
@@ -3812,6 +3813,22 @@ function renderDemoStrip(exercises) {
   }).join("");
   strip.style.display = "flex";
   strip.scrollLeft = 0;
+  // Pausing is a statement about video in general, not about one clip: a
+  // member who doesn't want it won't want the next one starting when they
+  // scroll either. Cleared by pressing play again (2026-10-02, Chris).
+  strip.querySelectorAll(".demo-pause-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const wantsPaused = strip.dataset.paused !== "1";
+      strip.dataset.paused = wantsPaused ? "1" : "0";
+      strip.querySelectorAll(".demo-pause-btn").forEach((b) => {
+        b.textContent = wantsPaused ? "▶" : "❚❚";
+        b.setAttribute("aria-label", wantsPaused ? "Play demo" : "Pause demo");
+      });
+      if (wantsPaused) strip.querySelectorAll("video").forEach((v) => v.pause());
+      else playVisibleDemo(strip);
+    });
+  });
   playVisibleDemo(strip);
   strip.onscroll = () => {
     clearTimeout(strip._settle);
@@ -3822,6 +3839,10 @@ function renderDemoStrip(exercises) {
 }
 
 function playVisibleDemo(strip) {
+  if (strip.dataset.paused === "1") {
+    strip.querySelectorAll("video").forEach((v) => v.pause());
+    return;
+  }
   const mid = strip.scrollLeft + strip.clientWidth / 2;
   let best = null, bestDist = Infinity;
   strip.querySelectorAll(".demo-card").forEach((card) => {
@@ -4665,7 +4686,6 @@ const Player = {
                 <span class="amrap-ex-name">${esc(e.name)}</span>
                 ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
               </div>
-              <button class="amrap-play-btn" data-ex-name="${esc(e.name)}" title="Watch demo">▶</button>
             </div>
             <div class="amrap-row-line2">
               ${e.reps ? `<span class="amrap-reps">${e.reps} reps</span>` : ""}
