@@ -666,6 +666,36 @@ h1, h2, h3 {
 @keyframes boot-note-in { to { opacity: 1; } }
 
 
+
+/* ---------- SUPERSET ROWS (2026-10-02) ----------
+   Chris coaches a superset as one movement into the next with no break, then
+   rest. The screen has to answer "which of these am I on" without being read:
+   the current row is lit, the ones behind are faded and ticked. */
+.amrap-row-right { display: flex; align-items: center; gap: 8px; }
+.superset-done-btn {
+  border: 1px solid var(--border-strong);
+  background: var(--card-white);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  min-width: 56px;
+}
+.superset-row.is-current {
+  box-shadow: inset 3px 0 0 var(--color-action);
+}
+.superset-row.is-current .amrap-ex-name { color: var(--text); }
+.superset-row.is-done { opacity: 0.55; }
+.superset-row.is-done .amrap-ex-name { text-decoration: line-through; }
+.superset-row.is-done .superset-done-btn {
+  background: var(--color-success-text);
+  border-color: var(--color-success-text);
+  color: #FFFFFF;
+}
+
 /* ---------- SECTION ICON BADGES (2026-10-01, Chris) ----------
    A pale card has nothing for the eye to catch, and the answer Kelly's mockup
    uses is not a louder card but one small saturated mark per section. The badge
