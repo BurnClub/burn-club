@@ -2445,14 +2445,16 @@ h1, h2, h3 {
   font-size: 10px;
   font-weight: 700;
   color: var(--text);
-  background: var(--yellow);
+  /* Swapped with the motivation card (Chris, 2026-10-01): the quote is a
+     surface worth some colour, this is a small tag that reads better quiet. */
+  background: var(--card-community);
   padding: 5px 8px;
   border-radius: 999px;
 }
 
 .motivation-card {
   margin-top: 20px;
-  background: var(--card-community);
+  background: var(--yellow);
   border-radius: var(--radius-md);
   padding: 16px;
   font-weight: 700;
