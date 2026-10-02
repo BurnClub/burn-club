@@ -4605,7 +4605,12 @@ const Player = {
     this.paused = false;
     clearHoldTimers();
 
-    document.getElementById("player-block-label").textContent = phase.blockLabel;
+    // The workout's name, not the block's (2026-10-02, Chris). The block is
+    // already named right below this on most screens, and since tapping here
+    // opens the whole session, naming the session is what makes the button
+    // read as what it does.
+    document.getElementById("player-block-label").textContent =
+      (this.circuit && this.circuit.title) || phase.blockLabel;
     // Closed on every phase change: an overview left open over a rest timer
     // hides the clock the member is waiting on.
     closeWorkoutOverview();
