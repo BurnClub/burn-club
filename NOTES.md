@@ -259,9 +259,10 @@ it would be nice. Things that can follow launch belong in the sections below.
 - [ ] **Technique text.** 661 of 663 exercises have none. It is also what the
       app reads aloud, so an empty field is a silently missing feature rather
       than a blank line.
-- [ ] **Videos** — compress, then upload to Supabase Storage at
-      `<exercise-id>.mp4`. See "Where we are with the videos" below; 269 of 663
-      are named and ready, 127 still need naming.
+- [x] **Videos — done 2026-09-30.** All 375 named clips are compressed and in
+      the public `exercise-videos` bucket, and they play in the app. The
+      remaining 299 exercises have no footage yet; that's filming, not a task
+      for here.
 - [ ] **Reload the exercises table in Supabase.** Ten misspelled ids were
       fixed in `data.js` on 2026-09-24 (`peck-deck` → `pec-deck`,
       `dd-reverse-crunch` → `db-`, `eg-extension` → `leg-`, `posts-march` →
@@ -286,9 +287,10 @@ it would be nice. Things that can follow launch belong in the sections below.
 - [ ] Reflow at 200% text, reduced-motion coverage, and native VoiceOver /
       TalkBack testing. The measurable contrast failures are fixed; these are
       the ones that need a device and a person.
-- [ ] **The brand blue.** White on `#788CE3` is 3.15:1 — below the 4.5:1 floor —
-      on the primary button, Profile rows and the unread badge. Waiting on
-      Chris and his partner.
+- [x] **The brand blue — resolved by the new palette, 2026-10-01.** Buttons and
+      anything carrying white text use `--color-action` (#4F6BD0) at 4.83:1. The
+      lighter brand blue (#6B8AF9, 3.17:1) is now reserved for large fills like
+      the Workouts card, where it clears the bar for big bold text only.
 
 ### App Store
 
@@ -301,9 +303,9 @@ it would be nice. Things that can follow launch belong in the sections below.
 
 ### Known limits to close or accept
 
-- [ ] **Offline writes.** Members are in gyms with bad wifi. The player already
-      writes to browser storage first; that needs to become a queue that syncs
-      on reconnect, designed before the storage rewire rather than after.
+- [x] **Offline writes — done 2026-10-01 (phase 4).** The queue survives a
+      reload, uploads the moment the connection returns, and the app itself
+      opens with no signal. Chris confirmed it in airplane mode on his phone.
 - [ ] **Admin and staff apps are still on browser storage.** Content is seeded
       into Supabase from `data.js`, so editing a workout in admin will not
       reach members until those apps move too. Acceptable for a tester trial —
@@ -524,6 +526,21 @@ syncs them.
   gets asked again. Worth doing in one pass rather than one flag at a time.
 
 ## Agreed, not yet built
+
+- **The workout flow: straight sets and static holds still to do** (Chris,
+  2026-10-02). Supersets were reworked first — per-round rep schemes, the demo
+  strip, weights moved to the end of each block, the overview button. Two
+  pieces are untouched:
+  - **Straight sets**, his other stated concern from the start. The screen
+    still carries a Done per set and a rest popup, and weight now lives on the
+    end-of-block screen instead, so the two no longer match each other.
+  - **Static holds.** Today a hold is a button on the row — "▶ 20s hold" — and
+    a hold never asks for weight, on the reasoning that it's held at whatever
+    the lift was just done at. 14 library exercises are typed Static Hold, and
+    holds also appear as the second half of a reps-then-hold set, which the
+    builder rewrites into a superset. Worth deciding how they should read and
+    whether that weight rule is right, rather than leaving it as the side
+    effect of two older decisions.
 
 - **The workout flow is the most important thing in the app** (Chris,
   2026-09-21). How a member moves through a workout must be as intuitive as
