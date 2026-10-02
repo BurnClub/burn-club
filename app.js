@@ -4022,21 +4022,6 @@ const Player = {
   // message and a Continue button instead of Skip Rest. Weight is still
   // UI-only for now (not saved anywhere) — the plan is per-exercise/rep-range
   // weight history and suggestions, saved for a future session per Chris.
-  // Ticking an exercise off inside a superset. The last one finishes the
-  // round: Chris coaches it as press, straight into dips, then rest — so the
-  // rest clock should start when the dips are done, not after a second tap on
-  // a separate button.
-  toggleSupersetExercise(index) {
-    if (!this.supersetDone) return;
-    this.supersetDone[index] = !this.supersetDone[index];
-    if (this.supersetDone.every(Boolean)) {
-      this.supersetDone = null;      // next round starts clean
-      this.advance();
-      return;
-    }
-    this.renderPhase();
-  },
-
   toggleSetChecked(setIndex) {
     if (this.setsChecked[setIndex]) return;
     this.setsChecked[setIndex] = true;
@@ -4580,11 +4565,6 @@ const Player = {
       setPlayerExerciseTechnique(null);
       const supersetListEl = document.getElementById("player-superset-list");
       supersetListEl.style.display = "flex";
-      // Fresh for each round. Held on the player rather than the DOM so a
-      // re-render (a tick, a weight) doesn't lose where the member is.
-      if (!this.supersetDone || this.supersetDone.length !== phase.exercises.length) {
-        this.supersetDone = phase.exercises.map(() => false);
-      }
       // Weight goes inline here rather than in the rest popup the way Straight
       // Sets does (2026-08-18). The reason weight moved off those rows was that
       // Done started the rest clock, so typing a number competed with finishing
@@ -4600,25 +4580,19 @@ const Player = {
           // bodyweight movement. Drop-set segments will work the same way.
           const tracks = !e.hold && !e.drop && exerciseTracksWeight(e.name);
           const last = tracks ? lastWeightFor(e.name) : null;
-          // The row you are on, the rows behind you and the rows ahead now read
-          // differently (2026-10-02). A superset is the one place a member
-          // loses their place: you finish the press, move straight into the
-          // dips, and nothing on screen said which of the two you were on.
-          const doneState = this.supersetDone[i]
-            ? " is-done"
-            : i === this.supersetDone.findIndex((d) => !d) ? " is-current" : "";
+          // No per-exercise tick (2026-10-02, Chris): the client goes straight
+          // from the press into the dips with no break, so a Done button
+          // between them asks for a tap at the one moment they have no hand
+          // free. One tap at the end of the round, and that starts the rest.
           return `
-          <div class="amrap-row superset-row${doneState}">
+          <div class="amrap-row superset-row">
             <div class="amrap-row-line1">
               <div class="amrap-row-left">
                 <span class="amrap-order-num">${i + 1}</span>
                 <span class="amrap-ex-name">${esc(e.name)}</span>
                 ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
               </div>
-              <div class="amrap-row-right">
-                <button class="amrap-play-btn" data-ex-name="${esc(e.name)}" title="Watch demo">▶</button>
-                <button class="superset-done-btn" data-ex-index="${i}">${this.supersetDone[i] ? "✓" : "Done"}</button>
-              </div>
+              <button class="amrap-play-btn" data-ex-name="${esc(e.name)}" title="Watch demo">▶</button>
             </div>
             <div class="amrap-row-line2">
               ${e.reps ? `<span class="amrap-reps">${e.reps} reps</span>` : ""}
@@ -4634,12 +4608,6 @@ const Player = {
       wireHoldButtons(supersetListEl);
       // Held on the player, not the DOM, so it survives the re-render between
       // rounds and carries into the completion record.
-      supersetListEl.querySelectorAll(".superset-done-btn").forEach((b) => {
-        b.addEventListener("click", () => this.toggleSupersetExercise(Number(b.dataset.exIndex)));
-      });
-      // The button stays, relabelled: ticking the last exercise finishes the
-      // round on its own, so this is for a member who would rather tap once at
-      // the end than tick as they go. Both land in the same place.
       const roundBtn = document.getElementById("player-complete-set-btn");
       roundBtn.textContent = "Finish round ✓";
       roundBtn.style.display = "block";
