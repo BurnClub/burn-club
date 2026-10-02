@@ -684,7 +684,10 @@ h1, h2, h3 {
 }
 .section-icon svg { width: 19px; height: 19px; display: block; }
 .section-icon-habits { background: var(--jade-700); }
-.section-icon-community { background: var(--persimmon-700); }
+/* Persimmon-400 rather than -700 (Chris, 2026-10-01: the darker one read as
+   brown). White on it is 2.07:1, so this badge takes a dark glyph — ink at
+   6.47:1 — instead. The jade badge keeps white; it is dark enough to carry it. */
+.section-icon-community { background: #F1A07F; color: var(--color-text); }
 .section-icon-workouts { background: var(--color-action); }
 
 /* ---------- UNFINISHED WORKOUT BANNER (2026-09-30, Chris) ----------

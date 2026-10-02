@@ -50,7 +50,10 @@ function circuitIconKey(c) {
 // keeps the tag chip exactly as before.
 function repeatMarkFor(c) {
   const completion = mostRecentCompletion(c.id);
-  if (!completion) return `<span class="circuit-tag">${c.tag}</span>`;
+  // Nothing on a workout nobody has done yet (Chris, 2026-10-01: category
+  // chips off the cards). The card's own line underneath already says what
+  // kind of workout it is.
+  if (!completion) return "";
   const times = completionsThisMonth(c.id);
   const date = formatShortDate(completion.date);
   // Nothing this month: the count is the uninteresting half, so it goes and
@@ -74,7 +77,7 @@ function renderCircuitCard(c) {
           ? repeatMarkFor(c)
           : completion
             ? `<div class="circuit-completed-mark"><span class="circuit-check">✓</span><span class="circuit-completed-date">${formatShortDate(completion.date)}</span></div>`
-            : `<span class="circuit-tag">${c.tag}</span>`}
+            : ""}
       </div>
       <p>${c.meta}</p>
     </button>
