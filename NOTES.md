@@ -8,8 +8,9 @@ strip with its pause, weights moved to one screen per block, the round line
 under the heading, and the overview button on the block pill. What remains is
 under "Agreed, not yet built".
 
-**`supabase/12-per-set-lifts.sql` has been run** (Chris, 2026-10-02), so lifts
-hold one row per set. Still worth proving with a real superset on his phone.
+**Per-set weights work end to end** (2026-10-02). `supabase/12-per-set-lifts.sql`
+is run, and Chris logged a real superset on his phone: three rows for the
+kettlebell swings, labelled Round 1-3. The old model kept one of those three.
 
 **Admin → member content is phase 6, still after testers.** Nothing authored in
 admin can reach a member: admin writes to its own localStorage, and the member
