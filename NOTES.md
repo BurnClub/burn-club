@@ -1,6 +1,28 @@
 # Burn Club — open notes
 
-## Start the next session here (2026-09-30)
+## Start the next session here (2026-10-02)
+
+**Workout flow — supersets done, straight sets and static holds still open.**
+Per-round rep schemes (`scheme: [10,8,8,6]` on a superset exercise), the demo
+strip with its pause, weights moved to one screen per block, the round line
+under the heading, and the overview button on the block pill. What remains is
+under "Agreed, not yet built".
+
+**`supabase/12-per-set-lifts.sql` has been run** (Chris, 2026-10-02), so lifts
+hold one row per set. Still worth proving with a real superset on his phone.
+
+**Admin → member content is phase 6, still after testers.** Nothing authored in
+admin can reach a member: admin writes to its own localStorage, and the member
+app reads workouts from the bundled `data.js`. For the trial Chris's spreadsheet
+comes to me and goes in through `data.js` — which means every content change,
+including a typo in a workout, costs a push. He has accepted that, and wants a
+real set of workouts loaded before testers arrive.
+
+**The tour replaying every session is fixed** (2026-10-02) along with the worse
+bug under it: preferences are one row, so a device with empty localStorage was
+pushing its defaults over everyone's. Preferences are a replacing store now.
+
+---
 
 **The videos are live in the app.** All 375 are uploaded to Supabase Storage and
 playing: silent, looping, starting on their own when the frame appears. The 299
