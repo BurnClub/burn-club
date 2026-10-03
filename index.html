@@ -631,13 +631,9 @@
             <p class="player-clock" id="rest-overlay-clock">00:00</p>
           </div>
           <p class="player-sub-pill" id="rest-overlay-upnext">Up next</p>
-          <div class="rest-overlay-weight-field" id="rest-overlay-weight-field" style="display:none;">
-            <label class="rest-overlay-weight-label" for="rest-overlay-weight-input">Weight used</label>
-            <div class="rest-overlay-weight-row">
-              <input type="number" id="rest-overlay-weight-input" placeholder="lbs" inputmode="numeric" />
-              <button class="rest-overlay-weight-save-btn" id="rest-overlay-weight-save-btn" type="button">Save</button>
-            </div>
-          </div>
+          <!-- The weight field that used to live here is gone (2026-10-02):
+               weight is logged once per block now, so asking again between sets
+               asked the same member for the same number twice. -->
           <button class="btn-primary" id="rest-overlay-skip-btn">Skip Rest →</button>
         </div>
       </div>

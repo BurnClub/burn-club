@@ -4162,17 +4162,9 @@ const Player = {
     this.restSetIndex = setIndex;
     this.restIsLastSet = isLastSet;
 
-    const weightField = document.getElementById("rest-overlay-weight-field");
-    const weightInput = document.getElementById("rest-overlay-weight-input");
-    const weightSaveBtn = document.getElementById("rest-overlay-weight-save-btn");
-    weightInput.value = "";
-    // Shows what they lifted last time as the placeholder, so the number they
-    // need is usually a glance rather than a memory (2026-08-18).
-    const last = lastWeightFor(phase.exerciseName);
-    weightInput.placeholder = last ? `${last} lbs last time` : "lbs";
-    weightSaveBtn.textContent = "Save";
-    weightSaveBtn.disabled = false;
-    weightField.style.display = exerciseTracksWeight(phase.exerciseName) ? "block" : "none";
+    // No weight field here any more (2026-10-02): weight is logged once per
+    // block, so asking between sets asked the same member for the same number
+    // twice.
 
     const clockWrap = document.getElementById("rest-overlay-clock-wrap");
     const clockEl = document.getElementById("rest-overlay-clock");
@@ -4211,39 +4203,6 @@ const Player = {
     document.getElementById("rest-timer-overlay").classList.add("visible");
   },
 
-  // Reflects the popup's weight input onto the set row that's resting (still
-  // just a DOM update, not persisted anywhere). Called both by the Save
-  // button (2026-08-07, for an explicit "locked in" confirmation while
-  // resting) and as a fallback when the popup closes on its own, so leaving
-  // without tapping Save doesn't lose whatever was typed.
-  applyWeightToRow() {
-    if (this.restSetIndex === null) return;
-    const weightInput = document.getElementById("rest-overlay-weight-input");
-    const weightVal = weightInput.value.trim();
-    if (!weightVal) return;
-    const row = document.querySelector(`.player-set-row[data-set-index="${this.restSetIndex}"]`);
-    const repsEl = row && row.querySelector(".set-row-reps");
-    if (repsEl) {
-      if (!repsEl.dataset.baseText) repsEl.dataset.baseText = repsEl.textContent;
-      repsEl.textContent = `${repsEl.dataset.baseText} · ${weightVal} lbs`;
-    }
-    // Was written onto the row and nowhere else until 2026-08-18. The heaviest
-    // set of the block is the one worth keeping — later sets are often drop
-    // sets, and taking the last one would record the lightest.
-    const phase = this.currentPhase();
-    const name = phase && phase.exerciseName;
-    if (name) {
-      const val = Number(weightVal);
-      this.sessionWeights[name] = Math.max(val, this.sessionWeights[name] || 0);
-    }
-  },
-
-  saveRestWeight() {
-    this.applyWeightToRow();
-    const saveBtn = document.getElementById("rest-overlay-weight-save-btn");
-    saveBtn.textContent = "✓ Saved";
-    saveBtn.disabled = true;
-  },
 
   // Hides the popup. Doesn't advance the phase itself — the last-set
   // "Continue" click handles that separately, so exiting mid-popup
@@ -4253,7 +4212,6 @@ const Player = {
     this.restIntervalId = null;
     this.restDeadlineAt = null;
     document.getElementById("rest-timer-overlay").classList.remove("visible");
-    this.applyWeightToRow();
     this.restSetIndex = null;
     this.restIsLastSet = false;
   },
@@ -6151,14 +6109,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const wasLastSet = Player.restIsLastSet;
     Player.dismissRestOverlay();
     if (wasLastSet) Player.advance();
-  });
-  document.getElementById("rest-overlay-weight-save-btn").addEventListener("click", () => Player.saveRestWeight());
-  // Editing after a Save resets the button so it's clear the locked-in value
-  // is stale until they save again.
-  document.getElementById("rest-overlay-weight-input").addEventListener("input", () => {
-    const saveBtn = document.getElementById("rest-overlay-weight-save-btn");
-    saveBtn.textContent = "Save";
-    saveBtn.disabled = false;
   });
   document.getElementById("round-plus-btn").addEventListener("click", () => {
     Player.amrapRounds++;
