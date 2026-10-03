@@ -1680,6 +1680,8 @@ h1, h2, h3 {
 /* The demo itself (2026-09-30). It fills the frame and sits above the gradient
    placeholder, so an exercise with no video keeps the ▶ and the label it always
    had — 299 of 674 still have none, and a black rectangle would look broken. */
+/* The frame anchors the play/pause button added by attachDemoControls. */
+.player-video { position: relative; }
 .player-video-el {
   position: absolute;
   inset: 0;

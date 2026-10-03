@@ -3711,6 +3711,66 @@ function closeExerciseVideo() {
 // An exercise with no video keeps the placeholder frame it always had. So does
 // one whose video fails to load, which is why the error handler undoes the
 // class rather than leaving a black rectangle where the demo should be.
+// How many times a demo plays before it stops and waits to be asked again
+// (Chris, 2026-10-02). A clip cycling in a member's eyeline for a four-set
+// block is a distraction long after they have seen the movement. Looping costs
+// no extra data — the file is cached after the first play — so this is about
+// attention and battery, not bandwidth.
+const DEMO_PLAYS_BEFORE_STOP = 2;
+
+// Every demo surface gets the same two behaviours: it stops itself after a
+// couple of plays, and it has a visible control. Called once per frame; safe to
+// call again, since it only wires what it hasn't already.
+function attachDemoControls(frame, video) {
+  if (!frame || !video || frame.dataset.demoWired === "1") return;
+  frame.dataset.demoWired = "1";
+
+  // loop is off: a looping video never fires "ended", which is the event the
+  // play count needs.
+  video.loop = false;
+  video.addEventListener("ended", () => {
+    const played = Number(video.dataset.played || 0) + 1;
+    video.dataset.played = String(played);
+    if (played < DEMO_PLAYS_BEFORE_STOP && frame.dataset.stopped !== "1") {
+      video.currentTime = 0;
+      tryPlayDemo(video);
+    } else {
+      setDemoStopped(frame, video, true);
+    }
+  });
+
+  let btn = frame.querySelector(".demo-pause-btn");
+  if (!btn) {
+    btn = document.createElement("button");
+    btn.className = "demo-pause-btn";
+    btn.type = "button";
+    frame.appendChild(btn);
+  }
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setDemoStopped(frame, video, frame.dataset.stopped !== "1");
+  });
+  setDemoStopped(frame, video, false);
+}
+
+function setDemoStopped(frame, video, stopped) {
+  frame.dataset.stopped = stopped ? "1" : "0";
+  const btn = frame.querySelector(".demo-pause-btn");
+  if (btn) {
+    btn.textContent = stopped ? "▶" : "❚❚";
+    btn.setAttribute("aria-label", stopped ? "Play demo" : "Pause demo");
+  }
+  if (stopped) {
+    video.pause();
+  } else {
+    // Asking for it again starts the count over — the member wants to watch it
+    // a couple more times, not get one play and another stop.
+    video.dataset.played = "0";
+    if (video.ended || video.currentTime >= (video.duration || 0) - 0.05) video.currentTime = 0;
+    tryPlayDemo(video);
+  }
+}
+
 function showDemoVideo(frameId, videoId, ex) {
   const frame = document.getElementById(frameId);
   const video = document.getElementById(videoId);
@@ -3734,10 +3794,15 @@ function showDemoVideo(frameId, videoId, ex) {
     };
   }
   frame.classList.add("has-video");
+  attachDemoControls(frame, video);
+  video.dataset.played = "0";
+  frame.dataset.stopped = "0";
+  const btn = frame.querySelector(".demo-pause-btn");
+  if (btn) { btn.textContent = "❚❚"; btn.setAttribute("aria-label", "Pause demo"); }
   // Start it when the file is ready rather than immediately: on a cold load
   // there is nothing to play yet, and that first attempt is simply ignored.
   // oncanplay also covers the panel being shown a tick after this runs.
-  video.oncanplay = () => tryPlayDemo(video);
+  video.oncanplay = () => { if (frame.dataset.stopped !== "1") tryPlayDemo(video); };
   tryPlayDemo(video);
 }
 
@@ -3803,8 +3868,7 @@ function renderDemoStrip(exercises) {
       <div class="demo-card">
         <div class="demo-card-frame">
           ${url
-            ? `<video muted loop playsinline preload="none" src="${url}"></video>
-               <button class="demo-pause-btn" type="button" aria-label="Pause demo">❚❚</button>`
+            ? `<video muted playsinline preload="none" src="${url}"></video>`
             : `<span class="demo-card-empty">No demo yet</span>`}
         </div>
         <p class="demo-card-name">
@@ -3816,20 +3880,16 @@ function renderDemoStrip(exercises) {
   }).join("");
   strip.style.display = "flex";
   strip.scrollLeft = 0;
-  // Pausing is a statement about video in general, not about one clip: a
-  // member who doesn't want it won't want the next one starting when they
-  // scroll either. Cleared by pressing play again (2026-10-02, Chris).
-  strip.querySelectorAll(".demo-pause-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const wantsPaused = strip.dataset.paused !== "1";
-      strip.dataset.paused = wantsPaused ? "1" : "0";
-      strip.querySelectorAll(".demo-pause-btn").forEach((b) => {
-        b.textContent = wantsPaused ? "▶" : "❚❚";
-        b.setAttribute("aria-label", wantsPaused ? "Play demo" : "Pause demo");
-      });
-      if (wantsPaused) strip.querySelectorAll("video").forEach((v) => v.pause());
-      else playVisibleDemo(strip);
+  // Same controls as every other demo: stops itself after a couple of plays,
+  // and the button starts it again. Stopping one card stops the strip — a
+  // member who doesn't want video won't want the next one starting when they
+  // scroll either (2026-10-02, Chris).
+  strip.querySelectorAll(".demo-card-frame").forEach((frame) => {
+    const v = frame.querySelector("video");
+    if (!v) return;
+    attachDemoControls(frame, v);
+    frame.querySelector(".demo-pause-btn").addEventListener("click", () => {
+      strip.dataset.paused = frame.dataset.stopped === "1" ? "1" : "0";
     });
   });
   playVisibleDemo(strip);
@@ -3855,12 +3915,14 @@ function playVisibleDemo(strip) {
   });
   strip.querySelectorAll("video").forEach((v) => {
     const isBest = best && best.contains(v);
+    const frame = v.closest(".demo-card-frame");
     if (isBest) {
+      if (frame && frame.dataset.stopped === "1") return;   // the member stopped it
       // preload="none" means there is nothing to play on the first attempt and
       // the call is simply ignored — the same cold-start that caught the demo
       // popup. Start on the video's own ready event as well.
       v.oncanplay = () => tryPlayDemo(v);
-      if (v.paused) tryPlayDemo(v);
+      if (v.paused) { v.dataset.played = "0"; tryPlayDemo(v); }
     } else if (!v.paused) {
       v.pause();
     }
