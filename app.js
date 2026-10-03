@@ -2927,70 +2927,29 @@ function holdLabel(seconds) {
   return `${seconds}s hold`;
 }
 
-// Tap to start, nothing to dismiss — during a hold their hands are on the
-// weight, so the one interaction has to happen before they're set, not after.
-// Deadline-driven like every other clock in the player (see runTimer): a hold
-// that quietly stops counting when the screen sleeps is worse than no timer.
-function startHoldTimer(btn) {
-  if (btn.dataset.running === "1" || btn.dataset.done === "1") return;
-  const seconds = Number(btn.dataset.holdSeconds);
-  const endsAt = Date.now() + seconds * 1000;
-  btn.dataset.running = "1";
-  btn.classList.add("running");
-  const tick = () => {
-    const left = Math.round((endsAt - Date.now()) / 1000);
-    if (left <= 0) {
-      clearInterval(id);
-      btn.dataset.running = "0";
-      btn.dataset.done = "1";
-      btn.classList.remove("running");
-      btn.classList.add("done");
-      btn.textContent = `✓ ${seconds}s`;
-      // A hold-only set has no Done button, so the clock finishing is what
-      // completes the set — same path as tapping Done, so the tick, the rest
-      // popup and the weight prompt all behave identically.
-      if (btn.dataset.autoSetIndex !== undefined) {
-        Player.toggleSetChecked(Number(btn.dataset.autoSetIndex));
-      }
-      return;
-    }
-    btn.textContent = `${left}s`;
-  };
-  tick();
-  const id = setInterval(tick, 250);
-  holdTimerIds.push(id);
-}
-
-// Cleared whenever the player leaves a phase — a hold left running on a row
-// that no longer exists would tick against a detached element forever.
-let holdTimerIds = [];
-function clearHoldTimers() {
-  holdTimerIds.forEach(clearInterval);
-  holdTimerIds = [];
-}
-
-// `mode` of "start" is for a hold-only prescription, where the row's own text
-// already says how long it is and repeating it on the button is noise.
-// `autoSetIndex` marks a hold that IS the set rather than an addition to it:
-// finishing the clock finishes the set, so there's no Done button beside it
-// and the timer running out has to do Done's job (2026-08-22, Chris).
-function holdBtnHtml(seconds, mode, autoSetIndex) {
+// 2026-10-03: the hold is an *instruction*, not a timer. It used to be a pill
+// on the row that the member tapped to start a countdown, and Chris killed
+// it: "pressing start on a timer for the hold is not ideal as we dont want
+// them trying to find their phone and locating a small button to press to
+// start a timer for the hold, that they may have already done for 10 seconds.
+// Or they put the weight down to find the button, press it then waste time
+// getting into position thus doing the hold for less time that programmed."
+//
+// His case is the one that matters: a superset of normal glute bridges where
+// the last rep is held at the top. At the moment the old button wanted a tap
+// the member is under load, hands occupied, phone on the floor. A timer there
+// is not a feature, it is an interruption that makes the hold wrong.
+//
+// So the row says what to do and the member does it. Nothing to tap, nothing
+// to start, and — the point — the reps and the hold are now ONE row rather
+// than the same exercise listed twice. Completion is the tap that was always
+// going to happen anyway: Done on a straight set, Finish round on a superset.
+function holdTagHtml(seconds, hasReps) {
   if (!seconds) return "";
-  // The triangle is doing real work (2026-08-23, Chris: "what's the best way
-  // to signal the member that the 20s Hold is actually a button"). The card
-  // carries a label pill (DROP) and a control pill (the hold) side by side,
-  // and nothing said which was which. The triangle is the one mark that
-  // unambiguously means "this starts something", and it's already the app's
-  // vocabulary for exactly that on the video button.
-  const label = mode === "start" ? "▶ Start" : `▶ ${seconds}s hold`;
-  const auto = autoSetIndex === undefined ? "" : ` data-auto-set-index="${autoSetIndex}"`;
-  return `<button class="hold-btn" data-hold-seconds="${seconds}"${auto} title="Static hold — tap to start">${label}</button>`;
-}
-
-function wireHoldButtons(root) {
-  root.querySelectorAll(".hold-btn").forEach((btn) => {
-    btn.addEventListener("click", () => startHoldTimer(btn));
-  });
+  // "last rep: hold 20s" where there are reps to hold at the end of; plain
+  // "hold 20s" where the hold is the whole set and the row has said so.
+  const text = hasReps ? `last rep: hold ${seconds}s` : `hold ${seconds}s`;
+  return `<span class="hold-tag">${text}</span>`;
 }
 
 function blockTypeLabel(type) {
@@ -3490,8 +3449,8 @@ function bindTour() {
 // actions, one unit of work, then rest", which is exactly what this is, and a
 // second way of saying it was complexity for nothing.
 //
-// One action stays one row in the checklist — a plain 3x12, or a hold-only
-// set, has no sequence to communicate.
+// Since 2026-10-03 a hold is a line on the row rather than a second row, so
+// reps-then-hold no longer reaches this at all — it stays a plain set.
 
 // ---------------- Weight logging, once per block (2026-10-02, Chris) ----------------
 // Weight used to be typed mid-set — inline on a superset row, in the rest
@@ -3531,44 +3490,19 @@ function weightEntriesForBlock(block, blockIndex) {
 }
 
 function pushSetPhases(phases, blockMeta, block, sets) {
-  const compound = sets.some((set) => set.reps && set.hold);
-  if (!compound) {
-    phases.push({
-      ...blockMeta,
-      kind: "sets",
-      exerciseName: block.exercise.name,
-      sets,
-      restDuration: block.rest,
-    });
-    return;
-  }
-  // Rewritten as the superset it is. Done here rather than in the builder so
-  // that anything already saved in the older shape — the seeded programs, and
-  // any workout bridged over from admin — runs the same way without a
-  // migration.
-  const exercises = [
-    { name: block.exercise.name, reps: sets[0].reps },
-    // `holdExercise` lets the hold carry its own library entry, and so its own
-    // video and cues. No weight on it: a hold is held at whatever the lift was
-    // just done at, so asking again would only split the history for nothing.
-    { name: block.holdExercise || block.exercise.name, hold: sets[0].hold },
-  ];
-  sets.forEach((set, i) => {
-    phases.push({
-      ...blockMeta,
-      kind: "superset",
-      exercises,
-      progressLabel: `Set ${set.num} of ${sets.length}`,
-    });
-    if (i !== sets.length - 1) {
-      phases.push({
-        ...blockMeta,
-        kind: "rest",
-        duration: block.rest,
-        upNext: block.exercise.name,
-        progressLabel: `Set ${set.num} of ${sets.length}`,
-      });
-    }
+  // Reps-then-hold used to be rewritten as a superset here: two rows, the
+  // lift and then the hold, because "several actions, one unit of work" is
+  // what a superset screen says. Chris's 2026-10-03 call retires that. The
+  // hold is one line of instruction on the lift's own row, so a set of ten
+  // glute bridges with a hold on the last one is a set of ten glute bridges —
+  // one row, one Done, rest as usual. `holdExercise` went with it: there is
+  // no second row for a separate library entry to carry a video on.
+  phases.push({
+    ...blockMeta,
+    kind: "sets",
+    exerciseName: block.exercise.name,
+    sets,
+    restDuration: block.rest,
   });
 }
 
@@ -4803,7 +4737,6 @@ const Player = {
   renderPhase() {
     const phase = this.currentPhase();
     this.paused = false;
-    clearHoldTimers();
 
     // The workout's name, not the block's (2026-10-02, Chris). The block is
     // already named right below this on most screens, and since tapping here
@@ -4942,7 +4875,7 @@ const Player = {
             </div>
             <div class="amrap-row-line2">
               ${e.reps ? `<span class="amrap-reps">${e.reps} reps</span>` : ""}
-              ${holdBtnHtml(e.hold)}
+              ${holdTagHtml(e.hold, !!e.reps)}
             </div>
           </div>
         `;
@@ -4951,7 +4884,6 @@ const Player = {
       supersetListEl.querySelectorAll(".amrap-play-btn").forEach((btn) => {
         btn.addEventListener("click", () => openExerciseVideo(btn.dataset.exName));
       });
-      wireHoldButtons(supersetListEl);
       // Held on the player, not the DOM, so it survives the re-render between
       // rounds and carries into the completion record.
       const roundBtn = document.getElementById("player-complete-set-btn");
@@ -5048,14 +4980,13 @@ const Player = {
         <div class="player-set-row" data-set-index="${i}">
           <span class="set-row-num">${s.num}</span>
           <span class="set-row-reps">${s.reps ? `${s.reps} reps` : holdLabel(s.hold)}</span>
-          ${s.reps ? holdBtnHtml(s.hold) : holdBtnHtml(s.hold, "start", i)}
-          ${s.reps || !s.hold ? `<button class="set-row-done-btn" data-set-index="${i}">Done</button>` : ""}
+          ${s.reps ? holdTagHtml(s.hold, true) : ""}
+          <button class="set-row-done-btn" data-set-index="${i}">Done</button>
         </div>
       `).join("");
       listEl.querySelectorAll(".set-row-done-btn").forEach((btn) => {
         btn.addEventListener("click", () => this.toggleSetChecked(Number(btn.dataset.setIndex)));
       });
-      wireHoldButtons(listEl);
     }
 
     if (phase.kind === "amrap") {
@@ -5095,7 +5026,7 @@ const Player = {
                     value="${this.sessionWeights[e.name] || ""}"
                     placeholder="${last ? last + " lb" : "add weight"}"
                     title="${last ? `Last time: ${last} lbs` : "Weight used"}" />` : ""}
-              ${holdBtnHtml(e.hold)}
+              ${holdTagHtml(e.hold, !!e.reps)}
             </div>
           </div>
         `;
@@ -5107,7 +5038,6 @@ const Player = {
       document.querySelectorAll("#player-amrap-list .superset-weight-input").forEach((input) => {
         input.addEventListener("input", () => this.noteWeight(input.dataset.exName, input.value));
       });
-      wireHoldButtons(document.getElementById("player-amrap-list"));
       // Visibility of player-round-counter is handled by awaitStart()/beginPhaseTimer()
       // below — it should only appear once the clock is actually running.
       document.getElementById("round-count").textContent = this.amrapRounds;

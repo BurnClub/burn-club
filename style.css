@@ -21,6 +21,10 @@
      describes the value. */
   --white: var(--oat);
   --card-white: #FFFFFF;
+  /* The fill behind a pill that sits ON a card (the static-hold instruction).
+     White against the periwinkle rows in light; in dark --card-white IS the
+     card, so a white pill would vanish and this becomes a lift instead. */
+  --pill-surface: #FFFFFF;
   /* Page ground (Chris, 2026-09-07). Was #FFFFFF. A warm off-white at 98%
      lightness, hue 40 — the same family as the notebook paper (#F7EFD3,
      hue 47), so the notebook reads as the same paper a shade heavier rather
@@ -164,6 +168,7 @@
 :root[data-theme="dark"] {
   --bg: var(--night);
   --card-white: var(--night-surface);
+  --pill-surface: rgba(255, 255, 255, 0.12);
   --white: var(--night-surface);
   --alice: rgba(107, 138, 249, 0.16);
   --field-bg: var(--night-surface);
@@ -231,6 +236,7 @@
   :root:not([data-theme="light"]) {
     --bg: var(--night);
     --card-white: var(--night-surface);
+    --pill-surface: rgba(255, 255, 255, 0.12);
     --white: var(--night-surface);
     --alice: rgba(107, 138, 249, 0.16);
     --field-bg: var(--night-surface);
@@ -3310,54 +3316,26 @@ h1, h2, h3 {
 #resume-overlay .btn-primary { width: 100%; display: block; }
 .resume-secondary { width: 100%; margin-top: 10px; }
 
-/* Static hold (2026-08-21). Sits inline on the exercise/set row rather than
-   taking the screen the way an interval block does — 20 seconds doesn't
-   justify a screen swap, and mid-superset it would be jarring. Three states:
-   idle (tap to start), running (counting), done. */
-.hold-btn {
-  border: 2px solid var(--blue);
-  border-radius: 999px;
-  background: none;
-  color: var(--accent-text);
+/* Static hold (2026-08-21, rewritten 2026-10-03). It was a button that started
+   a countdown. It is now an instruction, because at the moment that button
+   wanted a tap the member is under load with no free hand — see the note above
+   holdTagHtml in app.js. A pill rather than a sentence so it reads as part of
+   the prescription on the row, not as prose to parse mid-set. */
+.hold-tag {
   font-family: var(--font-heading);
   font-weight: 800;
   font-size: 12px;
-  padding: 5px 12px;
-  cursor: pointer;
-  flex-shrink: 0;
+  color: var(--text);
+  background: var(--periwinkle);
+  border-radius: 999px;
+  padding: 4px 11px;
   white-space: nowrap;
-  min-width: 74px;
-  text-align: center;
+  flex-shrink: 0;
 }
-.hold-btn.running {
-  background: var(--blue);
-  border-color: var(--accent-text);
-  color: #FFFFFF;
-}
-.hold-btn.done {
-  background: none;
-  border-color: var(--periwinkle);
-  color: var(--text-muted);
-  cursor: default;
-}
-/* On the straight-sets row the card is already periwinkle, so an outline in
-   --blue reads muddy against it (2.13:1). White box, ink label — the same
-   treatment the Done button next to it gets. */
-.player-set-row .hold-btn {
-  border-color: #FFFFFF;
-  background: var(--card-white);
-  color: var(--text);
-}
-.player-set-row .hold-btn.running {
-  background: var(--chip);
-  border-color: var(--text);
-  color: var(--chip-text);
-}
-.player-set-row .hold-btn.done {
-  background: none;
-  border-color: #FFFFFF;
-  color: var(--text);
-  opacity: 0.7;
+/* The straight-sets row is itself periwinkle, so the pill flips to the white
+   box the Done button beside it already uses. */
+.player-set-row .hold-tag {
+  background: var(--pill-surface);
 }
 
 /* Marks the second row of a compound set as the drop (2026-08-23). Without it
@@ -3399,25 +3377,16 @@ h1, h2, h3 {
    and pills sitting on the same card. */
 .player-amrap-list .amrap-row:not(:last-child)::after { background: var(--card-white); }
 /* Blue numerals on periwinkle measure 2.13:1. Ink is 10.4:1, and matches the
-   numbering on the straight-sets card. */
-.player-amrap-list .amrap-order-num { color: var(--text); }
-/* Same reason the Done button went white-on-ink over there: a blue outline on
-   a periwinkle card goes muddy. */
-.player-amrap-list .hold-btn {
-  border-color: #FFFFFF;
-  background: var(--card-white);
-  color: var(--text);
-}
-.player-amrap-list .hold-btn.running {
-  background: var(--chip);
-  border-color: var(--text);
-  color: var(--chip-text);
-}
-.player-amrap-list .hold-btn.done {
-  background: none;
-  border-color: #FFFFFF;
-  color: var(--text);
-  opacity: 0.7;
+   numbering on the straight-sets card.
+   --ink rather than --text (2026-10-03): the circle is a hardcoded white, but
+   --text flips to near-white in dark mode, so the numerals were white on white
+   — 1.05:1, invisible — on the superset and AMRAP screens. --ink holds its
+   value in both themes, which is what a fixed white background needs. */
+.player-amrap-list .amrap-order-num { color: var(--ink); }
+/* Both the superset and the AMRAP list sit on a periwinkle card, so the hold
+   pill takes the same white fill as the one on the straight-sets row. */
+.player-amrap-list .hold-tag {
+  background: var(--pill-surface);
 }
 /* Periwinkle borders are invisible against the card, so the white fill has to
    define these on its own. */
@@ -3489,8 +3458,7 @@ h1, h2, h3 {
   text-align: center;
 }
 /* Pressable, so it can't be mistaken for the flat DROP tag beside it. */
-.hold-btn { box-shadow: 0 1px 3px rgba(23, 36, 63, 0.18); }
-.hold-btn.done { box-shadow: none; }
+.hold-tag { box-shadow: 0 1px 3px rgba(23, 36, 63, 0.18); }
 
 /* ---------- PROGRAM COMPLETE (2026-08-23) ----------
    Shown instead of the week snapshot once a structured member is past their

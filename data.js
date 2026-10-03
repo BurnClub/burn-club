@@ -1104,6 +1104,42 @@ const CIRCUITS = [
   // Every exercise has a demo video and tracks weight, so each screen shows all
   // of its parts. Delete them before real members arrive.
   {
+    id: "block-static-hold",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
+    category: "circuit",
+    tag: "Demo",
+    title: "Static Hold",
+    meta: "Block demo · Strength",
+    color: "blue",
+    desc: "The two shapes a static hold takes: held on the last rep of a lift, and a hold as its own station in a superset.",
+    blocks: [
+      // Chris's own 99% case: normal glute bridges, last rep held at the top.
+      // One row, no button — see holdTagHtml in app.js.
+      {
+        type: "straight",
+        label: "Reps, Then a Hold",
+        sets: 4,
+        reps: 10,
+        rest: 60,
+        hold: 20,
+        exercise: { name: "Neutral Glute Bridge" },
+      },
+      // The other shape: the hold is a station of its own, and reads as an
+      // instruction next to the lift rather than as a timer to start.
+      {
+        type: "superset",
+        label: "Hold as a Station",
+        rounds: 3,
+        rest: 75,
+        exercises: [
+          { name: "Barbell Bench Press", reps: 10 },
+          { name: "Static V Hold", hold: 30 },
+        ],
+      },
+    ],
+  },
+  {
     id: "block-straight-sets",
     programId: "burn-club",
     availableFrom: SEED_THIS_WEEK,

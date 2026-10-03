@@ -2,7 +2,7 @@
 
 ## Start the next session here (2026-10-02)
 
-**Workout flow — supersets done, straight sets and static holds still open.**
+**Workout flow — supersets, straight sets and static holds all done.**
 Per-round rep schemes (`scheme: [10,8,8,6]` on a superset exercise), the demo
 strip with its pause, weights moved to one screen per block, the round line
 under the heading, and the overview button on the block pill. What remains is
@@ -521,9 +521,11 @@ not a stopgap — keep it after the native build.
 
 Still audio-only-when-native, and the reason the cues matter:
 
-- **Static hold finishing.** The strongest case. During a hip thrust or squat
-  hold the member is looking at the ceiling, not the phone — a pulse on the
-  clock is no use there, it has to be a beep they can't miss.
+- **Static hold finishing.** The strongest case, and now the only cue a hold
+  has no way to give: as of 2026-10-03 a hold is an instruction with no clock
+  at all, so the member counts it themselves. During a hip thrust the member is
+  looking at the ceiling, not the phone, so a pulse is no use — it has to be a
+  sound, and the honest version of that is native.
 - **Anything with the screen off or the phone in a pocket**, which the web
   cannot do at all.
 
@@ -581,20 +583,23 @@ syncs them.
   Until then a scheme can only be written by hand in `data.js`, which is how the
   demo Superset workout carries one.
 
-- **The workout flow: straight sets and static holds still to do** (Chris,
-  2026-10-02). Supersets were reworked first — per-round rep schemes, the demo
-  strip, weights moved to the end of each block, the overview button. Two
-  pieces are untouched:
-  - **Straight sets**, his other stated concern from the start. The screen
-    still carries a Done per set and a rest popup, and weight now lives on the
-    end-of-block screen instead, so the two no longer match each other.
-  - **Static holds.** Today a hold is a button on the row — "▶ 20s hold" — and
-    a hold never asks for weight, on the reasoning that it's held at whatever
-    the lift was just done at. 14 library exercises are typed Static Hold, and
-    holds also appear as the second half of a reps-then-hold set, which the
-    builder rewrites into a superset. Worth deciding how they should read and
-    whether that weight rule is right, rather than leaving it as the side
-    effect of two older decisions.
+- **The workout flow: straight sets and static holds are done** (2026-10-03).
+  Supersets first — per-round rep schemes, the demo strip, weights at the end
+  of each block, the overview button. Then:
+  - **Straight sets.** Chris confirmed Done-per-set is right: it's what starts
+    the rest period. Nothing outstanding unless he raises more.
+  - **Static holds are instructions, not timers** (2026-10-03). The hold used
+    to be a button on the row that started a countdown, and reps-then-hold was
+    rewritten into a two-row superset — the same exercise listed twice. Chris
+    killed both: his case is a superset of normal glute bridges with the last
+    rep held at the top, where the member is under load with no free hand and
+    the phone is on the floor. Now the lift and its hold are one row ("10 reps
+    · last rep: hold 20s"), a hold that's its own superset station reads as
+    "hold 30s", and a hold-only straight set got its Done button back. Nothing
+    to start, and completion is the tap that was happening anyway. A hold still
+    takes no weight. `holdExercise` went with the second row — a hold can no
+    longer carry its own library entry, and so its own video. Nothing in the
+    data used it. The demo workout **Static Hold** shows both shapes.
 
 - **The workout flow is the most important thing in the app** (Chris,
   2026-09-21). How a member moves through a workout must be as intuitive as
