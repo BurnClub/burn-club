@@ -4607,6 +4607,13 @@ const Player = {
     document.getElementById("player-back-btn").style.display = "none";
     this.closeSkipConfirm();
     setPlayerVideo(null);
+    // Hide these in the reset rather than relying on each kind to turn them
+    // off (2026-10-02, Chris spotted a video frame and a TECHNIQUE row sitting
+    // on the weight-logging screen). Display was only ever set by the kinds
+    // that wanted them, so any kind that didn't mention them inherited
+    // whatever the previous screen had left on.
+    document.getElementById("player-video").style.display = "none";
+    setPlayerExerciseTechnique(null);
     document.getElementById("player-pause-btn").textContent = "Pause";
 
     // The explainer describes a *format*, so it shows once per format per
