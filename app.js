@@ -3966,6 +3966,60 @@ function closeWorkoutOverview() {
   document.getElementById("overview-overlay").classList.remove("visible");
 }
 
+
+// ---------------- Timer sounds (2026-10-03, Chris) ----------------
+// There was no audio in the player at all: a member running a timed circuit
+// had to watch the screen to know when work ended. These are the two cues
+// Chris asked for — ten seconds out, and time up.
+//
+// Synthesised rather than loaded from files: nothing to download, nothing to
+// cache, and it works with no connection. iOS keeps an AudioContext suspended
+// until a user gesture, so it is created and resumed on the tap that starts a
+// workout; before that there is nothing to hear anyway.
+let audioCtx = null;
+
+function ensureAudio() {
+  if (!audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;                 // no Web Audio: the app runs silent
+    try { audioCtx = new Ctx(); } catch (e) { return null; }
+  }
+  if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+  return audioCtx;
+}
+
+// One short tone. Shaped with a quick attack and decay: a square-edged beep
+// clicks, and a click in a quiet gym is worse than no sound.
+function playTone(freq, ms, volume) {
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + ms / 1000);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + ms / 1000 + 0.02);
+}
+
+// Ten seconds left: two soft mid notes. Deliberately quieter and lower than
+// the finish — it is a nudge to start finishing, not an instruction to stop.
+function cueTenSeconds() {
+  playTone(660, 120, 0.12);
+  setTimeout(() => playTone(660, 120, 0.12), 180);
+}
+
+// Time up: three rising notes, loud enough to hear over a gym.
+function cueSegmentEnd() {
+  playTone(784, 140, 0.22);
+  setTimeout(() => playTone(988, 140, 0.22), 150);
+  setTimeout(() => playTone(1175, 220, 0.22), 300);
+}
+
 const Player = {
   circuit: null,
   phases: [],
@@ -4558,6 +4612,7 @@ const Player = {
       }
       if (this.remaining === this.lastShownRemaining) return;
       this.lastShownRemaining = this.remaining;
+      this.cueTimerSounds();
       this.updateClock();
     }, 250);
   },
@@ -4566,6 +4621,36 @@ const Player = {
   // a fresh :60 each time the exercise changes) rather than the whole block's total —
   // members were losing track of where they were with only one continuously-draining
   // number. The overall block time still counts down in the small clock alongside it.
+  // The two audible cues, decided once per whole second (2026-10-03). An EMOM
+  // is the awkward one: the phase clock runs the whole block, but what the
+  // member is counting is the minute, so its cues come off the seconds left in
+  // the current interval rather than the phase.
+  cueTimerSounds() {
+    const phase = this.currentPhase();
+    if (!phase || this.paused) return;
+    const timed = ["work", "rest", "amrap", "emom", "cardio-choice"].includes(phase.kind);
+    if (!timed) return;
+
+    let left = this.remaining;
+    if (phase.kind === "emom" && phase.interval) {
+      const elapsed = phase.duration - this.remaining;
+      left = phase.interval - (elapsed % phase.interval);
+      // The last minute's end is the block's end; don't sound both.
+      if (this.remaining <= phase.interval) left = this.remaining;
+    }
+
+    // A ten-second warning on anything long enough for it to mean something.
+    const longEnough = phase.kind === "emom" ? (phase.interval || 0) > 20 : (phase.duration || 0) > 20;
+    if (left === 10 && longEnough && this.lastCueAt !== "warn-" + left + "-" + this.remaining) {
+      this.lastCueAt = "warn-" + left + "-" + this.remaining;
+      cueTenSeconds();
+      return;
+    }
+    // "Time up" lands on 1 rather than 0: the clock advances the phase the
+    // moment it reaches zero, so a cue there would fire as the screen changed.
+    if (left === 1) cueSegmentEnd();
+  },
+
   updateClock() {
     const phase = this.currentPhase();
     if (phase.kind === "emom") {
@@ -6095,7 +6180,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   document.getElementById("player-exit-btn").addEventListener("click", () => Player.exit());
-  document.getElementById("player-start-btn").addEventListener("click", () => Player.beginPhaseTimer());
+  document.getElementById("player-start-btn").addEventListener("click", () => {
+    // iOS keeps an AudioContext suspended until a user gesture. Starting a
+    // workout is that gesture, and it is the last moment before any cue is
+    // due — unlock it here or the first beep of the session never sounds.
+    ensureAudio();
+    Player.beginPhaseTimer();
+  });
   document.getElementById("player-back-btn").addEventListener("click", () => Player.back());
   document.getElementById("exercise-video-close-btn").addEventListener("click", closeExerciseVideo);
   document.getElementById("player-block-label").addEventListener("click", openWorkoutOverview);
