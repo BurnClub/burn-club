@@ -550,6 +550,20 @@ syncs them.
 
 ## Agreed, not yet built
 
+- **Admin can't author a superset rep scheme yet** (Chris, 2026-10-02). The
+  member app runs `scheme: [10, 8, 8, 6]` on a superset exercise — round 1 is
+  10 reps, round 4 is 6 — but nothing can write one:
+  - **The builder**: `admin/app.js:2737` renders a single `type="number"` Reps
+    input per superset exercise. It needs to accept a list ("10, 8, 8, 6"),
+    validate the count against the block's rounds, and keep writing a plain
+    number when the reps don't change.
+  - **The importer**: the sheet has a "Ladder Scheme" column used only by the
+    ladder type (`BLOCK_FORMATS`, `admin/app.js:3801`). Either let superset rows
+    use it or rename the column to something that covers both — it is the same
+    idea in both places.
+  Until then a scheme can only be written by hand in `data.js`, which is how the
+  demo Superset workout carries one.
+
 - **The workout flow: straight sets and static holds still to do** (Chris,
   2026-10-02). Supersets were reworked first — per-round rep schemes, the demo
   strip, weights moved to the end of each block, the overview button. Two
