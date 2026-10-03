@@ -1803,6 +1803,20 @@ h1, h2, h3 {
   margin: 0;
   line-height: 1;
 }
+/* The ten-second warning that needs no sound (2026-10-03). Chris couldn't
+   hear the tones over Pandora, and a phone on silent never will, so the clock
+   itself carries the warning: persimmon, and a slow pulse. */
+.player-clock.urgent {
+  color: var(--color-accent-text);
+  animation: clock-urgent 1s ease-in-out infinite;
+}
+@keyframes clock-urgent {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.74; transform: scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .player-clock.urgent { animation: none; }
+}
 .player-clock-label {
   margin: 4px 0 0;
   font-size: 12px;

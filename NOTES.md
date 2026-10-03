@@ -497,18 +497,35 @@ Everything here is a thing a web app fundamentally can't do, so it waits for
 the wrapped app. Grouped because they land together, not one at a time.
 
 
-**Audio cues.** The prototype is a web app, so it has no reliable way to make
-a sound while the screen is off or the phone is in a pocket. Every one of
-these is currently a *visual-only* interim, and the audio is the real answer:
+**Audio cues — built on 2026-10-03, and as good as the web allows, which is
+not good enough.** Timers now sound two notes ten seconds out and three when
+time is up: interval work and rest, AMRAP, cardio, and every EMOM minute. The
+limit is the audio session, which a web page does not own:
+
+- Web Audio gets iOS's **ambient** category. It mixes with music — what Chris
+  wants — but it is **silenced by the hardware mute switch** and cannot duck
+  what is playing. Chris tested it against Pandora and could not hear it, or it
+  did not play; both are this.
+- An `<audio>` element gets the **playback** category. Loud, survives the mute
+  switch, and **pauses the music**.
+- Only a native build can have both: playback + `mixWithOthers`. That one line
+  of audio-session config is the whole fix, and it is the reason this stays on
+  this list.
+
+What was done in the meantime: the tones moved to 1-2kHz with a triangle plus
+its octave (a pure sine is the easiest thing there is for music to mask), the
+level went up about four times, **the clock now pulses persimmon for the last
+ten seconds** so the warning survives a muted phone entirely, and Profile →
+Workout Sounds turns the sounds off for members they don't suit. The pulse is
+not a stopgap — keep it after the native build.
+
+Still audio-only-when-native, and the reason the cues matter:
 
 - **Static hold finishing.** The strongest case. During a hip thrust or squat
-  hold the member is looking at the ceiling, not the phone — the countdown on
-  the row is a fallback for a beep they can't miss.
-- **Interval work → rest → work transitions.**
-- **EMOM minute change**, which is the moment the exercise swaps.
-- **AMRAP cap expiring.**
-
-When the native build happens, these four are the list.
+  hold the member is looking at the ceiling, not the phone — a pulse on the
+  clock is no use there, it has to be a beep they can't miss.
+- **Anything with the screen off or the phone in a pocket**, which the web
+  cannot do at all.
 
 **Wearable / health data.** The step, calorie and resting-HR figures on Home
 are currently invented. Real ones mean HealthKit on iOS and Health Connect on

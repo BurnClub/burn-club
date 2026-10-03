@@ -846,6 +846,7 @@
         <div class="settings-list">
           <button class="settings-row" id="open-appearance-btn"><span>Appearance</span><span>›</span></button>
           <button class="settings-row" id="open-notifications-btn"><span>Notifications</span><span>›</span></button>
+          <button class="settings-row" id="open-sound-settings-btn"><span>Workout Sounds</span><span>›</span></button>
           <button class="settings-row" id="open-checkin-settings-btn"><span>Daily Check-In</span><span>›</span></button>
           <button class="settings-row" id="open-health-profile-btn"><span>My Health Profile</span><span>›</span></button>
           <button class="settings-row" id="open-invite-btn"><span>Invite a Friend</span><span>›</span></button>
@@ -876,6 +877,18 @@
           <button class="player-exit" id="pr-picker-close-btn">✕</button>
           <h2 class="cardio-log-title">Personal Bests</h2>
           <div id="pr-picker-body"></div>
+        </div>
+      </div>
+
+      <!-- ---------- WORKOUT SOUNDS SETTING (2026-10-03) ----------
+           Its own row rather than a line in Notifications: nothing here is
+           sent anywhere, and what "on" actually gets you depends on the
+           phone's mute switch, which is worth a sentence. -->
+      <div class="cardio-log-overlay" id="sound-settings-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="sound-settings-close-btn">✕</button>
+          <h2 class="cardio-log-title">Workout Sounds</h2>
+          <div id="sound-settings-body"></div>
         </div>
       </div>
 

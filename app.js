@@ -2690,6 +2690,38 @@ function closeAppearanceSettings() {
   document.getElementById("appearance-overlay").classList.remove("visible");
 }
 
+// Toggling it on plays the finish cue straight away. Two reasons: a member
+// can tell whether they will actually hear it in the room they train in, and
+// the tap doubles as the gesture iOS needs before any audio will play at all.
+function renderSoundSettings() {
+  const on = timerSoundsEnabled();
+  document.getElementById("sound-settings-body").innerHTML = `
+    <button class="notif-row ${on ? "checked" : ""}" id="toggle-sound-pref" type="button">
+      <span class="notif-checkbox">${on ? "✓" : ""}</span>
+      <span class="notif-label">Timer cues during a workout</span>
+    </button>
+    <p class="checkin-settings-note">${on
+      ? "Two notes ten seconds before a timer ends, three when it does. They play over your music instead of stopping it, so they can be hard to hear — your phone's ringer has to be on, and loud music will drown them. The clock also pulses for the last ten seconds either way."
+      : "Timers run silently. The clock still pulses for the last ten seconds of every work period and rest."}</p>
+  `;
+  document.getElementById("toggle-sound-pref").addEventListener("click", () => {
+    const next = !timerSoundsEnabled();
+    setTimerSoundsEnabled(next);
+    renderSoundSettings();
+    if (next) cueSegmentEnd();
+  });
+}
+
+function openSoundSettings() {
+  ensureAudio();
+  renderSoundSettings();
+  document.getElementById("sound-settings-overlay").classList.add("visible");
+}
+
+function closeSoundSettings() {
+  document.getElementById("sound-settings-overlay").classList.remove("visible");
+}
+
 function renderCheckinSettings() {
   const on = checkinEnabled();
   document.getElementById("checkin-settings-body").innerHTML = `
@@ -3976,6 +4008,20 @@ function closeWorkoutOverview() {
 // cache, and it works with no connection. iOS keeps an AudioContext suspended
 // until a user gesture, so it is created and resumed on the tap that starts a
 // workout; before that there is nothing to hear anyway.
+//
+// Second pass, same day. The first version was inaudible under Pandora (Chris:
+// "i either couldnt hear the timer with the music, or it didnt play at all").
+// Both of those readings are real, and both come from the same fact: a web
+// page does not own the phone's audio session.
+//   - Web Audio gets iOS's "ambient" category. It mixes with music, which is
+//     what Chris asked for, but it is also silenced by the hardware mute
+//     switch and it cannot duck what is already playing.
+//   - An <audio> element would survive the mute switch and be far louder, but
+//     iOS gives it the "playback" category, which pauses the music.
+// Only a native build can have both (playback + mixWithOthers). So two
+// changes here: make the tone as hard to mask as a web page can, and stop the
+// cue being audio-only — the clock carries the ten-second warning visually as
+// well, which is the part that still works on a muted phone.
 let audioCtx = null;
 
 function ensureAudio() {
@@ -3988,36 +4034,75 @@ function ensureAudio() {
   return audioCtx;
 }
 
+// Sounds can be switched off. Device-local, like the notification prefs and
+// unlike the theme: whether a cue is any use depends on this phone, its mute
+// switch and whether the member trains in headphones, so it is not something
+// to carry across to another device.
+const TIMER_SOUND_KEY = "burnclub-timer-sounds";
+
+function timerSoundsEnabled() {
+  return localStorage.getItem(memberKey(TIMER_SOUND_KEY)) !== "0";
+}
+
+function setTimerSoundsEnabled(on) {
+  localStorage.setItem(memberKey(TIMER_SOUND_KEY), on ? "1" : "0");
+}
+
 // One short tone. Shaped with a quick attack and decay: a square-edged beep
 // clicks, and a click in a quiet gym is worse than no sound.
+//
+// Two oscillators rather than one, and up in the 1-2kHz band. A pure sine is
+// the easiest sound there is for music to mask — all of its energy sits at a
+// single frequency, so anything playing at that frequency buries it. A
+// triangle plus its octave spreads the energy across a band the ear is most
+// sensitive to and music has least going on in, which is what makes a beep
+// "cut through". Peak stays under 1.0 (volume x 1.4) so nothing clips.
 function playTone(freq, ms, volume) {
   const ctx = ensureAudio();
   if (!ctx) return;
   const now = ctx.currentTime;
-  const osc = ctx.createOscillator();
   const gain = ctx.createGain();
-  osc.type = "sine";
-  osc.frequency.value = freq;
   gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+  gain.gain.linearRampToValueAtTime(volume, now + 0.008);
   gain.gain.exponentialRampToValueAtTime(0.0001, now + ms / 1000);
-  osc.connect(gain).connect(ctx.destination);
-  osc.start(now);
-  osc.stop(now + ms / 1000 + 0.02);
+  gain.connect(ctx.destination);
+  [["triangle", freq, 1], ["sine", freq * 2, 0.4]].forEach((layer) => {
+    const osc = ctx.createOscillator();
+    const mix = ctx.createGain();
+    osc.type = layer[0];
+    osc.frequency.value = layer[1];
+    mix.gain.value = layer[2];
+    osc.connect(mix).connect(gain);
+    osc.start(now);
+    osc.stop(now + ms / 1000 + 0.02);
+  });
 }
 
-// Ten seconds left: two soft mid notes. Deliberately quieter and lower than
-// the finish — it is a nudge to start finishing, not an instruction to stop.
+// Ten seconds left: two notes. Still the quieter of the two cues — it is a
+// nudge to start finishing, not an instruction to stop — but no longer the
+// gentle thing it was, because gentle lost to the radio.
 function cueTenSeconds() {
-  playTone(660, 120, 0.12);
-  setTimeout(() => playTone(660, 120, 0.12), 180);
+  if (!timerSoundsEnabled()) return;
+  playTone(1480, 140, 0.45);
+  setTimeout(() => playTone(1480, 140, 0.45), 190);
 }
 
-// Time up: three rising notes, loud enough to hear over a gym.
+// Time up: three rising notes, as loud as this can go without distorting.
 function cueSegmentEnd() {
-  playTone(784, 140, 0.22);
-  setTimeout(() => playTone(988, 140, 0.22), 150);
-  setTimeout(() => playTone(1175, 220, 0.22), 300);
+  if (!timerSoundsEnabled()) return;
+  playTone(1175, 150, 0.6);
+  setTimeout(() => playTone(1568, 150, 0.6), 160);
+  setTimeout(() => playTone(2093, 320, 0.6), 320);
+}
+
+// The cue that survives a muted phone, headphones full of music, or a member
+// who has turned the sounds off: the big clock colours and pulses for the last
+// ten seconds. `left` is seconds remaining, or null when nothing is counting,
+// so it clears itself between screens.
+function paintClockUrgency(left) {
+  const clock = document.getElementById("player-clock");
+  if (!clock) return;
+  clock.classList.toggle("urgent", left !== null && left <= 10);
 }
 
 const Player = {
@@ -4627,9 +4712,11 @@ const Player = {
   // the current interval rather than the phase.
   cueTimerSounds() {
     const phase = this.currentPhase();
-    if (!phase || this.paused) return;
-    const timed = ["work", "rest", "amrap", "emom", "cardio-choice"].includes(phase.kind);
-    if (!timed) return;
+    const timed = !!phase && ["work", "rest", "amrap", "emom", "cardio-choice"].includes(phase.kind);
+    if (!timed) {
+      paintClockUrgency(null);
+      return;
+    }
 
     let left = this.remaining;
     if (phase.kind === "emom" && phase.interval) {
@@ -4639,8 +4726,13 @@ const Player = {
       if (this.remaining <= phase.interval) left = this.remaining;
     }
 
-    // A ten-second warning on anything long enough for it to mean something.
     const longEnough = phase.kind === "emom" ? (phase.interval || 0) > 20 : (phase.duration || 0) > 20;
+    // Painted whether or not a sound follows: on a muted phone this is the
+    // only warning there is, and it stays correct while paused.
+    paintClockUrgency(longEnough ? left : null);
+    if (this.paused) return;
+
+    // A ten-second warning on anything long enough for it to mean something.
     if (left === 10 && longEnough && this.lastCueAt !== "warn-" + left + "-" + this.remaining) {
       this.lastCueAt = "warn-" + left + "-" + this.remaining;
       cueTenSeconds();
@@ -4762,6 +4854,7 @@ const Player = {
     document.getElementById("player-video").style.display = "none";
     setPlayerExerciseTechnique(null);
     document.getElementById("player-pause-btn").textContent = "Pause";
+    paintClockUrgency(null);
 
     // The explainer describes a *format*, so it shows once per format per
     // workout — not once per block (2026-08-19, Chris). Three straight-set
@@ -5525,6 +5618,8 @@ function wireStaticControls() {
     document.getElementById("notebook-page").scrollTop = 0;
   });
   document.getElementById("pr-picker-close-btn").addEventListener("click", closePRPicker);
+  document.getElementById("open-sound-settings-btn").addEventListener("click", openSoundSettings);
+  document.getElementById("sound-settings-close-btn").addEventListener("click", closeSoundSettings);
   document.getElementById("open-checkin-settings-btn").addEventListener("click", openCheckinSettings);
   document.getElementById("checkin-settings-close-btn").addEventListener("click", closeCheckinSettings);
   document.getElementById("open-support-btn").addEventListener("click", openSupportScreen);
