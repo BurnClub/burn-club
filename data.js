@@ -1098,6 +1098,165 @@ const SEED_LAST_WEEK = shiftWeeks(SEED_THIS_WEEK, -1);
 const SEED_NEXT_WEEK = shiftWeeks(SEED_THIS_WEEK, 1);
 
 const CIRCUITS = [
+  // ---------------- One workout per block type (2026-10-02, Chris) ----------------
+  // Built for reviewing each player screen quickly, and for showing Kelly, not
+  // for training: each holds exactly one block, named after the block type.
+  // Every exercise has a demo video and tracks weight, so each screen shows all
+  // of its parts. Delete them before real members arrive.
+  {
+    id: "block-straight-sets",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
+    category: "circuit",
+    tag: "Demo",
+    title: "Straight Sets",
+    meta: "Block demo · Strength",
+    color: "blue",
+    desc: "One straight sets block, for reviewing how this block type looks in the player.",
+    blocks: [
+      {
+        type: "straight",
+        label: "Straight Sets",
+        sets: 4,
+        reps: 10,
+        rest: 60,
+        exercise: { name: "Barbell Bench Press" },
+      },
+    ],
+  },
+  {
+    id: "block-superset",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
+    category: "circuit",
+    tag: "Demo",
+    title: "Superset",
+    meta: "Block demo · Upper Body",
+    color: "blue",
+    desc: "One superset block, for reviewing how this block type looks in the player.",
+    blocks: [
+      {
+        type: "superset",
+        label: "Superset",
+        rounds: 4,
+        rest: 90,
+        exercises: [
+          // A descending scheme, so the round-by-round reps are visible.
+          { name: "Barbell Bench Press", scheme: [10, 8, 8, 6] },
+          { name: "Lat Pulldown", scheme: [10, 10, 10, 10] },
+        ],
+      },
+    ],
+  },
+  {
+    id: "block-interval-circuit",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
+    category: "circuit",
+    tag: "Demo",
+    title: "Interval Circuit",
+    meta: "Block demo · Full Body",
+    color: "blue",
+    desc: "One interval circuit block, for reviewing how this block type looks in the player.",
+    blocks: [
+      {
+        type: "interval",
+        label: "Interval Circuit",
+        rounds: 3,
+        work: 40,
+        rest: 20,
+        exercises: [
+          { name: "DB Thruster" },
+          { name: "DB Walking Lunge" },
+          { name: "Alternating DB Curl" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "block-amrap",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
+    category: "circuit",
+    tag: "Demo",
+    title: "AMRAP",
+    meta: "Block demo · Conditioning",
+    color: "blue",
+    desc: "One amrap block, for reviewing how this block type looks in the player.",
+    blocks: [
+      {
+        type: "amrap",
+        label: "AMRAP",
+        duration: 480,
+        exercises: [
+          { name: "DB Thruster", reps: 10 },
+          { name: "Lat Pulldown", reps: 12 },
+          { name: "Bulgarian Split Squats", reps: 8 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "block-emom",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
+    category: "circuit",
+    tag: "Demo",
+    title: "EMOM",
+    meta: "Block demo · Conditioning",
+    color: "blue",
+    desc: "One emom block, for reviewing how this block type looks in the player.",
+    blocks: [
+      {
+        type: "emom",
+        label: "EMOM",
+        duration: 600,
+        interval: 60,
+        exercises: [
+          { name: "DB Thruster", reps: 8 },
+          { name: "Alternating DB Curl", reps: 10 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "block-ladder",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
+    category: "circuit",
+    tag: "Demo",
+    title: "Ladder",
+    meta: "Block demo · Strength",
+    color: "blue",
+    desc: "One ladder block, for reviewing how this block type looks in the player.",
+    blocks: [
+      {
+        type: "ladder",
+        label: "Ladder",
+        scheme: [12, 10, 8, 6],
+        rest: 75,
+        exercise: { name: "Sumo Barbell Deadlift" },
+      },
+    ],
+  },
+  {
+    id: "block-cardio-choice",
+    programId: "burn-club",
+    availableFrom: SEED_THIS_WEEK,
+    category: "circuit",
+    tag: "Demo",
+    title: "Cardio Choice",
+    meta: "Block demo · Cardio",
+    color: "blue",
+    desc: "One cardio choice block, for reviewing how this block type looks in the player.",
+    blocks: [
+      {
+        type: "cardio-choice",
+        label: "Cardio Choice",
+        duration: 600,
+      },
+    ],
+  },
   {
     id: "full-body-burn",
     programId: "burn-club",

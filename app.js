@@ -4720,7 +4720,7 @@ const Player = {
     }
 
     if (phase.kind === "log-weights") {
-      document.getElementById("player-exercise-name").textContent = "Weights";
+      document.getElementById("player-exercise-name").textContent = "Log your weights";
       document.getElementById("player-sub-pill").textContent = phase.blockLabel || "This block";
       const logEl = document.getElementById("player-weight-log");
       logEl.style.display = "flex";
