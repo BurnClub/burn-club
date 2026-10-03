@@ -2360,7 +2360,13 @@ h1, h2, h3 {
    --white every other .btn-ghost-lg still uses. */
 #player-pause-btn { background: var(--card-white); }
 
-#player-complete-set-btn { margin-top: auto; }
+/* Sits under the content it completes, not at the bottom of the screen
+   (2026-10-02, Chris: "too far from the exercise list" on a superset).
+   margin-top:auto pushed it to the floor whatever the screen held — 120px
+   below a two-exercise superset. It keeps position:sticky from .sticky-cta, so
+   on a long block (a nine-rung ladder) it still pins to the bottom while the
+   list scrolls under it. One rule, every block. */
+#player-complete-set-btn { margin-top: 20px; }
 
 /* ---------- WORKOUT COMPLETE ---------- */
 .workout-complete {
