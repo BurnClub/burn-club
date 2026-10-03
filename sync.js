@@ -358,7 +358,10 @@ async function hydrateMemberData() {
     const { data, error } = await SB.from("member_preferences").select("*").maybeSingle();
     if (error || !data) { report.preferences = error ? "error: " + error.message : "none"; return; }
     if (data.theme) localStorage.setItem(THEME_KEY, data.theme);
-    if (data.tour_seen) localStorage.setItem(memberKey(TOUR_SEEN_KEY), String(Date.now()));
+    // "1", not a timestamp: tourSeen() tests for exactly that string, so
+    // writing Date.now() here made the flag stop matching and the tour replayed
+    // on every sign-in — the bug Chris hit (2026-10-02).
+    if (data.tour_seen) localStorage.setItem(memberKey(TOUR_SEEN_KEY), "1");
     localStorage.setItem(memberKey(CHECKIN_ENABLED_KEY), data.checkin_enabled ? "1" : "0");
     if (data.checkin_dismissed_on) localStorage.setItem(memberKey(CHECKIN_DISMISS_KEY), data.checkin_dismissed_on);
     if (data.notification_prefs && Object.keys(data.notification_prefs).length) {
@@ -409,6 +412,13 @@ async function reconcileLocalUp() {
     // them costs a round trip and changes nothing the server already has.
     // Replacing stores are different: pushing one DELETES what the server
     // holds, so a device may only do that for a list it actually edited.
+    //
+    // Preferences belong in that set, found 2026-10-02 while chasing the tour
+    // replaying. They are one row of scalars, so a push is a whole-row
+    // overwrite: a device with empty localStorage — a new phone, a reinstall —
+    // sent its defaults up and flipped tour_seen to false for every device,
+    // then pulled that false straight back. A device may only write
+    // preferences it has actually been told about.
     if (REPLACE_STORES.has(n) && !dirty.has(n)) { results[n] = true; continue; }
     results[n] = await pushStore(n);
     if (results[n]) clearDirty(n);
@@ -430,7 +440,7 @@ async function reconcileLocalUp() {
 // device signing in would delete everything newer on the server and pull its
 // own old list back. Chris hit exactly that: a PR pinned on his phone was
 // erased by his PC signing in afterwards.
-const REPLACE_STORES = new Set(["showcasedPRs", "notebookNotes", "scheduledItems"]);
+const REPLACE_STORES = new Set(["showcasedPRs", "notebookNotes", "scheduledItems", "preferences"]);
 function dirtyKey() { return `burnclub-sync-dirty-${AUTH_MEMBER ? AUTH_MEMBER.id : "demo"}`; }
 function loadDirty() {
   try { return new Set(JSON.parse(localStorage.getItem(dirtyKey()) || "[]")); }

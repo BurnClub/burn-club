@@ -3319,7 +3319,10 @@ let tourIndex = 0;
 let tourIsReplay = false;
 
 function tourSeen() {
-  return localStorage.getItem(memberKey(TOUR_SEEN_KEY)) === "1";
+  // Any value counts, not just "1". The sync used to write a timestamp here,
+  // which meant a strict check failed and the tour replayed forever; this also
+  // repairs the phones already holding one (2026-10-02).
+  return !!localStorage.getItem(memberKey(TOUR_SEEN_KEY));
 }
 
 function tourSlides() {
