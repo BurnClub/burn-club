@@ -1620,13 +1620,20 @@ h1, h2, h3 {
    fixed-size chrome down to fit instead of letting .screen's own scroll take
    over, so the video collapses to 0 height (caught 2026-08-06). */
 .player-screen.visible > * { flex-shrink: 0; }
+/* Three columns, the outer two equal (2026-10-02, Chris spotted the pill sitting
+   off centre). space-between puts the pill in whatever room is left between a
+   34px exit button and a "Block 1 of 2" label, which is not the middle of the
+   screen — it sat ~16px left. Equal outer columns centre it properly whatever
+   those two happen to say. */
 .player-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   margin-bottom: 12px;
 }
+.player-header .player-exit { justify-self: start; }
+.player-header .player-progress-text { justify-self: end; text-align: right; }
 .player-exit {
   background: var(--white);
   border: none;
@@ -3877,12 +3884,24 @@ h1, h2, h3 {
 }
 
 /* ---- Read the technique aloud (2026-09-05) ---- */
+/* The speak button is taken out of the flow (2026-10-02, Chris spotted the
+   technique label sitting left of centre). It used to sit beside the toggle in
+   a flex row, so the toggle's own centred text was centred in "width minus the
+   button", landing about 22px left of the screen's centre. Absolute keeps the
+   button where it was and lets the label centre on the page. */
 .player-technique-row {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
 }
-.player-technique-row .player-technique-toggle { flex: 1; min-width: 0; }
+.player-technique-row .player-technique-toggle { margin-left: auto; margin-right: auto; }
+.player-technique-row .player-technique-speak {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
 .player-technique-speak {
   display: flex;
   align-items: center;
