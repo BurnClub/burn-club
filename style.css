@@ -852,7 +852,7 @@ h1, h2, h3 {
    Every set of the block on one screen, pre-filled. Wide fields and big rows:
    this is tapped with one hand, standing up, probably sweating. */
 .player-weight-log { display: none; flex-direction: column; gap: 18px; margin-top: 4px; }
-.weight-log-group { display: flex; flex-direction: column; gap: 6px; }
+.weight-log-group { display: flex; flex-direction: column; gap: 8px; }
 .weight-log-ex {
   margin: 0 0 2px;
   font-family: var(--font-heading);
@@ -860,18 +860,11 @@ h1, h2, h3 {
   font-weight: 800;
   color: var(--text);
 }
-.weight-log-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  background: var(--white);
-  border-radius: var(--radius-md);
-  padding: 10px 14px;
-}
-.weight-log-label { font-size: 13px; font-weight: 700; color: var(--text-muted); }
+/* The weight screen reuses .set-row, so a member reads it the same way round
+   as the screen they just worked through: number, leader, reps — and the box
+   standing exactly where the tick stood. */
 .weight-log-input {
-  width: 92px;
+  width: 86px;
   text-align: center;
   font-family: inherit;
   font-size: 17px;
@@ -2017,24 +2010,67 @@ h1, h2, h3 {
 }
 
 /* ---------- STRAIGHT SETS / REP LADDER CHECKLIST (2026-08-06) ---------- */
-.player-sets-list { display: none; flex-direction: column; gap: 10px; margin-bottom: 18px; }
-/* Light-blue card (2026-08-21) — was the cream --white tile. Chris's spec:
-   "White circles with dark text for the numbering, keep the black for the
-   reps and make the done box and text white." Periwinkle rather than a
-   paler blue on purpose: the white circle and white Done box have to read
-   as white ON something, and --field-bg/--alice are too close to the
-   screen's own white for either to show up. */
-.player-set-row {
+/* ---------- THE SET CARD (2026-10-05, from Chris's sketch) ----------
+   One card holding every set, where there used to be one card per set:
+   "i want to try out combining all of the set cards into one large card. It
+   looks to seperate right now." The exercise name stays outside it, the
+   count becomes the card's own heading, and each set is a line inside —
+   number, dotted leader, reps, tick.
+
+   Periwinkle is kept from the old per-set tiles (2026-08-21, Chris: "White
+   circles with dark text for the numbering, keep the black for the reps"):
+   the white circles and the white tick have to read as white ON something,
+   and the paler fills are too close to the screen's own cream to carry them.
+
+   No rules between the rows. The leader dots already run the eye across a
+   line and stop at the next one, which is the job a divider would be doing. */
+.player-sets-list { display: none; flex-direction: column; margin-bottom: 18px; }
+.player-sets-list, .set-card {
+  background: var(--periwinkle);
+  border-radius: var(--radius-md);
+  padding: 14px 16px 8px;
+  box-shadow: 0 4px 12px var(--border);
+}
+.set-card { display: flex; flex-direction: column; }
+.set-card-title {
+  margin: 0 0 2px;
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text);
+}
+/* The whole row is the button, not just the tick (2026-10-05). Mid-set, with
+   a bar just racked, a 26px circle is a small thing to hit and a full-width
+   row is a big one — the circle stays as the thing that says "tap me". */
+.set-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--periwinkle);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  box-shadow: 0 4px 12px var(--border);
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 11px 0;
+  margin: 0;
+  font-family: inherit;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
 }
-.player-set-row.done { opacity: 0.55; }
-.player-set-row.done .set-row-reps { text-decoration: line-through; }
+.set-row:disabled { cursor: default; }
+.set-row.done { opacity: 0.55; }
+.set-row.done .set-row-reps { text-decoration: line-through; }
+/* The dots Chris drew between the set number and its reps. Lifted off the
+   baseline so they sit mid-row rather than underlining the gap. */
+.set-row-leader {
+  flex: 1;
+  min-width: 16px;
+  align-self: center;
+  border-bottom: 2px dotted var(--pill-surface);
+  transform: translateY(-2px);
+}
 .set-row-num {
   width: 26px;
   height: 26px;
@@ -2049,32 +2085,32 @@ h1, h2, h3 {
   align-items: center;
   justify-content: center;
 }
-.set-row-reps { flex: 1; font-weight: 700; font-size: 13px; color: var(--text); }
-/* Done button replaces the old checkbox + inline weight field (2026-08-07) —
-   weight moved into the rest popup, see the note above toggleSetChecked in
-   app.js. */
-/* White filled box, not white text on the card: white label on periwinkle
-   measures 1.48:1, which is unreadable, so the white is the box and the
-   label is --ink at 15.4:1 — same treatment as the numbering circles. */
-.set-row-done-btn {
-  border: 2px solid #FFFFFF;
-  border-radius: var(--radius-sm);
+.set-row-reps { font-weight: 700; font-size: 13px; color: var(--text); white-space: nowrap; }
+/* Outline until it's tapped, filled after — the one bit of state on the row,
+   so it carries the tick rather than a word. White is the fill and --ink the
+   mark, never white text on periwinkle: that measures 1.48:1. */
+.set-row-check {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  /* Built exactly like the numbering circle opposite it — same fill, same
+     mark colour — so the two read as one family and the tick inherits a
+     treatment that has been legible in both themes for months. An outlined
+     ring was the first try: white-on-periwinkle gives the boundary about
+     1.2:1, so the control you are meant to aim at was the faintest thing on
+     the card. Empty and filled differ by the mark, at 13:1. */
   background: var(--card-white);
-  color: var(--text);
+  color: transparent;
+  font-size: 15px;
   font-weight: 800;
-  font-size: 12px;
-  padding: 8px 14px;
-  cursor: pointer;
-  flex-shrink: 0;
-  font-family: inherit;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-/* Completed state moved off --blue fill (2026-08-21): blue on the new
-   periwinkle card is 2.13:1 and goes muddy under the row's 0.55 opacity.
-   Ink fill is 10.4:1 against the card and still reads once faded. */
-.player-set-row.done .set-row-done-btn {
-  background: var(--chip);
-  border-color: var(--text);
-  color: var(--chip-text);
+.set-row.done .set-row-check {
+  color: var(--text);
 }
 
 /* Rest timer pops up over the checklist between sets instead of a full
@@ -3332,9 +3368,9 @@ h1, h2, h3 {
   white-space: nowrap;
   flex-shrink: 0;
 }
-/* The straight-sets row is itself periwinkle, so the pill flips to the white
-   box the Done button beside it already uses. */
-.player-set-row .hold-tag {
+/* The set card is itself periwinkle, so the pill flips to the white fill the
+   numbering circles and the tick already use. */
+.set-row .hold-tag {
   background: var(--pill-surface);
 }
 

@@ -586,8 +586,15 @@ syncs them.
 - **The workout flow: straight sets and static holds are done** (2026-10-03).
   Supersets first — per-round rep schemes, the demo strip, weights at the end
   of each block, the overview button. Then:
-  - **Straight sets.** Chris confirmed Done-per-set is right: it's what starts
-    the rest period. Nothing outstanding unless he raises more.
+  - **Straight sets.** Done-per-set is right: it's what starts the rest period.
+    The four separate set tiles became **one card** on 2026-10-05 (Chris: "i
+    want to try out combining all of the set cards into one large card. It
+    looks to seperate right now"), drawn from his sketch — exercise name
+    outside, the count as the card's heading, then set number, dotted leader,
+    reps, tick. The whole row is the tap target, not just the tick. The
+    end-of-block weight screen was rebuilt on the same card so the two screens
+    read the same way round, with the input standing where the tick stood.
+    Behaviour is untouched: same Done, same rest, same weights.
   - **Static holds are instructions, not timers** (2026-10-03). The hold used
     to be a button on the row that started a countdown, and reps-then-hold was
     rewritten into a two-row superset — the same exercise listed twice. Chris

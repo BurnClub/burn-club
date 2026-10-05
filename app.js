@@ -2944,6 +2944,22 @@ function holdLabel(seconds) {
 // to start, and — the point — the reps and the hold are now ONE row rather
 // than the same exercise listed twice. Completion is the tap that was always
 // going to happen anyway: Done on a straight set, Finish round on a superset.
+// "4 sets" / "1 set", "3 rounds" — the card's own heading, on the working
+// screen and on the weight screen that mirrors it.
+function countLabel(n, word) {
+  return `${n} ${word}${n === 1 ? "" : "s"}`;
+}
+
+// One place that knows what a finished row looks like, because two call it:
+// the tap itself, and the resume path that re-applies ticks after a render.
+function markSetRowDone(setIndex) {
+  const row = document.querySelector(`.set-row[data-set-index="${setIndex}"]`);
+  if (!row) return;
+  row.classList.add("done");
+  row.setAttribute("aria-pressed", "true");
+  row.disabled = true;
+}
+
 function holdTagHtml(seconds, hasReps) {
   if (!seconds) return "";
   // "last rep: hold 20s" where there are reps to hold at the end of; plain
@@ -4235,11 +4251,7 @@ const Player = {
     this.setsChecked = saved.slice();
     saved.forEach((checked, i) => {
       if (!checked) return;
-      const row = document.querySelector(`.player-set-row[data-set-index="${i}"]`);
-      if (!row) return;
-      row.classList.add("done");
-      const btn = row.querySelector(".set-row-done-btn");
-      if (btn) { btn.textContent = "✓ Done"; btn.disabled = true; }
+      markSetRowDone(i);
     });
   },
 
@@ -4278,15 +4290,7 @@ const Player = {
   toggleSetChecked(setIndex) {
     if (this.setsChecked[setIndex]) return;
     this.setsChecked[setIndex] = true;
-    const row = document.querySelector(`.player-set-row[data-set-index="${setIndex}"]`);
-    if (row) {
-      row.classList.add("done");
-      const doneBtn = row.querySelector(".set-row-done-btn");
-      if (doneBtn) {
-        doneBtn.textContent = "✓ Done";
-        doneBtn.disabled = true;
-      }
-    }
+    markSetRowDone(setIndex);
     const phase = this.currentPhase();
     const isLastSet = this.setsChecked.every(Boolean);
     this.persist();
@@ -4906,24 +4910,37 @@ const Player = {
         g.rows.push(e);
       });
 
+      // Laid out as the working screen is (2026-10-05, Chris): the exercise
+      // name outside, one card under it, and inside the card the same
+      // numbered rows with the same dotted leader. The input simply stands
+      // where the tick stood, so the member reads the two screens the same
+      // way round rather than relearning the block at the end of it.
       logEl.innerHTML = byExercise.map((g) => {
         const last = lastWeightFor(g.name);
+        // "Round 1" on a superset, "Set 1" on straight sets — the heading
+        // follows whichever the block actually produced.
+        const unit = /^round/i.test(g.rows[0].label || "") ? "round" : "set";
         return `
           <div class="weight-log-group">
             <p class="weight-log-ex">${esc(g.name)}</p>
-            ${g.rows.map((row, i) => {
-              const key = `${row.blockIndex}|${g.name}|${row.label}`;
-              const prefill = this.setWeights[key] != null ? this.setWeights[key]
-                            : (i > 0 ? this.setWeights[`${row.blockIndex}|${g.name}|${g.rows[i - 1].label}`] : null)
-                            ?? last ?? "";
-              return `
-              <label class="weight-log-row">
-                <span class="weight-log-label">${esc(row.label)}${row.reps ? ` · ${row.reps} reps` : ""}</span>
-                <input type="number" inputmode="numeric" class="weight-log-input"
-                       data-key="${esc(key)}" data-ex-name="${esc(g.name)}"
-                       value="${prefill}" placeholder="lb" />
-              </label>`;
-            }).join("")}
+            <div class="set-card">
+              <p class="set-card-title">${countLabel(g.rows.length, unit)}</p>
+              ${g.rows.map((row, i) => {
+                const key = `${row.blockIndex}|${g.name}|${row.label}`;
+                const prefill = this.setWeights[key] != null ? this.setWeights[key]
+                              : (i > 0 ? this.setWeights[`${row.blockIndex}|${g.name}|${g.rows[i - 1].label}`] : null)
+                              ?? last ?? "";
+                return `
+                <label class="set-row weight-row">
+                  <span class="set-row-num">${i + 1}</span>
+                  <span class="set-row-leader"></span>
+                  ${row.reps ? `<span class="set-row-reps">${row.reps} reps</span>` : ""}
+                  <input type="number" inputmode="numeric" class="weight-log-input"
+                         data-key="${esc(key)}" data-ex-name="${esc(g.name)}"
+                         value="${prefill}" placeholder="lb" />
+                </label>`;
+              }).join("")}
+            </div>
           </div>`;
       }).join("");
 
@@ -4962,8 +4979,9 @@ const Player = {
 
     if (phase.kind === "sets") {
       document.getElementById("player-exercise-name").textContent = phase.exerciseName;
-      document.getElementById("player-sub-pill").textContent =
-        `${phase.sets.length} set${phase.sets.length === 1 ? "" : "s"}`;
+      // The count moved into the card, so the pill carries the block label —
+      // which is what the superset screen already shows in this spot.
+      document.getElementById("player-sub-pill").textContent = phase.blockLabel || "";
       document.getElementById("player-video").style.display = "flex";
       setPlayerVideo(phase.exerciseName);
       setPlayerExerciseTechnique(phase.exerciseName);
@@ -4976,16 +4994,28 @@ const Player = {
       // real rest time. Tapping Done starts rest immediately; the weight
       // field shows up inside that popup where they have the whole rest
       // period to fill it in. See toggleSetChecked/showSetPopup.
-      listEl.innerHTML = phase.sets.map((s, i) => `
-        <div class="player-set-row" data-set-index="${i}">
+      // One card holding every set, rather than one card per set (2026-10-05,
+      // from Chris's sketch: "It looks to seperate right now"). Four tiles for
+      // four lines of the same prescription was four times the furniture for
+      // no extra meaning. Same rows, same Done behaviour, same rest — the
+      // card is the only thing that changed.
+      //
+      // The whole row is the button, not just the tick. Mid-set, with a
+      // barbell just racked, a 26px circle is a small thing to hit and the
+      // row is a big one; the circle stays as the thing that *says* "tap me".
+      listEl.innerHTML = `
+        <p class="set-card-title">${countLabel(phase.sets.length, "set")}</p>
+        ${phase.sets.map((s, i) => `
+        <button class="set-row" type="button" data-set-index="${i}" aria-pressed="false">
           <span class="set-row-num">${s.num}</span>
+          <span class="set-row-leader"></span>
           <span class="set-row-reps">${s.reps ? `${s.reps} reps` : holdLabel(s.hold)}</span>
           ${s.reps ? holdTagHtml(s.hold, true) : ""}
-          <button class="set-row-done-btn" data-set-index="${i}">Done</button>
-        </div>
-      `).join("");
-      listEl.querySelectorAll(".set-row-done-btn").forEach((btn) => {
-        btn.addEventListener("click", () => this.toggleSetChecked(Number(btn.dataset.setIndex)));
+          <span class="set-row-check">✓</span>
+        </button>
+      `).join("")}`;
+      listEl.querySelectorAll(".set-row").forEach((row) => {
+        row.addEventListener("click", () => this.toggleSetChecked(Number(row.dataset.setIndex)));
       });
     }
 
