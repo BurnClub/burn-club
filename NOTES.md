@@ -590,10 +590,13 @@ syncs them.
     The four separate set tiles became **one card** on 2026-10-05 (Chris: "i
     want to try out combining all of the set cards into one large card. It
     looks to seperate right now"), drawn from his sketch — exercise name
-    outside, the count as the card's heading, then set number, dotted leader,
-    reps, tick. The whole row is the tap target, not just the tick. The
-    end-of-block weight screen was rebuilt on the same card so the two screens
-    read the same way round, with the input standing where the tick stood.
+    outside, the count as the card's heading, then set number, reps, dotted
+    leader, Done. Reps stayed on the left where they have always been, and
+    Done stayed a word rather than becoming a tick — both Chris's call, for
+    consistency with everything else. The whole row is the tap target, not
+    just the Done box. The end-of-block weight screen was rebuilt on the same
+    card so the two screens read the same way round, with the input standing
+    where Done stands.
     Behaviour is untouched: same Done, same rest, same weights.
   - **Static holds are instructions, not timers** (2026-10-03). The hold used
     to be a button on the row that started a countdown, and reps-then-hold was

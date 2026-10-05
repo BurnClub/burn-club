@@ -2958,6 +2958,8 @@ function markSetRowDone(setIndex) {
   row.classList.add("done");
   row.setAttribute("aria-pressed", "true");
   row.disabled = true;
+  const done = row.querySelector(".set-row-done");
+  if (done) done.textContent = "✓ Done";
 }
 
 function holdTagHtml(seconds, hasReps) {
@@ -4933,8 +4935,8 @@ const Player = {
                 return `
                 <label class="set-row weight-row">
                   <span class="set-row-num">${i + 1}</span>
-                  <span class="set-row-leader"></span>
                   ${row.reps ? `<span class="set-row-reps">${row.reps} reps</span>` : ""}
+                  <span class="set-row-leader"></span>
                   <input type="number" inputmode="numeric" class="weight-log-input"
                          data-key="${esc(key)}" data-ex-name="${esc(g.name)}"
                          value="${prefill}" placeholder="lb" />
@@ -5000,18 +5002,20 @@ const Player = {
       // no extra meaning. Same rows, same Done behaviour, same rest — the
       // card is the only thing that changed.
       //
-      // The whole row is the button, not just the tick. Mid-set, with a
-      // barbell just racked, a 26px circle is a small thing to hit and the
-      // row is a big one; the circle stays as the thing that *says* "tap me".
+      // The whole row is the button, not just the Done box. Mid-set, with a
+      // barbell just racked, the box is a small thing to hit and the row is a
+      // big one; the box stays as the thing that *says* where to tap. It is a
+      // span rather than a nested <button>, which would not be valid inside
+      // one — it looks and reads like the control it has always been.
       listEl.innerHTML = `
         <p class="set-card-title">${countLabel(phase.sets.length, "set")}</p>
         ${phase.sets.map((s, i) => `
         <button class="set-row" type="button" data-set-index="${i}" aria-pressed="false">
           <span class="set-row-num">${s.num}</span>
-          <span class="set-row-leader"></span>
           <span class="set-row-reps">${s.reps ? `${s.reps} reps` : holdLabel(s.hold)}</span>
           ${s.reps ? holdTagHtml(s.hold, true) : ""}
-          <span class="set-row-check">✓</span>
+          ${s.reps && s.hold ? "" : `<span class="set-row-leader"></span>`}
+          <span class="set-row-done">Done</span>
         </button>
       `).join("")}`;
       listEl.querySelectorAll(".set-row").forEach((row) => {
