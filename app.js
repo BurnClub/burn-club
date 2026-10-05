@@ -2944,12 +2944,6 @@ function holdLabel(seconds) {
 // to start, and — the point — the reps and the hold are now ONE row rather
 // than the same exercise listed twice. Completion is the tap that was always
 // going to happen anyway: Done on a straight set, Finish round on a superset.
-// "4 sets" / "1 set", "3 rounds" — the card's own heading, on the working
-// screen and on the weight screen that mirrors it.
-function countLabel(n, word) {
-  return `${n} ${word}${n === 1 ? "" : "s"}`;
-}
-
 // One place that knows what a finished row looks like, because two call it:
 // the tap itself, and the resume path that re-applies ticks after a render.
 function markSetRowDone(setIndex) {
@@ -4919,14 +4913,14 @@ const Player = {
       // way round rather than relearning the block at the end of it.
       logEl.innerHTML = byExercise.map((g) => {
         const last = lastWeightFor(g.name);
-        // "Round 1" on a superset, "Set 1" on straight sets — the heading
-        // follows whichever the block actually produced.
-        const unit = /^round/i.test(g.rows[0].label || "") ? "round" : "set";
+        // "Round 1" on a superset, "Set 1" on straight sets — the column
+        // header follows whichever the block actually produced.
+        const unit = /^round/i.test(g.rows[0].label || "") ? "Rounds" : "Sets";
         return `
           <div class="weight-log-group">
             <p class="weight-log-ex">${esc(g.name)}</p>
             <div class="set-card">
-              <p class="set-card-title">${countLabel(g.rows.length, unit)}</p>
+              <p class="set-card-title">${unit}</p>
               ${g.rows.map((row, i) => {
                 const key = `${row.blockIndex}|${g.name}|${row.label}`;
                 const prefill = this.setWeights[key] != null ? this.setWeights[key]
@@ -5008,7 +5002,7 @@ const Player = {
       // span rather than a nested <button>, which would not be valid inside
       // one — it looks and reads like the control it has always been.
       listEl.innerHTML = `
-        <p class="set-card-title">${countLabel(phase.sets.length, "set")}</p>
+        <p class="set-card-title">Sets</p>
         ${phase.sets.map((s, i) => `
         <button class="set-row" type="button" data-set-index="${i}" aria-pressed="false">
           <span class="set-row-num">${s.num}</span>
