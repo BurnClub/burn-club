@@ -150,7 +150,16 @@ never put in front of him, which is what made the question unanswerable.
 **14 exercises the library had no entry for** came out of this batch and are
 added to `data.js` and `admin/data.js`. Their tags are copied from the nearest
 sibling and are my guesses, not his — same unchecked caveat as the 11 added on
-2026-09-28, and both sets are still worth a pass with him.
+2026-09-28.
+
+All 25 of those now carry a **"New" tag** so Chris can work through them
+(2026-10-07, his ask). It rides in `bodyParts` rather than being its own field,
+because that is what the Filters popup and the exercise edit modal already
+read, so it needed no code: tick New in Filters to list them, untick it on an
+exercise once its real tags are in, and when the list empties delete "New" from
+`BODY_PART_TAGS`. Admin-only — the member app never reads `bodyParts`. Nothing
+in the library is *literally* untagged, which is what he asked for; these are
+the ones whose tags are mine.
 
 **The Bear Plank demo currently live is the wrong clip** (Chris, 2026-10-07).
 The new `bear-plank-quadruped.mp4` is the right one and replaces it. What the
