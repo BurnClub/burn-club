@@ -3845,6 +3845,9 @@ function exerciseTracksWeight(name) {
 // The strip of demos on a superset screen. Only the one in view plays: the
 // others keep their src so a sideways flick starts them instantly, but a
 // paused video downloads nothing more (2026-10-02).
+// No numbering circles on the captions either (2026-10-06): they are the same
+// circle the set card uses for a set number, sitting directly above a list
+// that just lost its own for exactly that reason.
 function renderDemoStrip(exercises) {
   const strip = document.getElementById("player-demo-strip");
   if (!strip) return;
@@ -3859,7 +3862,6 @@ function renderDemoStrip(exercises) {
             : `<span class="demo-card-empty">No demo yet</span>`}
         </div>
         <p class="demo-card-name">
-          <span class="demo-card-num">${i + 1}</span>
           <span>${esc(e.name)}</span>
           ${e.reps ? `<span class="demo-card-reps">${e.reps} reps</span>` : ""}
         </p>
@@ -4873,11 +4875,16 @@ const Player = {
           // from the press into the dips with no break, so a Done button
           // between them asks for a tap at the one moment they have no hand
           // free. One tap at the end of the round, and that starts the rest.
+          //
+          // And no numbering circle either (2026-10-06, Chris: "since the
+          // numbers listed on the side are meant for sets, lets take those
+          // out"). The set card next door uses that exact circle for the set
+          // number, so here it was quietly claiming these two exercises were
+          // sets one and two. The order is already carried by the order.
           return `
           <div class="amrap-row superset-row">
             <div class="amrap-row-line1">
               <div class="amrap-row-left">
-                <span class="amrap-order-num">${i + 1}</span>
                 <span class="amrap-ex-name">${esc(e.name)}</span>
                 ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
               </div>
