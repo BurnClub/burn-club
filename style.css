@@ -3472,8 +3472,7 @@ h1, h2, h3 {
   /* Indented to the name above it — 22px circle + 10px gap — so the set
      details read as belonging to that exercise rather than as a new row. */
   padding-left: 32px;
-  /* A superset row has no circle to indent past since 2026-10-06, so its
-     second line sits under the name rather than under where one used to be. */
+
   font-size: 13px;
   font-weight: 500;
   min-height: 26px;
@@ -3499,7 +3498,12 @@ h1, h2, h3 {
   overflow: hidden;
   line-height: 1.2;
 }
-.superset-row .amrap-row-line2 { padding-left: 0; }
+/* The circle left on 2026-10-06 but the indent stays: without it the name ran
+   up against the edge of the card. Chris: "it liiks to close to the edge ...
+   Pretty much same spot as if the numver was there." So the text holds the
+   position it has always had — 22px circle plus its 10px gap — and it is the
+   circle alone that is gone. */
+.superset-row .amrap-row-left { padding-left: 32px; }
 .amrap-reps { white-space: nowrap; font-weight: 500; }
 /* Weight reads as text until you tap it — it was a permanent bordered input
    sitting in a row you spend most of your time just reading. Same field, same
