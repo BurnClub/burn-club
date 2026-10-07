@@ -127,6 +127,12 @@
   --text: var(--color-text);        /* was color: var(--ink) / var(--slate) */
   --text-muted: var(--color-text-muted);  /* was color: var(--deepblue), which failed 4.5:1 on every surface */
   --border: rgba(23, 36, 63, 0.08);
+  /* The one shadow every card on the app's own background casts: 0 4px 12px
+     of this (2026-10-06, Chris — "make sure the shadow is the same across all
+     block types and anywhere those shadows are used on this background").
+     It was --border at 0.08 until the set card went a quarter darker and left
+     its neighbours behind. Round buttons, chat bubbles, calendar cells, the
+     nav bar and the overlays keep their own: none of them is a card. */
   --card-shadow: rgba(23, 36, 63, 0.10);
   --border-strong: rgba(23, 36, 63, 0.14);
   --shadow: rgba(23, 36, 63, 0.05);
@@ -541,7 +547,7 @@ h1, h2, h3 {
   display: flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 4px 12px var(--border);
+  box-shadow: 0 4px 12px var(--card-shadow);
 }
 .today-stat-icon { display: flex; color: var(--text); }
 .today-stat-icon svg { width: 22px; height: 22px; display: block; }
@@ -982,7 +988,7 @@ h1, h2, h3 {
   border: 1px solid rgba(255,255,255,0.5);
   padding: 18px;
   margin-bottom: 10px;
-  box-shadow: 0 4px 12px var(--border);
+  box-shadow: 0 4px 12px var(--card-shadow);
   overflow: hidden;
 }
 /* Flat colors instead of gradients across all card variants (2026-08-10,
@@ -1017,7 +1023,7 @@ h1, h2, h3 {
 .home-section-card.card-white {
   background: var(--card-white);
   border: 1px solid var(--border);
-  box-shadow: 0 4px 14px var(--border);
+  box-shadow: 0 4px 12px var(--card-shadow);
 }
 /* Watermark icon behind the workout cards — was a line-art barbell (Chris's
    2026-08-06 request), then a hand-traced SVG outline of the melting-smiley
@@ -1143,7 +1149,7 @@ h1, h2, h3 {
      stay distinct from --white's other job as the tint for standalone cards
      sitting directly on the page background (today-stat tiles, feed items). */
   background: var(--card-white);
-  box-shadow: 0 4px 10px var(--border);
+  box-shadow: 0 4px 12px var(--card-shadow);
   position: relative;
   overflow: hidden;
 }
@@ -1376,7 +1382,7 @@ h1, h2, h3 {
   border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: 13px;
-  box-shadow: 0 4px 10px var(--border);
+  box-shadow: 0 4px 12px var(--card-shadow);
   border: none;
   width: 100%;
   text-align: left;
@@ -1570,7 +1576,7 @@ h1, h2, h3 {
   border: 1px solid var(--blue);
   border-radius: var(--radius-md);
   padding: 16px;
-  box-shadow: 0 4px 12px var(--border);
+  box-shadow: 0 4px 12px var(--card-shadow);
 }
 .block-card-top {
   display: flex;
@@ -2497,7 +2503,7 @@ h1, h2, h3 {
   background: var(--white);
   border-radius: var(--radius-md);
   padding: 16px 18px;
-  box-shadow: 0 4px 12px var(--border);
+  box-shadow: 0 4px 12px var(--card-shadow);
   text-align: left;
 }
 .benchmark-score-label { margin: 0 0 12px; font-size: 13px; font-weight: 700; color: var(--text); }
@@ -2574,7 +2580,7 @@ h1, h2, h3 {
   background: var(--white);
   padding: 12px 16px;
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px var(--border);
+  box-shadow: 0 4px 12px var(--card-shadow);
   font-weight: 700;
   font-size: 14px;
 }
@@ -2594,7 +2600,7 @@ h1, h2, h3 {
   padding: 4px;
   gap: 4px;
   margin-bottom: 16px;
-  box-shadow: 0 4px 12px var(--border);
+  box-shadow: 0 4px 12px var(--card-shadow);
 }
 .range-btn {
   flex: 1;
@@ -2674,7 +2680,7 @@ h1, h2, h3 {
   border-radius: var(--radius-md);
   padding: 18px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 12px var(--border);
+  box-shadow: 0 4px 12px var(--card-shadow);
 }
 .challenge-eyebrow { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
 /* +50% (2026-08-11) — was 20px. */
@@ -2751,7 +2757,7 @@ h1, h2, h3 {
   background: var(--card-white);
   border-radius: var(--radius-md);
   padding: 14px 10px;
-  box-shadow: 0 4px 12px var(--border);
+  box-shadow: 0 4px 12px var(--card-shadow);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3437,7 +3443,7 @@ h1, h2, h3 {
   /* The divider does the separating now, so the inter-row gap goes; the rows'
      own 12px vertical padding is what spaces them. */
   gap: 0;
-  box-shadow: 0 4px 12px var(--border);
+  box-shadow: 0 4px 12px var(--card-shadow);
 }
 /* The divider was periwinkle, which is now the colour of the card behind it —
    it would have vanished entirely. White keeps it, and matches the circles
@@ -3616,7 +3622,7 @@ h1, h2, h3 {
      this the card had a top margin and no bottom one, so the Activity Feed
      sat flush against it — a 0px gap between two differently-coloured cards. */
   margin-bottom: 24px;
-  box-shadow: 0 4px 12px var(--border);
+  box-shadow: 0 4px 12px var(--card-shadow);
 }
 /* The eyebrow and name are .challenge-eyebrow/.challenge-name, borrowed from
    the individual card so the two read as a pair (2026-08-27). Only the parts
