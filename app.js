@@ -5057,11 +5057,13 @@ const Player = {
           // bodyweight movement. Drop-set segments will work the same way.
           const tracks = !e.hold && !e.drop && exerciseTracksWeight(e.name);
           const last = tracks ? lastWeightFor(e.name) : null;
+          // Unnumbered, like the superset list (2026-10-06): that circle means
+          // "set number" on the set card, and an AMRAP row is a station, not a
+          // set. The indent it used to hold stays.
           return `
           <div class="amrap-row">
             <div class="amrap-row-line1">
               <div class="amrap-row-left">
-                <span class="amrap-order-num">${i + 1}</span>
                 <span class="amrap-ex-name">${esc(e.name)}</span>
                 ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
               </div>
