@@ -10,8 +10,9 @@
 #   unset SUPABASE_SERVICE_KEY
 #
 # Safe to re-run: every upload is an upsert, so a half-finished run just
-# carries on. Files are named <exercise-id>.mp4 and that name is the contract
-# with the app — it builds the URL from the exercise id.
+# carries on. Files are named <exercise-id>.mp4 (and <exercise-id>.jpg for the
+# cover frame) and that name is the contract with the app — it builds both URLs
+# from the exercise id.
 set -u
 
 DIR="${1:-$HOME/Desktop/burn-club-videos}"
@@ -25,21 +26,26 @@ if [ -z "${SUPABASE_SERVICE_KEY:-}" ]; then
 fi
 [ -d "$DIR" ] || { echo "No such folder: $DIR"; exit 1; }
 
-total=$(ls -1 "$DIR"/*.mp4 2>/dev/null | grep -vc '/\._' || true)
-[ "${total:-0}" -gt 0 ] || { echo "No .mp4 files in $DIR"; exit 1; }
+# Posters ride in the same bucket beside their clips, <id>.jpg next to
+# <id>.mp4 (2026-10-07), so the content type comes from the extension rather
+# than being hardcoded to video.
+total=$(ls -1 "$DIR"/*.mp4 "$DIR"/*.jpg 2>/dev/null | grep -vc '/\._' || true)
+[ "${total:-0}" -gt 0 ] || { echo "No .mp4 or .jpg files in $DIR"; exit 1; }
 echo "Uploading $total files to $BUCKET"
 
 ok=0; failed=0; n=0
-for f in "$DIR"/*.mp4; do
+for f in "$DIR"/*.mp4 "$DIR"/*.jpg; do
+  [ -e "$f" ] || continue
   name=$(basename "$f")
   case "$name" in ._*) continue;; esac
+  case "$name" in *.jpg) ctype="image/jpeg";; *) ctype="video/mp4";; esac
   n=$((n+1))
 
   code=$(curl -s -o /tmp/upload-body.txt -w '%{http_code}' \
     -X POST "$PROJECT_URL/storage/v1/object/$BUCKET/$name" \
     -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
     -H "apikey: $SUPABASE_SERVICE_KEY" \
-    -H "Content-Type: video/mp4" \
+    -H "Content-Type: $ctype" \
     -H "x-upsert: true" \
     --data-binary "@$f")
 
@@ -53,7 +59,7 @@ for f in "$DIR"/*.mp4; do
       -X POST "$PROJECT_URL/storage/v1/object/$BUCKET/$name" \
       -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
       -H "apikey: $SUPABASE_SERVICE_KEY" \
-      -H "Content-Type: video/mp4" \
+      -H "Content-Type: $ctype" \
       -H "x-upsert: true" \
       --data-binary "@$f")
     if [ "$code" = "200" ] || [ "$code" = "201" ]; then

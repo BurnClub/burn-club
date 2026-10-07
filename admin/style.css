@@ -949,6 +949,26 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   justify-content: center;
   position: relative;
 }
+/* The cover frame fills the tile and the preview sits on top of it when it
+   plays; the play button sits over both (2026-10-07). object-fit: cover
+   because these are portrait phone clips in a 3:2 tile, and letterboxing 450
+   of them would make the grid read as broken. */
+.exercise-card-cover,
+.exercise-card-clip {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.exercise-card-clip { z-index: 1; }
+/* Dimmed under the play button so a white shoe or a bright gym wall never
+   swallows it, lifted while the preview runs. */
+.exercise-card-cover { filter: brightness(0.88); transition: filter 0.2s ease; }
+.exercise-card-video.previewing .exercise-card-cover { filter: none; }
+.exercise-card-video.previewing .exercise-card-play { opacity: 0; }
+.exercise-card-play { position: relative; z-index: 2; }
 .exercise-card-play {
   width: 40px;
   height: 40px;
@@ -997,6 +1017,8 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   background: linear-gradient(135deg, var(--deepblue), var(--blue));
   border-radius: var(--radius-md);
   height: 180px;
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1015,6 +1037,20 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   font-size: 20px;
 }
 .admin-player-video-label { margin: 0; font-size: 12px; font-weight: 700; opacity: 0.85; text-align: center; padding: 0 12px; }
+/* The gradient box and its ▶ stay as the empty state for an exercise with no
+   video; the clip covers them when there is one. */
+.admin-player-clip { display: none; }
+.admin-player-video.has-clip .admin-player-clip {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+.admin-player-video.has-clip .admin-player-video-play,
+.admin-player-video.has-clip .admin-player-video-label { display: none; }
 .exercise-video-admin-url { margin: 12px 0 0; font-size: 12px; text-align: center; color: var(--deepblue); font-weight: 600; word-break: break-all; }
 .exercise-video-admin-url a { color: var(--blue); }
 

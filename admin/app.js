@@ -3304,28 +3304,128 @@ function renderExerciseLibrary() {
   // card) or the Filters popup, not printed on the card face.
   document.getElementById("exercise-list").innerHTML = filtered.map((ex) => `
     <div class="exercise-card" data-action="edit-exercise" data-ex-id="${ex.id}">
-      <div class="exercise-card-video">
+      <div class="exercise-card-video" ${ex.videoUrl ? `data-clip="${ex.videoUrl}"` : ""}>
+        ${ex.videoUrl ? `<img class="exercise-card-cover" loading="lazy" alt=""
+             src="${posterUrlFor(ex.videoUrl)}" onerror="this.style.display='none'">` : ""}
         <button class="exercise-card-play" data-action="view-exercise-video" data-ex-id="${ex.id}" title="View video">▶</button>
       </div>
       <p class="exercise-card-name">${ex.name}</p>
     </div>
   `).join("") || `<p style="color:var(--deepblue);font-weight:700;">No exercises match.</p>`;
+
+  wireExerciseCardPreviews();
 }
 
-// Mirrors the member app's exercise-video-popup pattern: a placeholder box since
-// there's still no real video file anywhere in the app (same disclosed gap as
-// everywhere else) — shows the exercise name, and the raw Video URL field as a
-// clickable link if one was entered.
+// The cover frame lives beside its clip in the same bucket, one derived from
+// the other rather than stored twice: <id>.mp4 and <id>.jpg. A card whose
+// poster is missing — or whose image request simply failed — hides it and
+// falls back to the gradient tile, which is what every card looked like before
+// this. Hidden rather than removed, so the next render gets to try again.
+function posterUrlFor(videoUrl) {
+  return videoUrl.replace(/\.mp4(\?.*)?$/i, ".jpg");
+}
+
+// Covers and hover previews on the Exercise Library (2026-10-07, Chris: "Id
+// like to see a cover phote taken from 50% of the way through the video, and a
+// short preview if it is hovered on for a few seconds").
+//
+// The first build gave every card its own <video>, seeked to its own midpoint,
+// and nothing rendered: 450 of them on one page is far past the number of media
+// elements a browser will keep alive, so they sat there decoded but unpainted.
+// That is not a thing to work around with CSS. So:
+//
+//   - the cover is a plain <img loading="lazy">, which the browser pages in and
+//     out by itself and will happily draw 450 of;
+//   - there is exactly ONE <video> on the page, moved into whichever card is
+//     being hovered. One element can never hit the limit.
+//
+// The 450ms wait is deliberate: the pointer crosses a lot of cards on the way
+// to the one you want, and a grid that plays under the cursor is noise.
+const EXERCISE_PREVIEW_DELAY_MS = 450;
+let hoverClip = null;
+let hoverTimer = null;
+
+function exerciseHoverClip() {
+  if (!hoverClip) {
+    hoverClip = document.createElement("video");
+    hoverClip.className = "exercise-card-clip";
+    hoverClip.muted = true;
+    hoverClip.loop = true;
+    hoverClip.playsInline = true;
+    hoverClip.preload = "auto";
+  }
+  return hoverClip;
+}
+
+function stopExerciseHoverPreview() {
+  clearTimeout(hoverTimer);
+  if (!hoverClip) return;
+  const frame = hoverClip.parentElement;
+  if (frame) frame.classList.remove("previewing");
+  hoverClip.pause();
+  hoverClip.removeAttribute("src");
+  hoverClip.load();            // drops the buffer as well as the picture
+  hoverClip.remove();
+}
+
+function wireExerciseCardPreviews() {
+  document.querySelectorAll(".exercise-card-video[data-clip]").forEach((frame) => {
+    frame.addEventListener("mouseenter", () => {
+      clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(() => {
+        const v = exerciseHoverClip();
+        frame.appendChild(v);
+        // Starts where the cover frame left off, so the preview carries on from
+        // the still rather than jumping back to someone standing about.
+        //
+        // The listener goes on BEFORE the src: with the clip already in cache,
+        // loadedmetadata fires the moment src is set, and attaching afterwards
+        // meant the second hover onwards never started playing at all.
+        v.addEventListener("loadedmetadata", () => {
+          if (isFinite(v.duration)) v.currentTime = v.duration / 2;
+          v.play().catch(() => {});
+        }, { once: true });
+        // No load() here: setting src already starts one, and a second call
+        // resets the element — which threw away the seek and the play() that
+        // the once-listener had just done.
+        v.src = frame.dataset.clip;
+        frame.classList.add("previewing");
+      }, EXERCISE_PREVIEW_DELAY_MS);
+    });
+    frame.addEventListener("mouseleave", stopExerciseHoverPreview);
+  });
+}
+
+// Was a placeholder box plus the raw URL as a link, written when no video file
+// existed anywhere in the app. They exist now, so it plays one (2026-10-07).
+// The URL stays underneath: this is the admin side, and when a demo looks wrong
+// the first question is which file is actually attached to the exercise.
 function openAdminExerciseVideo(exId) {
   const ex = EXERCISE_LIBRARY.find((x) => x.id === exId);
   if (!ex) return;
   document.getElementById("exercise-video-admin-label").textContent = `Demo Video — ${ex.name}`;
+  const frame = document.getElementById("admin-player-video");
+  const video = document.getElementById("exercise-video-admin-clip");
+  frame.classList.toggle("has-clip", !!ex.videoUrl);
+  if (ex.videoUrl) {
+    video.src = ex.videoUrl;
+    video.load();
+  } else {
+    video.removeAttribute("src");
+    video.load();
+  }
   const urlEl = document.getElementById("exercise-video-admin-url");
   urlEl.innerHTML = ex.videoUrl ? `<a href="${ex.videoUrl}" target="_blank" rel="noopener">${ex.videoUrl}</a>` : "No video URL set for this exercise yet.";
   document.getElementById("exercise-video-overlay-admin").classList.add("visible");
 }
 
 function closeAdminExerciseVideo() {
+  // Stop the download as well as the playback — a closed popup that is still
+  // pulling a video is invisible and costs the same.
+  const video = document.getElementById("exercise-video-admin-clip");
+  video.pause();
+  video.removeAttribute("src");
+  video.load();
   document.getElementById("exercise-video-overlay-admin").classList.remove("visible");
 }
 
