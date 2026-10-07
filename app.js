@@ -2956,6 +2956,15 @@ function markSetRowDone(setIndex) {
   if (done) done.textContent = "✓ Done";
 }
 
+// The hold under the reps rather than beside them (2026-10-06, Chris: "can we
+// make it so the hold button/test is subtext of the rep. I want to
+// differenciate it a little bit at least"). On a set row the hold is not a
+// second thing of the same kind as the reps — it is a note about how the last
+// one of them ends — so it reads as a line under, not a pill alongside.
+function holdSubText(seconds) {
+  return `last rep: hold ${seconds}s`;
+}
+
 function holdTagHtml(seconds, hasReps) {
   if (!seconds) return "";
   // "last rep: hold 20s" where there are reps to hold at the end of; plain
@@ -4929,7 +4938,9 @@ const Player = {
                 return `
                 <label class="set-row weight-row">
                   <span class="set-row-num">${i + 1}</span>
-                  ${row.reps ? `<span class="set-row-reps">${row.reps} reps</span>` : ""}
+                  <span class="set-row-main">
+                    ${row.reps ? `<span class="set-row-reps">${row.reps} reps</span>` : ""}
+                  </span>
                   <span class="set-row-leader"></span>
                   <input type="number" inputmode="numeric" class="weight-log-input"
                          data-key="${esc(key)}" data-ex-name="${esc(g.name)}"
@@ -5006,9 +5017,11 @@ const Player = {
         ${phase.sets.map((s, i) => `
         <button class="set-row" type="button" data-set-index="${i}" aria-pressed="false">
           <span class="set-row-num">${s.num}</span>
-          <span class="set-row-reps">${s.reps ? `${s.reps} reps` : holdLabel(s.hold)}</span>
-          ${s.reps ? holdTagHtml(s.hold, true) : ""}
-          ${s.reps && s.hold ? "" : `<span class="set-row-leader"></span>`}
+          <span class="set-row-main">
+            <span class="set-row-reps">${s.reps ? `${s.reps} reps` : holdLabel(s.hold)}</span>
+            ${s.reps && s.hold ? `<span class="set-row-sub">${holdSubText(s.hold)}</span>` : ""}
+          </span>
+          <span class="set-row-leader"></span>
           <span class="set-row-done">Done</span>
         </button>
       `).join("")}`;

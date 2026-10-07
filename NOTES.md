@@ -603,9 +603,11 @@ syncs them.
     rewritten into a two-row superset — the same exercise listed twice. Chris
     killed both: his case is a superset of normal glute bridges with the last
     rep held at the top, where the member is under load with no free hand and
-    the phone is on the floor. Now the lift and its hold are one row ("10 reps
-    · last rep: hold 20s"), a hold that's its own superset station reads as
-    "hold 30s", and a hold-only straight set got its Done button back. Nothing
+    the phone is on the floor. Now the lift and its hold are one row —
+    "10 reps", with "last rep: hold 20s" as subtext beneath it rather than a
+    pill beside it (2026-10-06, Chris, to differentiate the two). A hold that
+    is its own superset station still reads as a "hold 30s" pill, and a
+    hold-only straight set got its Done button back. Nothing
     to start, and completion is the tap that was happening anyway. A hold still
     takes no weight. `holdExercise` went with the second row — a hold can no
     longer carry its own library entry, and so its own video. Nothing in the
