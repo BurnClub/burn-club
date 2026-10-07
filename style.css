@@ -25,10 +25,6 @@
      White against the periwinkle rows in light; in dark --card-white IS the
      card, so a white pill would vanish and this becomes a lift instead. */
   --pill-surface: #FFFFFF;
-  /* The set card's 1pt stroke. Kelly's blue-800 reads at 8.3:1 on the
-     periwinkle fill; in dark mode that same navy IS the card, which left
-     the card with no edge at all once the shadow came off. */
-  --card-stroke: var(--blue-800);
   /* Page ground (Chris, 2026-09-07). Was #FFFFFF. A warm off-white at 98%
      lightness, hue 40 — the same family as the notebook paper (#F7EFD3,
      hue 47), so the notebook reads as the same paper a shade heavier rather
@@ -131,6 +127,7 @@
   --text: var(--color-text);        /* was color: var(--ink) / var(--slate) */
   --text-muted: var(--color-text-muted);  /* was color: var(--deepblue), which failed 4.5:1 on every surface */
   --border: rgba(23, 36, 63, 0.08);
+  --card-shadow: rgba(23, 36, 63, 0.10);
   --border-strong: rgba(23, 36, 63, 0.14);
   --shadow: rgba(23, 36, 63, 0.05);
   --shadow-lift: rgba(23, 36, 63, 0.12);
@@ -173,7 +170,6 @@
   --bg: var(--night);
   --card-white: var(--night-surface);
   --pill-surface: rgba(255, 255, 255, 0.12);
-  --card-stroke: rgba(152, 166, 236, 0.55);
   --white: var(--night-surface);
   --alice: rgba(107, 138, 249, 0.16);
   --field-bg: var(--night-surface);
@@ -181,6 +177,7 @@
   --text: var(--warm-white);
   --text-muted: var(--night-muted);
   --border: rgba(255, 255, 255, 0.10);
+  --card-shadow: rgba(255, 255, 255, 0.10);
   --border-strong: rgba(255, 255, 255, 0.18);
   --shadow: rgba(0, 0, 0, 0.40);
   --shadow-lift: rgba(0, 0, 0, 0.55);
@@ -242,7 +239,6 @@
     --bg: var(--night);
     --card-white: var(--night-surface);
     --pill-surface: rgba(255, 255, 255, 0.12);
-    --card-stroke: rgba(152, 166, 236, 0.55);
     --white: var(--night-surface);
     --alice: rgba(107, 138, 249, 0.16);
     --field-bg: var(--night-surface);
@@ -250,6 +246,7 @@
     --text: var(--warm-white);
     --text-muted: var(--night-muted);
     --border: rgba(255, 255, 255, 0.10);
+    --card-shadow: rgba(255, 255, 255, 0.10);
     --border-strong: rgba(255, 255, 255, 0.18);
     --shadow: rgba(0, 0, 0, 0.40);
     --shadow-lift: rgba(0, 0, 0, 0.55);
@@ -2033,12 +2030,12 @@ h1, h2, h3 {
 .player-sets-list { display: none; flex-direction: column; margin-bottom: 18px; }
 .player-sets-list, .set-card {
   background: var(--periwinkle);
-  /* A 1pt stroke instead of the soft shadow the card carried (2026-10-05,
-     Chris). With a hard edge the shadow was only blurring the line sitting on
-     top of it. */
-  border: 1px solid var(--card-stroke);
   border-radius: var(--radius-md);
   padding: 14px 16px 8px;
+  /* The 1pt outline was tried on 2026-10-05 and rejected the next day; the
+     card is back to the shadow alone, a quarter darker than it was (0.08 to
+     0.10 alpha) so it still holds an edge without a line drawn round it. */
+  box-shadow: 0 4px 12px var(--card-shadow);
 }
 .set-card { display: flex; flex-direction: column; }
 /* A column header for the rows under it, not a title for the card — it names
