@@ -127,7 +127,37 @@ Next:
 
 ### Where we are with the videos
 
-On the external drive at **`/Volumes/Extreme SSD/EXERCISE LIBRARY`** (98% full).
+On the external drive, now at **`/Volumes/Extreme SSD/Burn Club Exercises`**
+(renamed from EXERCISE LIBRARY; the drive is 98% full).
+
+**Second batch, 2026-10-07: 104 more clips, already slug-named by Chris.**
+26 of them turned out to be duplicates of demos already live — he spot-checked
+three, all matched — and sit in `Burn Club Exercises/Duplicates/` rather than
+being deleted. Of the 78 left: 34 matched an exercise id outright, 16 were
+spelling variants of one, and 28 went to Chris as a numbered list with my best
+guess each (the same batch rhythm as last time: he replies only with the
+numbers that are wrong).
+
+The check that earned its keep was looking for **two clips landing on one
+exercise**, run across all 78 rather than just the ones in question. It found
+two, both invisible from the list Chris was answering: `t-spine-rotation.mp4`
+already matched T-Spine Rotation by name while he was assigning a second clip
+to it, and the same for Low Kneeling Lat Pulldown. He re-cut both — the plain
+T-Spine clip is Kneeling T-Spine Rotation, and `-to-elbow` is new. Ask about
+collisions before showing a batch list next time; the 34 exact matches were
+never put in front of him, which is what made the question unanswerable.
+
+**14 exercises the library had no entry for** came out of this batch and are
+added to `data.js` and `admin/data.js`. Their tags are copied from the nearest
+sibling and are my guesses, not his — same unchecked caveat as the 11 added on
+2026-09-28, and both sets are still worth a pass with him.
+
+**The Bear Plank demo currently live is the wrong clip** (Chris, 2026-10-07).
+The new `bear-plank-quadruped.mp4` is the right one and replaces it. What the
+old one actually shows is unidentified — it may belong to another exercise
+that is now silently wrong too, so it is worth watching before the next batch
+goes up.
+
 As of 2026-09-28:
 
 - **375 clips in the main folder, every one named to match an exercise id.**
