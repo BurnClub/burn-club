@@ -643,8 +643,18 @@ syncs them.
 
 ## Agreed, not yet built
 
-- **Archiving a program is a filing action and nothing more** (established
-  2026-10-08, when Chris asked what it does to a member mid-program).
+- **~~Archiving a program is a filing action and nothing more~~ — fixed
+  2026-10-08.** Archiving now means what Chris wants it to mean: whoever is on
+  the program carries on, nobody new is put on it. Archived programs leave the
+  pickers that *start* something (assign a member, file a folder, aim a
+  challenge) and stay in the ones that *find* something (the member list
+  filter, the activity filter) — which is exactly when you need them. The
+  member-assign dropdown re-adds a member's own archived program, labelled, so
+  that opening their record does not silently move them to whatever is first in
+  the list. The member app is untouched: it never read program status, and a
+  member mid-program notices nothing.
+
+  Was, before that:
   `toggleProgramArchived` sets `status: "archived"` on admin's own copy and
   that is the whole of it. Demonstrated by archiving one: it leaves the
   Programs grid for the Library, its workouts stay in `CIRCUITS`, **and it is

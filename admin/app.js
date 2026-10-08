@@ -1036,6 +1036,10 @@ function toggleProgramArchived(programId) {
   const p = programById(programId);
   if (!p) return;
   p.status = p.status === "archived" ? "active" : "archived";
+  // The dropdowns are built once at startup, so without this the program stays
+  // assignable until the page is reloaded — which is the whole bug, just
+  // delayed.
+  populateProgramFilters();
   renderPrograms();
   renderLibrary();
 }
@@ -1226,20 +1230,62 @@ function showProgramsPane(name) {
   });
 }
 
+function programIsArchived(p) {
+  return (p.status || "active") === "archived";
+}
+
+// Archiving means "no new members on this, but whoever is on it carries on"
+// (2026-10-08, Chris). So the split here is between pickers that START
+// something and pickers that FIND something:
+//
+//   assigning a member, filing a folder, aiming a challenge — these create new
+//   commitments to a program, and an archived one should not be on offer;
+//
+//   the member-list filter and the activity filter — these are how you find
+//   the people still working through an archived program, which is exactly
+//   when you need them most.
+//
+// Before this, archiving did nothing but move a card to the Library: the
+// program stayed in every dropdown, so it could be assigned to someone new the
+// day after it was archived.
 function populateProgramFilters() {
   const folderModalSelect = document.getElementById("folder-modal-program");
   const memberModalSelect = document.getElementById("member-modal-program");
   const memberFilterSelect = document.getElementById("member-program-filter");
   const challengeModalSelect = document.getElementById("challenge-modal-program");
   const activityFilterSelect = document.getElementById("activity-program-filter");
+  // Rebuilt from scratch, because this now runs again whenever a program is
+  // archived or restored rather than only at startup — appending would double
+  // every option. Each select keeps the static first entry it was authored
+  // with; member-modal-program has none, which is why it gets "".
+  folderModalSelect.innerHTML = `<option value="">General (Unassigned)</option>`;
+  memberModalSelect.innerHTML = "";
+  memberFilterSelect.innerHTML = `<option value="all">All Programs</option>`;
+  challengeModalSelect.innerHTML = `<option value="all">All Programs</option>`;
   activityFilterSelect.innerHTML = `<option value="all">All Programs</option>`;
   PROGRAMS.forEach((p) => {
-    folderModalSelect.insertAdjacentHTML("beforeend", `<option value="${p.id}">${p.name}</option>`);
-    memberModalSelect.insertAdjacentHTML("beforeend", `<option value="${p.id}">${p.name}</option>`);
-    memberFilterSelect.insertAdjacentHTML("beforeend", `<option value="${p.id}">${p.name}</option>`);
-    challengeModalSelect.insertAdjacentHTML("beforeend", `<option value="${p.id}">${p.name}</option>`);
-    activityFilterSelect.insertAdjacentHTML("beforeend", `<option value="${p.id}">${p.name}</option>`);
+    const option = `<option value="${p.id}">${p.name}</option>`;
+    memberFilterSelect.insertAdjacentHTML("beforeend", option);
+    activityFilterSelect.insertAdjacentHTML("beforeend", option);
+    if (programIsArchived(p)) return;
+    folderModalSelect.insertAdjacentHTML("beforeend", option);
+    memberModalSelect.insertAdjacentHTML("beforeend", option);
+    challengeModalSelect.insertAdjacentHTML("beforeend", option);
   });
+}
+
+// A member already on an archived program keeps it, so their own program has
+// to be in the list when their record is opened — otherwise the <select> falls
+// back to the first option and saving silently moves them onto a different
+// program. Added just for them, and labelled, so it is clear why it is there
+// and that picking anything else is a one-way trip.
+function ensureProgramOptionFor(programId) {
+  const select = document.getElementById("member-modal-program");
+  if (!programId || select.querySelector(`option[value="${programId}"]`)) return;
+  const p = programById(programId);
+  if (!p) return;
+  select.insertAdjacentHTML("beforeend",
+    `<option value="${p.id}">${p.name} (archived)</option>`);
 }
 
 // Program name is deliberately left off the card — the left-side program
@@ -6285,6 +6331,7 @@ function openEditMemberModal(memberId) {
   document.getElementById("member-modal-save-btn").textContent = "Save Changes";
   document.getElementById("member-modal-name").value = m.name;
   document.getElementById("member-modal-email").value = m.email;
+  ensureProgramOptionFor(m.program);
   document.getElementById("member-modal-program").value = m.program;
   document.getElementById("member-modal-member-since").value = m.memberSince;
   document.getElementById("member-modal-badge").value = m.badge;
