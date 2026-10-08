@@ -2176,14 +2176,19 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   cursor: default;
 }
 
-/* Which kind of program this is, under the stats and above the buttons
-   (2026-10-08). Quiet on purpose: it is a standing fact about the program
-   rather than a status that changes, so it should not compete with the status
-   pill at the top. */
+/* Which kind of program this is. Last on the card, below the buttons
+   (2026-10-08, Chris), because a structured program has an extra Schedule
+   button and the row wraps at some widths — anything above it lands in a
+   different place card to card. Last is the only position that is the same on
+   every one. */
 .program-type-tag {
-  margin: 12px 0 0;
+  display: inline-block;
+  margin: 14px 0 0;
+  padding: 4px 11px;
+  border-radius: 999px;
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  opacity: 0.75;
+  font-weight: 800;
+  letter-spacing: 0.4px;
 }
+.program-type-tag.on-demand { background: #000000; color: #FFFFFF; }
+.program-type-tag.structured { background: #E6E6E6; color: #000000; }

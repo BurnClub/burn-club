@@ -1000,13 +1000,13 @@ function renderPrograms() {
           <div><p>${circuitCount}</p><p>Workouts</p></div>
           <div><p>${perWeek}</p><p>Per Week</p></div>
         </div>
-        <p class="program-type-tag">${isStructured ? "Structured" : "On Demand"}</p>
         <div class="program-card-actions">
           <button class="btn-ghost-lg small" data-open-program="${p.id}">Open</button>
           <button class="btn-ghost-lg small" data-edit-program="${p.id}">Edit</button>
           ${isStructured ? `<button class="btn-ghost-lg small" data-manage-schedule="${p.id}">Schedule</button>` : ""}
           <button class="btn-ghost-lg small" data-archive-program="${p.id}" title="Moves this program and its folders to the Library">Archive</button>
         </div>
+        <p class="program-type-tag ${isStructured ? "structured" : "on-demand"}">${isStructured ? "Structured" : "On Demand"}</p>
       </div>
     `;
   }).join("") || `<p style="color:var(--deepblue);font-weight:700;">No ${programStatusFilter} programs.</p>`;
