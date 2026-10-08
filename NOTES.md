@@ -643,27 +643,27 @@ syncs them.
 
 ## Agreed, not yet built
 
-- **The exercise NAME is the join key everywhere, and it reaches into member
-  data.** Not just `exercise: { name: "Push Press" }` in a workout:
+- **~~The exercise NAME is the join key everywhere~~ — done 2026-10-08 for
+  member data.** `lifts` and `showcased_prs` now carry `exercise_id` and
+  conflict on it, so renaming an exercise no longer orphans a member's logged
+  sets or their pinned PRs; history comes back under whatever the exercise is
+  called now. `supabase/14-exercise-id.sql` backfills existing rows. The id is
+  *derived* from the name (slugify, with five hand-authored exceptions) rather
+  than looked up, which is what makes it safe for an exercise the library has
+  never heard of — a lookup could miss, a derivation cannot. `tests/sync/
+  exercise-rename.test.js` fails if the name-keyed read comes back.
 
-      lifts           exercise_name text, unique(member_id, completion_client_id,
-                                                 exercise_name, set_number)
-      personal_bests  primary key (member_id, exercise_name)
+  Still outstanding, and much smaller: **workout blocks still name their
+  exercise** (`exercise: { name }` in `data.js`). Admin cascades a rename
+  through them, so nothing breaks today, but they should carry the id too.
+  `personal_bests` is a dead table — in `01-schema.sql`, never read or written;
+  drop it when convenient.
 
-  and `lastWeightFor()` / `exerciseTracksWeight()` look up by name too. Since
-  2026-10-08 a rename carries through admin's workouts, so that half is safe.
-  **Members' logged history is not** — rename an exercise once anyone has
-  trained and their sets and personal bests for it are orphaned, and no amount
-  of cascading through CIRCUITS touches that.
-
-  **Do the id join before testers log anything** (Chris, 2026-10-08, agreed it
-  is worth the longer fix). Today the only rows in `lifts` are Chris's own
-  tests, so it is a code change. Afterwards it is a code change plus migrating
-  real training history, where a mistake is somebody's record. The id cannot
-  simply replace the name everywhere — it is also the video and poster
-  filename, so it must stay stable across a rename, which is exactly why it is
-  the right key.
-
+- **Local caches still key on the name, and that is fine.** `LAST_WEIGHTS` and
+  a completion's own `weights` object are keyed by exercise name. After a
+  rename the pre-fill forgets one weight and relearns it, and the completion's
+  names are rewritten from the server on the next hydrate. Neither loses
+  anything, so neither is worth a migration.
 - **Admin only saved what the importer wrote, until 2026-10-08.** Chris asked
   whether Kelly could build a program across several sessions without losing
   it. The answer was no, and the test was one reload: a workout built in the

@@ -97,9 +97,13 @@ function syncStores() {
     },
     showcasedPRs: {
       key: SHOWCASED_PRS_KEY, table: "showcased_prs",
-      toRows: (list) => list.map((name) => ({ member_id: me(), exercise_name: name })),
-      onConflict: "member_id,exercise_name",
-      fromRows: (rows) => rows.map((r) => r.exercise_name),
+      toRows: (list) => list.map((name) => ({
+        member_id: me(), exercise_id: exerciseIdForName(name), exercise_name: name,
+      })),
+      onConflict: "member_id,exercise_id",
+      // Shown under whatever the exercise is called now, not what it was
+      // called when it was pinned.
+      fromRows: (rows) => rows.map(currentNameForLift),
       order: "exercise_name",
       replace: true,   // unpinning a PR is a delete, not an update
     },
@@ -585,7 +589,9 @@ async function pushStore(name) {
     // completions themselves landed — a lift whose completion never arrived
     // would be an orphan nothing could show.
     if (ok && name === "completions") {
-      return await pushRows("lifts", liftsToRows(local), "member_id,completion_client_id,exercise_name,set_number");
+      // Conflicts resolve on the id now, so a rename does not create a second
+      // set of rows alongside the member's existing ones (14-exercise-id.sql).
+      return await pushRows("lifts", liftsToRows(local), "member_id,completion_client_id,exercise_id,set_number");
     }
     return ok;
   } catch (e) {
@@ -597,6 +603,19 @@ async function pushStore(name) {
 // Weights ride with their completion. They are the numbers a member actually
 // came for — a personal best is computed from them — and until now they were
 // the one thing that never left the phone.
+// The id a lift is filed under. Derived from the name by the library's own
+// rule rather than looked up, so it cannot fail to resolve for an exercise the
+// library has never heard of — a deleted one, a typo, a demo seed. The five
+// hand-authored ids that do not follow the rule are resolved from the library
+// first; everything else slugifies. 14-exercise-id.sql does exactly this in
+// SQL, and the two have to agree.
+function exerciseIdForName(name) {
+  const known = typeof EXERCISE_LIBRARY !== "undefined"
+    && EXERCISE_LIBRARY.find((e) => e.name === name);
+  if (known) return known.id;
+  return String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "-");
+}
+
 function liftsToRows(completions) {
   const rows = [];
   completions.forEach((c) => {
@@ -615,6 +634,7 @@ function liftsToRows(completions) {
         if (!name) return;
         rows.push({
           member_id: AUTH_MEMBER.id, completion_client_id: c.id,
+          exercise_id: exerciseIdForName(name),
           exercise_name: name, weight, performed_on: c.date,
           set_number: ++n, set_label: parts[2] || null,
         });
@@ -630,6 +650,7 @@ function liftsToRows(completions) {
       if (!Number.isFinite(weight)) return;
       rows.push({
         member_id: AUTH_MEMBER.id, completion_client_id: c.id,
+        exercise_id: exerciseIdForName(name),
         exercise_name: name, weight, performed_on: c.date,
         set_number: 1, set_label: null,
       });
@@ -637,11 +658,22 @@ function liftsToRows(completions) {
   });
   return rows;
 }
+// A lift comes back under the name it was logged with. If the exercise has
+// been renamed since, the library knows it by its id, and the member's history
+// should follow the rename rather than sit under a name nothing uses any more.
+function currentNameForLift(row) {
+  if (row.exercise_id && typeof EXERCISE_LIBRARY !== "undefined") {
+    const ex = EXERCISE_LIBRARY.find((e) => e.id === row.exercise_id);
+    if (ex) return ex.name;
+  }
+  return row.exercise_name;
+}
+
 function liftsOntoCompletions(completions, liftRows) {
   const byCompletion = {};
   liftRows.forEach((r) => {
     if (!r.completion_client_id) return;
-    (byCompletion[r.completion_client_id] = byCompletion[r.completion_client_id] || {})[r.exercise_name] = Number(r.weight);
+    (byCompletion[r.completion_client_id] = byCompletion[r.completion_client_id] || {})[currentNameForLift(r)] = Number(r.weight);
   });
   completions.forEach((c) => {
     if (byCompletion[c.id]) c.weights = byCompletion[c.id];
