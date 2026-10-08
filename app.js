@@ -3014,17 +3014,46 @@ function blockExerciseNames(block) {
   return [];
 }
 
+// What a block is called, and whether its label is worth printing at all
+// (2026-10-08, Chris: "they seem to be redundant ... if that second on is
+// redundant, just delete it").
+//
+// It almost never is. Admin derives a block's label rather than asking for one
+// — derivedBlockLabel gives a multi-exercise block the name of its TYPE and a
+// single-exercise block the name of its ONE EXERCISE — so the label line was
+// printing something already on the card either way: the type tag under it, or
+// the exercise bullet below it. On the Core Crusher card that read "Straight
+// Sets" directly above "STRAIGHT SETS".
+//
+// So the type leads, and the label only appears when it says something neither
+// the type nor the exercise list already does. That happens with a workout
+// imported from the spreadsheet, which has a Block Label column — "Main
+// Strength", "8-Minute Finisher" — and those are worth keeping.
+function blockHeading(block) {
+  const type = blockTypeLabel(block.type);
+  const label = String(block.label || "").trim();
+  const names = [
+    block.exercise && block.exercise.name,
+    ...(block.exercises || []).map((e) => e.name),
+  ].filter(Boolean).map((n) => n.toLowerCase());
+  const adds = label
+    && label.toLowerCase() !== type.toLowerCase()
+    && !names.includes(label.toLowerCase());
+  return { type, label: adds ? label : null };
+}
+
 function renderBlockSummaryCard(block, index) {
   const exercises = blockExerciseNames(block)
     .map((name) => `<li>${esc(name)}</li>`)
     .join("");
+  const { type, label } = blockHeading(block);
   return `
     <div class="block-card">
       <div class="block-card-top">
         <span class="block-num">${index + 1}</span>
         <div>
-          <p class="block-name">${esc(block.label)}</p>
-          <p class="block-type-tag">${blockTypeLabel(block.type)}</p>
+          <p class="block-name">${esc(type)}</p>
+          ${label ? `<p class="block-type-tag">${esc(label)}</p>` : ""}
         </div>
       </div>
       <p class="block-summary-line">${blockSummaryLine(block)}</p>
@@ -3940,7 +3969,7 @@ function openWorkoutOverview() {
         <div class="overview-block-top">
           <span class="overview-block-num">${i < currentBlock ? "✓" : i + 1}</span>
           <div>
-            <p class="overview-block-name">${esc(block.label || blockTypeLabel(block.type))}</p>
+            <p class="overview-block-name">${esc(blockHeading(block).type)}</p>
             <p class="overview-block-line">${blockSummaryLine(block)}</p>
           </div>
         </div>
