@@ -974,6 +974,11 @@ function renderPrograms() {
   });
 
   document.getElementById("program-grid").innerHTML = visible.map((p) => {
+    // scheduleType has always been the difference and has never been shown
+    // (2026-10-08, Chris). It decides real things — whether the program has a
+    // Schedule button at all, where its workouts live, whether "per week" is a
+    // number someone set or one derived from the schedule — so a card that
+    // does not say which kind it is makes those differences look arbitrary.
     const isStructured = p.scheduleType === "structured";
     const circuitCount = programWorkoutCount(p);
     // Structured programs don't collect a "workouts per week" number up front
@@ -995,6 +1000,7 @@ function renderPrograms() {
           <div><p>${circuitCount}</p><p>Workouts</p></div>
           <div><p>${perWeek}</p><p>Per Week</p></div>
         </div>
+        <p class="program-type-tag">${isStructured ? "Structured" : "On Demand"}</p>
         <div class="program-card-actions">
           <button class="btn-ghost-lg small" data-open-program="${p.id}">Open</button>
           <button class="btn-ghost-lg small" data-edit-program="${p.id}">Edit</button>

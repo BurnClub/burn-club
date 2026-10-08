@@ -643,6 +643,24 @@ syncs them.
 
 ## Agreed, not yet built
 
+- **Archiving a program is a filing action and nothing more** (established
+  2026-10-08, when Chris asked what it does to a member mid-program).
+  `toggleProgramArchived` sets `status: "archived"` on admin's own copy and
+  that is the whole of it. Demonstrated by archiving one: it leaves the
+  Programs grid for the Library, its workouts stay in `CIRCUITS`, **and it is
+  still offered in the member-assign dropdown** — `populateProgramFilters`
+  lists every program regardless of status. The member app never reads program
+  status at all; a member gets workouts by `programId`, so archiving changes
+  nothing for anyone already on it.
+
+  Half of that is right and half is a trap. Not pulling a program out from
+  under someone mid-way is correct. Still offering it for *new* assignments is
+  not what "archived" means to anyone, and nothing in the UI says otherwise.
+  **Decide what archiving should mean before it is used in anger**: almost
+  certainly "existing members carry on, no new assignments", which is a filter
+  on the dropdown plus a line on the member modal explaining why someone is on
+  a program that is not listed.
+
 - **~~The exercise NAME is the join key everywhere~~ — done 2026-10-08 for
   member data.** `lifts` and `showcased_prs` now carry `exercise_id` and
   conflict on it, so renaming an exercise no longer orphans a member's logged

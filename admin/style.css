@@ -2175,3 +2175,15 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   color: var(--deepblue);
   cursor: default;
 }
+
+/* Which kind of program this is, under the stats and above the buttons
+   (2026-10-08). Quiet on purpose: it is a standing fact about the program
+   rather than a status that changes, so it should not compete with the status
+   pill at the top. */
+.program-type-tag {
+  margin: 12px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  opacity: 0.75;
+}
