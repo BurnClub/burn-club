@@ -148,12 +148,18 @@ media, so `play()` rejects with AbortError. Same wall as the demo-resume work.
 (2026-10-08 — consolidated off the Extreme SSD, where the folder was first
 called EXERCISE LIBRARY).
 
-**The masters are split across two drives until Chris finishes consolidating.**
-The second batch's 104 originals are on the CJV SSD (verified byte-for-byte
-against the old Extreme SSD on 2026-10-08 — all 104 identical by checksum, so
-the Extreme copy is safe to delete). The 375 from September are on a third
-drive, still to be copied across. Worth re-running the same check when it is:
-names and sizes agreeing is not the same as the bytes agreeing.
+**Every master is on the CJV SSD, verified** (2026-10-08). Consolidated off the
+Extreme SSD and checked by checksum rather than by eye — 558 files, all
+identical:
+
+- `Burn Club Exercises` — 104 (the October batch, `Duplicates` included)
+- `EXERCISE LIBRARY` — 441 (September, with `_duplicates`, `_too-long` and
+  `_not-in-library`)
+- `Duplicate Exercise Videos` — 13
+
+Matching names and sizes is what a copy looks like when it has silently
+corrupted a file; the checksums are what rule that out. Worth the same pass
+before erasing any source drive in future.
 
 Compression is one way — 720p, CRF 26, audio stripped — so a higher-quality
 re-encode, a different crop or a better poster frame can only come from a
