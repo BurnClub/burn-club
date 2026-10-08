@@ -3559,6 +3559,17 @@ function openEditExerciseModal(exerciseId, opts) {
   exerciseModalReturnsTo = (opts && opts.fromBuilder) ? exerciseId : null;
   const addBtn = document.getElementById("exercise-modal-add-btn");
   if (addBtn) addBtn.style.display = exerciseModalReturnsTo ? "" : "none";
+  // The name is read-only from the builder (2026-10-08, Chris: "the main
+  // reason I want this is if i need to make changes to tags, or technique").
+  // Not for safety — a rename carries through workouts now — but because the
+  // builder is where you are moving fast, and renaming is the one edit here
+  // that reaches outside this exercise. It stays available on the Exercises
+  // page, where it is a deliberate trip.
+  const nameField = document.getElementById("exercise-modal-name");
+  const nameNote = document.getElementById("exercise-modal-name-note");
+  nameField.readOnly = !!exerciseModalReturnsTo;
+  nameField.classList.toggle("is-locked", !!exerciseModalReturnsTo);
+  if (nameNote) nameNote.style.display = exerciseModalReturnsTo ? "" : "none";
   editingExerciseId = exerciseId;
   document.getElementById("exercise-modal-title").textContent = "Edit Exercise";
   document.getElementById("exercise-modal-save-btn").textContent = "Save Changes";

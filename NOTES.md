@@ -643,15 +643,26 @@ syncs them.
 
 ## Agreed, not yet built
 
-- **A workout points at an exercise by NAME, and that is still the weak join.**
-  `exercise: { name: "Push Press" }`. Renaming an exercise used to orphan it
-  everywhere it was used — silently, losing the demo video, the technique text
-  and weight tracking. Since 2026-10-08 a rename is carried through every
-  workout that uses the old name and Chris is told how many changed, which
-  makes it safe rather than correct. The real fix is joining on the id, which
-  is a bigger change because the id is also the key for the video and poster
-  files, so it cannot be regenerated on a rename. Worth doing before anyone but
-  Chris and Kelly can edit the library.
+- **The exercise NAME is the join key everywhere, and it reaches into member
+  data.** Not just `exercise: { name: "Push Press" }` in a workout:
+
+      lifts           exercise_name text, unique(member_id, completion_client_id,
+                                                 exercise_name, set_number)
+      personal_bests  primary key (member_id, exercise_name)
+
+  and `lastWeightFor()` / `exerciseTracksWeight()` look up by name too. Since
+  2026-10-08 a rename carries through admin's workouts, so that half is safe.
+  **Members' logged history is not** — rename an exercise once anyone has
+  trained and their sets and personal bests for it are orphaned, and no amount
+  of cascading through CIRCUITS touches that.
+
+  **Do the id join before testers log anything** (Chris, 2026-10-08, agreed it
+  is worth the longer fix). Today the only rows in `lifts` are Chris's own
+  tests, so it is a code change. Afterwards it is a code change plus migrating
+  real training history, where a mistake is somebody's record. The id cannot
+  simply replace the name everywhere — it is also the video and poster
+  filename, so it must stay stable across a rename, which is exactly why it is
+  the right key.
 
 - **Admin only saved what the importer wrote, until 2026-10-08.** Chris asked
   whether Kelly could build a program across several sessions without losing

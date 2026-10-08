@@ -2167,3 +2167,11 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .program-benchmark-meta { margin: 4px 0 0; font-size: 11px; font-weight: 700; color: var(--deepblue); opacity: 0.8; }
 .program-benchmark-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .program-benchmark-empty { margin: 0; font-size: 13px; font-weight: 600; color: var(--deepblue); }
+
+/* A field that is deliberately not editable here, as opposed to disabled:
+   still selectable and copyable, just not typed into (2026-10-08). */
+.modal-field input.is-locked {
+  background: var(--field-bg);
+  color: var(--deepblue);
+  cursor: default;
+}
