@@ -625,6 +625,24 @@ syncs them.
 
 ## Agreed, not yet built
 
+- **Admin only saved what the importer wrote, until 2026-10-08.** Chris asked
+  whether Kelly could build a program across several sessions without losing
+  it. The answer was no, and the test was one reload: a workout built in the
+  builder went into memory and nowhere else, and a program created in the UI
+  was dropped by the restore, which skipped any program not already in the
+  seed. `saveAdminCircuits()` had exactly one call site — the end of the
+  spreadsheet importer.
+  Now a debounced save hangs off the four render functions that follow every
+  change, rather than off the thirteen separate mutation sites, so code written
+  later cannot forget it. Writes are gated on the restore having succeeded; a
+  store that fails to parse is copied aside, left in place, and saving stays
+  off for that session, because a corrupt value is still the only copy of
+  someone's work. Also flushes on pagehide and visibilitychange, for the edit
+  made inside the 400ms debounce.
+  **What this still is not:** localStorage. Clearing site data takes it, a
+  private window never keeps it, and Safari evicts script-writable storage
+  after about 7 days without a visit. Export All is the actual backup.
+
 - **Getting admin content to members is still a hand-carry** (2026-10-08).
   Chris builds programs in admin; admin keeps them in `localStorage`; members
   read `data.js`. So a program reaches testers by my folding the export into

@@ -965,6 +965,7 @@ let programStatusFilter = "active";
 // because the Library is now the archive and showing them in both places is
 // the clutter archiving exists to prevent (2026-08-15).
 function renderPrograms() {
+  persistAdminState();
   const visible = PROGRAMS.filter((p) => (p.status || "active") !== "archived")
     .filter((p) => programStatusFilter === "all" || (p.status || "active") === programStatusFilter);
 
@@ -1406,6 +1407,7 @@ function weekGroupCardHtml(g, programId) {
 }
 
 function renderFolderGrid() {
+  persistAdminState();
   // The tree lists the same folders and weeks this grid does, so it redraws
   // here rather than at each of the ~15 call sites that mutate one.
   renderProgramTree();
@@ -1823,6 +1825,7 @@ function syncBenchmarksToMemberApp() {
 }
 
 function renderScopeDetail() {
+  persistAdminState();
   // Before the guard: the tree's counts move when workouts are added, deleted
   // or copied out of the open folder, and some of those paths return early.
   renderProgramTree();
@@ -4340,27 +4343,68 @@ function programSlotPrefix(programId) {
 // backend is what makes it real.
 const ADMIN_PROGRAM_DATA_KEY = "burnclub-admin-programs";
 
-function saveAdminCircuits() {
+// Everything admin has authored, saved on every change (2026-10-08).
+//
+// It used to be saved in exactly one place — the end of the spreadsheet
+// importer — so anything built by hand lived in memory and nowhere else. A
+// workout built in the builder was gone on reload, and so was a program
+// created in the UI, because the restore skipped any program it did not
+// already have in the seed. Chris asked whether Kelly could build a program
+// over several days without losing it; the honest answer was no.
+//
+// Now every render that follows a change schedules a save. Hooking the renders
+// rather than the thirteen separate mutation sites means code written later
+// cannot forget to call it — and the snapshot is compared before writing, so a
+// render that changed nothing costs nothing.
+let adminSaveTimer = null;
+let lastAdminSnapshot = null;
+// Nothing is written until the restore has run. Otherwise the first render of
+// a page whose load failed would overwrite good saved data with the seed.
+let adminStateReady = false;
+
+function adminStateSnapshot() {
+  return JSON.stringify({
+    circuits: CIRCUITS,
+    schedules: SCHEDULE_TEMPLATES,
+    folders: FOLDERS,
+    // The whole program, not just its counts: a program created in admin is
+    // not in the seed, and saving only the counts meant it came back as
+    // nothing at all.
+    programs: PROGRAMS,
+  });
+}
+
+function persistAdminState() {
+  if (!adminStateReady) return;
+  clearTimeout(adminSaveTimer);
+  adminSaveTimer = setTimeout(flushAdminState, 400);
+}
+
+function flushAdminState() {
+  if (!adminStateReady) return;
+  clearTimeout(adminSaveTimer);
+  const snapshot = adminStateSnapshot();
+  if (snapshot === lastAdminSnapshot) return;
   try {
-    localStorage.setItem(ADMIN_PROGRAM_DATA_KEY, JSON.stringify({
-      circuits: CIRCUITS,
-      schedules: SCHEDULE_TEMPLATES,
-      folders: FOLDERS,
-      programMeta: PROGRAMS.map((p) => ({
-        id: p.id, durationWeeks: p.durationWeeks,
-        workoutsPerWeek: p.workoutsPerWeek, circuitsPerWeek: p.circuitsPerWeek,
-      })),
-    }));
+    localStorage.setItem(ADMIN_PROGRAM_DATA_KEY, snapshot);
+    lastAdminSnapshot = snapshot;
   } catch (e) {
     // Quota is the realistic failure. Say so rather than letting the next
-    // reload quietly serve the seed as if nothing had been imported.
-    alert("Couldn't save the imported program to this browser — it may be out of storage. The import is live in this session but will be gone on reload.");
+    // reload quietly serve the seed as if the work had never happened.
+    alert("Couldn't save your work to this browser — it may be out of storage. "
+        + "Use Export All on the Programs page now, so this session isn't lost.");
   }
+}
+
+// Kept as the name the importer calls, now an immediate write rather than a
+// debounced one: an import is a big change and worth committing at once.
+function saveAdminCircuits() {
+  flushAdminState();
 }
 
 function loadAdminCircuits() {
   const raw = localStorage.getItem(ADMIN_PROGRAM_DATA_KEY);
-  if (!raw) return;
+  if (!raw) { adminStateReady = true; return; }
   try {
     const saved = JSON.parse(raw);
     if (Array.isArray(saved.circuits) && saved.circuits.length) {
@@ -4372,15 +4416,31 @@ function loadAdminCircuits() {
       FOLDERS.push(...saved.folders);
     }
     if (saved.schedules) Object.assign(SCHEDULE_TEMPLATES, saved.schedules);
-    (saved.programMeta || []).forEach((m) => {
-      const p = PROGRAMS.find((x) => x.id === m.id);
-      if (!p) return;
-      if (m.durationWeeks) p.durationWeeks = m.durationWeeks;
-      if (m.workoutsPerWeek) p.workoutsPerWeek = m.workoutsPerWeek;
-      if (m.circuitsPerWeek) p.circuitsPerWeek = m.circuitsPerWeek;
-    });
+
+    // Full programs since 2026-10-08; programMeta is the older shape, still
+    // read so an admin saved before this keeps its counts.
+    if (Array.isArray(saved.programs) && saved.programs.length) {
+      PROGRAMS.length = 0;
+      PROGRAMS.push(...saved.programs);
+    } else {
+      (saved.programMeta || []).forEach((m) => {
+        const p = PROGRAMS.find((x) => x.id === m.id);
+        if (!p) return;
+        if (m.durationWeeks) p.durationWeeks = m.durationWeeks;
+        if (m.workoutsPerWeek) p.workoutsPerWeek = m.workoutsPerWeek;
+        if (m.circuitsPerWeek) p.circuitsPerWeek = m.circuitsPerWeek;
+      });
+    }
+    lastAdminSnapshot = adminStateSnapshot();
+    adminStateReady = true;
   } catch (e) {
-    // Corrupt value — fall back to the seeded data rather than a blank admin.
+    // A corrupt value is still the only copy of someone's work, so it is put
+    // aside rather than overwritten by the next save. Saving stays off for
+    // this session: better a seeded admin than one that quietly destroys the
+    // thing a recovery would need.
+    try { localStorage.setItem(ADMIN_PROGRAM_DATA_KEY + "-corrupt-" + Date.now(), raw); } catch (e2) {}
+    alert("Couldn't read the work saved in this browser, so Burn Club is showing the starting data instead.\n\n"
+        + "Nothing has been deleted — the unreadable copy has been kept. Tell Chris before building anything else.");
   }
 }
 
@@ -5150,6 +5210,7 @@ function clearLibrarySearch() {
 }
 
 function renderLibrary() {
+  persistAdminState();
   renderLibraryTree();
   const q = libraryQuery.trim().toLowerCase();
   const searching = q.length > 0;
@@ -6639,6 +6700,13 @@ function renderPosts() {
 document.addEventListener("DOMContentLoaded", () => {
   loadExerciseLibrary();
   loadAdminCircuits();
+  // The debounce is 400ms; closing a tab inside that window would otherwise
+  // drop the last edit. pagehide fires where beforeunload is unreliable on
+  // mobile Safari, and visibilitychange covers switching away without closing.
+  window.addEventListener("pagehide", flushAdminState);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushAdminState();
+  });
 
   populateProgramFilters();
   // Before anything that reads CONVERSATIONS — the dashboard's reply queue is
