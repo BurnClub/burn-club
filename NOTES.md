@@ -643,6 +643,16 @@ syncs them.
 
 ## Agreed, not yet built
 
+- **A workout points at an exercise by NAME, and that is still the weak join.**
+  `exercise: { name: "Push Press" }`. Renaming an exercise used to orphan it
+  everywhere it was used — silently, losing the demo video, the technique text
+  and weight tracking. Since 2026-10-08 a rename is carried through every
+  workout that uses the old name and Chris is told how many changed, which
+  makes it safe rather than correct. The real fix is joining on the id, which
+  is a bigger change because the id is also the key for the video and poster
+  files, so it cannot be regenerated on a rename. Worth doing before anyone but
+  Chris and Kelly can edit the library.
+
 - **Admin only saved what the importer wrote, until 2026-10-08.** Chris asked
   whether Kelly could build a program across several sessions without losing
   it. The answer was no, and the test was one reload: a workout built in the

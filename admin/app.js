@@ -2834,6 +2834,19 @@ document.addEventListener("mousedown", (e) => {
 });
 
 document.addEventListener("dragstart", (e) => {
+  // Dragging an exercise in from the library (2026-10-08, Chris: "I would also
+  // like to be able to drag the exercise in and place it in a position within
+  // the workout"). Unlike a row, a library card is draggable from the start —
+  // there is nothing on it to select, so there is no text-selection drag to
+  // get in the way.
+  const card = e.target.closest(".builder-library-card");
+  if (card) {
+    dragState = { type: "library", exId: card.dataset.exId };
+    card.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "copy";
+    e.dataTransfer.setData("text/plain", "");
+    return;
+  }
   const item = e.target.closest(".builder-block-card, .builder-ex-row");
   if (!item || !item.draggable) return;
   const isRow = item.classList.contains("builder-ex-row");
@@ -2848,14 +2861,24 @@ document.addEventListener("dragstart", (e) => {
   e.dataTransfer.setData("text/plain", "");
 });
 
+// A library drag can land in two places, so it looks for the narrower target
+// first: a row means "into that block, here", a block card means "a new block
+// of its own, here".
+function dragTargetFor(node) {
+  if (!node || !node.closest) return null;
+  if (dragState.type === "library") {
+    return node.closest(".builder-ex-row") || node.closest(".builder-block-card");
+  }
+  return node.closest(dragState.type === "block" ? ".builder-block-card" : ".builder-ex-row");
+}
+
 document.addEventListener("dragover", (e) => {
   if (!dragState) return;
-  const selector = dragState.type === "block" ? ".builder-block-card" : ".builder-ex-row";
-  const over = e.target.closest(selector);
+  const over = dragTargetFor(e.target);
   if (!over) return;
   if (dragState.type === "exercise" && Number(over.dataset.blockIndex) !== dragState.blockIndex) return;
   e.preventDefault();
-  e.dataTransfer.dropEffect = "move";
+  e.dataTransfer.dropEffect = dragState.type === "library" ? "copy" : "move";
   clearDropMarkers();
   // Which half of the target you're over decides whether it lands above or
   // below it — the usual sortable-list behaviour.
@@ -2869,6 +2892,24 @@ function completeDrop(over, clientY) {
   if (!dragState || !over) return false;
   const box = over.getBoundingClientRect();
   const after = clientY > box.top + box.height / 2;
+
+  if (dragState.type === "library") {
+    const ex = EXERCISE_LIBRARY.find((x) => x.id === dragState.exId);
+    if (!ex) return false;
+    if (over.classList.contains("builder-ex-row")) {
+      // Into an existing block, at the point it was dropped. A block with one
+      // exercise becomes a superset by the same rule as checking two rows.
+      const block = builderBlocks[Number(over.dataset.blockIndex)];
+      if (!block || !block.values.exercises) return false;
+      const at = Number(over.dataset.exIndex) + (after ? 1 : 0);
+      block.values.exercises.splice(at, 0, { name: ex.name, exerciseId: ex.id, reps: 10 });
+      return true;
+    }
+    // On a block but not a row: its own straight set, above or below.
+    const at = Number(over.dataset.blockIndex) + (after ? 1 : 0);
+    builderBlocks.splice(at, 0, newBlockForExercise(ex));
+    return true;
+  }
 
   if (dragState.type === "block") {
     const from = dragState.blockIndex;
@@ -2891,8 +2932,7 @@ let dropHandled = false;
 
 document.addEventListener("drop", (e) => {
   if (!dragState) return;
-  const selector = dragState.type === "block" ? ".builder-block-card" : ".builder-ex-row";
-  const over = e.target.closest(selector);
+  const over = dragTargetFor(e.target);
   clearDropMarkers();
   if (!over) return;
   e.preventDefault();
@@ -2911,8 +2951,7 @@ document.addEventListener("dragend", (e) => {
   // finished here from the release coordinates instead.
   if (!dropHandled && dragState) {
     const el = document.elementFromPoint(e.clientX, e.clientY);
-    const selector = dragState.type === "block" ? ".builder-block-card" : ".builder-ex-row";
-    const over = el && el.closest ? el.closest(selector) : null;
+    const over = dragTargetFor(el);
     // Only when released over a real target — dragging off the list and
     // letting go still means "cancel".
     if (over && completeDrop(over, e.clientY)) {
@@ -3507,9 +3546,19 @@ function openExerciseModal() {
   document.getElementById("exercise-modal-overlay").classList.add("visible");
 }
 
-function openEditExerciseModal(exerciseId) {
+// Opened from the Exercises page, or from a card in the builder's library
+// (2026-10-08). From the builder it grows an "Add to workout" button, because
+// opening a card to check the demo and then having no way to use it is a dead
+// end — and saving refreshes the list underneath, since the name or the video
+// may have just changed.
+let exerciseModalReturnsTo = null;
+
+function openEditExerciseModal(exerciseId, opts) {
   const ex = EXERCISE_LIBRARY.find((x) => x.id === exerciseId);
   if (!ex) return;
+  exerciseModalReturnsTo = (opts && opts.fromBuilder) ? exerciseId : null;
+  const addBtn = document.getElementById("exercise-modal-add-btn");
+  if (addBtn) addBtn.style.display = exerciseModalReturnsTo ? "" : "none";
   editingExerciseId = exerciseId;
   document.getElementById("exercise-modal-title").textContent = "Edit Exercise";
   document.getElementById("exercise-modal-save-btn").textContent = "Save Changes";
@@ -3526,6 +3575,43 @@ function openEditExerciseModal(exerciseId) {
 function closeExerciseModal() {
   document.getElementById("exercise-modal-overlay").classList.remove("visible");
   editingExerciseId = null;
+  exerciseModalReturnsTo = null;
+}
+
+// A workout refers to an exercise by NAME — `exercise: { name: "Push Press" }`
+// — so renaming one in the library used to orphan it everywhere it was used.
+// Silently: the member app looks the old name up, finds nothing, and the demo
+// video, the technique text and weight tracking all quietly stop working.
+// Nothing said so, and nothing could be undone.
+//
+// That was survivable while editing an exercise meant a deliberate trip to the
+// Exercises page. Since the builder's library cards open the same editor
+// (2026-10-08), exercises get edited *while a workout is using them*, which is
+// exactly when a rename is most likely and most damaging.
+//
+// Renaming by id instead is the real fix and a much larger one — the id is the
+// join key for videos and posters too, so it cannot change. Until then the
+// rename is carried through every workout that uses the old name, and Chris is
+// told how many changed rather than left to find out.
+function renameExerciseInWorkouts(oldName, newName) {
+  const touched = [];
+  CIRCUITS.forEach((circuit) => {
+    let changed = false;
+    (circuit.blocks || []).forEach((block) => {
+      if (block.exercise && block.exercise.name === oldName) { block.exercise.name = newName; changed = true; }
+      if (block.holdExercise === oldName) { block.holdExercise = newName; changed = true; }
+      (block.exercises || []).forEach((e) => {
+        if (e.name === oldName) { e.name = newName; changed = true; }
+      });
+    });
+    if (changed) touched.push(circuit);
+  });
+  if (!touched.length) return;
+  touched.forEach(syncCircuitToMemberApp);
+  flushAdminState();
+  alert(`Renamed "${oldName}" to "${newName}".\n\n`
+      + `${touched.length} workout${touched.length === 1 ? "" : "s"} used it and ${touched.length === 1 ? "was" : "were"} updated to match, `
+      + `so nothing lost its demo video or weight tracking.`);
 }
 
 function saveExercise() {
@@ -3544,13 +3630,17 @@ function saveExercise() {
 
   if (editingExerciseId) {
     const ex = EXERCISE_LIBRARY.find((x) => x.id === editingExerciseId);
+    const previousName = ex.name;
     Object.assign(ex, { name, videoUrl, technique, bodyParts, modality, equipment, trackWeight });
+    if (previousName !== name) renameExerciseInWorkouts(previousName, name);
   } else {
     EXERCISE_LIBRARY.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now(), name, videoUrl, technique, bodyParts, modality, equipment, trackWeight });
   }
   saveExerciseLibrary();
+  const wasFromBuilder = !!exerciseModalReturnsTo;
   closeExerciseModal();
   renderExerciseLibrary();
+  if (wasFromBuilder) renderBuilderLibraryList();
 }
 
 // ---------------- Exercise library persistence (2026-08-10) ----------------
@@ -4506,7 +4596,7 @@ function renderBuilderLibraryList() {
 
   document.getElementById("builder-library-hint").innerHTML = builderActiveSlot
     ? `Filling an exercise slot — click one below. <button class="link-btn" data-action="cancel-slot-fill">Cancel</button>`
-    : "Click an exercise to add it as a new station.";
+    : "Drag an exercise where you want it, or tap + to add it at the end. Click the card to see or edit it.";
 
   // Three to a row, each a near-full-width thumbnail with the name underneath
   // (2026-08-19). Body-part tags are deliberately not on the card — they're
@@ -4515,7 +4605,9 @@ function renderBuilderLibraryList() {
   // it shows, and it's sized and placed for the hover-to-preview Chris wants
   // next, so adding that is a behaviour change rather than a layout one.
   let html = filtered.map((ex) => `
-    <div class="builder-library-card" data-action="library-pick-exercise" data-ex-id="${ex.id}">
+    <div class="builder-library-card" data-action="library-open-exercise" data-ex-id="${ex.id}" draggable="true">
+      <button class="library-card-add" data-action="library-pick-exercise" data-ex-id="${ex.id}"
+              title="Add ${ex.name} to this workout">+</button>
       ${exerciseVideoSlotHtml(ex.name, "ex-video-card")}
       <span class="ex-card-name">${ex.name}</span>
     </div>
@@ -4535,6 +4627,16 @@ function renderBuilderLibraryList() {
   wireExerciseCardPreviews(list);
 }
 
+// One place decides what a brand-new block looks like, so a dragged exercise
+// and a clicked one land identically (2026-10-08).
+function newBlockForExercise(ex) {
+  return {
+    type: "straight",
+    values: { label: ex.name, exerciseName: ex.name, exerciseId: ex.id, sets: 3, reps: 12, rest: 30 },
+    selected: false,
+  };
+}
+
 function applyExerciseToWorkout(ex) {
   if (builderActiveSlot) {
     const { blockIndex, exIndex } = builderActiveSlot;
@@ -4548,11 +4650,7 @@ function applyExerciseToWorkout(ex) {
     }
     builderActiveSlot = null;
   } else {
-    builderBlocks.push({
-      type: "straight",
-      values: { label: ex.name, exerciseName: ex.name, exerciseId: ex.id, sets: 3, reps: 12, rest: 30 },
-      selected: false,
-    });
+    builderBlocks.push(newBlockForExercise(ex));
   }
   renderBuilderBlocks();
   renderBuilderLibraryList();
@@ -4938,6 +5036,14 @@ document.addEventListener("click", (e) => {
   }
   if (action === "cancel-slot-fill") {
     clearActiveSlot();
+  }
+  if (action === "library-open-exercise") {
+    openEditExerciseModal(el.dataset.exId, { fromBuilder: true });
+  }
+  if (action === "add-open-exercise-to-workout") {
+    const ex = EXERCISE_LIBRARY.find((x) => x.id === exerciseModalReturnsTo);
+    closeExerciseModal();
+    if (ex) applyExerciseToWorkout(ex);
   }
   if (action === "library-pick-exercise") {
     const ex = EXERCISE_LIBRARY.find((x) => x.id === el.dataset.exId);

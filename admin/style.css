@@ -1442,7 +1442,36 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   font-size: 12px;
   border: 2px solid transparent;
 }
+.builder-library-card { position: relative; }
 .builder-library-card:hover { border-color: var(--periwinkle); }
+/* The two targets on a library card (2026-10-08). + adds it where the click
+   used to; the rest of the card opens it. The + sits over the thumbnail's
+   corner and only appears on hover, so a grid of 450 cards isn't 450 plus
+   signs — but it stays visible once the pointer is on the card you want. */
+.library-card-add {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: var(--blue);
+  color: white;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  box-shadow: 0 2px 6px rgba(10, 19, 64, 0.35);
+}
+.builder-library-card:hover .library-card-add,
+.library-card-add:focus-visible { opacity: 1; }
+.library-card-add:hover { background: var(--deepblue); }
+/* While a card is being dragged into the workout. */
+.builder-library-card.dragging { opacity: 0.45; }
 
 /* The video slot, in three sizes. Real thumbnail frames rather than icons, so
    the hover-to-preview step drops a <video> straight in without moving

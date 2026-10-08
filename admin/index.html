@@ -408,6 +408,9 @@
           <span></span>
           <div>
             <button class="btn-ghost-lg" id="exercise-modal-cancel-btn">Cancel</button>
+            <!-- Only shown when the editor was opened from the builder's
+                 library, so checking an exercise isn't a dead end. -->
+            <button class="btn-ghost-lg" id="exercise-modal-add-btn" data-action="add-open-exercise-to-workout" style="display:none;">+ Add to Workout</button>
             <button class="btn-primary" id="exercise-modal-save-btn">Save Exercise</button>
           </div>
         </footer>
