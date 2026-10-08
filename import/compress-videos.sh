@@ -15,7 +15,9 @@
 # Usage:  ./compress-videos.sh [source-dir] [output-dir]
 set -u
 
-SRC="${1:-/Volumes/Extreme SSD/EXERCISE LIBRARY}"
+# The masters moved to the CJV SSD on 2026-10-08 when Chris consolidated his
+# drives; the folder was called EXERCISE LIBRARY on the old one.
+SRC="${1:-/Volumes/CJV SSD/Burn Club Exercises}"
 OUT="${2:-$HOME/Desktop/burn-club-videos}"
 
 command -v ffmpeg >/dev/null || { echo "ffmpeg not found. Run: brew install ffmpeg"; exit 1; }

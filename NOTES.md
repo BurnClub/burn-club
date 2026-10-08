@@ -144,8 +144,20 @@ media, so `play()` rejects with AbortError. Same wall as the demo-resume work.
 
 ### Where we are with the videos
 
-On the external drive, now at **`/Volumes/Extreme SSD/Burn Club Exercises`**
-(renamed from EXERCISE LIBRARY; the drive is 98% full).
+**The masters live on the CJV SSD, at `/Volumes/CJV SSD/Burn Club Exercises`**
+(2026-10-08 — consolidated off the Extreme SSD, where the folder was first
+called EXERCISE LIBRARY).
+
+**The masters are split across two drives until Chris finishes consolidating.**
+The second batch's 104 originals are on the CJV SSD (verified byte-for-byte
+against the old Extreme SSD on 2026-10-08 — all 104 identical by checksum, so
+the Extreme copy is safe to delete). The 375 from September are on a third
+drive, still to be copied across. Worth re-running the same check when it is:
+names and sizes agreeing is not the same as the bytes agreeing.
+
+Compression is one way — 720p, CRF 26, audio stripped — so a higher-quality
+re-encode, a different crop or a better poster frame can only come from a
+master. That is the reason to keep them.
 
 **Second batch, 2026-10-07: 104 more clips, already slug-named by Chris.**
 26 of them turned out to be duplicates of demos already live — he spot-checked
