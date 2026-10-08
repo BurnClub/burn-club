@@ -625,19 +625,28 @@ syncs them.
 
 ## Agreed, not yet built
 
-- **Admin can't author a superset rep scheme yet** (Chris, 2026-10-02). The
-  member app runs `scheme: [10, 8, 8, 6]` on a superset exercise — round 1 is
-  10 reps, round 4 is 6 — but nothing can write one:
-  - **The builder**: `admin/app.js:2737` renders a single `type="number"` Reps
-    input per superset exercise. It needs to accept a list ("10, 8, 8, 6"),
-    validate the count against the block's rounds, and keep writing a plain
-    number when the reps don't change.
-  - **The importer**: the sheet has a "Ladder Scheme" column used only by the
-    ladder type (`BLOCK_FORMATS`, `admin/app.js:3801`). Either let superset rows
-    use it or rename the column to something that covers both — it is the same
-    idea in both places.
-  Until then a scheme can only be written by hand in `data.js`, which is how the
-  demo Superset workout carries one.
+- **Getting admin content to members is still a hand-carry** (2026-10-08).
+  Chris builds programs in admin; admin keeps them in `localStorage`; members
+  read `data.js`. So a program reaches testers by my folding the export into
+  `data.js` and pushing — every content change costs a deploy, which he has
+  accepted for the trial. Two things make that bearable:
+  - **Export All** (Programs header) downloads everything authored as one JSON
+    file. That is how the work reaches me, and it is also the only backup —
+    until phase 6 his programs exist in one browser's localStorage, and a
+    cleared cache takes them with it. Worth clicking after any real session.
+  - **For his own testing he does not need me at all**: admin writes
+    `burnClubLiveCircuits`, the member app reads it and listens for changes, so
+    in the same browser a workout he just built is immediately walkable. That
+    is the loop for "go through the motions and see what we want to change".
+
+- **The importer still can't carry a superset rep scheme.** The builder can
+  since 2026-10-08 — the Reps field takes "10,8,8,6" and writes `scheme`, one
+  number still writes plain `reps`, and editing a workout puts the scheme back
+  in the field. The spreadsheet route did not follow: its "Ladder Scheme"
+  column is read only for the ladder type (`BLOCK_FORMATS`, `admin/app.js`).
+  Either let superset rows use it or rename the column to cover both — it is
+  the same idea in both places. Only matters once Chris imports rather than
+  builds by hand.
 
 - **The workout flow: straight sets and static holds are done** (2026-10-03).
   Supersets first — per-round rep schemes, the demo strip, weights at the end

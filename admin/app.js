@@ -2363,7 +2363,7 @@ function schemaBlockToBuilderBlock(block) {
           label: block.label,
           rounds: block.rounds,
           rest: block.rest,
-          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps, hold: e.hold, drop: e.drop })),
+          exercises: block.exercises.map(exerciseToBuilderRow),
         },
       };
     case "straight":
@@ -2397,7 +2397,7 @@ function schemaBlockToBuilderBlock(block) {
         values: {
           label: block.label,
           durationMin: Math.round(block.duration / 60),
-          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps, hold: e.hold, drop: e.drop })),
+          exercises: block.exercises.map(exerciseToBuilderRow),
         },
       };
     case "emom":
@@ -2407,7 +2407,7 @@ function schemaBlockToBuilderBlock(block) {
           label: block.label,
           durationMin: Math.round(block.duration / 60),
           intervalSec: block.interval,
-          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps, hold: e.hold, drop: e.drop })),
+          exercises: block.exercises.map(exerciseToBuilderRow),
         },
       };
     default:
@@ -2640,7 +2640,15 @@ function exerciseVideoSlotHtml(name, variantClass) {
   const title = !name
     ? "No exercise chosen yet"
     : has ? `Video: ${name}` : `No video yet for ${name} — add one from the Exercises page`;
-  return `<span class="ex-video-slot ${variantClass} ${has ? "has-video" : ""}" title="${title}">${icon(has ? "play" : "video")}</span>`;
+  // Carries the same cover frame and hover preview as the Exercises page
+  // (2026-10-08, Chris: "I checked page/pop up for building a workout, and the
+  // changes to not reflect there yet"). data-clip is what the preview wiring
+  // looks for, so the two lists share one implementation.
+  return `<span class="ex-video-slot ${variantClass} ${has ? "has-video" : ""}"
+    ${has ? `data-clip="${ex.videoUrl}"` : ""} title="${title}">${
+    has ? `<img class="ex-slot-cover" loading="lazy" alt="" src="${posterUrlFor(ex.videoUrl)}"
+             onerror="this.style.display='none'">` : ""
+  }<span class="ex-slot-icon">${icon(has ? "play" : "video")}</span></span>`;
 }
 
 // straight and ladder hold exactly one exercise; the others hold a list. Drives
@@ -2734,7 +2742,7 @@ function blockExerciseList(block, i) {
           <span class="drag-handle" data-drag="exercise" data-block-index="${i}" data-ex-index="${ei}" title="Drag to reorder">${icon("grip")}</span>
           ${chosenExercisePill(e.name, i, ei)}
           ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
-          ${withReps && !e.hold ? `<input type="number" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" />` : ""}
+          ${withReps && !e.hold ? `<input type="text" inputmode="numeric" class="reps-field" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" title="One number for every round, or a number per round: 10,8,8,6" />` : ""}
           ${e.hold ? `<span class="row-seg-tag">hold</span><input type="number" min="1" placeholder="secs" title="Static hold, in seconds" value="${e.hold}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="hold" />` : ""}
           <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
         </div>
@@ -2964,8 +2972,41 @@ function convertSelectedSingle(targetType) {
 // `hold` is omitted entirely when unset rather than written as 0, so a block
 // nobody touched serialises byte-identically to how it did before holds
 // existed — which is what keeps this additive.
+// Reps may be one number for every round, or a number per round — "10,8,8,6",
+// which is how Chris actually programs a superset (2026-10-08). The member app
+// has read `scheme` on a superset exercise since 2026-10-02; this is the
+// authoring half, which was the only reason his real workouts could not be
+// built in admin at all.
+//
+// A single number still writes plain `reps` and nothing else, so a block nobody
+// touched serialises exactly as it did before schemes existed. Same reason
+// `hold` is omitted when unset rather than written as 0.
+function parseRepsField(value) {
+  const parts = String(value == null ? "" : value).split(",").map((n) => n.trim()).filter(Boolean);
+  if (parts.length > 1) {
+    const nums = parts.map(Number).filter((n) => Number.isFinite(n) && n > 0);
+    if (nums.length > 1) return { scheme: nums };
+  }
+  // The first number, not the whole string: typing "10," on the way to
+  // "10,8,8,6" would otherwise read as NaN and silently store 0 reps.
+  return { reps: Number(parts[0]) || 0 };
+}
+
+// The inverse of parseRepsField: a stored scheme comes back into the one Reps
+// field as "10,8,8,6" so editing a workout shows what was authored, rather than
+// an empty box that silently flattens the scheme on the next save.
+function exerciseToBuilderRow(e) {
+  return {
+    name: e.name,
+    exerciseId: exerciseIdByName(e.name),
+    reps: Array.isArray(e.scheme) ? e.scheme.join(",") : e.reps,
+    hold: e.hold,
+    drop: e.drop,
+  };
+}
+
 function exerciseWithHold(e) {
-  const out = { name: e.name, reps: Number(e.reps) || 0 };
+  const out = { name: e.name, ...parseRepsField(e.reps) };
   if (Number(e.hold)) out.hold = Number(e.hold);
   if (e.drop) out.drop = true;
   return out;
@@ -3359,6 +3400,8 @@ function exerciseHoverClip() {
 
 function stopExerciseHoverPreview() {
   clearTimeout(hoverTimer);
+  // Listeners are re-attached on every render, so a frame that is wired twice
+  // would otherwise leave a second timer running against a detached element.
   if (!hoverClip) return;
   const frame = hoverClip.parentElement;
   if (frame) frame.classList.remove("previewing");
@@ -3368,8 +3411,8 @@ function stopExerciseHoverPreview() {
   hoverClip.remove();
 }
 
-function wireExerciseCardPreviews() {
-  document.querySelectorAll(".exercise-card-video[data-clip]").forEach((frame) => {
+function wireExerciseCardPreviews(root) {
+  (root || document).querySelectorAll("[data-clip]").forEach((frame) => {
     frame.addEventListener("mouseenter", () => {
       clearTimeout(hoverTimer);
       hoverTimer = setTimeout(() => {
@@ -3911,6 +3954,39 @@ let workoutUploadRows = [];      // one per sheet row, with its parse errors
 let workoutUploadWorkouts = [];  // grouped into workouts, ready to build
 let workoutUploadProgramId = null;
 
+// Everything authored in admin, as one file (2026-10-08, Chris is about to
+// build real programs for the testers).
+//
+// Two jobs, both of which were awkward before this existed. It is how the work
+// gets to me — until the backend carries content, a program reaches members by
+// my folding it into data.js, and the alternative was asking Chris to run a
+// console one-liner every time. And it is the only backup: everything he
+// builds lives in one browser's localStorage, which a cleared cache would take
+// with it.
+//
+// The shape matches what saveAdminCircuits persists, so an export is a
+// snapshot of admin's own state rather than a format to keep in step.
+function exportAllPrograms() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    circuits: CIRCUITS,
+    schedules: SCHEDULE_TEMPLATES,
+    folders: FOLDERS,
+    programs: PROGRAMS.map((p) => ({
+      id: p.id, name: p.name, durationWeeks: p.durationWeeks,
+      workoutsPerWeek: p.workoutsPerWeek, circuitsPerWeek: p.circuitsPerWeek,
+    })),
+  };
+  const stamp = new Date().toISOString().slice(0, 10);
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `burn-club-programs-${stamp}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function downloadWorkoutTemplate() {
   const headers = ["Week","Day","Variant","Title","Focus","Difficulty","Description",
     "Block","Block Label","Block Type","Rounds","Work (sec)","Rest (sec)",
@@ -4394,7 +4470,9 @@ function renderBuilderLibraryList() {
     html += `<button class="btn-primary picker-add-new" data-action="add-new-exercise-to-workout">+ Add "${query}" to library</button>`;
   }
 
-  document.getElementById("builder-library-list").innerHTML = html;
+  const list = document.getElementById("builder-library-list");
+  list.innerHTML = html;
+  wireExerciseCardPreviews(list);
 }
 
 function applyExerciseToWorkout(ex) {
@@ -6769,6 +6847,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("exercise-modal-cancel-btn").addEventListener("click", closeExerciseModal);
   document.getElementById("exercise-modal-save-btn").addEventListener("click", saveExercise);
   document.getElementById("workout-template-btn").addEventListener("click", downloadWorkoutTemplate);
+  document.getElementById("export-programs-btn").addEventListener("click", exportAllPrograms);
   document.getElementById("workout-upload-btn").addEventListener("click", () => {
     // Structured only: the sheet is Week/Day/Variant, which a rolling program
     // has no use for — its workouts carry dates instead.
