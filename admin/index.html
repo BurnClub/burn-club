@@ -187,11 +187,20 @@
                 <p class="eyebrow" id="folder-grid-eyebrow">Program</p>
                 <h1 id="folder-pane-title">Program</h1>
               </div>
-              <button class="btn-primary" id="new-folder-btn">+ New Folder</button>
-              <!-- Rolling programs have no folders to create, so the header
-                   offers the thing you actually came here to do. Which week the
-                   workout lands in is decided by the date you give it. -->
-              <button class="btn-primary" id="new-rolling-workout-btn" style="display:none;">+ New Workout</button>
+              <!-- Grouped, or space-between pushes them to opposite ends of
+                   the header. Edit and Schedule reach the program from the page
+                   you are already on (2026-10-08, Chris) — both existed only on
+                   the Programs card grid, so changing a program's length or
+                   laying out its weeks meant going back out to find it. -->
+              <div class="view-header-actions">
+                <button class="btn-ghost-lg small" id="folder-edit-program-btn">Edit</button>
+                <button class="btn-ghost-lg small" id="folder-schedule-btn">Schedule</button>
+                <button class="btn-primary" id="new-folder-btn">+ New Folder</button>
+                <!-- Rolling programs have no folders to create, so the header
+                     offers the thing you actually came here to do. Which week
+                     the workout lands in is decided by the date you give it. -->
+                <button class="btn-primary" id="new-rolling-workout-btn" style="display:none;">+ New Workout</button>
+              </div>
             </header>
 
             <div class="folder-grid" id="folder-grid"></div>

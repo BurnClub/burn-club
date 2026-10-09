@@ -1501,6 +1501,12 @@ function renderFolderGrid() {
   document.getElementById("new-folder-btn").style.display = rolling ? "none" : "";
   document.getElementById("new-rolling-workout-btn").style.display = rolling ? "" : "none";
 
+  // Both only mean something for a real program — "General (Unassigned)" is
+  // not one — and only a structured program has a schedule to lay out.
+  document.getElementById("folder-edit-program-btn").style.display = program ? "" : "none";
+  document.getElementById("folder-schedule-btn").style.display =
+    program && program.scheduleType === "structured" ? "" : "none";
+
   // Rolling programs stack labelled bands, each holding its own card grid, so
   // the container itself must not be a grid — otherwise the bands become grid
   // items and sit side by side in columns.
@@ -7380,6 +7386,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("target-date-modal-input").addEventListener("input", updateTargetDateNote);
   document.getElementById("target-date-modal-input").addEventListener("change", updateTargetDateNote);
   document.getElementById("new-folder-btn").addEventListener("click", openFolderModal);
+  document.getElementById("folder-edit-program-btn").addEventListener("click", () => {
+    if (selectedProgramScope) openEditProgramModal(selectedProgramScope);
+  });
+  document.getElementById("folder-schedule-btn").addEventListener("click", () => {
+    if (selectedProgramScope) openScheduleView(selectedProgramScope);
+  });
   document.getElementById("folder-modal-close-btn").addEventListener("click", closeFolderModal);
   document.getElementById("folder-modal-cancel-btn").addEventListener("click", closeFolderModal);
   document.getElementById("folder-modal-save-btn").addEventListener("click", saveNewFolder);
