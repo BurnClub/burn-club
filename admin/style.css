@@ -2220,3 +2220,27 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   font-weight: 700;
   line-height: 1.4;
 }
+
+/* The builder's filter panel, grouped (2026-10-08). Was one flat row of
+   body-part pills; now three labelled groups, because "which muscle" and
+   "what equipment" are different questions and a flat row cannot say which
+   one a pill belongs to. Scrolls rather than pushing the exercise list off
+   the panel — there are 23 body parts and 23 pieces of equipment. */
+#builder-library-filters {
+  display: block;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 2px 2px 6px;
+}
+.builder-filter-group + .builder-filter-group { margin-top: 10px; }
+.builder-filter-group-name {
+  margin: 0 0 5px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--deepblue);
+  opacity: 0.65;
+}
+.builder-filter-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+.builder-filter-clear { display: inline-block; margin-top: 10px; font-size: 12px; }

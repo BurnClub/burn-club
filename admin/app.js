@@ -2390,7 +2390,7 @@ function openBuilder(folderId) {
   document.getElementById("builder-benchmark-select-wrap").style.display = "none";
   builderBlocks = [];
   builderActiveSlot = null;
-  builderLibraryCategory = "All";
+  clearBuilderFilters();
   document.getElementById("builder-library-search").value = "";
   renderBuilderBlocks();
   renderBuilderLibraryFilters();
@@ -2599,7 +2599,7 @@ function openEditBuilder(circuitId) {
   renderBuilderVariantPills();
   builderBlocks = circuit.blocks.map(schemaBlockToBuilderBlock).filter(Boolean);
   builderActiveSlot = null;
-  builderLibraryCategory = "All";
+  clearBuilderFilters();
   document.getElementById("builder-library-search").value = "";
   renderBuilderBlocks();
   renderBuilderLibraryFilters();
@@ -4766,7 +4766,36 @@ function loadAdminCircuits() {
 // straight-set station; clicking an existing "+ Choose Exercise" chip on a block first arms that
 // slot (setActiveSlot) so the next library click fills it instead of appending.
 
-let builderLibraryCategory = "All";
+// Three groups, OR inside a group and AND across them (2026-10-08, Chris):
+// "i will tag Chest, Back and DB/KB, BAND. i want it to show my Chest OR Back
+// (both of them), AND only exercised tagged with this equipment."
+//
+// This was one row of body-part pills, pick one — which could not express that
+// at all. The Exercises page has had grouped filters since August and behaves
+// exactly this way; the builder is where they are actually wanted, because
+// hunting for one more exercise mid-workout is the moment you are narrowing by
+// muscle and by what is in the room.
+let builderFilterBodyParts = new Set();
+let builderFilterEquipment = new Set();
+let builderFilterModality = new Set();
+
+function builderFilterGroups() {
+  return [
+    { key: "bodypart", label: "Muscle Worked", tags: BODY_PART_TAGS, set: builderFilterBodyParts },
+    { key: "equipment", label: "Equipment", tags: EQUIPMENT_TAGS, set: builderFilterEquipment },
+    { key: "type", label: "Type", tags: MODALITY_TAGS, set: builderFilterModality },
+  ];
+}
+
+function builderFilterCount() {
+  return builderFilterBodyParts.size + builderFilterEquipment.size + builderFilterModality.size;
+}
+
+function clearBuilderFilters() {
+  builderFilterBodyParts.clear();
+  builderFilterEquipment.clear();
+  builderFilterModality.clear();
+}
 let builderActiveSlot = null;
 
 function isActiveSlot(blockIndex, exIndex) {
@@ -4792,19 +4821,26 @@ function clearActiveSlot() {
 let builderFiltersOpen = false;
 
 function renderBuilderLibraryFilters() {
-  const cats = ["All", ...BODY_PART_TAGS];
-  document.getElementById("builder-library-filters").innerHTML = cats
-    .map((c) => `<button class="pill-filter ${c === builderLibraryCategory ? "active" : ""}" data-action="builder-library-category" data-cat="${c}">${c}</button>`)
-    .join("");
+  const groups = builderFilterGroups();
+  const active = builderFilterCount();
+  document.getElementById("builder-library-filters").innerHTML =
+    groups.map((g) => `
+      <div class="builder-filter-group">
+        <p class="builder-filter-group-name">${g.label}</p>
+        <div class="builder-filter-pills">
+          ${g.tags.map((t) => `<button class="pill-filter ${g.set.has(t) ? "active" : ""}"
+             data-action="builder-filter-tag" data-group="${g.key}" data-tag="${esc(t)}">${t}</button>`).join("")}
+        </div>
+      </div>`).join("")
+    + (active ? `<button class="link-btn builder-filter-clear" data-action="builder-filter-clear">Clear ${active} filter${active === 1 ? "" : "s"}</button>` : "");
   document.getElementById("builder-library-filters").style.display = builderFiltersOpen ? "" : "none";
 
   // The badge is what makes hiding them safe — an active filter has to stay
   // visible, or an empty-looking list reads as a missing exercise.
   const badge = document.getElementById("builder-filter-count");
-  const filtered = builderLibraryCategory !== "All";
-  badge.style.display = filtered ? "" : "none";
-  badge.textContent = filtered ? builderLibraryCategory : "";
-  document.getElementById("builder-filter-btn").classList.toggle("active", builderFiltersOpen || filtered);
+  badge.style.display = active ? "" : "none";
+  badge.textContent = active ? String(active) : "";
+  document.getElementById("builder-filter-btn").classList.toggle("active", builderFiltersOpen || active > 0);
 }
 
 function toggleBuilderFilters() {
@@ -4816,7 +4852,11 @@ function renderBuilderLibraryList() {
   const query = document.getElementById("builder-library-search").value.trim();
   const queryLower = query.toLowerCase();
   const filtered = EXERCISE_LIBRARY.filter((ex) => {
-    if (builderLibraryCategory !== "All" && !ex.bodyParts.includes(builderLibraryCategory)) return false;
+    // OR within a group, AND across them: an exercise has to answer every
+    // group you have narrowed by, but any one tag in that group will do.
+    if (builderFilterBodyParts.size && !(ex.bodyParts || []).some((t) => builderFilterBodyParts.has(t))) return false;
+    if (builderFilterEquipment.size && !(ex.equipment || []).some((t) => builderFilterEquipment.has(t))) return false;
+    if (builderFilterModality.size && !builderFilterModality.has(ex.modality)) return false;
     if (queryLower && !ex.name.toLowerCase().includes(queryLower)) return false;
     return true;
   });
@@ -5282,7 +5322,9 @@ document.addEventListener("click", (e) => {
     const newEx = {
       id: query.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now(),
       name: query,
-      bodyParts: [builderLibraryCategory !== "All" ? builderLibraryCategory : "Full Body"],
+      // Seeded from whatever muscle is being filtered by, if exactly one is —
+      // otherwise there is no single right answer to guess at.
+      bodyParts: [builderFilterBodyParts.size === 1 ? [...builderFilterBodyParts][0] : "Full Body"],
       modality: "Strength",
       equipment: [],
       technique: "",
@@ -5291,9 +5333,20 @@ document.addEventListener("click", (e) => {
     EXERCISE_LIBRARY.push(newEx);
     applyExerciseToWorkout(newEx);
   }
-  if (action === "builder-library-category") {
-    builderFiltersOpen = false;
-    builderLibraryCategory = el.dataset.cat;
+  if (action === "builder-filter-tag") {
+    const group = builderFilterGroups().find((g) => g.key === el.dataset.group);
+    if (group) {
+      const tag = el.dataset.tag;
+      // The panel stays open: picking one tag is rarely the whole thought, and
+      // closing it after every click made building a filter a game of reopening
+      // the panel.
+      if (group.set.has(tag)) group.set.delete(tag); else group.set.add(tag);
+      renderBuilderLibraryFilters();
+      renderBuilderLibraryList();
+    }
+  }
+  if (action === "builder-filter-clear") {
+    clearBuilderFilters();
     renderBuilderLibraryFilters();
     renderBuilderLibraryList();
   }
