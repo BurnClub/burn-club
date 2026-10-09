@@ -659,6 +659,24 @@ syncs them.
 
 ## Agreed, not yet built
 
+- **Messaging is a demo, and testers will message into the void** (established
+  2026-10-08, when Chris asked for a shared staff inbox). There is no messages
+  table, nothing in `sync.js`, and `broadcastMessage` writes to
+  `LIVE_MESSAGES_KEY` in localStorage — its own comment says "same-browser
+  only". A member messaging their coach from a phone writes to that phone and
+  nowhere else. Admin's inbox is seed data.
+
+  So the shared inbox Chris wants is not a feature on top of messaging; it is
+  what building messaging *is*. One `messages` table with member↔staff threads
+  and RLS — a member reads their own, staff read all — and both staff accounts
+  are looking at the same rows by construction.
+
+  **Decide before testers**: build it, or turn messaging off for the trial.
+  Testers tapping "message your coach" and getting silence is worse than no
+  button, and their feedback is the point of having them. Open design
+  question: whether marking a message read clears it for both staff (shared
+  inbox) or each tracks their own.
+
 - **~~Archiving a program is a filing action and nothing more~~ — fixed
   2026-10-08.** Archiving now means what Chris wants it to mean: whoever is on
   the program carries on, nobody new is put on it. Archived programs leave the

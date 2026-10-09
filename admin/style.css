@@ -98,6 +98,13 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .shell { display: none; min-height: 100vh; }
 .shell.visible { display: flex; }
 
+/* Pinned, not scrolled away with the page (2026-10-08, Chris: "i dont want to
+   have to scroll down to get those"). The Exercises list is 688 cards long, so
+   Settings and Log Out were a long way down a page that had nothing to do with
+   them.
+   align-self keeps the sticky element from being stretched to the full height
+   of the content by the shell's flex row — without it, height:100vh is
+   overridden and there is nothing to stick. */
 .sidebar {
   width: 220px;
   background: var(--ink);
@@ -106,6 +113,10 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   flex-direction: column;
   padding: 24px 16px;
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
 }
 .sidebar-brand {
   display: flex;
@@ -118,7 +129,10 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .sidebar-brand img { width: 36px; height: 36px; border-radius: 50%; background: white; }
 .sidebar-brand small { font-weight: 700; opacity: 0.6; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
 
-.sidebar-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+/* The links scroll if they ever outgrow the window; the footer below them does
+   not move. min-height:0 is what allows a flex child to shrink below its
+   content and actually scroll. */
+.sidebar-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; overflow-y: auto; min-height: 0; }
 /* ---------- ICONS (2026-08-19) ---------- */
 /* One shared line-icon rule, matching the member app: 24-grid, no fill,
    currentColor stroke, so an icon takes the colour of whatever it sits in
