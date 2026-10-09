@@ -1044,6 +1044,26 @@ function toggleProgramArchived(programId) {
   renderLibrary();
 }
 
+// A structured program is organised by week, and its weeks were being made by
+// hand (2026-10-08, Chris). The seeded programs already follow the convention —
+// one library folder per week — so a new program should arrive the same way
+// rather than as an empty shell with a schedule and nowhere to put anything.
+//
+// Only ever adds. Raising a program from 8 weeks to 12 creates Weeks 9-12;
+// lowering it leaves the folders alone, because a folder nobody is looking at
+// may still be holding workouts, and deleting those to tidy a number would be
+// a poor trade.
+function ensureWeekFolders(programId, weeks) {
+  for (let week = 1; week <= weeks; week++) {
+    const id = `${programId}-week-${week}`;
+    if (FOLDERS.some((f) => f.id === id)) continue;
+    // No `live` flag: structured programs do not use the live-folder publish
+    // model. A workout reaches a member by being slotted into the schedule,
+    // and these are the library it is slotted from.
+    FOLDERS.push({ id, name: `Week ${week}`, program: programId });
+  }
+}
+
 const PROGRAM_CARD_COLORS = ["blue", "deepblue", "yellow", "green"];
 
 let editingProgramId = null;
@@ -1148,7 +1168,11 @@ function saveProgram() {
       p.name = name;
       p.description = description;
       p.status = status;
-      if (p.scheduleType === "structured") p.durationWeeks = Number(document.getElementById("program-modal-duration").value) || p.durationWeeks;
+      if (p.scheduleType === "structured") {
+        p.durationWeeks = Number(document.getElementById("program-modal-duration").value) || p.durationWeeks;
+        // Lengthening a program should give it the weeks it just gained.
+        ensureWeekFolders(p.id, p.durationWeeks);
+      }
       else p.circuitsPerWeek = Number(document.getElementById("program-modal-per-week").value) || p.circuitsPerWeek;
     }
     // Program name appears in several dropdowns that are built once at load.
@@ -1173,6 +1197,7 @@ function saveProgram() {
     const days = [];
     for (let day = 1; day <= durationWeeks * 7; day++) days.push({ day, type: "rest" });
     SCHEDULE_TEMPLATES[id] = days;
+    ensureWeekFolders(id, durationWeeks);
   } else {
     const circuitsPerWeek = Number(document.getElementById("program-modal-per-week").value) || 1;
     PROGRAMS.push({ id, name, color, status, scheduleType, memberCount: 0, circuitsPerWeek, description });
