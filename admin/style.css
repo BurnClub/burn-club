@@ -2244,3 +2244,71 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .builder-filter-pills { display: flex; flex-wrap: wrap; gap: 4px; }
 .builder-filter-clear { display: inline-block; margin-top: 10px; font-size: 12px; }
+
+/* ---------- SCHEDULE GRID (2026-10-08) ----------
+   Seven day columns with a week label down the left, replacing a column of 56
+   dropdowns. The point is seeing the shape of a programme at a glance — where
+   the rest days fall, whether a week is front-loaded — which a list of selects
+   could not show however carefully you read it.
+   No weekday headings on purpose: day one is whatever day that member starts,
+   so a column means "second day of the week", not Tuesday. */
+.schedule-grid {
+  display: grid;
+  grid-template-columns: 72px repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  align-items: stretch;
+}
+.schedule-week-label {
+  display: flex;
+  align-items: center;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--deepblue);
+}
+.schedule-cell {
+  background: white;
+  border: 1px solid var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  min-height: 86px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+/* A rest day is quiet rather than empty-looking: tinted, so a run of them
+   reads as a pattern instead of as missing content. */
+.schedule-cell.is-rest { background: var(--field-bg); }
+.schedule-cell-head { display: flex; align-items: center; justify-content: space-between; }
+.schedule-cell-day { font-size: 11px; font-weight: 800; color: var(--deepblue); opacity: 0.6; }
+.schedule-cell-add {
+  width: 20px; height: 20px;
+  border: none; border-radius: 5px;
+  background: var(--field-bg);
+  color: var(--deepblue);
+  font-size: 14px; font-weight: 800; line-height: 1;
+  cursor: pointer; opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.schedule-cell:hover .schedule-cell-add,
+.schedule-cell-add:focus-visible { opacity: 1; }
+.schedule-cell-add:hover { background: var(--blue); color: white; }
+.schedule-cell-rest { margin: auto 0; text-align: center; font-size: 11px; font-weight: 700; color: var(--deepblue); opacity: 0.45; }
+.schedule-chip {
+  display: flex; align-items: flex-start; gap: 4px;
+  padding: 4px 5px;
+  border-radius: 5px;
+  font-size: 11px; font-weight: 700; line-height: 1.25;
+  background: var(--field-bg);
+  color: var(--deepblue);
+}
+/* The three kinds are told apart by colour, so a week of workouts with one
+   photo reminder in it is scannable without reading every chip. */
+.schedule-chip.kind-workout { background: var(--blue); color: white; }
+.schedule-chip.kind-cardio { background: #E8F3EC; color: #1C5B36; }
+.schedule-chip.kind-note { background: #FFF1DC; color: #7A4A12; }
+.schedule-chip span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.schedule-chip-x {
+  border: none; background: none; cursor: pointer; padding: 0;
+  font-size: 11px; line-height: 1; color: currentColor; opacity: 0.6;
+}
+.schedule-chip-x:hover { opacity: 1; }

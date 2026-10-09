@@ -1652,66 +1652,183 @@ function openScheduleView(programId) {
   renderScheduleView();
 }
 
+// The schedule as a grid: seven columns of days, one row per week
+// (2026-10-08, Chris). It replaces a column of 56 dropdowns, which was fine
+// for setting one day and hopeless for seeing the shape of a programme — you
+// could not tell at a glance whether rest days were spread out or bunched.
+//
+// No weekday headings. A member starts on day one whatever day that is, so a
+// column means "the second day of your week", not Tuesday. Labelling it
+// Tuesday would be a lie for six people in seven.
+//
+// A day holds a LIST, not one thing. The template was already a flat array of
+// items each carrying its own day number, so several items on one day needed
+// no change of shape — which is what lets a progress-photo reminder sit
+// alongside the workout rather than instead of it.
+const SCHEDULE_ITEM_KINDS = {
+  workout: { label: "Workout", icon: "dumbbell" },
+  cardio: { label: "Cardio", icon: "heart" },
+  note: { label: "Reminder", icon: "bell" },
+  rest: { label: "Rest", icon: "moon" },
+};
+
+// Adding to a day. A small modal rather than an inline menu: picking a
+// workout means choosing from everything in the programme, which is a list,
+// not a menu item.
+let scheduleAddDay = null;
+
+function openScheduleAdd(day) {
+  scheduleAddDay = day;
+  const program = programById(currentScheduleProgramId);
+  const options = scheduleWorkoutOptions(program.id);
+  document.getElementById("schedule-add-title").textContent = `Add to day ${day}`;
+  // One option per slot, not per variant: offering "Week 1 Shoulders and Abs"
+  // twice, once for Home and once for Gym, asks Chris to pick a variant the
+  // schedule does not record — and whichever he picked, the other half of his
+  // members would be scheduled nothing.
+  const slots = [];
+  options.forEach((c) => {
+    const ref = c.slotId || c.id;
+    if (!slots.some((x) => x.ref === ref)) slots.push({ ref, title: c.title });
+  });
+  document.getElementById("schedule-add-workout").innerHTML =
+    slots.length
+      ? slots.map((o) => `<option value="${esc(o.ref)}">${esc(o.title)}</option>`).join("")
+      : `<option value="">No workouts in this program yet</option>`;
+  document.getElementById("schedule-add-text").value = "";
+  setScheduleAddKind("workout");
+  document.getElementById("schedule-add-overlay").classList.add("visible");
+}
+
+function closeScheduleAdd() {
+  document.getElementById("schedule-add-overlay").classList.remove("visible");
+  scheduleAddDay = null;
+}
+
+// Which fields the chosen kind needs: a workout picks from a list, cardio and
+// a reminder are free text, rest is just itself.
+function setScheduleAddKind(kind) {
+  document.getElementById("schedule-add-overlay").dataset.kind = kind;
+  document.querySelectorAll("[data-schedule-kind]").forEach((b) => {
+    b.classList.toggle("active", b.dataset.scheduleKind === kind);
+  });
+  document.getElementById("schedule-add-workout-field").style.display = kind === "workout" ? "" : "none";
+  document.getElementById("schedule-add-text-field").style.display =
+    (kind === "cardio" || kind === "note") ? "" : "none";
+  const hint = document.getElementById("schedule-add-text");
+  if (kind === "cardio") hint.placeholder = "e.g. 20 minutes easy, your choice";
+  if (kind === "note") hint.placeholder = "e.g. Take your progress photos";
+}
+
+function confirmScheduleAdd() {
+  const program = programById(currentScheduleProgramId);
+  const template = SCHEDULE_TEMPLATES[program.id] || [];
+  const kind = document.getElementById("schedule-add-overlay").dataset.kind;
+  const day = scheduleAddDay;
+  if (!day) return;
+
+  if (kind === "rest") {
+    // Rest is the absence of everything else, so it clears the day rather than
+    // being added alongside a workout.
+    for (let i = template.length - 1; i >= 0; i--) {
+      if (template[i].day === day) template.splice(i, 1);
+    }
+  } else if (kind === "workout") {
+    const workoutId = document.getElementById("schedule-add-workout").value;
+    if (!workoutId) return;
+    removeRestFor(template, day);
+    template.push({ day, type: "workout", workoutId });
+  } else {
+    const text = document.getElementById("schedule-add-text").value.trim();
+    removeRestFor(template, day);
+    template.push({ day, type: kind, text });
+  }
+  // Kept in day order so anything walking the template in sequence — the
+  // member app's upcoming list does — still reads correctly.
+  template.sort((a, b) => a.day - b.day);
+  SCHEDULE_TEMPLATES[program.id] = template;
+  flushAdminState();
+  closeScheduleAdd();
+  renderScheduleView();
+}
+
+// An explicit rest item and real content on the same day would contradict each
+// other, and the member app filters on type rather than asking which wins.
+function removeRestFor(template, day) {
+  for (let i = template.length - 1; i >= 0; i--) {
+    if (template[i].day === day && template[i].type === "rest") template.splice(i, 1);
+  }
+}
+
+function removeScheduleItem(index) {
+  const program = programById(currentScheduleProgramId);
+  const template = SCHEDULE_TEMPLATES[program.id] || [];
+  if (index < 0 || index >= template.length) return;
+  template.splice(index, 1);
+  flushAdminState();
+  renderScheduleView();
+}
+
+function scheduleItemsForDay(template, day) {
+  return template.filter((it) => it.day === day);
+}
+
+// A scheduled workout names a SLOT, not a circuit. A slot holds the Home and
+// Gym variants of the same session, which is what lets one schedule serve
+// members on either — the variant is chosen from the member, not the calendar.
+// Circuits in a program without variants have no slotId, so the id is the
+// fallback rather than the other way round.
+function circuitForScheduleRef(ref) {
+  return CIRCUITS.find((c) => c.slotId === ref) || CIRCUITS.find((c) => c.id === ref) || null;
+}
+
+function scheduleItemLabel(item) {
+  if (item.type === "workout") {
+    const c = circuitForScheduleRef(item.workoutId);
+    return c ? c.title : "Workout (missing)";
+  }
+  if (item.type === "cardio") return item.text || "Cardio";
+  if (item.type === "note") return item.text || "Reminder";
+  return "Rest";
+}
+
 function renderScheduleView() {
   const program = programById(currentScheduleProgramId);
   if (!program) return;
   const template = SCHEDULE_TEMPLATES[program.id] || [];
-  const options = scheduleWorkoutOptions(program.id);
 
   document.getElementById("schedule-title").textContent = `${program.name} — Schedule`;
   document.getElementById("schedule-subtitle").textContent =
     `${program.durationWeeks}-week program · Day 1 starts on each member's own enrollment date, not a shared calendar date`;
 
-  const weeks = [];
+  let html = '<div class="schedule-grid">';
   for (let w = 0; w < program.durationWeeks; w++) {
-    weeks.push(template.slice(w * 7, w * 7 + 7));
-  }
-
-  document.getElementById("schedule-weeks").innerHTML = weeks
-    .map(
-      (week, wi) => `
-        <div class="schedule-week">
-          <h3>Week ${wi + 1}</h3>
-          <div class="schedule-day-list">
-            ${week
-              .map(
-                (item) => `
-                  <div class="schedule-day-row">
-                    <span class="schedule-day-label">Day ${item.day}</span>
-                    <select data-role="schedule-day-select" data-day="${item.day}">
-                      <option value="rest" ${item.type === "rest" ? "selected" : ""}>Rest Day</option>
-                      ${options
-                        .map((c) => `<option value="${c.id}" ${item.type === "workout" && item.workoutId === c.id ? "selected" : ""}>${c.title}</option>`)
-                        .join("")}
-                    </select>
-                  </div>
-                `
-              )
-              .join("")}
+    html += `<div class="schedule-week-label">Week ${w + 1}</div>`;
+    for (let d = 1; d <= 7; d++) {
+      const day = w * 7 + d;
+      const items = scheduleItemsForDay(template, day).filter((it) => it.type !== "rest");
+      html += `
+        <div class="schedule-cell ${items.length ? "" : "is-rest"}" data-day="${day}">
+          <div class="schedule-cell-head">
+            <span class="schedule-cell-day">${day}</span>
+            <button class="schedule-cell-add" data-action="schedule-add" data-day="${day}" title="Add to day ${day}">+</button>
           </div>
-        </div>
-      `
-    )
-    .join("");
-
-  document.querySelectorAll('[data-role="schedule-day-select"]').forEach((select) => {
-    select.addEventListener("change", () => {
-      const day = Number(select.dataset.day);
-      const item = template.find((d) => d.day === day);
-      if (!item) return;
-      if (select.value === "rest") {
-        item.type = "rest";
-        delete item.workoutId;
-      } else {
-        item.type = "workout";
-        item.workoutId = select.value;
-      }
-    });
-  });
+          ${items.length
+            ? items.map((it, i) => `
+                <div class="schedule-chip kind-${it.type}">
+                  <span>${esc(scheduleItemLabel(it))}</span>
+                  <button class="schedule-chip-x" data-action="schedule-remove" data-day="${day}"
+                          data-index="${template.indexOf(it)}" title="Remove">✕</button>
+                </div>`).join("")
+            : `<p class="schedule-cell-rest">Rest</p>`}
+        </div>`;
+    }
+  }
+  html += "</div>";
+  document.getElementById("schedule-weeks").innerHTML = html;
 }
 
-// Entered from a Program card's "Manage Workouts" — shows every circuit that
-// belongs to the program (across all of its folders), not just one folder's.
+
 function openProgramDetail(programId) {
   selectedProgramScope = programId;
   currentScope = { type: "program", id: programId };
@@ -5345,6 +5462,12 @@ document.addEventListener("click", (e) => {
       renderBuilderLibraryList();
     }
   }
+  if (action === "schedule-add") {
+    openScheduleAdd(Number(el.dataset.day));
+  }
+  if (action === "schedule-remove") {
+    removeScheduleItem(Number(el.dataset.index));
+  }
   if (action === "builder-filter-clear") {
     clearBuilderFilters();
     renderBuilderLibraryFilters();
@@ -7320,6 +7443,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("exercise-modal-save-btn").addEventListener("click", saveExercise);
   document.getElementById("workout-template-btn").addEventListener("click", downloadWorkoutTemplate);
   document.getElementById("export-programs-btn").addEventListener("click", exportAllPrograms);
+  document.getElementById("schedule-add-close-btn").addEventListener("click", closeScheduleAdd);
+  document.getElementById("schedule-add-cancel-btn").addEventListener("click", closeScheduleAdd);
+  document.getElementById("schedule-add-save-btn").addEventListener("click", confirmScheduleAdd);
+  document.querySelectorAll("[data-schedule-kind]").forEach((btn) => {
+    btn.addEventListener("click", () => setScheduleAddKind(btn.dataset.scheduleKind));
+  });
   document.getElementById("workout-upload-btn").addEventListener("click", () => {
     // Structured only: the sheet is Week/Day/Variant, which a rolling program
     // has no use for — its workouts carry dates instead.

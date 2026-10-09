@@ -659,6 +659,14 @@ syncs them.
 
 ## Agreed, not yet built
 
+- **The member app ignores the new schedule item types.** Admin can now put
+  `cardio` and `note` (reminder) items on a programme day — "take your progress
+  photos", "20 minutes easy" — but every member-side read filters
+  `type === "workout"`: `memberProgramPosition`, `upcomingScheduledWorkouts`
+  and the Calendar tab all skip anything else. So those items are authored and
+  invisible. Rendering them on Home's upcoming list and in the Calendar day
+  rows is the other half of the job (2026-10-08).
+
 - **Focus is derived, difficulty is off, and both are on trial** (2026-10-08).
   The builder's Focus and Difficulty are hidden inputs — hidden in August
   because "focus is carried by the workout's name" — but they were still being

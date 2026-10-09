@@ -267,6 +267,40 @@
       <div class="schedule-weeks" id="schedule-weeks"></div>
     </section>
 
+    <!-- ---------- ADD TO A SCHEDULE DAY (2026-10-08) ---------- -->
+    <div class="builder-overlay" id="schedule-add-overlay" data-kind="workout">
+      <div class="builder-panel small">
+        <header class="builder-header">
+          <h2 id="schedule-add-title">Add to day</h2>
+          <button class="player-exit" id="schedule-add-close-btn">✕</button>
+        </header>
+        <div class="builder-body">
+          <div class="modal-field">
+            <span class="modal-field-label">What goes on this day</span>
+            <div class="tag-checkbox-row">
+              <button class="pill-filter active" data-schedule-kind="workout">Workout</button>
+              <button class="pill-filter" data-schedule-kind="cardio">Cardio</button>
+              <button class="pill-filter" data-schedule-kind="note">Reminder</button>
+              <button class="pill-filter" data-schedule-kind="rest">Rest</button>
+            </div>
+          </div>
+          <label class="modal-field" id="schedule-add-workout-field">Which workout
+            <select id="schedule-add-workout"></select>
+          </label>
+          <label class="modal-field" id="schedule-add-text-field" style="display:none;">Details
+            <input type="text" id="schedule-add-text" />
+          </label>
+          <p class="modal-desc">Rest clears the day. Anything else is added alongside what is already there, so a reminder can share a day with a workout.</p>
+        </div>
+        <footer class="builder-footer">
+          <div>
+            <button class="btn-ghost-lg" id="schedule-add-cancel-btn">Cancel</button>
+            <button class="btn-primary" id="schedule-add-save-btn">Add</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
     <!-- ---------- NEW PROGRAM MODAL ---------- -->
     <div class="builder-overlay" id="program-modal-overlay">
       <div class="builder-panel small">
