@@ -659,23 +659,27 @@ syncs them.
 
 ## Agreed, not yet built
 
-- **Messaging is a demo, and testers will message into the void** (established
-  2026-10-08, when Chris asked for a shared staff inbox). There is no messages
-  table, nothing in `sync.js`, and `broadcastMessage` writes to
-  `LIVE_MESSAGES_KEY` in localStorage — its own comment says "same-browser
-  only". A member messaging their coach from a phone writes to that phone and
-  nowhere else. Admin's inbox is seed data.
+- **When messaging is built, it is a SHARED STAFF INBOX** (Chris, 2026-10-08 —
+  a decision to apply then, not a job for now; he knows it does not work yet).
+  A member writes to "the coaches", not to a person. Both staff accounts see
+  that a message is open, and either can answer it.
 
-  So the shared inbox Chris wants is not a feature on top of messaging; it is
-  what building messaging *is*. One `messages` table with member↔staff threads
-  and RLS — a member reads their own, staff read all — and both staff accounts
-  are looking at the same rows by construction.
+  That falls out of the right data model rather than needing anything extra:
+  one `messages` table of member↔staff threads, RLS so a member reads only
+  their own and staff read all. Both admin accounts are then looking at the
+  same rows by construction. Building it any other way — per-staff copies, or
+  a thread owned by whoever replied first — would take work to get wrong.
 
-  **Decide before testers**: build it, or turn messaging off for the trial.
-  Testers tapping "message your coach" and getting silence is worse than no
-  button, and their feedback is the point of having them. Open design
-  question: whether marking a message read clears it for both staff (shared
-  inbox) or each tracks their own.
+  Still to settle, when it comes up: whether marking a message read clears it
+  for both of them, which is what "shared inbox" usually means, or each tracks
+  their own unread.
+
+  Where it stands today: no table, nothing in `sync.js`, and
+  `broadcastMessage` writes to `LIVE_MESSAGES_KEY` in localStorage — its own
+  comment says "same-browser only". A member messaging from a phone writes to
+  that phone and nowhere else; admin's inbox is seed data. Which also means a
+  tester tapping "message your coach" gets silence, so messaging wants either
+  building or hiding before testers arrive.
 
 - **~~Archiving a program is a filing action and nothing more~~ — fixed
   2026-10-08.** Archiving now means what Chris wants it to mean: whoever is on
