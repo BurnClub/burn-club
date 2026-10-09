@@ -670,9 +670,11 @@ syncs them.
   same rows by construction. Building it any other way — per-staff copies, or
   a thread owned by whoever replied first — would take work to get wrong.
 
-  Still to settle, when it comes up: whether marking a message read clears it
-  for both of them, which is what "shared inbox" usually means, or each tracks
-  their own unread.
+  **Read is shared too** (Chris, 2026-10-08): when one of them reads a message
+  it clears for both. So "read" belongs on the message — a single `read_at`,
+  and who cleared it if that turns out to be worth knowing — not on a
+  per-staff join table. One of them handles it and it stops nagging the other,
+  which is the whole point of a shared inbox.
 
   Where it stands today: no table, nothing in `sync.js`, and
   `broadcastMessage` writes to `LIVE_MESSAGES_KEY` in localStorage — its own
