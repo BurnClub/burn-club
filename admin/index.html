@@ -19,13 +19,14 @@
     <form id="admin-login-form">
       <label class="field">
         <span>Email</span>
-        <input type="email" placeholder="staff@burnclub.com" />
+        <input type="email" id="admin-login-email" autocomplete="username" placeholder="you@burnclub.com" required />
       </label>
       <label class="field">
         <span>Password</span>
-        <input type="password" placeholder="••••••••" />
+        <input type="password" id="admin-login-password" autocomplete="current-password" placeholder="••••••••" required />
       </label>
-      <button type="submit" class="btn-primary">Log In</button>
+      <p class="admin-login-error" id="admin-login-error" hidden></p>
+      <button type="submit" class="btn-primary" id="admin-login-submit">Log In</button>
     </form>
   </div>
 </div>
@@ -35,7 +36,9 @@
   <aside class="sidebar">
     <div class="sidebar-brand">
       <img src="assets/burn-club-logo.png" alt="" />
-      <span>Burn Club<br /><small>Admin</small></span>
+      <!-- Says who is signed in once there is an answer (2026-10-08). With two
+           people in here and one shared screen, "Admin" tells you nothing. -->
+      <span>Burn Club<br /><small id="admin-staff-name">Admin</small></span>
     </div>
     <nav class="sidebar-nav">
       <button class="side-link active" data-view="view-dashboard"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg><span>Dashboard</span></button>
@@ -1318,6 +1321,11 @@
   </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+<!-- The same configured client the member app uses, one directory up: one
+     place holds the project URL and the publishable key, and admin cannot
+     drift onto a different project by accident. -->
+<script src="../supabase-client.js"></script>
 <script src="data.js"></script>
 <script src="app.js"></script>
 </body>

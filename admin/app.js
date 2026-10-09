@@ -4494,6 +4494,104 @@ function programSlotPrefix(programId) {
 // Same limitation as every other bridge here: this is one browser's
 // localStorage, so it survives a reload but not a different machine. A
 // backend is what makes it real.
+// ---------------- Who is allowed in here (2026-10-08) ----------------
+// The login form used to be preventDefault and a class change: any email, any
+// password, and this page is published at burnclub.github.io/burn-club/admin/.
+// It is a real sign-in now, against the same Supabase project the member app
+// uses, and a staff row is what grants entry.
+//
+// Being signed in is not enough on its own. A member has a perfectly valid
+// account on this project, and without the staff check their password would
+// open the coach's admin. So: authenticate, then look for a row in `staff`.
+// RLS means that query can only ever return the caller's own row, so there is
+// no filter to forget — a member gets nothing back and is refused.
+//
+// What this does NOT do, and should not be mistaken for: it does not make the
+// content secret. data.js is in a public repo and served as a static file, so
+// the workouts and the exercise library are readable by anyone who looks,
+// signed in or not. This closes the door on the admin *interface*. Making the
+// content itself private is phase 6, when it moves into the database.
+let ADMIN_STAFF = null;
+
+function adminAuthUnavailable() {
+  return "Can't reach the sign-in service. Check your connection and try again.";
+}
+
+async function adminSignIn(email, password) {
+  if (typeof SB === "undefined" || !SB) return { error: adminAuthUnavailable() };
+  const { data, error } = await SB.auth.signInWithPassword({ email: String(email).trim(), password });
+  if (error) return { error: friendlyAuthError(error) };
+  return await loadStaff(data.user, { signOutIfNotStaff: true });
+}
+
+// Separated from sign-in because the session is restored on reload too, and
+// both paths have to answer the same question.
+//
+// They differ in what to do with a valid account that is not staff, and the
+// difference matters because admin and the member app are served from the SAME
+// ORIGIN — burnclub.github.io — so they share one Supabase session. Signing out
+// here would sign the person out of the member app as well.
+//
+//   Signing in deliberately at the admin URL: sign them out. They asked for
+//   admin, they cannot have it, and leaving a half-session behind is worse.
+//
+//   Restoring a session on load: leave it alone. A member who opens the admin
+//   URL out of curiosity should see the login screen, not be quietly signed out
+//   of their own app on the way back.
+async function loadStaff(user, opts) {
+  if (!user) return { error: "Not signed in." };
+  let data, error;
+  try {
+    ({ data, error } = await SB.from("staff").select("*").eq("id", user.id).maybeSingle());
+  } catch (e) {
+    error = e;
+  }
+  if (error) {
+    // A network failure must not read as "you are not staff" — that would sign
+    // Chris out of his own admin because the wifi dropped.
+    if (typeof isOfflineError === "function" && isOfflineError(error)) {
+      return { error: adminAuthUnavailable() };
+    }
+    return { error: friendlyDbError(error) };
+  }
+  if (!data) {
+    // A valid account that is not staff. Said plainly rather than as "wrong
+    // password", which would send a member round in circles trying to fix a
+    // password that is perfectly correct.
+    if (opts && opts.signOutIfNotStaff) await SB.auth.signOut();
+    return { error: "That account isn't set up for the admin app. Members sign in at the main Burn Club address." };
+  }
+  ADMIN_STAFF = data;
+  return { staff: data };
+}
+
+function enterAdmin() {
+  document.getElementById("admin-login").style.display = "none";
+  document.getElementById("shell").classList.add("visible");
+  const who = document.getElementById("admin-staff-name");
+  if (who && ADMIN_STAFF) who.textContent = ADMIN_STAFF.name;
+  showView("view-dashboard");
+}
+
+async function adminSignOut() {
+  ADMIN_STAFF = null;
+  if (typeof SB !== "undefined" && SB) await SB.auth.signOut();
+}
+
+// Reload should not mean signing in again — the session persists, so the only
+// question is whether it is still valid and still staff.
+async function restoreAdminSession() {
+  if (typeof SB === "undefined" || !SB) return;
+  let session = null;
+  try {
+    const { data } = await SB.auth.getSession();
+    session = data && data.session;
+  } catch (e) { return; }
+  if (!session || !session.user) return;
+  const result = await loadStaff(session.user);
+  if (result.staff) enterAdmin();
+}
+
 const ADMIN_PROGRAM_DATA_KEY = "burnclub-admin-programs";
 
 // Everything admin has authored, saved on every change (2026-10-08).
@@ -6870,6 +6968,7 @@ function renderPosts() {
 document.addEventListener("DOMContentLoaded", () => {
   loadExerciseLibrary();
   loadAdminCircuits();
+  restoreAdminSession();
   // The debounce is 400ms; closing a tab inside that window would otherwise
   // drop the last edit. pagehide fires where beforeunload is unreliable on
   // mobile Safari, and visibilitychange covers switching away without closing.
@@ -6892,16 +6991,32 @@ document.addEventListener("DOMContentLoaded", () => {
   renderMemberTable();
   renderChallenges();
 
-  document.getElementById("admin-login-form").addEventListener("submit", (e) => {
+  document.getElementById("admin-login-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    document.getElementById("admin-login").style.display = "none";
-    document.getElementById("shell").classList.add("visible");
-    showView("view-dashboard");
+    const btn = document.getElementById("admin-login-submit");
+    const err = document.getElementById("admin-login-error");
+    err.hidden = true;
+    btn.disabled = true;
+    btn.textContent = "Signing in…";
+    const result = await adminSignIn(
+      document.getElementById("admin-login-email").value,
+      document.getElementById("admin-login-password").value
+    );
+    btn.disabled = false;
+    btn.textContent = "Log In";
+    if (result.error) {
+      err.textContent = result.error;
+      err.hidden = false;
+      return;
+    }
+    enterAdmin();
   });
 
-  document.getElementById("admin-logout-btn").addEventListener("click", () => {
+  document.getElementById("admin-logout-btn").addEventListener("click", async () => {
+    await adminSignOut();
     document.getElementById("shell").classList.remove("visible");
     document.getElementById("admin-login").style.display = "flex";
+    document.getElementById("admin-login-password").value = "";
   });
 
   document.querySelectorAll(".side-link").forEach((btn) => {

@@ -2192,3 +2192,17 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .program-type-tag.on-demand { background: #000000; color: #FFFFFF; }
 .program-type-tag.structured { background: #E6E6E6; color: #000000; }
+
+/* Why a sign-in was refused, under the password field (2026-10-08). Styled
+   like the member app's: red is the only colour on this form, so it cannot be
+   missed, and it takes the space rather than overlaying anything. */
+.admin-login-error {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: #FDE8E8;
+  color: #8A1C1C;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}

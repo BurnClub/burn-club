@@ -469,7 +469,23 @@ day the member import runs.
 
 **The two that matter most**
 
-- **Neither app authenticates.** The member login form and the admin login
+- **~~Neither app authenticates~~ — both do now** (member 2026-09-18, admin
+  2026-10-08). Admin signs in against the same Supabase project and checks for
+  a row in `staff`; being signed in is not enough, because a member has a valid
+  account on this project and without that check their password would open the
+  coach's admin. `supabase/15-staff-accounts.sql` creates the table.
+
+  **The two apps share one session.** They are served from the same origin, so
+  Supabase's stored session is shared between them. That is why `loadStaff`
+  only signs a non-staff account out when they *deliberately* signed in at the
+  admin URL — doing it while restoring a session would sign a member out of
+  their own app just for opening `/admin/` once.
+
+  **It gates the interface, not the content.** `data.js` is a static file in a
+  public repo: the workouts and exercise library are readable by anyone who
+  looks, signed in or not. Making the content itself private is phase 6.
+
+- **The old position, superseded:** The member login form and the admin login
   form both just `preventDefault()` and reveal the app — any email, any
   password, or none. There is no session, no token, no check.
 - **`admin/` is published to the same public GitHub Pages site.** Anyone with
