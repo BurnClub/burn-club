@@ -659,6 +659,26 @@ syncs them.
 
 ## Agreed, not yet built
 
+- **Focus is derived, difficulty is off, and both are on trial** (2026-10-08).
+  The builder's Focus and Difficulty are hidden inputs — hidden in August
+  because "focus is carried by the workout's name" — but they were still being
+  *saved*, as defaults nobody chose: focus fell back to "Full Body" and
+  difficulty was hardcoded "Intermediate" in the HTML. Every workout Chris
+  built reached members as "Full Body · Intermediate" with a full-body icon,
+  because `circuitIconKey` reads the middle of that string.
+
+  Focus now comes from the body-part tags of the exercises in the workout —
+  his "W1 Shoulders and Abs" derives "Shoulders & Abs". Difficulty is dropped
+  from display. **Both values are still stored**, so this is reversible: Chris
+  wants to live with it before deciding whether derived focus is the permanent
+  answer, whether difficulty comes back as a real field, or whether it belongs
+  on the program rather than the workout.
+
+  Two things to watch while it is on trial: the derived focus is computed when
+  a workout is saved, so re-tagging an exercise later does not update workouts
+  already synced; and the icon picks the first rule that matches, so
+  "Shoulders & Abs" draws the core icon rather than the upper-body one.
+
 - **When messaging is built, it is a SHARED STAFF INBOX** (Chris, 2026-10-08 —
   a decision to apply then, not a job for now; he knows it does not work yet).
   A member writes to "the coaches", not to a person. Both staff accounts see

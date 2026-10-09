@@ -1934,7 +1934,7 @@ function renderScopeDetail() {
     return `
     <tr>
       <td><input type="checkbox" class="select-item-checkbox" data-role="select-circuit" data-circuit-id="${c.id}" ${selectedCircuitIds.has(c.id) ? "checked" : ""} /></td>
-      <td><strong>${c.title}</strong>${c.variant ? ` <span class="variant-pill variant-${c.variant}">${(PROGRAM_VARIANTS.find((v) => v.key === c.variant) || {}).label || c.variant}</span>` : ""}${c.category !== "circuit" && c.category !== "structured" ? ` <span class="status-pill">${categoryLabel(c.category)}</span>` : ""}${c.isBenchmark ? ` <span class="status-pill benchmark-pill">${icon("trophy")} ${esc(benchmarkById(c.benchmarkId, circuitProgramId(c))?.name || "Benchmark")}</span>` : ""}<br /><span style="color:var(--deepblue);font-weight:700;font-size:11px;">${c.focus} · ${c.difficulty}</span></td>
+      <td><strong>${c.title}</strong>${c.variant ? ` <span class="variant-pill variant-${c.variant}">${(PROGRAM_VARIANTS.find((v) => v.key === c.variant) || {}).label || c.variant}</span>` : ""}${c.category !== "circuit" && c.category !== "structured" ? ` <span class="status-pill">${categoryLabel(c.category)}</span>` : ""}${c.isBenchmark ? ` <span class="status-pill benchmark-pill">${icon("trophy")} ${esc(benchmarkById(c.benchmarkId, circuitProgramId(c))?.name || "Benchmark")}</span>` : ""}<br /><span style="color:var(--deepblue);font-weight:700;font-size:11px;">${deriveWorkoutFocus(c.blocks)}</span></td>
       ${showWhere ? `<td>${isWeek ? availabilityCellHtml(c) : (folder ? folder.name : "—")}</td>` : ""}
       <td class="col-tight">${c.blocks.length} blocks</td>
       <td>
@@ -3194,6 +3194,45 @@ function renderHealthProfileReadout(memberId) {
 // workout is sent with its date attached and the member app decides for
 // itself, each time it loads, whether that date makes it this week's, last
 // week's, or neither. Nothing needs to be re-pushed when the week turns.
+// What a workout actually trains, worked out from the exercises in it
+// (2026-10-08, Chris). Focus and Difficulty are hidden fields in the builder —
+// hidden in August on the reasoning that "focus is carried by the workout's
+// name" — but they were still being SAVED, as defaults nobody chose: focus
+// fell back to "Full Body" and difficulty was hardcoded "Intermediate" in the
+// HTML. So "W1 Shoulders and Abs" reached members labelled Full Body,
+// Intermediate, and drew the full-body icon, since circuitIconKey reads the
+// middle of that same string.
+//
+// Derived beats typed here: it cannot go stale against the exercises, it costs
+// Chris nothing per workout, and it makes the body-part tags on the library
+// earn their keep. Difficulty is dropped from display rather than derived —
+// there is nothing in a workout to derive it from, and "Intermediate" on
+// everything told a member nothing. Both values are still stored, so this is
+// reversible and nothing authored is lost.
+function deriveWorkoutFocus(blocks) {
+  const counts = new Map();
+  (blocks || []).forEach((b) => {
+    const names = [b.exercise && b.exercise.name, ...(b.exercises || []).map((e) => e.name)];
+    names.filter(Boolean).forEach((name) => {
+      const ex = EXERCISE_LIBRARY.find((x) => x.name === name);
+      if (!ex) return;
+      (ex.bodyParts || []).forEach((part) => {
+        // "New" is the worklist tag for exercises whose tags I guessed, not a
+        // body part — a workout should never report its focus as "New".
+        if (part === "New") return;
+        counts.set(part, (counts.get(part) || 0) + 1);
+      });
+    });
+  });
+  if (!counts.size) return "Full Body";
+  const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  // An umbrella tag that leads outright says more than two specifics under it.
+  if (["Full Body", "Upper Body", "Lower Body"].includes(ranked[0][0])) return ranked[0][0];
+  // Two at most: three reads as a list rather than a focus, and the card has
+  // one line for it.
+  return ranked.slice(0, 2).map(([part]) => part).join(" & ");
+}
+
 function syncCircuitToMemberApp(circuit) {
   const programId = circuitProgramId(circuit);
   const program = programById(programId);
@@ -3209,7 +3248,9 @@ function syncCircuitToMemberApp(circuit) {
     availableFrom: circuit.availableFrom || undefined,
     tag: circuit.tag,
     title: circuit.title,
-    meta: `${estimateCircuitMinutes(circuit.blocks)} min · ${circuit.focus} · ${circuit.difficulty}`,
+    // Kept to two segments so circuitIconKey still finds the focus in the
+    // middle — it splits this string on the separator.
+    meta: `${estimateCircuitMinutes(circuit.blocks)} min · ${deriveWorkoutFocus(circuit.blocks)}`,
     color: LIVE_CARD_COLORS[CIRCUITS.length % LIVE_CARD_COLORS.length],
     desc: circuit.desc,
     isBenchmark: circuit.isBenchmark,
