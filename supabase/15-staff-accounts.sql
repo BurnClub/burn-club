@@ -39,6 +39,19 @@ create policy "staff can read their own row"
   on staff for select
   using (id = auth.uid());
 
+-- A grant decides whether a caller may touch the table at all; RLS only
+-- decides which rows. 02b-grants.sql granted "all tables in schema public",
+-- which was a snapshot of the tables existing that day — a table created
+-- afterwards gets nothing, and the symptom is "permission denied for table
+-- staff" on a correct password, before the policy above is ever consulted.
+-- Caught on the live site minutes after deploying, by reading the table as an
+-- anonymous visitor and looking at which error came back.
+grant select on table staff to authenticated;
+
+-- So the next table does not repeat it.
+alter default privileges in schema public
+  grant select, insert, update, delete on tables to authenticated;
+
 -- Nobody writes this table from the browser. Adding or removing staff is a
 -- deliberate act in the dashboard, which is what it should be while there are
 -- two of them.
