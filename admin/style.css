@@ -2312,3 +2312,16 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   font-size: 11px; line-height: 1; color: currentColor; opacity: 0.6;
 }
 .schedule-chip-x:hover { opacity: 1; }
+
+/* The per-slot note appended to the exercise name on the member's screen
+   (2026-10-09). Narrow by default so it never crowds the name pill out of a
+   row, and it grows on focus because "Left Leg" is the short case and "Keep
+   the back knee under the hip" is the long one. */
+.builder-ex-row .cue-field {
+  width: 86px;
+  flex: 0 0 auto;
+  transition: width 120ms ease;
+}
+.builder-ex-row .cue-field:focus {
+  width: 200px;
+}

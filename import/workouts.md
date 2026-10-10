@@ -59,7 +59,7 @@ they're there if a later program needs them.
 everything in seconds — a 12-minute AMRAP is `720` internally — but you write
 `12`, and the importer converts. Rest of `60` means sixty seconds.
 
-### Exercise level — Exercise Id, Sets, Reps, Ladder Scheme
+### Exercise level — Exercise Id, Sets, Reps, Ladder Scheme, Note
 
 `Exercise Id` is the id from the exercise library — `goblet-squat`, not
 "Goblet Squat". **Use the id, not the name.** Workouts currently reference
@@ -70,6 +70,15 @@ row.
 
 Which of Sets / Reps apply depends on the block type — see the table above.
 A blank is fine where the type doesn't use it.
+
+`Note` (also accepted as `Cue`) is a short instruction shown after the
+exercise name on the member's screen: `Left Leg` turns "Bulgarian Split
+Squats" into "Bulgarian Split Squats / Left Leg" for that slot only. Write
+only the suffix, never the whole name — the name stays the library's, which is
+what the demo video, the technique text and the member's logged history all
+join on. To alternate sides in an EMOM, put the same `Exercise Id` on two rows
+and give them `Left Leg` and `Right Leg`: the player rotates its exercise list
+by the minute, so two rows *are* the two minutes. Blank for no note.
 
 ## What gets checked on upload
 

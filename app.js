@@ -2973,6 +2973,108 @@ function holdTagHtml(seconds, hasReps) {
   return `<span class="hold-tag">${text}</span>`;
 }
 
+// A per-slot instruction appended to the exercise name, so the member reads
+// one heading instead of a name plus a footnote (2026-10-09, Chris: "i could
+// just go in and add '- Left Leg' at the end of the exercise name, so it is
+// simple and easy for the member to understand, and hard to miss"). His case
+// is an EMOM of Bulgarian Split Squats, left leg on the first minute and right
+// leg on the second — the player already rotates the exercise list by minute,
+// so listing the lift twice gives him the two minutes; all that was missing
+// was the words.
+//
+// Only the suffix is stored, never the whole name. The slot keeps the library
+// name it has always had, which is what every lookup here runs off — the demo
+// video, the technique row, whether the slot asks for a weight — and what the
+// history joins on (exerciseIdForName in sync.js slugifies a name the library
+// doesn't know, so a free-text name would log "Left Leg" as its own exercise
+// with its own PRs). Storing the suffix also means a library rename still
+// flows through to every cue that uses it.
+function exerciseDisplayName(e) {
+  if (!e) return "";
+  return e.cue ? `${e.name} — ${e.cue}` : e.name;
+}
+
+// On a superset of one movement — Chris's Left Leg / Right Leg pair — the
+// heading above the list is already the exercise name, so repeating it on
+// every row leaves three lines all saying "Bulgarian Split Squats". Where the
+// whole list shares one name, the rows carry just their cue.
+function rowLabelFor(e, sharedName) {
+  if (sharedName && e.cue) return e.cue;
+  return exerciseDisplayName(e);
+}
+
+// The player's big heading, and the one rule that governs it: **never more
+// than two lines** (2026-10-09, Chris: "lets shrink the type enough to make
+// sure it is only 2 lines. Lets make this a rule across the board").
+//
+// It arrived as a cue problem — "Bulgarian Split Squats — Right Leg" wrapped
+// to three at 39px and pushed the clock off a phone screen — but it was never
+// only about cues: "Single Arm Farmer Carry Cossack Squat" already ran to
+// three lines on its own, and the library has plenty more like it. So the fit
+// applies to every heading the player shows, cued or not.
+//
+// Shrink-to-fit rather than truncation or a smaller fixed size: the short
+// names keep the full 39px they have always had, and only a name that needs
+// the room gives any up.
+const PLAYER_NAME_MAX_PX = 39;
+// Below this it is no longer a heading you can read at arm's length mid-set,
+// so a name long enough to hit the floor takes a third line rather than
+// shrinking into illegibility.
+//
+// 20 is measured, not picked: on the narrowest phone worth supporting (320px,
+// an SE) exactly two of the 636 library names need to go under 22px, and both
+// fit at 21 — "Sumo DB Squat Static Hold w/ Alternating Calf Raise" is the
+// worst of them. So every real exercise name clears two lines on every phone.
+// A name that long with a cue after it would need 17px, which is past
+// readable; that one takes its third line, and the answer there is a shorter
+// cue.
+const PLAYER_NAME_MIN_PX = 20;
+// Must match the line-height in .player-exercise-name — computing two lines
+// is the whole measurement.
+const PLAYER_NAME_LINE_RATIO = 1.12;
+
+let playerHeadingText = "";
+
+function setPlayerExerciseHeading(text) {
+  const el = document.getElementById("player-exercise-name");
+  playerHeadingText = text || "";
+  el.textContent = playerHeadingText;
+  fitPlayerHeading();
+}
+
+function fitPlayerHeading() {
+  const el = document.getElementById("player-exercise-name");
+  if (!el) return;
+  let size = PLAYER_NAME_MAX_PX;
+  el.style.fontSize = size + "px";
+  // offsetParent is null while the player screen is hidden, and every
+  // measurement then reads 0 — the loop would exit immediately and leave a
+  // long name at full size. Bail instead, and re-fit when the screen opens.
+  if (!el.offsetParent) return;
+  const twoLines = () => Math.ceil(size * PLAYER_NAME_LINE_RATIO * 2) + 1;
+  while (size > PLAYER_NAME_MIN_PX && el.scrollHeight > twoLines()) {
+    size -= 1;
+    el.style.fontSize = size + "px";
+  }
+}
+
+// Rotating the phone changes the width the heading has to fit into, so a size
+// chosen in portrait is wrong in landscape.
+window.addEventListener("resize", () => {
+  if (playerHeadingText) fitPlayerHeading();
+});
+
+// A fit measured before the heading font has loaded is measured against the
+// fallback's metrics, which are not the same width — on a cold load that is
+// the first workout of the session, so it is worth re-running once the real
+// font is in. Guarded: document.fonts is absent on older WebViews, and a
+// rejected promise here must not take the player down with it.
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    if (playerHeadingText) fitPlayerHeading();
+  }).catch(() => {});
+}
+
 function blockTypeLabel(type) {
   return {
     interval: "Circuit",
@@ -3009,8 +3111,8 @@ function blockExerciseNames(block) {
   // bullet is exactly the "two exercises" reading the modifier exists to
   // avoid (2026-08-21).
   const suffix = (hold) => (hold ? ` + ${holdLabel(hold)}` : "");
-  if (block.exercise) return [block.exercise.name + suffix(block.hold)];
-  if (block.exercises) return block.exercises.map((e) => e.name + (e.reps ? ` (${e.reps} reps)` : "") + suffix(e.hold));
+  if (block.exercise) return [exerciseDisplayName(block.exercise) + suffix(block.hold)];
+  if (block.exercises) return block.exercises.map((e) => exerciseDisplayName(e) + (e.reps ? ` (${e.reps} reps)` : "") + suffix(e.hold));
   return [];
 }
 
@@ -3034,7 +3136,8 @@ function blockHeading(block) {
   const label = String(block.label || "").trim();
   const names = [
     block.exercise && block.exercise.name,
-    ...(block.exercises || []).map((e) => e.name),
+    block.exercise && exerciseDisplayName(block.exercise),
+    ...(block.exercises || []).flatMap((e) => [e.name, exerciseDisplayName(e)]),
   ].filter(Boolean).map((n) => n.toLowerCase());
   const adds = label
     && label.toLowerCase() !== type.toLowerCase()
@@ -3515,14 +3618,19 @@ function bindTour() {
 // from the earlier rounds of this one as they are filled in.
 function weightEntriesForBlock(block, blockIndex) {
   const entries = [];
-  const add = (name, label, reps) => {
+  // `name` stays the library name and the cue rides beside it, because the
+  // name is what the setWeights key carries into sync.js as the exercise (see
+  // exerciseDisplayName). The cue goes into the label instead, which sync
+  // stores as set_label — "what the member saw" — so two cued slots of one
+  // lift get distinct keys without inventing a second exercise.
+  const add = (name, cue, label, reps) => {
     if (!exerciseTracksWeight(name)) return;
-    entries.push({ name, label, reps, blockIndex });
+    entries.push({ name, cue, label: cue ? `${label} · ${cue}` : label, reps, blockIndex });
   };
   if (block.type === "straight" && block.exercise) {
-    for (let i = 1; i <= block.sets; i++) add(block.exercise.name, `Set ${i}`, block.reps);
+    for (let i = 1; i <= block.sets; i++) add(block.exercise.name, block.exercise.cue, `Set ${i}`, block.reps);
   } else if (block.type === "ladder" && block.exercise) {
-    block.scheme.forEach((reps, i) => add(block.exercise.name, `Set ${i + 1}`, reps));
+    block.scheme.forEach((reps, i) => add(block.exercise.name, block.exercise.cue, `Set ${i + 1}`, reps));
   } else if (block.type === "superset" && block.exercises) {
     for (let round = 1; round <= block.rounds; round++) {
       block.exercises.forEach((e) => {
@@ -3530,7 +3638,7 @@ function weightEntriesForBlock(block, blockIndex) {
         // lighter than the set before by definition — neither takes a number
         // of its own (Chris, 2026-08-23).
         if (e.hold || e.drop) return;
-        add(e.name, `Round ${round}`, Array.isArray(e.scheme) ? e.scheme[round - 1] : e.reps);
+        add(e.name, e.cue, `Round ${round}`, Array.isArray(e.scheme) ? e.scheme[round - 1] : e.reps);
       });
     }
   }
@@ -3551,6 +3659,7 @@ function pushSetPhases(phases, blockMeta, block, sets) {
     ...blockMeta,
     kind: "sets",
     exerciseName: block.exercise.name,
+    exerciseCue: block.exercise.cue,
     sets,
     restDuration: block.rest,
   });
@@ -3596,6 +3705,7 @@ function buildPhaseQueue(circuit) {
             ...blockMeta,
             kind: "work",
             exerciseName: ex.name,
+            exerciseCue: ex.cue,
             duration: block.work,
             progressLabel: `Round ${round} of ${block.rounds} · Station ${exIndex + 1} of ${block.exercises.length}`,
           });
@@ -3606,7 +3716,7 @@ function buildPhaseQueue(circuit) {
               ...blockMeta,
               kind: "rest",
               duration: block.rest,
-              upNext: nextEx.name,
+              upNext: exerciseDisplayName(nextEx),
               progressLabel: `Round ${round} of ${block.rounds}`,
             });
           }
@@ -3641,7 +3751,7 @@ function buildPhaseQueue(circuit) {
             ...blockMeta,
             kind: "rest",
             duration: block.rest,
-            upNext: block.exercises[0].name,
+            upNext: exerciseDisplayName(block.exercises[0]),
             progressLabel: `Round ${round} of ${block.rounds}`,
           });
         }
@@ -3880,6 +3990,7 @@ function exerciseTracksWeight(name) {
 function renderDemoStrip(exercises) {
   const strip = document.getElementById("player-demo-strip");
   if (!strip) return;
+  const sharedName = new Set(exercises.map((x) => x.name)).size === 1;
   strip.innerHTML = exercises.map((e, i) => {
     const ex = EXERCISE_LIBRARY.find((x) => x.name === e.name);
     const url = ex && ex.videoUrl;
@@ -3891,7 +4002,7 @@ function renderDemoStrip(exercises) {
             : `<span class="demo-card-empty">No demo yet</span>`}
         </div>
         <p class="demo-card-name">
-          <span>${esc(e.name)}</span>
+          <span>${esc(rowLabelFor(e, sharedName))}</span>
           ${e.reps ? `<span class="demo-card-reps">${e.reps} reps</span>` : ""}
         </p>
       </div>`;
@@ -4727,7 +4838,7 @@ const Player = {
       document.getElementById("player-clock").textContent = formatClock(secondsLeftInMinute);
       document.getElementById("player-total-clock").textContent = `${formatClock(this.remaining)} total remaining`;
       const ex = phase.exercises[minute % phase.exercises.length];
-      document.getElementById("player-exercise-name").textContent = ex.name;
+      setPlayerExerciseHeading(exerciseDisplayName(ex));
       setPlayerVideo(ex.name);
       document.getElementById("player-sub-pill").textContent =
         `Minute ${Math.min(minute + 1, totalMinutes)} of ${totalMinutes}`;
@@ -4845,8 +4956,9 @@ const Player = {
     }
 
     if (phase.kind === "work" || phase.kind === "rest") {
-      document.getElementById("player-exercise-name").textContent =
-        phase.kind === "work" ? phase.exerciseName : "Rest";
+      setPlayerExerciseHeading(phase.kind === "work"
+        ? exerciseDisplayName({ name: phase.exerciseName, cue: phase.exerciseCue })
+        : "Rest");
       document.getElementById("player-sub-pill").textContent =
         phase.kind === "work" ? phase.progressLabel : `Up next: ${phase.upNext}`;
       document.getElementById("player-center").style.display = "flex";
@@ -4871,8 +4983,8 @@ const Player = {
       // "2-Exercise Superset" is right for a superset of different lifts, but
       // a reps-then-hold set is one movement and should say so.
       const names = new Set(phase.exercises.map((e) => e.name));
-      document.getElementById("player-exercise-name").textContent =
-        names.size === 1 ? [...names][0] : `${phase.exercises.length}-Exercise Superset`;
+      setPlayerExerciseHeading(
+        names.size === 1 ? [...names][0] : `${phase.exercises.length}-Exercise Superset`);
       // The round moves under the heading, right above the list it governs
       // (2026-10-02, Chris) — on a descending scheme the round IS what
       // changes. The pill above keeps the block's name.
@@ -4914,7 +5026,7 @@ const Player = {
           <div class="amrap-row superset-row">
             <div class="amrap-row-line1">
               <div class="amrap-row-left">
-                <span class="amrap-ex-name">${esc(e.name)}</span>
+                <span class="amrap-ex-name">${esc(rowLabelFor(e, names.size === 1))}</span>
                 ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
               </div>
             </div>
@@ -4937,17 +5049,21 @@ const Player = {
     }
 
     if (phase.kind === "log-weights") {
-      document.getElementById("player-exercise-name").textContent = "Log your weights";
+      setPlayerExerciseHeading("Log your weights");
       document.getElementById("player-sub-pill").textContent = phase.blockLabel || "This block";
       const logEl = document.getElementById("player-weight-log");
       logEl.style.display = "flex";
 
       // Group by exercise so the member reads down one movement's sets rather
       // than hopping between two in a superset.
+      // Grouped by name *and* cue: an EMOM-style "Left Leg" / "Right Leg" pair
+      // is one library exercise but two things to log, and merging them would
+      // put eight rows under one heading with no way to tell which leg was
+      // which.
       const byExercise = [];
       phase.entries.forEach((e) => {
-        let g = byExercise.find((x) => x.name === e.name);
-        if (!g) { g = { name: e.name, rows: [] }; byExercise.push(g); }
+        let g = byExercise.find((x) => x.name === e.name && x.cue === e.cue);
+        if (!g) { g = { name: e.name, cue: e.cue, rows: [] }; byExercise.push(g); }
         g.rows.push(e);
       });
 
@@ -4963,7 +5079,7 @@ const Player = {
         const unit = /^round/i.test(g.rows[0].label || "") ? "Rounds" : "Sets";
         return `
           <div class="weight-log-group">
-            <p class="weight-log-ex">${esc(g.name)}</p>
+            <p class="weight-log-ex">${esc(exerciseDisplayName(g))}</p>
             <div class="set-card">
               <p class="set-card-title">${unit}</p>
               ${g.rows.map((row, i) => {
@@ -5021,7 +5137,7 @@ const Player = {
     }
 
     if (phase.kind === "sets") {
-      document.getElementById("player-exercise-name").textContent = phase.exerciseName;
+      setPlayerExerciseHeading(exerciseDisplayName({ name: phase.exerciseName, cue: phase.exerciseCue }));
       // The count moved into the card, so the pill carries the block label —
       // which is what the superset screen already shows in this spot.
       document.getElementById("player-sub-pill").textContent = phase.blockLabel || "";
@@ -5067,7 +5183,7 @@ const Player = {
     }
 
     if (phase.kind === "amrap") {
-      document.getElementById("player-exercise-name").textContent = phase.blockLabel;
+      setPlayerExerciseHeading(phase.blockLabel);
       document.getElementById("player-sub-pill").textContent = phase.progressLabel;
       document.getElementById("player-video").style.display = "none";
       setPlayerExerciseTechnique(null);
@@ -5093,7 +5209,7 @@ const Player = {
           <div class="amrap-row">
             <div class="amrap-row-line1">
               <div class="amrap-row-left">
-                <span class="amrap-ex-name">${esc(e.name)}</span>
+                <span class="amrap-ex-name">${esc(exerciseDisplayName(e))}</span>
                 ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
               </div>
               <button class="amrap-play-btn" data-ex-name="${esc(e.name)}" title="Watch demo">▶</button>
@@ -5126,7 +5242,7 @@ const Player = {
     }
 
     if (phase.kind === "cardio-choice") {
-      document.getElementById("player-exercise-name").textContent = "Cardio — Your Choice";
+      setPlayerExerciseHeading("Cardio — Your Choice");
       document.getElementById("player-sub-pill").textContent = phase.progressLabel;
       document.getElementById("player-video").style.display = "none";
       setPlayerVideo(null);

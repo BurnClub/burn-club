@@ -659,6 +659,28 @@ syncs them.
 
 ## Agreed, not yet built
 
+- **Per-slot cues are in; a block-level note is not** (2026-10-09). Chris asked
+  how to give an exercise an instruction inside one workout — his case being an
+  EMOM of Bulgarian Split Squats, left leg on the first minute and right leg on
+  the second. Any exercise slot now takes an optional `cue`, shown after the
+  name ("Bulgarian Split Squats / Left Leg"). What was offered alongside it and
+  **not** built: a **note on the block** — a sentence shown on the breakdown
+  card and once as the block starts, for instructions about the structure
+  rather than one movement ("rest between A and B if you need it"). Chris took
+  the cue and left this; build it if he asks.
+
+  Two things that came out of the design and are worth not rediscovering:
+
+  - **Equipment substitutions belong in the library's `technique` field**, not
+    in a cue. "No bench? Use the floor" is true every time that exercise
+    appears, so it is written once and shows in every workout — the player
+    already has a collapsible technique row with a read-aloud button. It is
+    blank on nearly all 636 exercises, so that field is sitting unused.
+  - **AMRAP cannot carry per-round cues.** The member self-paces the list and
+    the app never knows which round they are in, so there is nowhere for a
+    round-specific cue to appear. Sides inside an AMRAP have to go in the
+    exercise name in the library, or wait for the block note.
+
 - **The member app ignores the new schedule item types.** Admin can now put
   `cardio` and `note` (reminder) items on a programme day — "take your progress
   photos", "20 minutes easy" — but every member-side read filters
@@ -965,6 +987,58 @@ rules, which are real logic rather than config and want their own design pass.
   being imminent, so there's no value in building it early.
 
 ## Settled — don't revisit
+
+- **A cue is a suffix, never the exercise name itself** (2026-10-09). Chris
+  asked whether he could just type "- Left Leg" onto the end of an exercise
+  name in the builder. He can have exactly that on screen, but the name in the
+  data stays the library's and only the suffix is stored, because four things
+  join on the name: the demo video, the technique row, the Track Weight flag,
+  and — the one that cannot be undone — the member's logged history.
+  `exerciseIdForName` in `sync.js` slugifies any name the library does not
+  know, so "Bulgarian Split Squats - Left Leg" would log under its own id,
+  giving that movement three separate histories and three separate PRs with
+  nothing able to merge them afterwards. `tests/sync/exercise-cue.test.js`
+  holds that line; it was checked against the free-text version and five of its
+  seven checks fail there.
+
+  A bonus of storing only the suffix: renaming an exercise in the library still
+  flows through to every cue that uses it.
+
+- **The player's big heading never runs past two lines** (2026-10-09, Chris:
+  "lets shrink the type enough to make sure it is only 2 lines. Lets make this
+  a rule across the board"). It started as a cue problem — "Bulgarian Split
+  Squats / Left Leg" wrapped to three at 39px and pushed the clock off the
+  screen — but it was never only about cues: "Single Arm Farmer Carry Cossack
+  Squat" already ran to three on its own.
+
+  `fitPlayerHeading` shrinks from 39px down to a 20px floor until the heading
+  fits two lines, and every write to that element goes through
+  `setPlayerExerciseHeading` so nothing can bypass it. Short names keep the
+  full 39px; only a name that needs room gives any up.
+
+  Three things the fit depends on, so don't break them casually:
+
+  - `line-height` in `.player-exercise-name` must stay in step with
+    `PLAYER_NAME_LINE_RATIO` — the measurement is "is this taller than two of
+    those?".
+  - It re-fits on **resize** (rotation changes the width) and on
+    **`document.fonts.ready`** (a fit measured against the fallback font picks
+    the wrong size on a cold load).
+  - It bails when the player screen is hidden, because every measurement reads
+    0 there. `Player.start` shows the screen before the first render, so this
+    is a guard, not a code path.
+
+  The 20px floor is measured: at 320px wide — an SE, the narrowest phone worth
+  supporting — all 636 library names fit two lines, the worst of them
+  ("Sumo DB Squat Static Hold w/ Alternating Calf Raise") needing 21px. A name
+  that long *plus* a cue would need 17px, which is past readable, so it takes a
+  third line instead; the answer there is a shorter cue.
+
+- **In a superset of one movement, the rows show only the cue** (2026-10-09,
+  Chris: "like the superset idea, keep that"). The heading above the list is
+  already the exercise name, so "Bulgarian Split Squats" + two rows repeating
+  it was three lines saying the same thing. Rows read "Left Leg" / "Right Leg"
+  when the whole list shares a name, and the full cued name otherwise.
 
 - **The completion card stays on Home until a new program is assigned**
   (Chris, 2026-08-23). Not dismissible, not a popup — it's a standing call to

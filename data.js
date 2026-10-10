@@ -7,6 +7,13 @@
 //   ladder    — single exercise, rep scheme across rounds (e.g. 10-8-6-4-2), self-paced
 //   amrap     — as many rounds as possible of an exercise list within a time cap
 //   emom      — every-minute-on-the-minute, rotating through an exercise list
+//
+// Any exercise slot may carry an optional `cue`: a short instruction appended
+// to the exercise name on the member's screen, so "Bulgarian Split Squats"
+// with cue "Left Leg" reads as "Bulgarian Split Squats — Left Leg". Only the
+// suffix is stored; `name` stays the library's, because that is what the demo
+// video, the technique row, the weight flag and the member's logged history
+// all join on (see exerciseDisplayName in app.js).
 
 // ---------------- Exercise Library ----------------
 // Mirrors admin's EXERCISE_LIBRARY (same ids/names/tags) so members browsing
@@ -1274,9 +1281,13 @@ const CIRCUITS = [
         label: "EMOM",
         duration: 600,
         interval: 60,
+        // Chris's cue case (2026-10-09): left leg on the first minute, right
+        // leg on the second. The player already rotates this list by minute,
+        // so the same lift listed twice IS the alternation — `cue` only
+        // supplies the words. See exerciseDisplayName in app.js.
         exercises: [
-          { name: "DB Thruster", reps: 8 },
-          { name: "Alternating DB Curl", reps: 10 },
+          { name: "Bulgarian Split Squats", reps: 8, cue: "Left Leg" },
+          { name: "Bulgarian Split Squats", reps: 8, cue: "Right Leg" },
         ],
       },
     ],

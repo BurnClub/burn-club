@@ -1721,7 +1721,14 @@ h1, h2, h3 {
    the sub-pill moved above the video instead. */
 .player-exercise-name {
   font-family: var(--font-heading);
+  /* The starting size only. fitPlayerHeading in app.js shrinks from here
+     until the heading fits two lines, so a long name — with or without a cue
+     after it — never runs to three and pushes the clock off the screen
+     (2026-10-09, Chris: "lets make this a rule across the board"). Keep
+     line-height in step with PLAYER_NAME_LINE_RATIO: the fit measures
+     against it. */
   font-size: 39px;
+  line-height: 1.12;
   font-weight: 800;
   color: var(--text);
   text-align: center;
@@ -1731,6 +1738,7 @@ h1, h2, h3 {
    the pair reads as one unit rather than two stacked lines. Big enough to
    catch at a glance mid-set — the whole reason it moved off the sub-pill. */
 .player-exercise-name.has-reps { margin-bottom: 2px; }
+
 .player-exercise-reps {
   font-family: var(--font-heading);
   font-size: 22px;

@@ -2556,7 +2556,7 @@ function schemaBlockToBuilderBlock(block) {
           rounds: block.rounds,
           work: block.work || 40,
           rest: block.rest,
-          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps || 12 })),
+          exercises: block.exercises.map((e) => ({ name: e.name, exerciseId: exerciseIdByName(e.name), reps: e.reps || 12, cue: e.cue })),
         },
       };
     case "superset":
@@ -2576,6 +2576,7 @@ function schemaBlockToBuilderBlock(block) {
           label: block.label,
           exerciseName: block.exercise.name,
           exerciseId: exerciseIdByName(block.exercise.name),
+          cue: block.exercise.cue,
           sets: block.sets,
           reps: block.reps,
           hold: block.hold,
@@ -2590,6 +2591,7 @@ function schemaBlockToBuilderBlock(block) {
           label: block.label,
           exerciseName: block.exercise.name,
           exerciseId: exerciseIdByName(block.exercise.name),
+          cue: block.exercise.cue,
           scheme: block.scheme.join(","),
           rest: block.rest,
         },
@@ -2749,10 +2751,11 @@ function convertBlockType(block, newType) {
   if (singleFamily && block.values.exerciseName) {
     fresh.exerciseName = block.values.exerciseName;
     fresh.exerciseId = block.values.exerciseId;
+    fresh.cue = block.values.cue;
     fresh.label = block.values.exerciseName;
   }
   if (!singleFamily && block.values.exercises) {
-    fresh.exercises = block.values.exercises.map((e) => ({ name: e.name, exerciseId: e.exerciseId, reps: e.reps || 10 }));
+    fresh.exercises = block.values.exercises.map((e) => ({ name: e.name, exerciseId: e.exerciseId, reps: e.reps || 10, cue: e.cue }));
     fresh.label = blockTypeLabel(newType);
   }
   return { type: newType, values: fresh };
@@ -2769,11 +2772,11 @@ function combineSelected(targetType) {
     // Carries the hold across. Adding one before combining is the documented
     // way to get a hold onto an exercise inside a superset, so dropping it
     // here would break the only route there is.
-    return { name: v.exerciseName, exerciseId: v.exerciseId, reps: v.reps || 10, ...(v.hold ? { hold: v.hold } : {}), ...(v.drop ? { drop: true } : {}) };
+    return { name: v.exerciseName, exerciseId: v.exerciseId, reps: v.reps || 10, cue: v.cue, ...(v.hold ? { hold: v.hold } : {}), ...(v.drop ? { drop: true } : {}) };
   });
 
   const fresh = defaultBlockValues(targetType);
-  fresh.exercises = targetType === "interval" ? exercises.map((e) => ({ name: e.name, exerciseId: e.exerciseId })) : exercises;
+  fresh.exercises = targetType === "interval" ? exercises.map((e) => ({ name: e.name, exerciseId: e.exerciseId, cue: e.cue })) : exercises;
   fresh.label = blockTypeLabel(targetType);
   const newBlock = { type: targetType, values: fresh };
 
@@ -2809,7 +2812,7 @@ function addSegmentToSelected(kind) {
     // so the row carries only its rep target.
     : { name: v.exerciseName, exerciseId: v.exerciseId, reps, drop: true };
   fresh.exercises = [
-    { name: v.exerciseName, exerciseId: v.exerciseId, reps },
+    { name: v.exerciseName, exerciseId: v.exerciseId, cue: v.cue, reps },
     second,
   ];
   builderBlocks[i] = { type: "superset", values: fresh };
@@ -2823,7 +2826,7 @@ function splitBlock(bi) {
     .filter((e) => e.name)
     .map((e) => ({
       type: "straight",
-      values: { label: e.name, exerciseName: e.name, exerciseId: e.exerciseId, sets: 3, reps: e.reps || 12, rest: 30, ...(e.hold ? { hold: e.hold } : {}) },
+      values: { label: e.name, exerciseName: e.name, exerciseId: e.exerciseId, cue: e.cue, sets: 3, reps: e.reps || 12, rest: 30, ...(e.hold ? { hold: e.hold } : {}) },
       selected: false,
     }));
   builderBlocks.splice(bi, 1, ...newItems);
@@ -2898,6 +2901,16 @@ function blockTopFields(block, i) {
            title="${v.exerciseName || ""}" data-action="choose-exercise" data-block-index="${i}">${v.exerciseName || "+ Choose Exercise"}</div>
     </label>
   `;
+  // Appended to the exercise name on the member's screen rather than replacing
+  // it (2026-10-09) — see exerciseDisplayName in app.js for why the name itself
+  // stays the library's.
+  const cue = () => `
+    <label class="inline-field wide">Note
+      <input type="text" placeholder="e.g. Left Leg" value="${esc(v.cue || "")}"
+             data-block-index="${i}" data-field="cue"
+             title="Shown after the exercise name: &quot;${esc(v.exerciseName || "Exercise")} — Left Leg&quot;" />
+    </label>
+  `;
 
   switch (block.type) {
     // Circuits are always timed (2026-08-18). The rep-based variant this
@@ -2909,9 +2922,9 @@ function blockTopFields(block, i) {
     case "superset":
       return num("Rounds", "rounds", v.rounds, 1) + num("Rest (s)", "rest", v.rest, 0);
     case "straight":
-      return chooser() + num("Sets", "sets", v.sets, 1) + num("Reps", "reps", v.reps, 1) + num("Rest (s)", "rest", v.rest, 0);
+      return chooser() + cue() + num("Sets", "sets", v.sets, 1) + num("Reps", "reps", v.reps, 1) + num("Rest (s)", "rest", v.rest, 0);
     case "ladder":
-      return chooser()
+      return chooser() + cue()
         + `<label class="inline-field wide">Rep scheme<input type="text" value="${v.scheme}" data-block-index="${i}" data-field="scheme" /></label>`
         + num("Rest (s)", "rest", v.rest, 0);
     case "cardio-choice":
@@ -2947,6 +2960,7 @@ function blockExerciseList(block, i) {
           ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
           ${withReps && !e.hold ? `<input type="text" inputmode="numeric" class="reps-field" placeholder="Reps" value="${e.reps}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="reps" title="One number for every round, or a number per round: 10,8,8,6" />` : ""}
           ${e.hold ? `<span class="row-seg-tag">hold</span><input type="number" min="1" placeholder="secs" title="Static hold, in seconds" value="${e.hold}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="hold" />` : ""}
+          <input type="text" class="cue-field" placeholder="Note" value="${esc(e.cue || "")}" data-block-index="${i}" data-ex-index="${ei}" data-exfield="cue" title="Appended to the exercise name for the member: &quot;Bulgarian Split Squats — Left Leg&quot;. Leave empty for none." />
           <button class="remove-ex-btn" data-action="remove-exercise" data-block-index="${i}" data-ex-index="${ei}">✕</button>
         </div>
       `).join("")}
@@ -3244,6 +3258,7 @@ function exerciseToBuilderRow(e) {
     reps: Array.isArray(e.scheme) ? e.scheme.join(",") : e.reps,
     hold: e.hold,
     drop: e.drop,
+    cue: e.cue,
   };
 }
 
@@ -3251,6 +3266,9 @@ function exerciseWithHold(e) {
   const out = { name: e.name, ...parseRepsField(e.reps) };
   if (Number(e.hold)) out.hold = Number(e.hold);
   if (e.drop) out.drop = true;
+  // Only written when there is one, so an uncued slot's schema is unchanged
+  // from before this existed.
+  if (e.cue && e.cue.trim()) out.cue = e.cue.trim();
   return out;
 }
 
@@ -3265,15 +3283,16 @@ function builderBlocksToSchema() {
     const v = b.values;
     switch (b.type) {
       case "interval": {
-        const exercises = v.exercises.filter((e) => e.name.trim()).map((e) => ({ name: e.name }));
+        const exercises = v.exercises.filter((e) => e.name.trim())
+          .map((e) => ({ name: e.name, ...(e.cue && e.cue.trim() ? { cue: e.cue.trim() } : {}) }));
         return { type: "interval", label: derivedBlockLabel(b), timed: true, rounds: Number(v.rounds) || 1, work: Number(v.work) || 0, rest: Number(v.rest) || 0, exercises };
       }
       case "superset":
         return { type: "superset", label: derivedBlockLabel(b), rounds: Number(v.rounds) || 1, rest: Number(v.rest) || 0, exercises: v.exercises.filter((e) => e.name.trim()).map(exerciseWithHold) };
       case "straight":
-        return { type: "straight", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "" }, sets: Number(v.sets) || 1, reps: Number(v.reps) || 0, rest: Number(v.rest) || 0 };
+        return { type: "straight", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "", ...(v.cue && v.cue.trim() ? { cue: v.cue.trim() } : {}) }, sets: Number(v.sets) || 1, reps: Number(v.reps) || 0, rest: Number(v.rest) || 0 };
       case "ladder":
-        return { type: "ladder", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "" }, scheme: String(v.scheme).split(",").map((n) => Number(n.trim())).filter((n) => !isNaN(n)), rest: Number(v.rest) || 0 };
+        return { type: "ladder", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "", ...(v.cue && v.cue.trim() ? { cue: v.cue.trim() } : {}) }, scheme: String(v.scheme).split(",").map((n) => Number(n.trim())).filter((n) => !isNaN(n)), rest: Number(v.rest) || 0 };
       case "cardio-choice":
         return { type: "cardio-choice", label: derivedBlockLabel(b), duration: (Number(v.durationMin) || 1) * 60 };
       case "amrap":
@@ -4279,6 +4298,9 @@ const WORKOUT_UPLOAD_FIELDS = {
   title: "title", focus: "focus", difficulty: "difficulty",
   description: "description", desc: "description",
   block: "block", blocklabel: "blockLabel", blocktype: "blockType",
+  // Appended to the exercise name for the member ("Left Leg"). Either header
+  // works, since Chris writes "Note" and the code calls it a cue.
+  cue: "cue", note: "cue",
   rounds: "rounds", worksec: "work", restsec: "rest",
   durationmin: "durationMin", emomintervalsec: "emomInterval",
   exerciseid: "exerciseId", sets: "sets", reps: "reps", ladderscheme: "scheme",
@@ -4405,6 +4427,7 @@ function handleWorkoutUploadFile(file) {
           rounds: num(at(cells, "rounds")), work: num(at(cells, "work")), rest: num(at(cells, "rest")),
           durationMin: num(at(cells, "durationMin")), emomInterval: num(at(cells, "emomInterval")),
           sets: num(at(cells, "sets")), reps: num(at(cells, "reps")), scheme: at(cells, "scheme"),
+          cue: at(cells, "cue"),
         };
       });
 
@@ -4498,8 +4521,9 @@ function groupWorkoutUploadRows() {
 function workoutUploadBlockToSchema(b) {
   const spec = BLOCK_FORMATS[b.format];
   const label = b.label || spec.label;
+  const cueOf = (r) => (r.cue && r.cue.trim() ? { cue: r.cue.trim() } : {});
   const ex = (r) => {
-    const e = { name: r.exerciseName };
+    const e = { name: r.exerciseName, ...cueOf(r) };
     if (spec.reps && r.reps != null && !Number.isNaN(r.reps)) e.reps = r.reps;
     return e;
   };
@@ -4508,7 +4532,7 @@ function workoutUploadBlockToSchema(b) {
     // of three exercises becomes three blocks, which is what it already is.
     return b.rows.map((r) => ({
       type: "straight", label,
-      exercise: { name: r.exerciseName },
+      exercise: { name: r.exerciseName, ...cueOf(r) },
       sets: r.sets != null && !Number.isNaN(r.sets) ? r.sets : 3,
       reps: r.reps != null && !Number.isNaN(r.reps) ? r.reps : 10,
       rest: b.rest != null && !Number.isNaN(b.rest) ? b.rest : 60,
@@ -4517,7 +4541,7 @@ function workoutUploadBlockToSchema(b) {
   if (b.format === "ladder") {
     return b.rows.map((r) => ({
       type: "ladder", label,
-      exercise: { name: r.exerciseName },
+      exercise: { name: r.exerciseName, ...cueOf(r) },
       scheme: String(r.scheme || "").split(/[;,]/).map((n) => Number(n.trim())).filter((n) => Number.isFinite(n)),
       rest: b.rest != null && !Number.isNaN(b.rest) ? b.rest : 15,
     }));
