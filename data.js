@@ -1619,9 +1619,24 @@ function buildFitFunctionalSchedule() {
       days.push({ day, type: "workout", workoutId: `ff-w${week}-${key}` });
       day++;
     });
+    // The two non-workout item types admin can schedule (2026-10-10). Seeded
+    // here so the member app's handling of them is exercisable at all — the
+    // real ones come from admin, and reach members the same hand-carried way
+    // every other authored change does.
+    //
+    // The cardio shares the last workout day rather than taking one of its
+    // own, because a day holding two items is the case the Calendar used to
+    // get wrong: it read only the first and dropped the rest.
+    days.push({ day: day - 1, type: "cardio", text: "20 minutes easy — keep it conversational" });
+    if (week % 4 === 1) {
+      days.push({ day: day - 1, type: "note", text: "Take your progress photos" });
+    }
     days.push({ day, type: "rest" });
     day++;
   }
+  // One item per day was the old shape and the sort assumed it; several per
+  // day means ties, and a stable sort keeps them in the order written above.
+  days.sort((a, b) => a.day - b.day);
   return days;
 }
 

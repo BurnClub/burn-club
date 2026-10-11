@@ -681,13 +681,46 @@ syncs them.
     round-specific cue to appear. Sides inside an AMRAP have to go in the
     exercise name in the library, or wait for the block note.
 
-- **The member app ignores the new schedule item types.** Admin can now put
-  `cardio` and `note` (reminder) items on a programme day — "take your progress
-  photos", "20 minutes easy" — but every member-side read filters
-  `type === "workout"`: `memberProgramPosition`, `upcomingScheduledWorkouts`
-  and the Calendar tab all skip anything else. So those items are authored and
-  invisible. Rendering them on Home's upcoming list and in the Calendar day
-  rows is the other half of the job (2026-10-08).
+- **~~The member app ignores the new schedule item types~~ — done 2026-10-10.**
+  Admin could put `cardio` and `note` (reminder) items on a programme day since
+  2026-10-08 and the member app dropped every one. Worse than invisible on a
+  day of its own: the Calendar took `template.find(...)`, the FIRST item for a
+  day, so a cardio-only day rendered the words **"Workout unavailable"** at the
+  member. Both confirmed against the running app before the fix.
+
+  Now: the Calendar draws every item on a day, Home's list (retitled "Coming
+  Up") carries them alongside the workouts, and a coach's cardio item taps
+  through to the cardio log pre-dated to its own day.
+
+  Two decisions inside it, both reversible:
+
+  - **A coach's cardio item is ticked by any cardio logged that date** — and
+    Chris wants it that way (2026-10-10: "if a person logs a normal cardio
+    session on a day with coachs cardio, it will prioritize the coaches cardio
+    ... if so, i like it"). Nothing is matched and nothing is tagged: a member
+    who runs and logs it from the Cardio tab clears the day's assigned cardio
+    without ever opening the card. Not checked: the activity, or the duration —
+    six minutes of stairs clears "20 min easy run".
+
+    There is no per-item completion record because the item belongs to the
+    programme template, the coach's, not the member's — unlike a session the
+    member schedules themselves, which lives in their own store with its own
+    `completedId`. The remaining trade: two cardio items on one day both read
+    done off the same log. If that starts mattering, the fix is a member-owned
+    record keyed by programme day.
+
+    Minutes on the card are **summed across the day**, not read off one entry.
+    Showing the first logged meant a 6-minute stair session hid the 25-minute
+    run done later the same day; it now says "31 min logged across 2 sessions".
+  - **Progress still counts workouts only.** `memberProgramPosition` drives
+    "3/6 Done This Week", and cardio days do not add to the denominator. A
+    programme with three cardio days a week would under-report how much the
+    member is actually being asked to do — worth revisiting with Chris once
+    he has written one.
+
+  **Reminders cannot be ticked off.** They show on the day and on Home, and
+  they go when the day passes. A check-off needs a member-owned store; nobody
+  has asked for one yet.
 
 - **Focus is derived, difficulty is off, and both are on trial** (2026-10-08).
   The builder's Focus and Difficulty are hidden inputs — hidden in August

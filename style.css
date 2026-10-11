@@ -1458,6 +1458,40 @@ h1, h2, h3 {
 }
 .calendar-day-row .calendar-item-btn + .calendar-item-btn { margin-top: 8px; }
 
+/* Coach-scheduled cardio and reminders on a programme day (2026-10-10).
+   Cardio keeps the blue program card, because the colour on this screen says
+   who put the item there: blue is assigned, green is the member's own. The
+   "Cardio" pill reuses the variant tag's slot, which is free on a cardio item
+   — there is no Home/Gym choice to make. */
+.calendar-item-cardio:disabled { cursor: default; }
+.calendar-day-row .calendar-item-cardio + .calendar-item-btn,
+.calendar-day-row .calendar-item-btn + .calendar-item-cardio { margin-top: 8px; }
+/* A reminder has nothing to open, so it is a line rather than a card — but a
+   dashed edge keeps it visibly ON the day rather than floating beside it, and
+   stops it reading as the muted "Rest Day" / "Program complete" text, which is
+   the app saying there is nothing here. */
+.calendar-item-reminder {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--pill-surface);
+  border: 1px dashed var(--accent-text);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+}
+.calendar-day-row .calendar-item-reminder { margin-top: 8px; }
+.calendar-day-row .calendar-item-reminder:first-child { margin-top: 0; }
+
+/* The same two on Home's "Coming Up" list. A reminder is a div, not a button,
+   so it needs the card's own padding back and must not look pressable. */
+.circuit-card-reminder {
+  background: var(--pill-surface);
+  border: 1px dashed var(--accent-text);
+  cursor: default;
+}
+.circuit-card-upcoming:disabled { cursor: default; }
+
 /* Member-scheduled cardio (2026-08-12, Chris) — green so a session the
    member added themselves reads as distinct from the blue program
    workouts the coach assigned. --slate text is the same treatment every

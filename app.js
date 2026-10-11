@@ -1375,7 +1375,14 @@ function updateCardioActivityPicker() {
   document.getElementById("cardio-distance-input").step = meta.step;
 }
 
-function openCardioLogModal() {
+// The date this log will be filed under. Today unless a coach-scheduled cardio
+// item opened the modal for an earlier day (2026-10-10) — logging Tuesday's
+// assigned session on Wednesday should land on Tuesday, which is the day the
+// calendar then ticks.
+let cardioLogDate = null;
+
+function openCardioLogModal(dateStr) {
+  cardioLogDate = dateStr || null;
   cardioSelectedActivity = (CARDIO_ACTIVITY_TYPES[0] || {}).id;
   renderCardioActivityPicker();
   updateCardioActivityPicker();
@@ -1393,8 +1400,14 @@ function saveCardioLogForm() {
   const minutes = parseInt(document.getElementById("cardio-minutes-input").value, 10) || 0;
   const distanceValue = parseFloat(document.getElementById("cardio-distance-input").value) || 0;
   if (minutes <= 0) return;
-  logCardioActivity({ activityType: cardioSelectedActivity, distanceValue, minutes, source: "manual" });
+  logCardioActivity({ activityType: cardioSelectedActivity, distanceValue, minutes, source: "manual", date: cardioLogDate || undefined });
   renderCardioLog();
+  // The Calendar ticks a coach's cardio item off a completion on that date, so
+  // it has to re-read after one is written. Guarded because the modal is also
+  // opened from the Cardio tab, where the Calendar may never have rendered.
+  if (CURRENT_MEMBER.scheduleType === "structured") renderCalendarTab();
+  renderHomeWeekSnapshot();
+  renderCircuitLists();
   document.getElementById("cardio-log-saved").style.display = "block";
   setTimeout(closeCardioLogModal, 900);
 }
@@ -5506,12 +5519,13 @@ function upcomingDayLabel(date) {
   return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
-// Next N scheduled workouts from today forward. Rest days are skipped (they'd
-// waste one of only three slots), and anything already completed on its own
-// scheduled date drops off so all three are genuinely still ahead of you —
-// completions are matched by date, not just workout id, the same way the
-// Calendar tab does it.
-function upcomingScheduledWorkouts(limit) {
+// Next N scheduled items from today forward — workouts, and since 2026-10-10
+// the coach's cardio and reminders too, which were being dropped here as well
+// as in the Calendar. Rest days are skipped (they'd waste one of only three
+// slots), and anything already completed on its own scheduled date drops off
+// so all three are genuinely still ahead of you — completions are matched by
+// date, not just workout id, the same way the Calendar tab does it.
+function upcomingScheduledItems(limit) {
   const member = CURRENT_MEMBER;
   const template = SCHEDULE_TEMPLATES[member.programId] || [];
   // A structured member with no start date is a data error, not a state the
@@ -5526,25 +5540,70 @@ function upcomingScheduledWorkouts(limit) {
   const out = [];
 
   for (const item of template) {
-    if (item.day < todayProgramDay || item.type !== "workout") continue;
+    if (item.day < todayProgramDay || item.type === "rest") continue;
 
     const date = new Date(today);
     date.setDate(date.getDate() + (item.day - todayProgramDay));
-    if (completionForSlotOnDate(item.workoutId, dateKey(date))) continue;
 
-    // Home counts a day once even for combo members — showing the same
-    // session twice in a three-slot "what's next" list would crowd out the
-    // days behind it. The Calendar is where both variants are offered.
-    const [circuit] = workoutsForSlot(item.workoutId);
-    if (!circuit) continue;
-
-    out.push({ circuit, date });
+    if (item.type === "cardio") {
+      // Same done-test the Calendar uses, so the two screens agree.
+      if (cardioLoggedOnDate(dateKey(date)).done) continue;
+      out.push({ kind: "cardio", item, date });
+    } else if (item.type === "note") {
+      // A reminder has nothing to complete, so it stays on the list until its
+      // day passes — which is the point of a reminder.
+      out.push({ kind: "note", item, date });
+    } else {
+      if (completionForSlotOnDate(item.workoutId, dateKey(date))) continue;
+      // Home counts a day once even for combo members — showing the same
+      // session twice in a three-slot "what's next" list would crowd out the
+      // days behind it. The Calendar is where both variants are offered.
+      const [circuit] = workoutsForSlot(item.workoutId);
+      if (!circuit) continue;
+      out.push({ kind: "workout", circuit, date });
+    }
     if (out.length === limit) break;
   }
   return out;
 }
 
-function renderUpcomingWorkoutCard({ circuit, date }) {
+function renderUpcomingWorkoutCard(entry) {
+  const { kind, circuit, item, date } = entry;
+
+  // Cardio and reminders ride in the same list as the workouts (2026-10-10),
+  // because "what is next" is the question Home answers and the coach put them
+  // on the schedule to be seen. They keep the card shape and the day tag so
+  // the list still scans as one column, and differ where they differ: cardio
+  // taps through to the cardio log rather than a player, and a reminder is not
+  // a button at all.
+  if (kind === "cardio") {
+    const label = item.text && item.text.trim() ? item.text.trim() : "Cardio";
+    const isFuture = daysBetween(dateKey(new Date()), dateKey(date)) > 0;
+    return `
+      <button class="circuit-card circuit-card-upcoming color-blue"
+              ${isFuture ? "disabled" : `data-coach-cardio="${esc(dateKey(date))}"`}>
+        <div class="circuit-card-top">
+          <h3>${esc(label)}</h3>
+          <span class="circuit-tag">${upcomingDayLabel(date)}</span>
+        </div>
+        <p>Cardio${isFuture ? "" : " · tap to log it"}</p>
+      </button>
+    `;
+  }
+
+  if (kind === "note") {
+    const label = item.text && item.text.trim() ? item.text.trim() : "Reminder";
+    return `
+      <div class="circuit-card circuit-card-upcoming circuit-card-reminder">
+        <div class="circuit-card-top">
+          <h3>${esc(label)}</h3>
+          <span class="circuit-tag">${upcomingDayLabel(date)}</span>
+        </div>
+        <p>Reminder from your coach</p>
+      </div>
+    `;
+  }
+
   return `
     <button class="circuit-card circuit-card-upcoming color-${circuit.color}" data-open-circuit="${circuit.id}">
       <span class="circuit-bg-icon">${CIRCUIT_ICONS[circuitIconKey(circuit)]}</span>
@@ -5558,7 +5617,7 @@ function renderUpcomingWorkoutCard({ circuit, date }) {
 }
 
 function renderHomeUpcomingWorkouts() {
-  const upcoming = upcomingScheduledWorkouts(3);
+  const upcoming = upcomingScheduledItems(3);
   const card = document.getElementById("home-circuit-list").closest(".home-section-card");
   const pos = memberProgramPosition();
   // Once the programme is over this card has nothing to say, and "you're all
@@ -5566,7 +5625,9 @@ function renderHomeUpcomingWorkouts() {
   // completion card is what answers "what now" (2026-08-23).
   if (card) card.style.display = pos && pos.finished ? "none" : "";
   if (pos && pos.finished) return;
-  document.getElementById("home-workouts-title").textContent = "Upcoming Workouts";
+  // "Upcoming Workouts" stops being true the moment the list can hold a cardio
+  // session or a reminder.
+  document.getElementById("home-workouts-title").textContent = "Coming Up";
   document.getElementById("home-circuit-list").innerHTML = upcoming.length
     ? upcoming.map(renderUpcomingWorkoutCard).join("")
     : `<p class="home-upcoming-empty">You're all caught up — nothing left on your schedule.</p>`;
@@ -5586,6 +5647,9 @@ function renderCircuitLists() {
     renderHomeUpcomingWorkouts();
     document.querySelectorAll("#home-circuit-list [data-open-circuit]").forEach((btn) => {
       btn.addEventListener("click", () => openCircuit(btn.dataset.openCircuit));
+    });
+    document.querySelectorAll("#home-circuit-list [data-coach-cardio]").forEach((btn) => {
+      btn.addEventListener("click", () => openCardioLogModal(btn.dataset.coachCardio));
     });
     return;
   }
@@ -6027,10 +6091,78 @@ function saveScheduledCardio() {
   note.style.display = "block";
 }
 
+// ---------------- Coach-scheduled cardio and reminders (2026-10-10) ----------------
+// Admin has been able to put `cardio` and `note` items on a programme day
+// since the calendar grid landed (2026-10-08), and the member app dropped
+// every one of them: each read filtered `type === "workout"`, and the Calendar
+// took `template.find(...)` — the FIRST item for a day — so a reminder sharing
+// a day with a workout vanished, and a day holding only a cardio item rendered
+// the words "Workout unavailable" at the member. Authored, invisible, and on
+// its own day actively broken.
+//
+// A day can hold several items, so everything below works from a list.
+function scheduleItemsForProgramDay(template, programDay) {
+  return template.filter((it) => it.day === programDay);
+}
+
+// Done-ness for a coach's cardio item is "is there cardio logged on that day".
+// There is no per-item record to tick: the item belongs to the programme
+// template, which is the coach's, not the member's — unlike a session the
+// member scheduled themselves, which lives in their own store and carries its
+// own completedId.
+//
+// So nothing is matched and nothing is tagged. A member who goes out for a run
+// and logs it the ordinary way, from the Cardio tab, clears that day's
+// assigned cardio without ever touching the card — which is the generous
+// reading, and Chris's call (2026-10-10: "i like it"). Note what it does NOT
+// check: not the activity, not the duration. Six minutes of stairs clears
+// "20 min easy run".
+//
+// Minutes are SUMMED across the day rather than read off one entry. Taking the
+// first logged showed "6 min logged" on a day the member later ran for 25,
+// which reads as a worse day than they had.
+function cardioLoggedOnDate(dateStr) {
+  const entries = COMPLETIONS.filter((c) => c.category === "cardio-activity" && c.date === dateStr);
+  return {
+    done: entries.length > 0,
+    minutes: entries.reduce((sum, c) => sum + (Number(c.minutes) || 0), 0),
+    count: entries.length,
+  };
+}
+
+function calendarCoachCardioHtml(item, date) {
+  const dateStr = dateKey(date);
+  const logged = cardioLoggedOnDate(dateStr);
+  // A future day cannot be logged yet — the same rule the member's own
+  // planned sessions follow, so a tap doesn't create a future-dated
+  // completion that would skew this week's numbers.
+  const isFuture = daysBetween(dateKey(new Date()), dateStr) > 0;
+  const label = item.text && item.text.trim() ? item.text.trim() : "Cardio";
+  return `
+    <button class="calendar-item-btn calendar-item-cardio ${logged.done ? "done" : ""}"
+            ${isFuture ? "disabled" : `data-coach-cardio="${esc(dateStr)}"`}>
+      <span class="calendar-item-label">${esc(label)}</span>
+      <span class="calendar-item-meta">${logged.done
+        ? `Cardio · ${logged.minutes} min logged${logged.count > 1 ? ` across ${logged.count} sessions` : ""}`
+        : isFuture ? "Cardio · from your coach" : "Cardio · tap to log it"}</span>
+      ${logged.done ? `<span class="calendar-item-check">✓</span>`
+                    : `<span class="calendar-variant-tag">Cardio</span>`}
+    </button>
+  `;
+}
+
+// A reminder is the one item with nothing to open and nothing to log — it is
+// a line of instruction for that day, so it is drawn as one rather than as a
+// button that does nothing when tapped.
+function calendarReminderHtml(item) {
+  const label = item.text && item.text.trim() ? item.text.trim() : "Reminder";
+  return `<span class="calendar-item-reminder">${esc(label)}</span>`;
+}
+
 function renderCalendarDayRow(date, member, template) {
   const today = new Date();
   const isToday = dateKey(date) === dateKey(today);
-  // Same guard as upcomingScheduledWorkouts — see the note there.
+  // Same guard as upcomingScheduledItems — see the note there.
   if (!member.startDate) {
     return `<div class="calendar-day-row${isToday ? " today" : ""}">
       <span class="calendar-day-label">${formatShortDate(dateKey(date))}</span>
@@ -6038,24 +6170,35 @@ function renderCalendarDayRow(date, member, template) {
     </div>`;
   }
   const programDay = daysBetween(member.startDate, dateKey(date)) + 1;
-  const item = template.find((d) => d.day === programDay);
+  const items = scheduleItemsForProgramDay(template, programDay);
 
   let bodyHtml;
-  if (!item) {
+  if (!items.length) {
     bodyHtml = `<span class="calendar-item-label calendar-item-muted">${programDay < 1 ? "Not started yet" : "Program complete"}</span>`;
-  } else if (item.type === "rest") {
-    bodyHtml = `<span class="calendar-item-label calendar-item-muted">Rest Day</span>`;
   } else {
-    const options = workoutsForSlot(item.workoutId);
-    if (!options.length) {
-      bodyHtml = `<span class="calendar-item-label calendar-item-muted">Workout unavailable</span>`;
-    } else {
+    // Every item on the day, in the order the coach left them — a workout and
+    // a reminder on one day are two things to show, not a choice between them.
+    // Rest only speaks for a day nothing else is on: admin strips the rest
+    // item when anything is added, so a leftover alongside real content is a
+    // contradiction, and "Rest Day" is the half that would be wrong.
+    const real = items.filter((it) => it.type !== "rest");
+    bodyHtml = (real.length ? real : items).map((item) => {
+      if (item.type === "rest") {
+        return `<span class="calendar-item-label calendar-item-muted">Rest Day</span>`;
+      }
+      if (item.type === "cardio") return calendarCoachCardioHtml(item, date);
+      if (item.type === "note") return calendarReminderHtml(item);
+
+      const options = workoutsForSlot(item.workoutId);
+      if (!options.length) {
+        return `<span class="calendar-item-label calendar-item-muted">Workout unavailable</span>`;
+      }
       // The day is done once either variant is completed, so the tick lands
       // on the one they actually did and the other simply stops being
       // offered — no half-finished day for a combo member.
       const completion = completionForSlotOnDate(item.workoutId, dateKey(date));
       const showVariantLabels = options.length > 1;
-      bodyHtml = options
+      return options
         .filter((c) => !completion || completion.workoutId === c.id)
         .map((circuit) => {
           const isDone = !!completion;
@@ -6069,7 +6212,7 @@ function renderCalendarDayRow(date, member, template) {
       `;
         })
         .join("");
-    }
+    }).join("");
   }
 
   return `
@@ -6110,6 +6253,9 @@ function renderCalendarTab() {
   });
   document.querySelectorAll("#calendar-day-list [data-complete-scheduled]").forEach((btn) => {
     btn.addEventListener("click", () => openCompleteScheduledPopup(btn.dataset.completeScheduled));
+  });
+  document.querySelectorAll("#calendar-day-list [data-coach-cardio]").forEach((btn) => {
+    btn.addEventListener("click", () => openCardioLogModal(btn.dataset.coachCardio));
   });
 }
 
