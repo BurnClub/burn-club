@@ -1230,6 +1230,12 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   margin-top: 10px;
   width: 100%;
 }
+/* Both of these are children of the library's card grid, so without this they
+   are laid out AS cards — a 150px column each, the message in one cell and the
+   "Add to library" button in the next one along. They are not cards; they
+   speak for the whole list, so they span it. */
+.builder-panel-wide .builder-library-list > .picker-empty-state,
+.builder-panel-wide .builder-library-list > .picker-add-new { grid-column: 1 / -1; }
 
 /* ---------- EXERCISE LIBRARY SIDEBAR (circuit builder) ---------- */
 /* Wider and taller than the other modals (2026-08-19, Chris: "way too much
@@ -1241,6 +1247,18 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
    on source order — which is why this panel has quietly been rendering at
    720px, not the 1020px it was meant to be, since the sidebar was added. */
 .builder-panel.builder-panel-wide { width: 1320px; max-width: 96vw; max-height: 95vh; }
+/* The BUILDER takes a fixed height, not a cap (2026-10-12, Chris: "when
+   searching for a workout that pulls no exercise, it completly resixes the
+   workout building card ... can we make it so the card always stays the
+   same"). It used to size to its content and only cap at 95vh — which every
+   search with results reaches, the library being 688 exercises. A search
+   matching nothing emptied the tallest thing in the panel and the card
+   collapsed from 730px to 385px, then sprang back on the next keystroke.
+   Fixed, the library just runs out of cards and the card never moves.
+   Scoped to this overlay on purpose: the two importers share the class and
+   show a validation table, where a short list in a 95vh panel would be mostly
+   empty modal. */
+#builder-overlay .builder-panel.builder-panel-wide { height: 95vh; }
 /* overflow-x: auto, not hidden (2026-08-23). Both columns now have a floor,
    so on a window too narrow for both the panel scrolls sideways instead of
    silently clipping whichever one loses — previously the content past the
