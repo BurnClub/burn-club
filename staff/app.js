@@ -326,11 +326,88 @@ function endLive() {
 
 // ---------------- Init ----------------
 
+// ---------------- Real sign-in (2026-10-13) ----------------
+// Mirrors admin's: authenticate, then require a row in `staff`. Deliberately a
+// separate small copy rather than a shared module — these are three static
+// apps with no build step, and the thing they must agree on is the TABLE, not
+// the code.
+let STAFF_USER = null;
+
+async function staffSignIn(email, password) {
+  const { data, error } = await SB.auth.signInWithPassword({
+    email: String(email).trim(), password,
+  });
+  if (error) {
+    return { error: typeof friendlyAuthError === "function"
+      ? friendlyAuthError(error) : error.message };
+  }
+  return await loadStaffRow(data.user, { signOutIfNotStaff: true });
+}
+
+async function loadStaffRow(user, opts) {
+  const { data, error } = await SB.from("staff").select("*").eq("id", user.id).maybeSingle();
+  if (error) return { error: "Couldn't check your access. Try again." };
+  if (!data) {
+    // Signing in deliberately at the staff URL and not being staff: sign out,
+    // because leaving a half-session behind is worse. On a session RESTORE,
+    // leave it alone — this app shares an origin, and therefore a session,
+    // with the member app.
+    if (opts && opts.signOutIfNotStaff) await SB.auth.signOut();
+    return { error: "That account doesn't have staff access." };
+  }
+  STAFF_USER = data;
+  return {};
+}
+
+async function restoreStaffSession() {
+  if (typeof SB === "undefined" || !SB) return;
+  let session = null;
+  try {
+    const { data } = await SB.auth.getSession();
+    session = data && data.session;
+  } catch (e) { return; }
+  if (!session) return;
+  const res = await loadStaffRow(session.user, { signOutIfNotStaff: false });
+  if (!res.error) showTab("tab-messages");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("login-form").addEventListener("submit", (e) => {
+  // Until 2026-10-13 this handler was `e.preventDefault(); showTab(...)` —
+  // any email, any password, straight in, on a page published at
+  // burnclub.github.io/burn-club/staff/. The same decoration admin had before
+  // 15-staff-accounts.sql, and missed when admin was fixed.
+  //
+  // What saved us is that this app holds no real data: it reads its own seeded
+  // MEMBERS and MESSAGES and never touches Supabase. So the exposure was a
+  // page titled "BURN CLUB STAFF" full of invented people, which a tester
+  // finding it would have had no way to read as a demo. Gated now on the same
+  // staff table admin uses.
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
     e.preventDefault();
+    const btn = document.getElementById("staff-login-submit");
+    const err = document.getElementById("staff-login-error");
+    err.hidden = true;
+    if (typeof SB === "undefined" || !SB) {
+      err.textContent = "Can't reach the sign-in service. Check your connection and try again.";
+      err.hidden = false;
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = "Signing in…";
+    const res = await staffSignIn(
+      document.getElementById("staff-login-email").value,
+      document.getElementById("staff-login-password").value
+    );
+    btn.disabled = false;
+    btn.textContent = "Log In";
+    if (res.error) { err.textContent = res.error; err.hidden = false; return; }
     showTab("tab-messages");
   });
+
+  // A reload should not mean signing in again, and a member who wandered here
+  // should not be signed out of their own app on the way back — the member app
+  // is on the same origin and shares this session. Same rule as admin.
+  restoreStaffSession();
 
   document.querySelectorAll("[data-tab-target]").forEach((btn) => {
     btn.addEventListener("click", () => showTab(btn.dataset.tabTarget));

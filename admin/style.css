@@ -1,3 +1,10 @@
+/* `hidden` has to beat the display rules in this file (2026-10-13). [hidden]
+   is only a UA default of display:none, so any class setting `display` wins on
+   specificity — which is how the member app ended up showing its sign-in form
+   and its set-a-password form stacked on top of each other, live. Same trap
+   here, same one-line answer. */
+[hidden] { display: none !important; }
+
 :root {
   --blue: #0057ff;
   --periwinkle: #c7d3ff;

@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<!-- Not for search engines. These are staff tools on the same public host as
+     the member app, so the only thing that keeps them out of a results page is
+     saying so (2026-10-13). The gate is the sign-in below; this just stops the
+     page being FOUND by someone who was not looking for it. -->
+<meta name="robots" content="noindex, nofollow" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Burn Club Staff</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -24,13 +29,14 @@
         <form class="login-form" id="login-form">
           <label class="field">
             <span>Email</span>
-            <input type="email" placeholder="staff@burnclub.com" />
+            <input type="email" id="staff-login-email" autocomplete="username" placeholder="you@burnclub.com" required />
           </label>
           <label class="field">
             <span>Password</span>
-            <input type="password" placeholder="••••••••" />
+            <input type="password" id="staff-login-password" autocomplete="current-password" placeholder="••••••••" required />
           </label>
-          <button type="submit" class="btn-primary">Log In</button>
+          <p class="login-error" id="staff-login-error" role="alert" hidden></p>
+          <button type="submit" class="btn-primary" id="staff-login-submit">Log In</button>
         </form>
       </div>
     </section>
@@ -132,6 +138,8 @@
   </div><!-- /app -->
 </div><!-- /phone-frame -->
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+<script src="../supabase-client.js"></script>
 <script src="data.js"></script>
 <script src="app.js"></script>
 </body>

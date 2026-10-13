@@ -262,7 +262,12 @@ it would be nice. Things that can follow launch belong in the sections below.
       **Still before import day:** Resend's free tier is 100/day and 200
       invites in an afternoon exceeds it — upgrade to the $20 tier, or send
       across three days.
-- [ ] **Turn off open signup.** `disable_signup` was `false` on 2026-09-18:
+- [x] **Open signup is off** — confirmed 2026-10-13 by reading
+      `/auth/v1/settings` on the live project, which reports the setting
+      without attempting a signup, so nothing was created to find out.
+      `disable_signup: true`, `mailer_autoconfirm: false` (so a confirmation is
+      still required), and email is the only provider enabled.
+      Original note: `disable_signup` was `false` on 2026-09-18:
       anyone holding the publishable key — which ships in the app's own
       JavaScript — can create an account, and the content policies grant read
       to any authenticated user. That hands a stranger the entire exercise
@@ -333,9 +338,24 @@ it would be nice. Things that can follow launch belong in the sections below.
       table; a member's own password is refused. Note what it does NOT do:
       admin still reads and writes its own browser storage for content, so
       signing in gates the screens, not the data.
-- [ ] **`admin/` is on the same public URL as the member app.** Anyone with the
-      link has full access to every admin screen today. Harmless with seed
-      data; not on import day.
+- [~] **`admin/` and `staff/` are on the same public URL as the member app.**
+      Worked through 2026-10-13. What was actually exposed, having looked:
+      - **admin/** — the page is public but the gate is real (sign-in plus a
+        row in `staff`), and the live member data behind it is protected by
+        RLS, not by the URL. The content in `admin/data.js` is the same content
+        the member app's own public `data.js` already carries, so moving admin
+        to a private host would protect nothing that is not already published.
+      - **staff/** — **its login was still decoration**: `preventDefault()` and
+        show the app, any email, any password. Missed when admin was fixed.
+        Now gated on the same `staff` table. It holds no real data — its own
+        seeded MEMBERS and MESSAGES, all `@example.com` — so this was a page
+        titled "BURN CLUB STAFF" full of invented people that a tester had no
+        way to read as a demo, rather than a data leak.
+      - Both now carry `noindex, nofollow`, which is the only thing that keeps
+        a staff tool on a public host out of a search result.
+      **Left open deliberately:** GitHub Pages has no server-side auth, so the
+      HTML and JS of both apps remain fetchable by anyone. The protections that
+      matter are the sign-in and RLS, and both hold.
 - [ ] **A security pass over the auth surface** — not a read of the code, an
       attempt to break it. Started, and it has already paid for itself: on
       2026-09-21 a member could set their own `role` to `admin` from the browser

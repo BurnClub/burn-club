@@ -1,3 +1,10 @@
+/* `hidden` has to beat the display rules in this file (2026-10-13). [hidden]
+   is only a UA default of display:none, so any class setting `display` wins on
+   specificity — which is how the member app ended up showing its sign-in form
+   and its set-a-password form stacked on top of each other, live. Same trap
+   here, same one-line answer. */
+[hidden] { display: none !important; }
+
 :root {
   --blue: #0057ff;
   --periwinkle: #c7d3ff;
@@ -250,3 +257,12 @@ h1, h2, h3 { font-family: 'Baloo 2', 'Nunito', sans-serif; margin: 0; }
 }
 .live-viewer-count { font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 999px; }
 .staff-live-chat { max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 4px 0 16px; margin-bottom: 90px; }
+
+/* The staff sign-in's failure line (2026-10-13), matching admin's. */
+.login-error {
+  margin: 0;
+  color: var(--danger, #D9776B);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
