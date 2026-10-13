@@ -345,6 +345,27 @@ it would be nice. Things that can follow launch belong in the sections below.
       signed-in session: refused. Still to do: sign in as one member and try to
       read another's rows, and the same for storage once videos are there.
 
+### Deploys reaching members
+
+- [x] **The shell is versioned as a unit** — fixed 2026-10-12, after catching
+      the real thing live. The service worker was network-first with
+      `cache: "no-cache"`, which was meant to stop a member running yesterday's
+      build. It was not enough: GitHub Pages serves `cache-control:
+      max-age=600`, so each file revalidated on its own schedule and files
+      deployed together arrived at different moments.
+      What that produced was worse than stale. The live app was running a
+      **NEW app.js against an OLD sync.js** — app.js calling a function that
+      did not exist yet. Old code is a bug you can see; mismatched code is one
+      you cannot. Two reloads did not clear it.
+      Every shell request now carries `?v=<CACHE>`, so bumping `CACHE` in
+      sw.js makes each one a URL the browser has never seen and no HTTP cache
+      can answer. **This means CACHE must be bumped on any deploy that changes
+      app.js, sync.js, data.js, style.css or index.html** — not just on changes
+      to sw.js itself.
+      Note: the service worker cannot be registered from the in-app browser on
+      localhost ("an unknown error occurred when fetching the script"), so this
+      is only testable on the live site.
+
 ### The first-run experience
 
 - [x] **The login screen showed two forms at once** — found and fixed

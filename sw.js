@@ -12,7 +12,12 @@
 // is the fallback, which is exactly the case it exists for.
 //
 // Bump CACHE on any change here. Old caches are deleted on activate.
-const CACHE = "burnclub-v2";
+//
+// It is also the VERSION TOKEN for every shell request (see below), so bumping
+// it is how a deploy actually reaches a member. Bump it on any deploy that
+// changes app.js, sync.js, data.js, style.css or index.html — not just on
+// changes to this file.
+const CACHE = "burnclub-v3";
 
 // The shell: enough to open the app and run a workout from local data.
 // Deliberately not the demo videos — they are ~1MB each and the browser's own
@@ -71,13 +76,35 @@ self.addEventListener("fetch", (event) => {
 
   if (url.origin !== self.location.origin) return;
 
-  // "no-cache" forces a revalidation rather than letting the browser's own HTTP
-  // cache answer from a copy it is still holding. Without it a member who
-  // reloads after a deploy can be served yesterday's CSS against today's HTML
-  // for as long as the cache header says — which is exactly what happened here
-  // the first time this was tested. Revalidation is a 304 when nothing moved,
-  // so it costs a round trip and no bytes.
-  const fresh = new Request(req, { cache: "no-cache" });
+  // The shell is versioned AS A UNIT, and this is why.
+  //
+  // This used to be `new Request(req, { cache: "no-cache" })` — revalidate
+  // rather than let the browser's HTTP cache answer. It was not enough.
+  // GitHub Pages serves `cache-control: max-age=600`, and each file revalidated
+  // on its own schedule, so files deployed together arrived at different
+  // moments. Caught live on 2026-10-12 in a state far worse than "stale": the
+  // page was running a NEW app.js against an OLD sync.js, so app.js called a
+  // function that did not exist yet. Old code is a bug you can see; mismatched
+  // code is one you cannot.
+  //
+  // So every shell request carries the cache version in its URL. A bumped
+  // CACHE makes every one of them a URL this browser has never seen, which no
+  // HTTP cache can answer from — the whole shell moves together or not at all.
+  // The response is stored under the ORIGINAL request, so a cache lookup in
+  // the offline path below still finds it.
+  // Built defensively. A Request cannot be constructed with mode "navigate",
+  // and a navigation's headers include Sec-Fetch-* which the constructor
+  // refuses — so this throws for exactly the request that matters most, and a
+  // throw inside a fetch handler is a page that does not load at all. URL and
+  // cache mode only, and the plain request if anything goes wrong.
+  let fresh;
+  try {
+    const versioned = new URL(req.url);
+    versioned.searchParams.set("v", CACHE);
+    fresh = new Request(versioned.toString(), { cache: "no-cache" });
+  } catch (e) {
+    fresh = new Request(req, { cache: "no-cache" });
+  }
 
   event.respondWith(
     fetch(fresh)
