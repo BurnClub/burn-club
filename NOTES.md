@@ -495,10 +495,20 @@ it would be nice. Things that can follow launch belong in the sections below.
       thread shapes: the member↔staff DM, and one group chat per PROGRAM so
       testers can talk to each other (Chris, 2026-10-12: "people often feel
       more comfortable talking to a peer, than they would Kelly").
-      **Still to do:** Chris runs the migration, then admin has to read the
-      same table — admin is still entirely on browser storage, so until it
-      moves, a member's message lands somewhere nobody is reading. Challenge
-      team chats are deliberately out and are hidden while signed in.
+      **Done 2026-10-12, both halves.** Migration run, and admin's inbox now
+      reads the same table: DM threads rebuilt from the real `members` rows
+      (admin built them from the SEEDED list, so its "dm-chris-v" never met a
+      real "dm-<uuid>"), shared `staff_read_at` written on opening a thread,
+      and replies sent under the coach's own name rather than "Staff".
+      Verified end to end on the live site: member sends → appears in admin's
+      inbox with an unread dot → opening it stamps `staff_read_at` in Postgres
+      → coach replies → the reply shows in the member app.
+      **Still open:** admin's Members section is still seeded — only the
+      conversation list reads the real table, which is the smallest slice that
+      makes the inbox true. Challenge team chats and custom-group chats have no
+      table; they are hidden in the member app and say so in admin rather than
+      swallowing a reply. Polling is a fetch a minute, paused in a background
+      tab; Realtime is the answer past a handful of members.
 
 - [ ] **`is_staff()` asks the wrong table — confirmed against the live database
       2026-10-12.** It reads `members.role`, but 15-staff-accounts.sql made
