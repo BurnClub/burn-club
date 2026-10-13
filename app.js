@@ -5403,8 +5403,11 @@ function memberConversations() {
   // Only while the challenge is running. Four new chats a month would be
   // forty-eight dead ones a year sitting in the inbox, so a team chat appears
   // with its challenge and goes when it ends (2026-08-24).
+  // Team chats are demo-only for now (2026-10-12): 16-messages.sql covers the
+  // member↔staff DM and the program group, not per-team rooms. Offering one
+  // while signed in would be a thread that silently accepts nothing.
   const team = myChallengeTeam();
-  if (team) {
+  if (team && !messagingIsLive()) {
     list.push({ id: `group-team-${team.id}`, type: "group", name: `${team.name} Team Chat` });
   }
   return list;
@@ -5494,11 +5497,16 @@ function openThread(conversationId) {
   conversationMessages(conversationId).forEach((m) => {
     if (m.senderId !== CURRENT_MEMBER.id) m.read = true;
   });
+  // Remembered across reloads, so what was read stays read (see
+  // markThreadRead in sync.js).
+  if (messagingIsLive() && typeof markThreadRead === "function") markThreadRead(conversationId);
 
   renderThreadMessages();
   updateUnreadBadges();
   showScreen("screen-thread");
   document.getElementById("bottom-nav").style.display = "none";
+  loadMessagesFromServer();
+  startThreadPoll();
 }
 
 function renderThreadMessages() {
@@ -5524,22 +5532,116 @@ function broadcastMessage(msg) {
   localStorage.setItem(LIVE_MESSAGES_KEY, JSON.stringify(live));
 }
 
-function sendThreadMessage(text) {
-  if (!openThreadId || !text.trim()) return;
-  broadcastMessage({
-    id: "msg-" + Date.now(),
-    conversationId: openThreadId,
-    senderId: CURRENT_MEMBER.id,
-    senderName: CURRENT_MEMBER.name,
-    isStaff: false,
-    text: text.trim(),
-    time: "Just now",
-    read: true,
+// Which shape of thread an id is, and what the row needs to carry for RLS to
+// place it. Derived from the id rather than stored anywhere, because the id IS
+// the convention all three apps already share.
+function conversationTarget(conversationId) {
+  if (conversationId.startsWith("dm-")) {
+    return { kind: "dm", memberId: AUTH_MEMBER ? AUTH_MEMBER.id : null, programId: null };
+  }
+  if (conversationId.startsWith("group-team-")) return null;   // no table yet
+  if (conversationId.startsWith("group-")) {
+    return { kind: "group", memberId: null, programId: conversationId.slice("group-".length) };
+  }
+  return null;
+}
+
+// Signed in, messaging goes to the server. Signed out — a demo walkthrough —
+// it keeps the old localStorage bridge, which is the only thing that makes the
+// three apps talk to each other without one.
+function messagingIsLive() {
+  return typeof SB !== "undefined" && !!SB && !!AUTH_MEMBER;
+}
+
+async function loadMessagesFromServer() {
+  if (!messagingIsLive() || typeof fetchMessages !== "function") return;
+  const res = await fetchMessages();
+  if (!res.ok) return;
+  // Replace rather than merge: the server is the whole truth for a shared
+  // thread, and merging would resurrect a seeded demo message beside it.
+  MESSAGES.length = 0;
+  res.messages.forEach((m) => MESSAGES.push(m));
+  updateUnreadBadges();
+  if (openThreadId) renderThreadMessages();
+  renderConversationList();
+}
+
+async function sendThreadMessage(text) {
+  const body = text.trim();
+  if (!openThreadId || !body) return;
+
+  if (!messagingIsLive()) {
+    broadcastMessage({
+      id: "msg-" + Date.now(),
+      conversationId: openThreadId,
+      senderId: CURRENT_MEMBER.id,
+      senderName: CURRENT_MEMBER.name,
+      isStaff: false,
+      text: body,
+      time: "Just now",
+      read: true,
+    });
+    renderThreadMessages();
+    return;
+  }
+
+  const target = conversationTarget(openThreadId);
+  if (!target) return;
+
+  // Shown immediately and replaced by the server's row when it lands. A
+  // message that sits invisible until a round trip finishes reads as a failure
+  // on gym wifi, which is where most of these get written.
+  const pendingId = "pending-" + Date.now();
+  MESSAGES.push({
+    id: pendingId, conversationId: openThreadId, senderId: CURRENT_MEMBER.id,
+    senderName: CURRENT_MEMBER.name, isStaff: false, text: body,
+    time: "Sending…", read: true, pending: true,
   });
+  renderThreadMessages();
+
+  const res = await pushMessage({
+    conversationId: openThreadId, kind: target.kind,
+    memberId: target.memberId, programId: target.programId, body,
+  });
+
+  const i = MESSAGES.findIndex((m) => m.id === pendingId);
+  if (res.ok) {
+    if (i !== -1) MESSAGES[i] = res.message;
+  } else if (i !== -1) {
+    // Kept on screen and marked, rather than deleted: the member wrote it, and
+    // silently removing their words is the one thing worse than not sending.
+    // Not "tap to retry": nothing is listening for that tap. A label that
+    // promises an action the app does not have is worse than a plain failure.
+    MESSAGES[i].time = "Not sent — check your connection";
+    MESSAGES[i].failed = true;
+  }
   renderThreadMessages();
 }
 
+// A shared thread changes because of someone else, so it has to be re-read
+// rather than waited on. Polled rather than pushed: Supabase Realtime would be
+// the right answer at scale, and for six testers a fetch on open plus one
+// while the thread is in front of you is the same result with none of the
+// connection handling.
+let threadPollId = null;
+
+function startThreadPoll() {
+  stopThreadPoll();
+  if (!messagingIsLive()) return;
+  threadPollId = setInterval(() => {
+    if (document.visibilityState === "visible") loadMessagesFromServer();
+  }, 15000);
+}
+
+function stopThreadPoll() {
+  if (threadPollId) clearInterval(threadPollId);
+  threadPollId = null;
+}
+
 function openMessagesInbox() {
+  openThreadId = null;
+  stopThreadPoll();
+  loadMessagesFromServer();
   renderConversationList();
   showScreen("screen-messages");
   document.getElementById("bottom-nav").style.display = "flex";
@@ -6383,6 +6485,9 @@ async function enterAsAuthedMember() {
   }
   init();
   showTab("tab-home");
+  // Not awaited: the inbox badge is worth having as soon as it arrives, and
+  // nothing on Home should wait on a message fetch to render.
+  loadMessagesFromServer();
   onEnterApp();
 }
 

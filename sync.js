@@ -761,4 +761,107 @@ async function pushScheduledItems() {
   return await pushReplace("scheduled_items", scheduledItemsToRows(list));
 }
 
+// ---------------- Messaging (2026-10-12) ----------------
+// Unlike every other store here, messages are neither member-owned nor
+// replaced: they are append-only and SHARED — a group thread holds rows
+// written by five other people, and nothing this device knows lets it decide
+// what that list should be. So there is no "push my copy" for messages. A send
+// inserts one row; a read pulls whatever the policies allow back.
+//
+// Which rows those are is decided entirely by RLS (see 16-messages.sql), not
+// by a filter here. A select with no `where` returns this member's DM and
+// their program's group chat and nothing else — if that ever returns somebody
+// else's thread, the bug is in the policy and a client-side filter would only
+// have hidden it.
+
+// Relative, because an absolute timestamp on every bubble is noise in a thread
+// you are reading top to bottom. Falls back to the date once "ago" stops
+// meaning anything.
+function messageTimeLabel(iso) {
+  const then = new Date(iso);
+  if (isNaN(then)) return "";
+  const mins = Math.floor((Date.now() - then.getTime()) / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return mins + "m ago";
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + "h ago";
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return days + "d ago";
+  return then.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function messageFromRow(row, lastReadAt) {
+  return {
+    // Prefixed so a server id can never collide with a seeded "msg-1" or with
+    // an optimistic local id while a send is still in flight.
+    id: "srv-" + row.id,
+    serverId: row.id,
+    conversationId: row.conversation_id,
+    senderId: row.sender_id,
+    senderName: row.sender_name,
+    isStaff: !!row.is_staff,
+    text: row.body,
+    time: messageTimeLabel(row.created_at),
+    createdAt: row.created_at,
+    // Read state for the MEMBER is local: a DM has one reader but a group has
+    // six, and per-member read state on the row would be a join table for
+    // something this side can answer from "when did I last open this thread".
+    // The shared staff_read_at on the row is the staff inbox's half.
+    read: row.sender_id === (AUTH_MEMBER && AUTH_MEMBER.id)
+          || (!!lastReadAt && row.created_at <= lastReadAt),
+  };
+}
+
+// When this member last opened each thread. Per browser on purpose — "unread"
+// is a property of a person sitting in front of a screen, and syncing it would
+// mean opening the app on a laptop marked a thread read on their phone.
+const THREAD_READ_KEY = "burnclub-thread-read";
+
+function loadThreadReads() {
+  try {
+    return JSON.parse(localStorage.getItem(memberKey(THREAD_READ_KEY)) || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+
+function markThreadRead(conversationId) {
+  const reads = loadThreadReads();
+  reads[conversationId] = new Date().toISOString();
+  localStorage.setItem(memberKey(THREAD_READ_KEY), JSON.stringify(reads));
+}
+
+async function fetchMessages() {
+  if (!SB || !AUTH_MEMBER) return { ok: false, reason: "not signed in" };
+  // Oldest first so a thread reads top to bottom with no sort on the client.
+  // Capped: a year of a six-person group chat is not something to pull on
+  // every app open, and nobody scrolls back past a few hundred.
+  const { data, error } = await SB.from("messages")
+    .select("*").order("created_at", { ascending: true }).limit(500);
+  if (error) { recordSyncError("messages", error.message); return { ok: false, reason: error.message }; }
+  const reads = loadThreadReads();
+  return { ok: true, messages: (data || []).map((r) => messageFromRow(r, reads[r.conversation_id])) };
+}
+
+// One row, inserted and returned, so the caller renders the server's copy
+// rather than a local guess that might differ. Returns null on failure and
+// says why — a send that silently vanishes is worse than one that errors.
+async function pushMessage({ conversationId, kind, memberId, programId, body }) {
+  if (!SB || !AUTH_MEMBER) return { ok: false, reason: "not signed in" };
+  const row = {
+    conversation_id: conversationId,
+    kind,
+    member_id: kind === "dm" ? memberId : null,
+    program_id: kind === "group" ? programId : null,
+    sender_id: AUTH_MEMBER.id,
+    sender_name: [AUTH_MEMBER.first_name, AUTH_MEMBER.last_name].filter(Boolean).join(" ")
+                 || AUTH_MEMBER.first_name || "Member",
+    is_staff: false,
+    body,
+  };
+  const { data, error } = await SB.from("messages").insert(row).select().maybeSingle();
+  if (error) { recordSyncError("messages", error.message); return { ok: false, reason: error.message }; }
+  return { ok: true, message: messageFromRow(data, null) };
+}
+
 window.addEventListener("online", () => { SYNC_STATE.online = true; drainSyncQueue(); });

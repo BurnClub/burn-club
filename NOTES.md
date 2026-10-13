@@ -399,8 +399,11 @@ it would be nice. Things that can follow launch belong in the sections below.
 
 ### Content
 
-- [ ] **Assign programs to the three real accounts.** chris@worthitcandy.com,
-      kelly@kellyyager.com and k_yager@yahoo.com all have `program_id` null,
+- [ ] **Assign programs to the real accounts.** Partly stale as of 2026-10-12:
+      chris@worthitcandy.com now has `program_id = burn-club` (confirmed on the
+      live database), so that one is done. Re-check the other two.
+      Previously: chris@worthitcandy.com,
+      kelly@kellyyager.com and k_yager@yahoo.com all had `program_id` null,
       so they hit the "not on a program yet" screen. Set them in SQL or through
       admin once the members table is editable there.
 - [ ] **Make Chris's account `role = 'admin'`.** All three real accounts are
@@ -463,8 +466,26 @@ it would be nice. Things that can follow launch belong in the sections below.
       reach members until those apps move too. Acceptable for a tester trial —
       content should be stable while people hammer it — and wrong for live
       members.
-- [ ] **Messaging, groups and challenge teams have no tables yet.** Phase 2 of
-      the schema.
+- [~] **Messaging — client built 2026-10-12, waiting on the SQL.** The member
+      UI was always finished (inbox, threads, bubbles, unread, compose, send);
+      what it lacked was storage, so a sent message went to localStorage and
+      reached admin only in the same browser on the same machine.
+      `supabase/16-messages.sql` adds the table, policies and grants for two
+      thread shapes: the member↔staff DM, and one group chat per PROGRAM so
+      testers can talk to each other (Chris, 2026-10-12: "people often feel
+      more comfortable talking to a peer, than they would Kelly").
+      **Still to do:** Chris runs the migration, then admin has to read the
+      same table — admin is still entirely on browser storage, so until it
+      moves, a member's message lands somewhere nobody is reading. Challenge
+      team chats are deliberately out and are hidden while signed in.
+
+- [ ] **`is_staff()` asks the wrong table — confirmed against the live database
+      2026-10-12.** It reads `members.role`, but 15-staff-accounts.sql made
+      staff their own table. Chris's account has `staff.role = 'admin'` and
+      `members.role = 'member'`, so `is_staff()` returns **false** for him
+      today, and every "staff read all" / "staff write" policy across all 25
+      tables is dead code. Harmless so far only because admin has no backend
+      code at all. `16-messages.sql` widens the function to accept either.
 
 ## Backend progress
 

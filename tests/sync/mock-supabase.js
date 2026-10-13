@@ -7,7 +7,14 @@ function Q(table) { this.t = table; this.f = null; }
 Q.prototype.select = function () { this.op = "select"; return this; };
 Q.prototype.order = function () { return this; };
 Q.prototype.eq = function (col, val) { this.f = [col, val]; return this; };
-Q.prototype.maybeSingle = function () { var r = tbl(this.t)[0] || null; return Promise.resolve({ data: r, error: null }); };
+Q.prototype.limit = function () { return this; };
+Q.prototype.maybeSingle = function () {
+  // After an insert, "the single row" is the one just written — that is what
+  // .insert().select().maybeSingle() means, and what pushMessage reads back.
+  var r = this.op === "insert" ? (this.inserted[this.inserted.length - 1] || null)
+                               : (tbl(this.t)[0] || null);
+  return Promise.resolve({ data: r, error: null });
+};
 Q.prototype.upsert = function (rows, opt) {
   var keys = (opt && opt.onConflict || "").split(",");
   var arr = tbl(this.t);
@@ -17,10 +24,26 @@ Q.prototype.upsert = function (rows, opt) {
   });
   return Promise.resolve({ error: null });
 };
-Q.prototype.insert = function (rows) { var a = tbl(this.t); rows.forEach(function (r) { a.push(Object.assign({}, r)); }); return Promise.resolve({ error: null }); };
+// Returns the query, not a promise, so .insert().select().maybeSingle()
+// chains the way the real client does. Still awaitable on its own: `then`
+// below resolves it. Rows get an id because the real table has an identity
+// column and the client reads it back.
+Q.prototype.insert = function (rows) {
+  var a = tbl(this.t);
+  this.op = "insert";
+  this.inserted = (Array.isArray(rows) ? rows : [rows]).map(function (r) {
+    var row = Object.assign({ id: a.length + 1, created_at: new Date().toISOString() }, r);
+    a.push(row);
+    return row;
+  });
+  return this;
+};
 Q.prototype.delete = function () { this.op = "delete"; return this; };
 Q.prototype.then = function (res) {
   var self = this;
+  if (this.op === "insert") {
+    return Promise.resolve({ data: this.inserted.slice(), error: null }).then(res);
+  }
   if (this.op === "delete") {
     SERVER[this.t] = tbl(this.t).filter(function (r) { return !(self.f && r[self.f[0]] === self.f[1]); });
     return Promise.resolve({ error: null }).then(res);
