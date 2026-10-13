@@ -328,8 +328,11 @@ it would be nice. Things that can follow launch belong in the sections below.
 - [x] **The member app authenticates.** Done 2026-09-19: real Supabase
       sign-in replaced a handler that was `e.preventDefault()` and nothing else.
       Invite-only — open signup is closed and confirmed refused by the server.
-- [ ] **The admin app still doesn't.** Its login is still decorative. Moves
-      when admin goes onto the backend (phase 6).
+- [x] **The admin app authenticates too** — done 2026-10-08, this entry was
+      stale. Real Supabase sign-in for Chris and Kelly, gated on the `staff`
+      table; a member's own password is refused. Note what it does NOT do:
+      admin still reads and writes its own browser storage for content, so
+      signing in gates the screens, not the data.
 - [ ] **`admin/` is on the same public URL as the member app.** Anyone with the
       link has full access to every admin screen today. Harmless with seed
       data; not on import day.
@@ -341,6 +344,31 @@ it would be nice. Things that can follow launch belong in the sections below.
       and **proven closed** by running that exact exploit against a real
       signed-in session: refused. Still to do: sign in as one member and try to
       read another's rows, and the same for storage once videos are there.
+
+### The first-run experience
+
+- [x] **The login screen showed two forms at once** — found and fixed
+      2026-10-12, live on the site until then. `set-password-form` carries the
+      `hidden` attribute, but `[hidden]` is only a UA default of
+      `display: none` and `.login-form { display: flex }` beat it on
+      specificity. So a signed-out member saw the sign-in form with "Welcome to
+      Burn Club. Choose a password to finish setting up your account." stacked
+      underneath it. Every `el.hidden = true` in app.js on one of those forms
+      was a no-op for the same reason, which means arriving from an invite link
+      showed BOTH forms, and the "not on a program yet" screen appeared below a
+      live login form. One rule — `[hidden] { display: none !important; }` —
+      fixes all three.
+- [ ] **Nothing is asked of a new member.** Setting a password drops them
+      straight into the app. No name confirmation, no goal, no units, no
+      height/weight, no notification permission. The Health Profile exists but
+      is buried at Profile → My Health Profile and nothing points at it, so in
+      practice it will be empty for every tester. Decide before the trial
+      whether that is deliberate (less friction) or a gap.
+- [ ] **Tour copy is placeholder**, five slides, editable at Admin → Settings →
+      Member-Facing Copy. It is the first thing a member reads.
+- [ ] **No invite button in admin.** Admin's Members section creates a member
+      record; the auth invite itself is sent by hand from the Supabase
+      dashboard. Workable for 6–10 testers, not past that.
 
 ### Content
 
@@ -658,6 +686,40 @@ syncs them.
   gets asked again. Worth doing in one pass rather than one flag at a time.
 
 ## Agreed, not yet built
+
+- **Member management on the STAFF PHONE APP** (Chris, 2026-10-12: "i want to
+  see it on the phone staff site as well so we can make these changes when we
+  are on the go"). Open a member, change their program, set or change their
+  program start date, and make account changes from a phone. Explicitly **not**
+  for the tester trial — Chris raised it so it would be written down, not
+  scheduled.
+
+  Build it after admin's members go onto the backend, not before. The desktop
+  member modal already has every field this needs — name, email, program,
+  access variant, start date, status, member-since, badge, internal notes, plus
+  read-only habits and health profile — but `saveMember()` mutates the
+  in-memory `MEMBERS` array from `admin/data.js` and nothing else. No
+  localStorage, no database: a refresh loses it, on desktop as much as on a
+  phone. Building the phone screen first just adds a second screen that
+  forgets.
+
+  The database half is already done and waiting. `02-policies.sql` ships
+  `"staff read all members"` and `"staff manage members"`, both `using
+  (is_staff())`. **One catch to check first:** `is_staff()` reads
+  `members.role in ('staff','admin')` — the members table — *not* the `staff`
+  table from `15-staff-accounts.sql`, which only gates the admin app's UI. Per
+  this file's own checklist all three real accounts are still `role = 'member'`,
+  so nothing passes `is_staff()` yet. That is one UPDATE away, and it unblocks
+  the whole permission layer.
+
+  Three things about the staff app itself that will need handling whenever this
+  is picked up — it has had no attention since 2026-08-06:
+  - **No sign-in at all.** It opens straight into Messages, on the same public
+    URL. Admin got real auth on 2026-10-08; this did not.
+  - **No persistence, not even localStorage** — its own header says
+    "everything here is in-memory only".
+  - **It predates the palette.** It loads only its own `style.css`, never
+    `palette.css`, so none of Kelly's 2026-10-01 colours reach it.
 
 - **Per-slot cues are in; a block-level note is not** (2026-10-09). Chris asked
   how to give an exercise an instruction inside one workout — his case being an

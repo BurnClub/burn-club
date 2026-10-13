@@ -380,6 +380,18 @@ h1, h2, h3 {
   filter: drop-shadow(0 12px 20px rgba(120,140,227,0.25));
   margin: auto 0;
 }
+/* The `hidden` attribute has to beat the display rules below it (2026-10-12).
+   `[hidden]` is a UA default of `display: none`, so any class that sets
+   `display` wins on specificity — and .login-form sets `display: flex`. The
+   result was visible on the live site: a signed-out member saw the sign-in
+   form AND "Welcome to Burn Club. Choose a password to finish setting up your
+   account." stacked under it, because `set-password-form` carries `hidden` and
+   was being drawn anyway. Every `el.hidden = true` in app.js on one of these
+   forms was a no-op too, so arriving from an invite link showed both forms,
+   and the "not on a program yet" screen appeared below a live login form.
+   Global and !important on purpose: `hidden` means hidden, everywhere. */
+[hidden] { display: none !important; }
+
 .login-form {
   width: 100%;
   display: flex;
