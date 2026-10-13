@@ -3328,9 +3328,20 @@ function loadHealthProfiles() {
   }
 }
 
-const HEALTH_PROFILE_SEX_LABELS = { female: "Female", male: "Male", "prefer-not-to-say": "Prefer not to say" };
-const HEALTH_PROFILE_ACTIVITY_LABELS = { sedentary: "Sedentary", "lightly-active": "Lightly Active", active: "Active", "very-active": "Very Active" };
-const HEALTH_PROFILE_GOAL_LABELS = { "lose-weight": "Lose Weight", "build-muscle": "Build Muscle", "improve-endurance": "Improve Endurance", "general-fitness": "General Fitness", other: "Other" };
+// Read from APP_SETTINGS rather than written out here (2026-10-12). These
+// were a second copy of the member app's <option> lists, so renaming an option
+// in one place left this readout showing the old wording — and now that the
+// lists are editable from Settings there would have been no way to keep them
+// in step at all. A stored id with no matching option still reads as itself.
+function healthProfileLabel(group, id) {
+  if (!id) return "";
+  const match = (APP_SETTINGS.healthProfileOptions[group] || []).find((o) => o.id === id);
+  if (match) return match.label;
+  // Removed since the member answered: its label went with it, so read the id
+  // back as words rather than printing "prefer-not-to-say" at Chris.
+  return String(id).replace(/^opt-/, "").split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
 
 function renderHealthProfileReadout(memberId) {
   const profile = loadHealthProfiles()[memberId];
@@ -3339,9 +3350,9 @@ function renderHealthProfileReadout(memberId) {
   if (profile.height) lines.push(`Height: ${profile.height}`);
   if (profile.weight) lines.push(`Weight: ${profile.weight} lbs`);
   if (profile.dob) lines.push(`DOB: ${profile.dob}`);
-  if (profile.sex) lines.push(`Sex: ${HEALTH_PROFILE_SEX_LABELS[profile.sex] || profile.sex}`);
-  if (profile.activityLevel) lines.push(`Activity Level: ${HEALTH_PROFILE_ACTIVITY_LABELS[profile.activityLevel] || profile.activityLevel}`);
-  if (profile.goal) lines.push(`Primary Goal: ${HEALTH_PROFILE_GOAL_LABELS[profile.goal] || profile.goal}`);
+  if (profile.sex) lines.push(`Sex: ${healthProfileLabel("sex", profile.sex)}`);
+  if (profile.activityLevel) lines.push(`Activity Level: ${healthProfileLabel("activityLevel", profile.activityLevel)}`);
+  if (profile.goal) lines.push(`Primary Goal: ${healthProfileLabel("goal", profile.goal)}`);
   if (profile.targetWeight) lines.push(`Target Weight: ${profile.targetWeight} lbs`);
   if (profile.injuries) lines.push(`Injuries/Limitations: ${profile.injuries}`);
   if (lines.length === 0) return "No health profile submitted yet.";
@@ -5320,6 +5331,21 @@ document.addEventListener("click", (e) => {
     APP_SETTINGS.habits.splice(i, 1);
     renderAppSettingPanel();
   }
+  // Both rebuild from the DOM first, so edits typed into the other two groups
+  // survive adding or removing a row in this one.
+  if (action === "add-hp-option") {
+    APP_SETTINGS.healthProfileOptions = readHealthProfileOptions();
+    APP_SETTINGS.healthProfileOptions[el.dataset.hpGroup].push({ id: "", label: "" });
+    renderAppSettingPanel();
+  }
+  if (action === "remove-hp-option") {
+    const wrap = el.closest("[data-hp-group]");
+    const rows = [...wrap.querySelectorAll(".settings-option-row")];
+    const i = rows.indexOf(el.closest(".settings-option-row"));
+    APP_SETTINGS.healthProfileOptions = readHealthProfileOptions();
+    APP_SETTINGS.healthProfileOptions[wrap.dataset.hpGroup].splice(i, 1);
+    renderAppSettingPanel();
+  }
   if (action === "open-admin-thread") {
     openAdminThread(el.dataset.conversationId);
   }
@@ -6298,6 +6324,26 @@ const APP_SETTING_PANELS = {
     },
   },
 
+  healthProfileOptions: {
+    eyebrow: "Member Experience",
+    title: "Health Profile Options",
+    desc: "The three dropdowns on a member's Health Profile. Rewording a label is safe and shows up for everyone immediately. Removing an option does not change members who already picked it — their answer stays and still reads correctly.",
+    render: () => {
+      const o = APP_SETTINGS.healthProfileOptions;
+      const group = (key, title, help) => `
+        <h3 class="settings-subhead">${title}</h3>
+        <p class="settings-field-help">${help}</p>
+        <div class="settings-option-rows" data-hp-group="${key}">${o[key].map(hpOptionRowHtml).join("")}</div>
+        <button class="btn-ghost-lg small" data-action="add-hp-option" data-hp-group="${key}">+ Add an option</button>`;
+      return [
+        group("sex", "Sex", "Shown in the order listed here."),
+        group("activityLevel", "Activity Level", "Shown in the order listed here."),
+        group("goal", "Primary Goal", "Shown in the order listed here."),
+      ].join("");
+    },
+    read: () => ({ healthProfileOptions: readHealthProfileOptions() }),
+  },
+
   habits: {
     eyebrow: "Member Experience",
     title: "Default Habits",
@@ -6409,6 +6455,43 @@ const HABIT_AUTO_SOURCES = [
   { value: "activeMinutes", label: "Active minutes (from wearable)" },
   { value: "calories", label: "Calories (from wearable)" },
 ];
+
+// An option's id is what sits on every member profile that picked it, so it is
+// shown read-only and derived from the label only when the row is brand new.
+// Letting the id follow a reworded label would orphan every answer already
+// stored under the old one.
+function hpOptionRowHtml(o) {
+  return `
+    <div class="settings-note-card settings-option-row" data-option-id="${esc(o.id || "")}">
+      <div class="settings-note-head">
+        <span class="settings-note-type">${o.id ? esc(o.id) : "New option"}</span>
+        <button class="btn-ghost-lg small btn-danger" data-action="remove-hp-option">Remove</button>
+      </div>
+      <label class="modal-field">Label members see
+        <input type="text" data-option-label value="${esc(o.label || "")}" />
+      </label>
+    </div>`;
+}
+
+function readHealthProfileOptions() {
+  const out = {};
+  document.querySelectorAll("#settings-panel-body [data-hp-group]").forEach((wrap) => {
+    if (!wrap.classList.contains("settings-option-rows")) return;
+    const rows = [];
+    wrap.querySelectorAll(".settings-option-row").forEach((row) => {
+      const label = row.querySelector("[data-option-label]").value.trim();
+      if (!label) return;                       // a blank label is a deleted row
+      rows.push({ id: row.dataset.optionId || slugify("opt", label), label });
+    });
+    out[wrap.dataset.hpGroup] = rows;
+  });
+  // A group emptied completely would leave the member a dropdown with nothing
+  // in it and a required field they cannot fill, so the defaults stand back up.
+  ["sex", "activityLevel", "goal"].forEach((k) => {
+    if (!out[k] || !out[k].length) out[k] = APP_SETTINGS_DEFAULTS.healthProfileOptions[k];
+  });
+  return out;
+}
 
 function habitRowHtml(h) {
   return `

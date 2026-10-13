@@ -1211,6 +1211,36 @@ const APP_SETTINGS_DEFAULTS = {
       note: "Ask about repeating this program, or what to move on to next.",
     },
   },
+  // The three dropdowns on a member's Health Profile (2026-10-12). Lists, not
+  // hardcoded <option> markup, because Chris asked to be able to change them
+  // from Settings — and because the same three sets were written out twice,
+  // once as options in the member app's HTML and once as label maps in admin's
+  // member modal, which is two places to forget.
+  //
+  // `id` is what gets stored on the member's profile and must not change once
+  // anyone has saved one; `label` is what they read and is safe to reword. A
+  // removed option still shows on a member who already picked it, since the
+  // readout falls back to the stored id.
+  healthProfileOptions: {
+    sex: [
+      { id: "female", label: "Female" },
+      { id: "male", label: "Male" },
+      { id: "prefer-not-to-say", label: "Prefer not to say" },
+    ],
+    activityLevel: [
+      { id: "sedentary", label: "Sedentary" },
+      { id: "lightly-active", label: "Lightly Active" },
+      { id: "active", label: "Active" },
+      { id: "very-active", label: "Very Active" },
+    ],
+    goal: [
+      { id: "lose-weight", label: "Lose Weight" },
+      { id: "build-muscle", label: "Build Muscle" },
+      { id: "improve-endurance", label: "Improve Endurance" },
+      { id: "general-fitness", label: "General Fitness" },
+      { id: "other", label: "Other" },
+    ],
+  },
   // The menu members choose from. "Other (custom)" is appended in code rather
   // than listed here — it's the escape hatch, not a preset.
   habitPresets: [

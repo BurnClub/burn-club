@@ -372,6 +372,14 @@ it would be nice. Things that can follow launch belong in the sections below.
       goal. Target Weight and Injuries are excluded because the form itself
       labels them optional, and a badge that can never be cleared is worse than
       no badge.
+      The three dropdowns (Sex, Activity Level, Primary Goal) are now editable
+      at Admin → Settings → Health Profile Options rather than written into the
+      member app's HTML (2026-10-12, Chris). That also removed a second copy of
+      the same three lists, which admin's member readout had been holding as
+      its own label maps. An option's **id** is shown read-only and never
+      follows a reworded label, because the id is what sits on every member
+      profile that picked it; and an option removed after someone answered
+      still shows on their form rather than silently blanking.
       **Still open:** nothing asks for a notification permission anywhere, and
       the profile is the only thing flagged — if anything else should carry a
       badge later, `renderHealthProfileFlag` is the pattern to copy.

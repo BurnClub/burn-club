@@ -2650,14 +2650,44 @@ function renderHealthProfileFlag() {
   if (dot) dot.hidden = complete;
 }
 
+// The three dropdowns are filled from APP_SETTINGS rather than written into
+// the markup (2026-10-12), so Chris can change them at Admin → Settings →
+// Health Profile Options. Rebuilt on every open so an edit made in admin shows
+// up without a reload, the same way the rest of the settings bridge works.
+//
+// A value the member saved under an option that has since been removed is kept
+// rather than silently cleared: it is appended as its own option, so opening
+// the form doesn't quietly rewrite their answer to blank.
+// The label that went with a removed option is gone with it, so the id is all
+// there is to go on — "sedentary" reads like a bug next to "Lightly Active",
+// and this at least reads like a word. The `opt-` prefix is the one auto
+// ids carry (see slugify in admin), and it means nothing to a member.
+function labelFromOptionId(id) {
+  return String(id).replace(/^opt-/, "").split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+function fillHealthProfileSelect(elId, options, savedValue) {
+  const el = document.getElementById(elId);
+  const known = options.some((o) => o.id === savedValue);
+  el.innerHTML = [`<option value="">Select…</option>`]
+    .concat(options.map((o) => `<option value="${esc(o.id)}">${esc(o.label)}</option>`))
+    .concat(savedValue && !known
+      ? [`<option value="${esc(savedValue)}">${esc(labelFromOptionId(savedValue))}</option>`]
+      : [])
+    .join("");
+  el.value = savedValue || "";
+}
+
 function openHealthProfileScreen() {
   const saved = loadHealthProfiles()[CURRENT_MEMBER.id] || {};
+  const opts = APP_SETTINGS.healthProfileOptions;
+  fillHealthProfileSelect("hp-sex", opts.sex, saved.sex);
+  fillHealthProfileSelect("hp-activity", opts.activityLevel, saved.activityLevel);
+  fillHealthProfileSelect("hp-goal", opts.goal, saved.goal);
   document.getElementById("hp-height").value = saved.height || "";
   document.getElementById("hp-weight").value = saved.weight || "";
   document.getElementById("hp-dob").value = saved.dob || "";
-  document.getElementById("hp-sex").value = saved.sex || "";
-  document.getElementById("hp-activity").value = saved.activityLevel || "";
-  document.getElementById("hp-goal").value = saved.goal || "";
   document.getElementById("hp-target-weight").value = saved.targetWeight || "";
   document.getElementById("hp-injuries").value = saved.injuries || "";
   document.getElementById("hp-saved-note").style.display = "none";
