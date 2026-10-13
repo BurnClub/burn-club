@@ -2967,6 +2967,35 @@ h1, h2, h3 {
   color: white;
 }
 .settings-row span:last-child { color: white; font-size: 16px; }
+/* The chevron used to be the row's only right-hand child; the badge sits
+   beside it in a wrapper so `span:last-child` above still means the chevron. */
+.settings-row-right { display: flex; align-items: center; gap: 10px; }
+.settings-badge {
+  background: var(--danger);
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+/* Beside the label of each required health-profile field still empty
+   (2026-10-12). It points at the field instead of naming it in a list at the
+   top, and goes the moment that field is saved. The two optional fields never
+   get one. */
+.field-flag {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin-left: 5px;
+  color: var(--danger);
+}
+.field-flag svg {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+  stroke: var(--card-white);
+  stroke-width: 1.6;
+}
 
 /* ---------- BOTTOM NAV ---------- */
 /* Plain white bar, minimalist icons (Chris's 2026-08-06 follow-ups):
@@ -3005,7 +3034,33 @@ h1, h2, h3 {
   font-family: var(--font-body);
 }
 .nav-btn span:not(.nav-icon) { display: none; }
-.nav-icon { display: flex; }
+.nav-icon { display: flex; position: relative; }
+/* The unfinished-health-profile dot (2026-10-12). On the nav rather than only
+   inside Profile, because a member who never opens Profile would otherwise
+   never learn there is anything to finish — which is the whole point, given
+   nothing in onboarding asks. A bare dot, no number: the nav says "go look",
+   the row inside says what is actually missing.
+   The ring is --card-white, the nav bar's own background, so the dot reads as
+   sitting on top of the icon rather than merging into it — and it follows the
+   bar into dark mode instead of staying a white speck. */
+/* Three classes deliberately: the nav hides its text labels with
+   `.nav-btn span:not(.nav-icon)` (0,2,1), and the dot is a span inside the
+   icon, so it matched that and never drew. This outranks it. `hidden` still
+   wins over both, since the [hidden] rule at the top of this file is
+   !important. */
+.nav-btn .nav-icon .nav-dot {
+  display: block;
+}
+.nav-dot {
+  position: absolute;
+  top: -2px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--danger);
+  border: 2px solid var(--card-white);
+}
 .nav-icon svg { width: 23px; height: 23px; display: block; }
 .nav-btn.active { color: var(--accent-text); }
 

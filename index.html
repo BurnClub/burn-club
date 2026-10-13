@@ -848,7 +848,12 @@
           <button class="settings-row" id="open-notifications-btn"><span>Notifications</span><span>›</span></button>
           <button class="settings-row" id="open-sound-settings-btn"><span>Workout Sounds</span><span>›</span></button>
           <button class="settings-row" id="open-checkin-settings-btn"><span>Daily Check-In</span><span>›</span></button>
-          <button class="settings-row" id="open-health-profile-btn"><span>My Health Profile</span><span>›</span></button>
+          <!-- The badge is the only thing telling a member their health profile
+               is unfinished — nothing in onboarding asks for it (2026-10-12,
+               Chris: "i don't mind if we leave it up to the user to fill it
+               out on their own, we just need to make sure they know that it is
+               'incomplete'"). -->
+          <button class="settings-row" id="open-health-profile-btn"><span>My Health Profile</span><span class="settings-row-right"><span class="settings-badge" id="health-profile-badge" hidden>Incomplete</span><span>›</span></span></button>
           <button class="settings-row" id="open-invite-btn"><span>Invite a Friend</span><span>›</span></button>
           <button class="settings-row" id="open-support-btn"><span>Help &amp; Support</span><span>›</span></button>
           <button class="settings-row danger" id="logout-btn"><span>Log Out</span><span>›</span></button>
@@ -918,19 +923,19 @@
           <h2 class="cardio-log-title">My Health Profile</h2>
 
           <label class="field">
-            <span>Height</span>
+            <span>Height<span class="field-flag" data-hp-flag="height" hidden aria-label="Not filled in yet" title="Not filled in yet"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M8 4.2v4.4" stroke-linecap="round"/><circle cx="8" cy="11.4" r="1"/></svg></span></span>
             <input type="text" id="hp-height" placeholder="e.g. 5&#39;9&quot;" autocomplete="off" />
           </label>
           <label class="field">
-            <span>Weight (lbs)</span>
+            <span>Weight (lbs)<span class="field-flag" data-hp-flag="weight" hidden aria-label="Not filled in yet" title="Not filled in yet"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M8 4.2v4.4" stroke-linecap="round"/><circle cx="8" cy="11.4" r="1"/></svg></span></span>
             <input type="number" id="hp-weight" min="0" step="1" placeholder="e.g. 165" inputmode="numeric" />
           </label>
           <label class="field">
-            <span>Date of Birth</span>
+            <span>Date of Birth<span class="field-flag" data-hp-flag="dob" hidden aria-label="Not filled in yet" title="Not filled in yet"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M8 4.2v4.4" stroke-linecap="round"/><circle cx="8" cy="11.4" r="1"/></svg></span></span>
             <input type="date" id="hp-dob" />
           </label>
           <label class="field">
-            <span>Sex</span>
+            <span>Sex<span class="field-flag" data-hp-flag="sex" hidden aria-label="Not filled in yet" title="Not filled in yet"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M8 4.2v4.4" stroke-linecap="round"/><circle cx="8" cy="11.4" r="1"/></svg></span></span>
             <select id="hp-sex">
               <option value="">Select…</option>
               <option value="female">Female</option>
@@ -939,7 +944,7 @@
             </select>
           </label>
           <label class="field">
-            <span>Activity Level</span>
+            <span>Activity Level<span class="field-flag" data-hp-flag="activityLevel" hidden aria-label="Not filled in yet" title="Not filled in yet"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M8 4.2v4.4" stroke-linecap="round"/><circle cx="8" cy="11.4" r="1"/></svg></span></span>
             <select id="hp-activity">
               <option value="">Select…</option>
               <option value="sedentary">Sedentary</option>
@@ -949,7 +954,7 @@
             </select>
           </label>
           <label class="field">
-            <span>Primary Goal</span>
+            <span>Primary Goal<span class="field-flag" data-hp-flag="goal" hidden aria-label="Not filled in yet" title="Not filled in yet"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M8 4.2v4.4" stroke-linecap="round"/><circle cx="8" cy="11.4" r="1"/></svg></span></span>
             <select id="hp-goal">
               <option value="">Select…</option>
               <option value="lose-weight">Lose Weight</option>
@@ -1013,8 +1018,8 @@
         <button class="nav-btn" data-tab-target="tab-progress" id="nav-progress-btn">
           <span class="nav-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span><span>Progress</span>
         </button>
-        <button class="nav-btn" data-tab-target="tab-profile">
-          <span class="nav-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span><span>Profile</span>
+        <button class="nav-btn" data-tab-target="tab-profile" id="nav-profile-btn">
+          <span class="nav-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span class="nav-dot" id="profile-nav-dot" hidden></span></span><span>Profile</span>
         </button>
       </nav>
 

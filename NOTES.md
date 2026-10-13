@@ -358,12 +358,23 @@ it would be nice. Things that can follow launch belong in the sections below.
       showed BOTH forms, and the "not on a program yet" screen appeared below a
       live login form. One rule — `[hidden] { display: none !important; }` —
       fixes all three.
-- [ ] **Nothing is asked of a new member.** Setting a password drops them
-      straight into the app. No name confirmation, no goal, no units, no
-      height/weight, no notification permission. The Health Profile exists but
-      is buried at Profile → My Health Profile and nothing points at it, so in
-      practice it will be empty for every tester. Decide before the trial
-      whether that is deliberate (less friction) or a gap.
+- [x] **Nothing is asked of a new member — settled 2026-10-12.** Setting a
+      password still drops them straight into the app: no goal, no units, no
+      height/weight, no notification permission. Chris's call is to leave the
+      filling-in to the member and just make the gap visible ("we just need to
+      make sure they know that it is 'incomplete' ... a red icon of sorts in
+      their profile"). So: a red dot on the Profile tab, a red "N of 6 missing"
+      badge on the My Health Profile row, and a small flag beside each required
+      field in the form that is still empty — pointing at the field rather than
+      naming it in a list at the top (Chris, same day). Each flag goes when
+      that field is saved; the dot and badge go when the last one is.
+      Required = height, weight, date of birth, sex, activity level, primary
+      goal. Target Weight and Injuries are excluded because the form itself
+      labels them optional, and a badge that can never be cleared is worse than
+      no badge.
+      **Still open:** nothing asks for a notification permission anywhere, and
+      the profile is the only thing flagged — if anything else should carry a
+      badge later, `renderHealthProfileFlag` is the pattern to copy.
 - [ ] **Tour copy is placeholder**, five slides, editable at Admin → Settings →
       Member-Facing Copy. It is the first thing a member reads.
 - [ ] **No invite button in admin.** Admin's Members section creates a member

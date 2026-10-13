@@ -2598,6 +2598,58 @@ function saveHealthProfile(memberId, data) {
   queueSync("healthProfile");
 }
 
+// ---------------- Health profile completeness (2026-10-12) ----------------
+// Nothing in onboarding asks a member for any of this: setting a password
+// drops them straight into the app, and the form is five taps deep at
+// Profile → My Health Profile with nothing pointing at it. Chris's call is to
+// leave the filling-in to them but to say plainly that it is unfinished
+// ("a red icon of sorts in their profile letting them know something is
+// missing"), so this is the only thing that will ever prompt them.
+//
+// Target Weight and Injuries are excluded — both are labelled optional on the
+// form itself, and a badge that can never be cleared is worse than no badge.
+const HEALTH_PROFILE_REQUIRED = [
+  { key: "height", label: "Height" },
+  { key: "weight", label: "Weight" },
+  { key: "dob", label: "Date of birth" },
+  { key: "sex", label: "Sex" },
+  { key: "activityLevel", label: "Activity level" },
+  { key: "goal", label: "Primary goal" },
+];
+
+function healthProfileStatus() {
+  const saved = loadHealthProfiles()[CURRENT_MEMBER.id] || {};
+  const missing = HEALTH_PROFILE_REQUIRED.filter((f) => !String(saved[f.key] || "").trim());
+  return { missing, complete: missing.length === 0, total: HEALTH_PROFILE_REQUIRED.length };
+}
+
+// Two places, because they answer different questions: the badge on the row
+// says WHAT is unfinished, and the dot on the nav says there is something to
+// go and look at — without it a member who never opens Profile never finds
+// out.
+// A flag beside each required field that is still empty, rather than a list of
+// field names at the top of the form (2026-10-12, Chris: "just add a small
+// icon next to the required filed that needs filled in that disappears once
+// saved"). It points at the thing to fix instead of describing it, and the
+// optional two never carry one.
+function renderHealthProfileFieldFlags() {
+  const saved = loadHealthProfiles()[CURRENT_MEMBER.id] || {};
+  document.querySelectorAll("[data-hp-flag]").forEach((el) => {
+    el.hidden = !!String(saved[el.dataset.hpFlag] || "").trim();
+  });
+}
+
+function renderHealthProfileFlag() {
+  const { missing, complete, total } = healthProfileStatus();
+  const badge = document.getElementById("health-profile-badge");
+  if (badge) {
+    badge.hidden = complete;
+    badge.textContent = complete ? "" : `${missing.length} of ${total} missing`;
+  }
+  const dot = document.getElementById("profile-nav-dot");
+  if (dot) dot.hidden = complete;
+}
+
 function openHealthProfileScreen() {
   const saved = loadHealthProfiles()[CURRENT_MEMBER.id] || {};
   document.getElementById("hp-height").value = saved.height || "";
@@ -2609,6 +2661,7 @@ function openHealthProfileScreen() {
   document.getElementById("hp-target-weight").value = saved.targetWeight || "";
   document.getElementById("hp-injuries").value = saved.injuries || "";
   document.getElementById("hp-saved-note").style.display = "none";
+  renderHealthProfileFieldFlags();
   document.getElementById("health-profile-overlay").classList.add("visible");
 }
 
@@ -2629,6 +2682,10 @@ function saveHealthProfileForm() {
   };
   saveHealthProfile(CURRENT_MEMBER.id, data);
   document.getElementById("hp-saved-note").style.display = "block";
+  // Both have to answer to what was just saved, or a member who fills the form
+  // in still sees the flags and "Incomplete" behind it.
+  renderHealthProfileFlag();
+  renderHealthProfileFieldFlags();
 }
 
 // Notifications — device-local prefs only (no member-facing product would
@@ -5751,6 +5808,9 @@ function init() {
   renderCheckinSection();
   renderPersonalBests();
   renderCheckinAffordances();
+  // In init() rather than wired once: switchMemberProfile() re-runs init(),
+  // and the badge belongs to the member, not the page.
+  renderHealthProfileFlag();
 }
 
 // One-time wiring for static elements that exist from page load and are
