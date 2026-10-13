@@ -4789,12 +4789,32 @@ async function loadStaff(user, opts) {
   return { staff: data };
 }
 
+// Polled rather than pushed. Supabase Realtime is the right answer once there
+// are more than a handful of members; for a tester trial a fetch on entry and
+// one a minute is the same result with none of the connection handling, and it
+// stops when the tab is in the background so an admin left open overnight is
+// not a request every minute until morning.
+let adminInboxPollId = null;
+
+function startAdminInboxPoll() {
+  if (adminInboxPollId || !adminMessagingLive()) return;
+  adminInboxPollId = setInterval(() => {
+    if (document.visibilityState === "visible") loadServerMessages();
+  }, 60000);
+}
+
 function enterAdmin() {
   document.getElementById("admin-login").style.display = "none";
   document.getElementById("shell").classList.add("visible");
   const who = document.getElementById("admin-staff-name");
   if (who && ADMIN_STAFF) who.textContent = ADMIN_STAFF.name;
   showView("view-dashboard");
+  // Members first: the DM list is built from them, so loading messages before
+  // them would render an inbox of threads with no names on it.
+  loadRealMembers()
+    .then(loadServerMessages)
+    .then(startAdminInboxPoll)
+    .catch((e) => console.warn("[admin] inbox:", e));
 }
 
 async function adminSignOut() {
@@ -5540,8 +5560,95 @@ function memberById(id) {
   return MEMBERS.find((m) => m.id === id);
 }
 
+// ---------------- The inbox, on the real table (2026-10-12) ----------------
+// Admin's messaging was the member app's problem in a mirror: a finished UI
+// over localStorage, which only ever showed a message if the member app
+// happened to be open in the same browser. Everything below moves it onto the
+// `messages` table from 16-messages.sql.
+//
+// The identity mismatch is the part that bites. Admin builds DM threads from
+// the SEEDED member list, so a thread is "dm-chris-v" — while a real member's
+// thread is "dm-<auth uuid>". The two never meet. So when staff are signed in,
+// the DM list is rebuilt from the real members table, which staff can now read
+// because is_staff() finally answers true.
+//
+// Admin's Members section is still seeded, deliberately: this reads the real
+// table only for the conversation list, which is the smallest slice that makes
+// the inbox true. Moving the rest of admin is its own job.
+let REAL_MEMBERS = [];
+let SERVER_MESSAGES = [];
+
+function adminMessagingLive() {
+  return typeof SB !== "undefined" && !!SB && !!ADMIN_STAFF;
+}
+
+function realMemberName(m) {
+  return [m.first_name, m.last_name].filter(Boolean).join(" ") || m.email || "Member";
+}
+
+async function loadRealMembers() {
+  if (!adminMessagingLive()) return;
+  const { data, error } = await SB.from("members")
+    .select("id,email,first_name,last_name,program_id").order("first_name");
+  if (error) { console.warn("[admin] members:", error.message); return; }
+  REAL_MEMBERS = data || [];
+}
+
+async function loadServerMessages() {
+  if (!adminMessagingLive()) return;
+  // No filter: staff policies return every thread. If this ever comes back
+  // with something it should not, the bug is in the policy, and a filter here
+  // would only have hidden it.
+  const { data, error } = await SB.from("messages")
+    .select("*").order("created_at", { ascending: true }).limit(1000);
+  if (error) { console.warn("[admin] messages:", error.message); return; }
+  SERVER_MESSAGES = data || [];
+  MESSAGES.length = 0;
+  SERVER_MESSAGES.forEach((r) => MESSAGES.push({
+    id: "srv-" + r.id,
+    serverId: r.id,
+    conversationId: r.conversation_id,
+    senderId: r.sender_id,
+    senderName: r.sender_name,
+    isStaff: !!r.is_staff,
+    text: r.body,
+    time: adminMessageTime(r.created_at),
+    // SHARED across staff, which is the whole point: Kelly opening a thread
+    // clears it from Chris's inbox too (Chris, 2026-10-08).
+    read: !!r.staff_read_at,
+  }));
+  rebuildConversations();
+  renderAdminConversationList();
+  renderDashboardUnread();
+  if (selectedConversationId) renderAdminThreadMessages();
+}
+
+function adminMessageTime(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const mins = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return mins + "m ago";
+  if (mins < 1440) return Math.floor(mins / 60) + "h ago";
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// Rebuilt in place rather than reassigned: CONVERSATIONS is a const in
+// data.js, and half of admin holds a reference to it.
+function rebuildConversations() {
+  if (!adminMessagingLive() || !REAL_MEMBERS.length) return;
+  const groups = CONVERSATIONS.filter((c) => c.type === "group");
+  const dms = REAL_MEMBERS.map((m) => ({
+    id: "dm-" + m.id, type: "dm", memberId: m.id, realName: realMemberName(m),
+  }));
+  CONVERSATIONS.length = 0;
+  dms.concat(groups).forEach((c) => CONVERSATIONS.push(c));
+}
+
 function conversationDisplayName(conv) {
   if (conv.type === "group") return conv.name;
+  // A real member carries its own name; a seeded one is looked up as before.
+  if (conv.realName) return conv.realName;
   const member = memberById(conv.memberId);
   return member ? member.name : "Unknown Member";
 }
@@ -5636,6 +5743,7 @@ function openAdminThread(conversationId) {
   conversationMessages(conversationId).forEach((m) => {
     if (!m.isStaff) m.read = true;
   });
+  markThreadReadForStaff(conversationId);
 
   document.getElementById("admin-thread-title").textContent = conversationDisplayName(conv);
   document.getElementById("admin-thread-empty").style.display = "none";
@@ -5658,17 +5766,89 @@ function broadcastMessage(msg) {
   localStorage.setItem(LIVE_MESSAGES_KEY, JSON.stringify(live));
 }
 
-function sendAdminReply(text) {
-  if (!selectedConversationId || !text.trim()) return;
-  broadcastMessage({
-    id: "msg-" + Date.now(),
-    conversationId: selectedConversationId,
-    senderId: "staff",
-    senderName: "Staff",
-    isStaff: true,
-    text: text.trim(),
-    time: "Just now",
-    read: true,
+// Writes the SHARED read state. One timestamp on the row, so a thread Kelly
+// opens stops being unread for Chris too — which is what a shared inbox means,
+// and what Chris asked for before any of this was built.
+async function markThreadReadForStaff(conversationId) {
+  if (!adminMessagingLive()) return;
+  const unread = SERVER_MESSAGES.filter((r) =>
+    r.conversation_id === conversationId && !r.is_staff && !r.staff_read_at);
+  if (!unread.length) return;
+  const now = new Date().toISOString();
+  const { error } = await SB.from("messages")
+    .update({ staff_read_at: now }).in("id", unread.map((r) => r.id));
+  if (error) { console.warn("[admin] mark read:", error.message); return; }
+  unread.forEach((r) => { r.staff_read_at = now; });
+  renderAdminConversationList();
+  renderDashboardUnread();
+}
+
+// What a thread id needs for RLS to place the row. Same derivation the member
+// app does, from the id itself.
+function adminConversationTarget(conversationId) {
+  if (conversationId.startsWith("dm-")) {
+    return { kind: "dm", memberId: conversationId.slice(3), programId: null };
+  }
+  if (conversationId.startsWith("group-")) {
+    const rest = conversationId.slice("group-".length);
+    // Custom groups and team chats have no table; only program groups do.
+    if (rest.startsWith("custom-") || rest.startsWith("team-")) return null;
+    return { kind: "group", memberId: null, programId: rest };
+  }
+  return null;
+}
+
+async function sendAdminReply(text) {
+  const body = text.trim();
+  if (!selectedConversationId || !body) return;
+
+  if (!adminMessagingLive()) {
+    broadcastMessage({
+      id: "msg-" + Date.now(),
+      conversationId: selectedConversationId,
+      senderId: "staff",
+      senderName: "Staff",
+      isStaff: true,
+      text: body,
+      time: "Just now",
+      read: true,
+    });
+    renderAdminThreadMessages();
+    renderAdminConversationList();
+    return;
+  }
+
+  const target = adminConversationTarget(selectedConversationId);
+  if (!target) {
+    alert("This thread isn't on the messaging backend yet — only member DMs and program group chats are.");
+    return;
+  }
+
+  const { data: { user } } = await SB.auth.getUser();
+  const { data, error } = await SB.from("messages").insert({
+    conversation_id: selectedConversationId,
+    kind: target.kind,
+    member_id: target.kind === "dm" ? target.memberId : null,
+    program_id: target.kind === "group" ? target.programId : null,
+    sender_id: user.id,
+    // The coach's own name, not the word "Staff": a member reading a reply
+    // should see who answered.
+    sender_name: ADMIN_STAFF ? ADMIN_STAFF.name : "Staff",
+    is_staff: true,
+    body,
+    // Staff have read what staff just wrote.
+    staff_read_at: new Date().toISOString(),
+  }).select().maybeSingle();
+
+  if (error) {
+    alert("Message not sent: " + error.message);
+    return;
+  }
+  SERVER_MESSAGES.push(data);
+  MESSAGES.push({
+    id: "srv-" + data.id, serverId: data.id, conversationId: data.conversation_id,
+    senderId: data.sender_id, senderName: data.sender_name, isStaff: true,
+    text: data.body, time: "Just now", read: true,
   });
   renderAdminThreadMessages();
   renderAdminConversationList();
