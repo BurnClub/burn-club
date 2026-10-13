@@ -6461,7 +6461,34 @@ function applyAuthMemberToProfile() {
 // if they came from an emailed link, the app if they already have a session,
 // otherwise sign-in. Runs before init() so a signed-in member never sees the
 // login screen flash past.
+// The two demo entries run the app on data.js's seed and never touch Supabase,
+// which is what makes them useful for a walkthrough and unacceptable once real
+// members exist: a tester who taps one is looking at someone else's fake
+// workouts and logging into nothing (2026-10-12, before the tester trial).
+//
+// Hidden rather than deleted, because they are still how this app gets driven
+// for a demo or a quick check without burning a real account — and deleting
+// them would mean rebuilding them the first time Chris wants to show someone.
+// `?demo=1` brings them back; nothing else does, so a member who is simply
+// handed the app never sees them.
+function demoEntriesRequested() {
+  try {
+    return new URLSearchParams(location.search).get("demo") === "1";
+  } catch (e) {
+    return false;
+  }
+}
+
+function applyDemoEntryVisibility() {
+  const demo = document.getElementById("login-demo");
+  if (!demo) return;
+  // Still shown when there is no Supabase to sign in to at all — otherwise a
+  // local copy with no config is a login form that cannot do anything.
+  demo.hidden = supabaseReady() && !demoEntriesRequested();
+}
+
 async function routeOnLoad() {
+  applyDemoEntryVisibility();
   if (!supabaseReady()) return false;          // demo mode; login screen stands
   if (arrivedFromEmailLink()) {
     document.getElementById("login-form").hidden = true;

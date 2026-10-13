@@ -388,6 +388,14 @@ it would be nice. Things that can follow launch belong in the sections below.
 - [ ] **No invite button in admin.** Admin's Members section creates a member
       record; the auth invite itself is sent by hand from the Supabase
       dashboard. Workable for 6–10 testers, not past that.
+- [x] **The demo entries are off the login screen** — done 2026-10-12.
+      "Continue as Guest" and "Preview as Fit & Functional member" run the app
+      on `data.js`'s seed and never touch Supabase, so a tester tapping one
+      would be reading someone else's fake workouts and logging into nothing.
+      Hidden rather than deleted: `?demo=1` brings them back, so a walkthrough
+      or a quick check still works without burning a real account. They also
+      still show when Supabase is not configured at all, since otherwise a
+      local copy with no config is a login form that cannot do anything.
 
 ### Content
 
