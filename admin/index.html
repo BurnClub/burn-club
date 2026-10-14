@@ -835,7 +835,44 @@
       <div class="bulk-bar" id="member-bulk-bar">
         <span id="member-bulk-count">0 selected</span>
         <div class="bulk-bar-actions">
+          <!-- One DM each, not a group thread (2026-10-13, Chris: "forget
+               message as a group, but I want to keep message individually if I
+               check multiple people"). Each member gets it in their own thread
+               and replies privately, which is the point — a tester who would
+               not raise something in front of five peers still answers a
+               direct question. -->
+          <button class="btn-ghost-lg small" id="member-bulk-message-btn">Send message</button>
+          <!-- Both shown rather than one toggle: a selection can hold active
+               and inactive members at once, and a toggle would have to guess
+               which way the person meant. -->
+          <button class="btn-ghost-lg small" id="member-bulk-deactivate-btn">Deactivate</button>
+          <button class="btn-ghost-lg small" id="member-bulk-reactivate-btn">Reactivate</button>
           <button class="btn-ghost-lg small" id="member-bulk-clear-btn">Clear Selection</button>
+        </div>
+      </div>
+
+      <!-- Composer for the above. A plain overlay rather than a modal of its
+           own kind, so it reads like every other admin dialog. -->
+      <div class="builder-overlay" id="bulk-message-overlay">
+        <div class="builder-panel small">
+          <div class="builder-header">
+            <h2 id="bulk-message-title">Send a message</h2>
+            <button class="player-exit" id="bulk-message-close-btn">✕</button>
+          </div>
+          <div class="builder-body">
+            <p class="settings-field-help" id="bulk-message-who"></p>
+            <label class="modal-field">Message
+              <textarea id="bulk-message-text" rows="5" placeholder="Each person gets this in their own thread — they can reply privately."></textarea>
+            </label>
+            <p class="settings-field-help" id="bulk-message-result"></p>
+          </div>
+          <footer class="builder-footer">
+            <span></span>
+            <div>
+              <button class="btn-ghost-lg" id="bulk-message-cancel-btn">Cancel</button>
+              <button class="btn-primary" id="bulk-message-send-btn">Send</button>
+            </div>
+          </footer>
         </div>
       </div>
 
@@ -845,9 +882,14 @@
             <th><input type="checkbox" id="member-select-all" /></th>
             <th>Name</th>
             <th>Program</th>
-            <th>Status</th>
-            <th>Member Since</th>
-            <th>Streak</th>
+            <!-- Setup and Last active replace Status and Streak (2026-10-13,
+                 Chris). During a trial what you need at a glance is who is
+                 stuck and who has gone quiet. Status is something you set by
+                 hand rather than something the app observes, and a streak of 0
+                 reads identically for someone who never started and someone
+                 who stopped. -->
+            <th>Setup</th>
+            <th>Last active</th>
           </tr>
         </thead>
         <tbody id="member-table-body"></tbody>

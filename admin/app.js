@@ -296,11 +296,20 @@ function groupById(id) {
   return allGroups().find((g) => g.id === id);
 }
 
+// Inactive members are excluded from every roster (2026-10-13). Until now
+// "inactive" was a label on the admin list and nothing else: a paused member
+// still sat in the group roster and still appeared in challenge standings,
+// which is wrong under any reading of the word and would have put someone who
+// stopped training on a leaderboard.
+function isActiveMember(m) {
+  return (m.status || "active") === "active";
+}
+
 function groupMembers(group) {
   if (!group) return [];
-  if (group.type === "program") return MEMBERS.filter((m) => m.program === group.programId);
+  if (group.type === "program") return MEMBERS.filter((m) => m.program === group.programId && isActiveMember(m));
   // Custom groups and teams both carry an explicit member list.
-  return (group.memberIds || []).map((id) => memberById(id)).filter(Boolean);
+  return (group.memberIds || []).map((id) => memberById(id)).filter(Boolean).filter(isActiveMember);
 }
 
 // The group's chat thread. Program groups already had one; custom groups get
@@ -5586,12 +5595,61 @@ function realMemberName(m) {
   return [m.first_name, m.last_name].filter(Boolean).join(" ") || m.email || "Member";
 }
 
+// Loads the real people and REPLACES the contents of MEMBERS with them.
+//
+// In place rather than swapping the array, and shaped like the seed rather
+// than exposing raw rows, because MEMBERS feeds eleven other places in this
+// file — the groups roster, challenge teams, the member modal, memberById.
+// Mapping here means every one of them shows real people with no edits of
+// their own, and nothing has to learn two shapes.
+//
+// What comes from where: the account and its programme from `members`, the
+// coach-only fields from `member_private` (staff-only by policy, which is why
+// they are a separate table at all), and "last active" from the newest
+// completion. All three are staff-readable now that is_staff() answers true.
 async function loadRealMembers() {
   if (!adminMessagingLive()) return;
-  const { data, error } = await SB.from("members")
-    .select("id,email,first_name,last_name,program_id").order("first_name");
-  if (error) { console.warn("[admin] members:", error.message); return; }
-  REAL_MEMBERS = data || [];
+  const [rows, priv, acts, habits] = await Promise.all([
+    SB.from("members").select("id,email,first_name,last_name,program_id,start_date,access,role,member_since,badge").order("first_name"),
+    SB.from("member_private").select("member_id,coach_notes,status,point_adjustment"),
+    SB.from("completions").select("member_id,performed_on"),
+    SB.from("member_habits").select("member_id,label"),
+  ]);
+  if (rows.error) { console.warn("[admin] members:", rows.error.message); return; }
+  REAL_MEMBERS = rows.data || [];
+
+  const privBy = {};
+  (priv.data || []).forEach((r) => { privBy[r.member_id] = r; });
+  const lastBy = {};
+  (acts.data || []).forEach((r) => {
+    if (!lastBy[r.member_id] || r.performed_on > lastBy[r.member_id]) lastBy[r.member_id] = r.performed_on;
+  });
+  const habitsBy = {};
+  (habits.data || []).forEach((r) => { (habitsBy[r.member_id] = habitsBy[r.member_id] || []).push(r.label); });
+
+  MEMBERS.length = 0;
+  REAL_MEMBERS.forEach((m) => {
+    const pv = privBy[m.id] || {};
+    MEMBERS.push({
+      id: m.id,
+      name: realMemberName(m),
+      email: m.email || "",
+      program: m.program_id || "",
+      access: m.access || null,
+      startDate: m.start_date || null,
+      memberSince: m.member_since || "",
+      badge: m.badge || "",
+      // Defaults match the column defaults, so a member whose private row has
+      // not been written yet reads the same as one whose has.
+      status: pv.status || "active",
+      notes: pv.coach_notes || "",
+      pointAdjustment: pv.point_adjustment || 0,
+      habits: habitsBy[m.id] || [],
+      lastActive: lastBy[m.id] || null,
+      challengePoints: 0,
+    });
+  });
+  renderMemberTable();
 }
 
 async function loadServerMessages() {
@@ -5643,6 +5701,30 @@ function rebuildConversations() {
   }));
   CONVERSATIONS.length = 0;
   dms.concat(groups).forEach((c) => CONVERSATIONS.push(c));
+}
+
+// ---------------- Live accounts (2026-10-13) ----------------
+// The Members table on this page is seeded demo content. These are the real
+// rows — the people who can sign in — and this is where a tester gets put on a
+// program, which is the one thing standing between an invite and a working
+// app: `enterAsAuthedMember` sends a member with no program_id to a dead-end
+// screen, and a structured member with no start_date to another one.
+//
+// Staff may write these columns: "staff manage members" covers the table, and
+// the protect_member_columns trigger from 10-reset-epoch-and-lock-members.sql
+// only blocks NON-staff from touching program_id, start_date and access.
+function programById(id) {
+  return PROGRAMS.find((p) => p.id === id) || null;
+}
+
+// What is still missing before this account works. Start date only matters for
+// a structured program — a rolling member has no week to begin on.
+function liveMemberGaps(m) {
+  const gaps = [];
+  if (!m.program_id) gaps.push("program");
+  const prog = programById(m.program_id);
+  if (prog && prog.scheduleType === "structured" && !m.start_date) gaps.push("start date");
+  return gaps;
 }
 
 function conversationDisplayName(conv) {
@@ -5825,6 +5907,10 @@ async function sendAdminReply(text) {
   }
 
   const { data: { user } } = await SB.auth.getUser();
+  if (!user) {
+    alert("Your session has expired — sign in again and resend.");
+    return;
+  }
   const { data, error } = await SB.from("messages").insert({
     conversation_id: selectedConversationId,
     kind: target.kind,
@@ -6866,33 +6952,165 @@ let selectedMemberIds = new Set();
 
 const MEMBER_ACCESS_LABELS = { home: "Home", gym: "Gym", both: "Combo" };
 
+// "3 days ago" beats a date here: the question this column answers is whether
+// someone has gone quiet, and that is a duration, not a day.
+function lastActiveLabel(iso) {
+  if (!iso) return `<span class="last-active none">Never</span>`;
+  const days = Math.floor((Date.now() - new Date(iso + "T00:00:00").getTime()) / 86400000);
+  if (days <= 0) return `<span class="last-active">Today</span>`;
+  if (days === 1) return `<span class="last-active">Yesterday</span>`;
+  if (days < 14) return `<span class="last-active${days >= 7 ? " stale" : ""}">${days} days ago</span>`;
+  return `<span class="last-active stale">${new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>`;
+}
+
 function renderMemberTable() {
   const programFilter = document.getElementById("member-program-filter").value;
   const filtered = MEMBERS.filter((m) => {
-    if (memberStatusFilter !== "all" && m.status !== memberStatusFilter) return false;
+    // Status is still a real field on member_private and still set in the
+    // modal — it is just no longer a column, so the filter reads the record
+    // rather than the row.
+    if (memberStatusFilter !== "all" && (m.status || "active") !== memberStatusFilter) return false;
     if (programFilter !== "all" && m.program !== programFilter) return false;
     return true;
   });
 
   document.getElementById("member-table-body").innerHTML = filtered.map((m) => {
     const program = programById(m.program);
+    const gaps = liveMemberGaps({ program_id: m.program, start_date: m.startDate });
     return `
       <tr data-action="edit-member" data-member-id="${m.id}" style="cursor:pointer;">
         <td><input type="checkbox" class="select-item-checkbox" data-action="select-member" data-member-id="${m.id}" ${selectedMemberIds.has(m.id) ? "checked" : ""} /></td>
-        <td><strong>${m.name}</strong></td>
+        <!-- Status stopped being a column when Setup replaced it, which left a
+             paused member looking identical to an active one in the All view.
+             A quiet tag rather than a column: it is the exception, not a thing
+             to scan down. -->
+        <td><strong>${esc(m.name)}</strong>${isActiveMember(m) ? "" : ` <span class="paused-tag">Paused</span>`}</td>
         <td>
-          ${program ? program.name : "—"}
+          ${program ? esc(program.name) : "—"}
           ${m.access && programHasVariants(m.program) ? ` <span class="variant-pill variant-${m.access === "both" ? "combo" : m.access}">${MEMBER_ACCESS_LABELS[m.access] || m.access}</span>` : ""}
         </td>
-        <td><span class="status-pill ${m.status === "active" ? "active" : "draft"}">${m.status}</span></td>
-        <td>${m.memberSince}</td>
-        <td>${m.streak} days</td>
+        <td>${gaps.length
+          ? `<span class="setup-pill needs">Needs ${esc(gaps.join(" and "))}</span>`
+          : `<span class="setup-pill ready">Ready</span>`}</td>
+        <td>${lastActiveLabel(m.lastActive)}</td>
       </tr>
     `;
-  }).join("") || `<tr><td colspan="6" style="text-align:center;color:var(--deepblue);padding:24px;">No members match this filter.</td></tr>`;
+  }).join("") || `<tr><td colspan="5" style="text-align:center;color:var(--deepblue);padding:24px;">No members yet. Invite someone from the Supabase dashboard and they appear here.</td></tr>`;
 
   document.getElementById("member-select-all").checked = filtered.length > 0 && filtered.every((m) => selectedMemberIds.has(m.id));
   renderMemberBulkBar();
+}
+
+// ---------------- Bulk: message each selected member (2026-10-13) ----------
+// One row per member, into their own dm-<id> thread. Not a group thread and
+// not one row fanned out: a member replying replies to a conversation that is
+// theirs, which is what makes a direct question worth asking.
+function openBulkMessage() {
+  const ids = [...selectedMemberIds];
+  if (!ids.length) return;
+  if (!adminMessagingLive()) {
+    alert("Sign in to send messages — this writes to the messages table.");
+    return;
+  }
+  const names = ids.map((id) => (memberById(id) || {}).name).filter(Boolean);
+  document.getElementById("bulk-message-who").textContent =
+    names.length === 1
+      ? `To ${names[0]} — in their own thread.`
+      : `To ${names.length} members, each in their own thread: ${names.join(", ")}.`;
+  document.getElementById("bulk-message-text").value = "";
+  document.getElementById("bulk-message-result").textContent = "";
+  document.getElementById("bulk-message-send-btn").disabled = false;
+  document.getElementById("bulk-message-overlay").classList.add("visible");
+}
+
+function closeBulkMessage() {
+  document.getElementById("bulk-message-overlay").classList.remove("visible");
+}
+
+async function sendBulkMessage() {
+  const body = document.getElementById("bulk-message-text").value.trim();
+  const result = document.getElementById("bulk-message-result");
+  if (!body) { result.textContent = "Write something first."; return; }
+
+  const ids = [...selectedMemberIds];
+  const btn = document.getElementById("bulk-message-send-btn");
+  btn.disabled = true;
+  result.textContent = "Sending…";
+
+  // A session can expire while the page stays open, and getUser() then returns
+  // a null user. Without this the map below throws on user.id, the send dies
+  // silently and the composer sits there looking ready. Caught by a test that
+  // was aiming at something else entirely.
+  const { data: { user } } = await SB.auth.getUser();
+  if (!user) {
+    btn.disabled = false;
+    result.textContent = "Your session has expired — sign in again and resend.";
+    return;
+  }
+  const rows = ids.map((id) => ({
+    conversation_id: "dm-" + id,
+    kind: "dm",
+    member_id: id,
+    program_id: null,
+    sender_id: user.id,
+    sender_name: ADMIN_STAFF ? ADMIN_STAFF.name : "Staff",
+    is_staff: true,
+    body,
+    // Staff have read what staff just wrote; without this every send would
+    // light up the inbox it came from.
+    staff_read_at: new Date().toISOString(),
+  }));
+
+  // One insert, not one per member. A partial send is the bad outcome here —
+  // half your testers answering a question the other half never got — and a
+  // single statement either lands for everyone or for nobody.
+  const { error } = await SB.from("messages").insert(rows);
+  if (error) {
+    btn.disabled = false;
+    result.textContent = "Not sent: " + error.message;
+    return;
+  }
+  result.textContent = `Sent to ${ids.length} ${ids.length === 1 ? "member" : "members"}.`;
+  await loadServerMessages();
+  setTimeout(closeBulkMessage, 1200);
+}
+
+// ---------------- Bulk: deactivate / reactivate (2026-10-13) ----------------
+// Writes member_private.status, which is a real staff-only column.
+//
+// Be clear about what this does and does not do. It marks someone paused for
+// YOUR benefit: they drop out of the Active filter, out of challenge standings
+// and out of group rosters. It does NOT revoke access — an inactive member can
+// still sign in and train, because taking away what someone paid for is a
+// commercial decision, not a checkbox, and it belongs with the refund and
+// lapsed-subscription questions in the post-sale flow.
+async function setMemberStatus(status) {
+  const ids = [...selectedMemberIds];
+  if (!ids.length) return;
+  if (!adminMessagingLive()) {
+    alert("Sign in to change a member's status — this writes to the database.");
+    return;
+  }
+  const names = ids.map((id) => (memberById(id) || {}).name).filter(Boolean);
+  const verb = status === "inactive" ? "Deactivate" : "Reactivate";
+  if (!confirm(
+    `${verb} ${names.length} ${names.length === 1 ? "member" : "members"}?\n\n` +
+    names.join(", ") + "\n\n" +
+    (status === "inactive"
+      ? "They drop out of challenge standings and group rosters. They can still sign in and train — this does not revoke access."
+      : "They go back into challenge standings and group rosters.")
+  )) return;
+
+  // upsert, because member_private is created with the account but an account
+  // made before that trigger existed has no row, and an update would write
+  // nothing while reporting success.
+  const { error } = await SB.from("member_private")
+    .upsert(ids.map((id) => ({ member_id: id, status })), { onConflict: "member_id" });
+  if (error) { alert("Not changed: " + error.message); return; }
+
+  await loadRealMembers();
+  selectedMemberIds.clear();
+  renderMemberTable();
 }
 
 function renderMemberBulkBar() {
@@ -6930,6 +7148,25 @@ function updateMemberProgramFields() {
 }
 
 function openMemberModal() {
+  // Admin cannot create an account, and the honest place to say so is before
+  // a form is filled in rather than after Save. The key this page holds is not
+  // allowed to invite users and open signup is off — both correct. What does
+  // work is already wired: handle_new_user() creates the member row the moment
+  // an auth user exists, so an invite from the dashboard arrives here on its
+  // own. Building a real invite button needs a server-side function with the
+  // service key, which is the same piece the Shopify flow will need — worth
+  // building once, there.
+  if (adminMessagingLive()) {
+    alert(
+      "Members are created by inviting them, not here.\n\n" +
+      "Supabase dashboard → Authentication → Users → Add user → " +
+      "\"Send invite\". They appear in this list as soon as the account " +
+      "exists, and you set their program by clicking their row.\n\n" +
+      "(A real invite button needs a server-side function — it is on the list " +
+      "with the Shopify checkout flow.)"
+    );
+    return;
+  }
   editingMemberId = null;
   document.getElementById("member-modal-title").textContent = "Add Member";
   document.getElementById("member-modal-save-btn").textContent = "Save Member";
@@ -7015,6 +7252,19 @@ function saveMember() {
     ? document.getElementById("member-modal-access").value
     : null;
 
+  if (adminMessagingLive()) {
+    if (!editingMemberId) {
+      // Admin cannot create an account. The key this page holds is not allowed
+      // to invite users and open signup is off — both correct. An auth user is
+      // what a member row hangs off, and handle_new_user() creates the row the
+      // moment one exists.
+      alert("Members can't be created here. Invite them from the Supabase dashboard (Authentication → Add user) and they appear in this list automatically.");
+      return;
+    }
+    saveMemberToServer({ name, email, program, memberSince, badge, status, notes, startDate, access });
+    return;
+  }
+
   if (editingMemberId) {
     const m = MEMBERS.find((x) => x.id === editingMemberId);
     Object.assign(m, { name, email, program, memberSince, badge, status, notes, startDate, access });
@@ -7023,6 +7273,46 @@ function saveMember() {
   }
   closeMemberModal();
   renderMemberTable();
+}
+
+// Two tables, because the coach-only fields are deliberately not columns on
+// `members`: RLS is row-level, so a policy letting a member read their own row
+// would have handed back their own coach notes and status with it.
+async function saveMemberToServer(v) {
+  const id = editingMemberId;
+  const parts = String(v.name).trim().split(/\s+/);
+  const patch = {
+    email: v.email,
+    first_name: parts[0] || v.name,
+    // Rejoined rather than taking parts[1], so a two-word surname survives.
+    last_name: parts.slice(1).join(" ") || null,
+    program_id: v.program || null,
+    start_date: v.startDate || null,
+    access: v.access || null,
+    member_since: v.memberSince || null,
+    badge: v.badge || null,
+  };
+  const btn = document.getElementById("member-modal-save-btn");
+  btn.disabled = true;
+  btn.textContent = "Saving…";
+
+  const { error } = await SB.from("members").update(patch).eq("id", id);
+  if (error) {
+    btn.disabled = false; btn.textContent = "Save Member";
+    alert("Not saved: " + error.message);
+    return;
+  }
+  // upsert, not update: member_private is created alongside the account by
+  // handle_new_user(), but an account made before that trigger existed has no
+  // row and an update would silently write nothing.
+  const { error: pErr } = await SB.from("member_private")
+    .upsert({ member_id: id, coach_notes: v.notes || "", status: v.status || "active" },
+            { onConflict: "member_id" });
+  btn.disabled = false; btn.textContent = "Save Member";
+  if (pErr) { alert("Saved, but the notes and status didn't: " + pErr.message); }
+
+  await loadRealMembers();
+  closeMemberModal();
 }
 
 // ---------------- Challenges ----------------
@@ -7047,7 +7337,8 @@ function challengeById(id) {
 // so existing challenges keep working untouched — a challenge with no groupIds
 // behaves exactly as before.
 function challengeStandings(challenge) {
-  const byProgram = MEMBERS.filter((m) => challenge.programId === "all" || m.program === challenge.programId);
+  const byProgram = MEMBERS.filter((m) =>
+    isActiveMember(m) && (challenge.programId === "all" || m.program === challenge.programId));
   const byGroup = (challenge.groupIds || []).flatMap((gid) => groupMembers(groupById(gid)));
 
   const seen = new Set();
@@ -7798,6 +8089,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("challenge-edit-btn").addEventListener("click", () => {
     if (selectedChallengeId) openEditChallengeModal(selectedChallengeId);
   });
+  document.getElementById("member-bulk-message-btn").addEventListener("click", openBulkMessage);
+  document.getElementById("member-bulk-deactivate-btn").addEventListener("click", () => setMemberStatus("inactive"));
+  document.getElementById("member-bulk-reactivate-btn").addEventListener("click", () => setMemberStatus("active"));
+  document.getElementById("bulk-message-close-btn").addEventListener("click", closeBulkMessage);
+  document.getElementById("bulk-message-cancel-btn").addEventListener("click", closeBulkMessage);
+  document.getElementById("bulk-message-send-btn").addEventListener("click", sendBulkMessage);
   document.getElementById("member-program-filter").addEventListener("change", renderMemberTable);
   document.getElementById("member-select-all").addEventListener("change", (e) => {
     document.querySelectorAll('[data-action="select-member"]').forEach((cb) => {

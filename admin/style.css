@@ -14,6 +14,12 @@
   --white: #ffffff;
   --field-bg: #E3ECFF;
   --bg: #f4f6ff;
+  /* Admin had no danger token — .btn-danger carried #e0435f inline, and
+     anything else reaching for var(--danger) got nothing. Which is exactly
+     what happened to the "Needs program" badge: white text on no background,
+     invisible, while the markup was perfectly correct. Named now so the next
+     one works. */
+  --danger: #e0435f;
   /* One radius everywhere (Chris, 2026-09-17): "any button or view that has a
      curved corner make it 5pt". The three names are kept rather than collapsed
      into one so the scale is still there to restore if the flat look is too
@@ -898,7 +904,7 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .bulk-bar-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .bulk-bar-actions select { border: 2px solid transparent; border-radius: var(--radius-sm); padding: 8px 10px; font-family: 'Nunito', sans-serif; font-size: 13px; }
 .bulk-bar-actions .btn-ghost-lg { background: white; }
-.btn-danger { color: #e0435f; border-color: #f4b6c2; }
+.btn-danger { color: var(--danger); border-color: #f4b6c2; }
 
 /* ---------- FILTER ROW ---------- */
 .filter-row { display: flex; gap: 16px; margin-bottom: 18px; align-items: center; flex-wrap: wrap; }
@@ -2349,4 +2355,41 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .builder-ex-row .cue-field:focus {
   width: 200px;
+}
+
+/* ---------- MEMBERS TABLE: SETUP + LAST ACTIVE (2026-10-13) ---------- */
+/* Setup replaced Status as a column. It is derived, not set: these are the two
+   dead-end screens in the member app, so a red pill here is a member who opens
+   the app and cannot use it. */
+.setup-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.setup-pill.needs { background: var(--danger); color: white; }
+.setup-pill.ready { background: var(--field-bg); color: var(--deepblue); }
+/* Grey rather than red past a week: going quiet is worth seeing, but it is not
+   a fault the way an unusable account is, and two reds would flatten both. */
+.last-active { font-size: 13px; font-weight: 700; color: var(--ink); }
+.last-active.stale { color: var(--deepblue); }
+.last-active.none { color: var(--deepblue); opacity: 0.6; }
+
+/* A deactivated member in the All view (2026-10-13). Grey, not red: paused is
+   a state someone chose, not a fault — the red pills on this page mean an
+   account that cannot be used. */
+.paused-tag {
+  display: inline-block;
+  margin-left: 6px;
+  background: var(--field-bg);
+  color: var(--deepblue);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  vertical-align: 1px;
 }

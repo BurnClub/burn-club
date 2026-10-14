@@ -1847,21 +1847,22 @@ const SCHEDULE_TEMPLATES = {
 // APP_SETTINGS, which meant renaming a benchmark in Settings changed it for
 // members but not in the workout builder's dropdown. One owner now.
 
-const MEMBERS = [
-  { id: "priya-k", name: "Priya K.", email: "priya.k@example.com", program: "burn-club", streak: 10, memberSince: "Jan 2025", badge: "Founding Member", status: "active", notes: "", challengePoints: 195, pointAdjustment: 10, habits: ["10,000 Steps", "100oz Water", "Outdoor Activity"] },
-  { id: "marcus-t", name: "Marcus T.", email: "marcus.t@example.com", program: "burn-club", streak: 8, memberSince: "Feb 2025", badge: "", status: "active", notes: "Prefers morning workouts.", challengePoints: 150, pointAdjustment: 0, habits: ["10,000 Steps", "25 Push-ups"] },
-  { id: "jamie-r", name: "Jamie R.", email: "jamie.r@example.com", program: "burn-club", streak: 6, memberSince: "Mar 2025", badge: "", status: "active", notes: "", challengePoints: 110, pointAdjustment: 0, habits: ["100oz Water"] },
-  { id: "chris-v", name: "Chris V.", email: "chris.v@example.com", program: "burn-club", streak: 5, memberSince: "Jan 2025", badge: "Founding Member", status: "active", notes: "Asked about modifying Sweat & Sculpt frequency — flagged in DMs.", challengePoints: 90, pointAdjustment: 0, habits: ["10,000 Steps", "100oz Water", "Outdoor Activity"] },
-  { id: "alicia-b", name: "Alicia B.", email: "alicia.b@example.com", program: "burn-club", streak: 0, memberSince: "Apr 2025", badge: "", status: "inactive", notes: "Paused membership — traveling for work through end of month.", challengePoints: 40, pointAdjustment: 0, habits: [] },
-  // Mirrors the member app's Jordan profile (2026-08-17). Every member here
-  // was on Burn Club, so Fit & Functional claimed a member it didn't have and
-  // the new Program Access field had nothing to appear on. `access` is only
-  // meaningful for programs authored in Home/Gym variants — see
-  // programHasVariants() — and `startDate` anchors this member's Day 1 against
-  // SCHEDULE_TEMPLATES. Kept a fixed date rather than one computed from today,
-  // matching how the member app seeds its own structured history.
-  { id: "jordan-p", name: "Jordan P.", email: "jordan.p@example.com", program: "fit-functional", streak: 3, memberSince: "Jun 2025", badge: "", status: "active", notes: "Bought the combo package — sees both Home and Gym each day.", challengePoints: 60, pointAdjustment: 0, habits: ["10,000 Steps"], startDate: "2026-08-07", access: "both" },
-];
+// Emptied 2026-10-13 (Chris: "now is the time when we start getting rid of the
+// invented, demo information"). Priya K., Marcus T., Jamie R., Chris V. and
+// Alicia B. were fiction with active streaks and founding-member badges, and
+// with Kelly about to be in here too, fiction that looks like a client list is
+// a decision waiting to be made on it.
+//
+// This array is no longer a seed — loadRealMembers() fills it from the
+// `members` table, mapped into this same shape so the groups roster, challenge
+// teams, the member modal and memberById all keep working untouched. It starts
+// empty so that an admin with no connection shows nothing rather than someone
+// invented.
+//
+// Jordan is not lost: his profile is being recreated as a real account
+// ("Jordan Tester"), because his wearable figures are what the watch visuals
+// are built against — see supabase/17-jordan-tester.sql.
+const MEMBERS = [];
 
 // ---------------- Challenges ----------------
 // Point-based, threshold challenges (not first-past-the-post): any member who
@@ -1900,10 +1901,10 @@ const CHALLENGES = [
     teamChallengeName: "August Showdown",
     teamCount: 4,
     teams: [
-      { id: "t-red", name: "Red", defaultName: "Red", color: "#E0685E", memberIds: ["priya-k", "marcus-t"] },
-      { id: "t-blue", name: "Blue", defaultName: "Blue", color: "#788CE3", memberIds: ["jamie-r", "alicia-b"] },
-      { id: "t-green", name: "Green", defaultName: "Green", color: "#13673F", memberIds: ["chris-v"] },
-      { id: "t-gold", name: "Gold", defaultName: "Gold", color: "#E6B400", memberIds: ["jordan-p"] },
+      { id: "t-red", name: "Red", defaultName: "Red", color: "#E0685E", memberIds: [] },
+      { id: "t-blue", name: "Blue", defaultName: "Blue", color: "#788CE3", memberIds: [] },
+      { id: "t-green", name: "Green", defaultName: "Green", color: "#13673F", memberIds: [] },
+      { id: "t-gold", name: "Gold", defaultName: "Gold", color: "#E6B400", memberIds: [] },
     ],
   },
 ];
@@ -1942,13 +1943,13 @@ const CUSTOM_GROUPS = [
     id: "custom-founding-members",
     name: "Founding Members",
     description: "The original crew — first to sign up, first to hear about anything new.",
-    memberIds: ["priya-k", "chris-v"],
+    memberIds: [],
   },
   {
     id: "custom-form-check",
     name: "Form Check Volunteers",
     description: "Members who agreed to send video for technique feedback.",
-    memberIds: ["marcus-t", "jamie-r", "jordan-p"],
+    memberIds: [],
   },
 ];
 
@@ -1960,30 +1961,12 @@ const CONVERSATIONS = [
   ...CUSTOM_GROUPS.map((g) => ({ id: "group-" + g.id, type: "group", groupId: g.id, name: g.name + " Group Chat" })),
 ];
 
-const MESSAGES = [
-  { id: "msg-1", conversationId: "dm-chris-v", senderId: "staff", senderName: "Staff", isStaff: true, text: "Hey Chris! Welcome to Burn Club — let us know if you need anything.", time: "Mon 9:02 AM", read: true },
-  { id: "msg-2", conversationId: "dm-chris-v", senderId: "chris-v", senderName: "Chris V.", isStaff: false, text: "Thanks! Quick question — is Sweat & Sculpt okay to do two days in a row?", time: "Mon 6:47 PM", read: false },
-  { id: "msg-3", conversationId: "dm-priya-k", senderId: "priya-k", senderName: "Priya K.", isStaff: false, text: "Just hit a 10-day streak! 🎉", time: "Today 8:02 AM", read: false },
-  { id: "msg-4", conversationId: "group-burn-club", senderId: "staff", senderName: "Staff", isStaff: true, text: "New circuits are up for the week — 3 fresh ones plus a new stretch session! 🔥", time: "Sun 8:00 AM", read: true },
-  { id: "msg-5", conversationId: "group-burn-club", senderId: "priya-k", senderName: "Priya K.", isStaff: false, text: "Sweat & Sculpt kicked my butt today 😅", time: "Sun 5:30 PM", read: true },
-  { id: "msg-6", conversationId: "group-burn-club", senderId: "marcus-t", senderName: "Marcus T.", isStaff: false, text: "Same! Worth it though", time: "Sun 5:41 PM", read: false },
-  // Every group chat but Burn Club's was empty, which made the Groups
-  // section's chat panel look broken rather than quiet (2026-08-17).
-  { id: "msg-7", conversationId: "group-fit-functional", senderId: "staff", senderName: "Staff", isStaff: true, text: "Week 3 is live — the Gym variant swaps the DB press for barbell work.", time: "Mon 7:30 AM", read: true },
-  { id: "msg-8", conversationId: "group-fit-functional", senderId: "jordan-p", senderName: "Jordan P.", isStaff: false, text: "Perfect, I'll be at the gym Thursday. Can I do Week 3 Day 2 at home instead?", time: "Mon 12:15 PM", read: false },
-  { id: "msg-9", conversationId: "group-custom-founding-members", senderId: "staff", senderName: "Staff", isStaff: true, text: "Early access to the new benchmark this Friday — you three first, as always.", time: "Sun 4:00 PM", read: true },
-  { id: "msg-10", conversationId: "group-custom-founding-members", senderId: "priya-k", senderName: "Priya K.", isStaff: false, text: "Love it. Ready to beat my last Gauntlet score 🔥", time: "Sun 6:22 PM", read: false },
-  { id: "msg-11", conversationId: "group-custom-form-check", senderId: "staff", senderName: "Staff", isStaff: true, text: "Send your deadlift setup when you get a chance — happy to review before next week.", time: "Today 9:10 AM", read: true },
-  // One kickoff per team chat, so every team thread has a coach in it from the
-  // moment the teams are drawn.
-  { id: "msg-team-red-1", conversationId: "group-team-t-red", senderId: "staff", senderName: "Staff", isStaff: true, text: "Team Red is set — say hi and get after it. 🔥", time: "Sat 9:00 AM", read: true },
-  { id: "msg-team-red-2", conversationId: "group-team-t-red", senderId: "priya-k", senderName: "Priya K.", isStaff: false, text: "Let's go! I'm in for a double this week.", time: "Sat 10:12 AM", read: true },
-  { id: "msg-team-red-3", conversationId: "group-team-t-red", senderId: "marcus-t", senderName: "Marcus T.", isStaff: false, text: "Same here. What's everyone doing Monday?", time: "Sat 11:40 AM", read: false },
-  { id: "msg-team-blue-1", conversationId: "group-team-t-blue", senderId: "staff", senderName: "Staff", isStaff: true, text: "Team Blue is set — say hi and get after it. 🔥", time: "Sat 9:00 AM", read: true },
-  { id: "msg-team-blue-2", conversationId: "group-team-t-blue", senderId: "jamie-r", senderName: "Jamie R.", isStaff: false, text: "First team challenge for me — what counts for points again?", time: "Sat 2:05 PM", read: false },
-  { id: "msg-team-green-1", conversationId: "group-team-t-green", senderId: "staff", senderName: "Staff", isStaff: true, text: "Team Green is set — say hi and get after it. 🔥", time: "Sat 9:00 AM", read: true },
-  { id: "msg-team-gold-1", conversationId: "group-team-t-gold", senderId: "staff", senderName: "Staff", isStaff: true, text: "Team Gold is set — say hi and get after it. 🔥", time: "Sat 9:00 AM", read: true },
-];
+// Emptied with MEMBERS on 2026-10-13: every one of these was from a member
+// who no longer exists. Messaging reads the `messages` table now
+// (16-messages.sql); loadServerMessages() fills this array, and it starts
+// empty so a signed-out admin shows no conversation rather than an invented
+// one.
+const MESSAGES = [];
 
 const LIVE_MESSAGES_KEY = "burnClubLiveMessages";
 try {
@@ -2016,21 +1999,11 @@ const COMMUNITY_POSTS = [
 // the feed stays anchored to today rather than drifting into the past as the
 // demo ages. In the real system these are timestamps on a completion record.
 const ACTIVITY_FEED_SEED = [
-  { id: "a1", memberId: "jamie-r", memberName: "Jamie R.", workoutTitle: "Core Crusher", time: "4m ago", daysAgo: 0, rpe: 7 },
-  { id: "a2", memberId: "priya-k", memberName: "Priya K.", workoutTitle: "Sweat & Sculpt", time: "18m ago", daysAgo: 0, rpe: 9 },
-  { id: "a3", memberId: "jamie-r", memberName: "Jamie R.", workoutTitle: "10-Minute Ab Burn", time: "2h ago", daysAgo: 0, rpe: 6 },
-  { id: "a4", memberId: "priya-k", memberName: "Priya K.", workoutTitle: "Full Body Stretch & Mobility", time: "5h ago", daysAgo: 0, rpe: 3 },
-  { id: "a5", memberId: "marcus-t", memberName: "Marcus T.", workoutTitle: "Full Body Burn", time: "Yesterday", daysAgo: 1, rpe: 6 },
-  { id: "a6", memberId: "chris-v", memberName: "Chris V.", workoutTitle: "Core Crusher", time: "Yesterday", daysAgo: 1, rpe: 5 },
-  { id: "a7", memberId: "marcus-t", memberName: "Marcus T.", workoutTitle: "Sweat & Sculpt", time: "Yesterday", daysAgo: 1, rpe: 8 },
-  { id: "a8", memberId: "priya-k", memberName: "Priya K.", workoutTitle: "Core Crusher", time: "2 days ago", daysAgo: 2, rpe: 4 },
-  { id: "a9", memberId: "chris-v", memberName: "Chris V.", workoutTitle: "Full Body Burn", time: "3 days ago", daysAgo: 3, rpe: 8 },
-  { id: "a10", memberId: "marcus-t", memberName: "Marcus T.", workoutTitle: "10-Minute Ab Burn", time: "4 days ago", daysAgo: 4, rpe: 5 },
-  { id: "a11", memberId: "jamie-r", memberName: "Jamie R.", workoutTitle: "Full Body Burn", time: "5 days ago", daysAgo: 5, rpe: 9 },
-  // Alicia's membership is paused while she travels, so a session hours ago
-  // contradicted her own record. Pushed back to match — and it's what makes
-  // the roster's date column worth reading, by showing who has gone quiet.
-  { id: "a12", memberId: "alicia-b", memberName: "Alicia B.", workoutTitle: "Full Body Burn", time: "12 days ago", daysAgo: 12, rpe: 7 },
+  // Emptied 2026-10-13 with MEMBERS: every entry was a workout by someone who
+  // no longer exists. The real source is a completion record, which admin does
+  // not read yet — so the dashboard and the group activity counts show nothing
+  // until it does, which is honest. Reading `completions` here is the next
+  // slice of admin to move onto the backend, after the inbox.
 ];
 
 const ACTIVITY_FEED = ACTIVITY_FEED_SEED.map((a) => {

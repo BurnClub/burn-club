@@ -386,6 +386,94 @@ it would be nice. Things that can follow launch belong in the sections below.
       localhost ("an unknown error occurred when fetching the script"), so this
       is only testable on the live site.
 
+### Onboarding, from the sale to the app
+
+- [x] **A tester can be put on a program from admin** — built 2026-10-13.
+      "Live accounts" at the top of Members lists the REAL `members` rows and
+      sets program, start date and access on each. It is kept visually apart
+      from the table below it, which is seeded demo content: merging them is
+      how a coach ends up editing a fictional Priya K. and wondering why
+      nothing happened.
+      Each row says what is still missing — **Needs program**, **Needs start
+      date**, or **Ready** — because those are exactly the two dead-end screens
+      in `enterAsAuthedMember`. A rolling programme needs no start date and the
+      field disables itself.
+      Staff may write those columns: "staff manage members" covers the table
+      and the `protect_member_columns` trigger only blocks NON-staff. Reasoned
+      from the policies rather than proven on the live database — the browser
+      session had expired and passwords are not mine to handle, so **Chris
+      should confirm one save works** before relying on it for six people.
+
+- [ ] **Invites for the first six are hand-delivered** (Chris, 2026-10-13).
+      The invite email still lands in spam and that is not being fixed before
+      the trial. The decision is to send the link personally and walk each
+      tester through setting a password. Fixing deliverability is wanted soon
+      after, not before.
+
+- [ ] **Plan the whole post-sale path, end to end** (Chris, 2026-10-13) —
+      "from the listing on our shopify site, to the download of the app."
+      Not started; it is a design conversation, not a task. Today the pieces
+      exist but nothing joins them: Shopify takes the money and knows the
+      buyer's email, Supabase holds the account, the invite email sets the
+      password, and the app is a web page rather than a download. Nothing
+      carries a buyer from one step to the next automatically, and nobody has
+      decided what should.
+      Worth doing properly when it comes up, because it decides several things
+      at once: whether an account is created at purchase or on first sign-in,
+      who sends the welcome, what a buyer sees in the gap between paying and
+      being set up, what happens to a refund or a lapsed subscription, and
+      whether "download" means an App Store build or an add-to-home-screen web
+      app. The App Store answer in particular reaches back into the product —
+      see the App Store section above.
+
+### Members in admin — the rebuild (2026-10-13)
+
+Chris: "now is the time when we start getting rid of the invented, demo
+information." The five seeded members, their messages and the activity feed are
+gone; `MEMBERS` is filled from the real table by `loadRealMembers()` and mapped
+into the old shape so the eleven other things reading it keep working.
+
+Agreed build order for the bulk actions, from his list:
+
+1. [x] **Message each selected member individually** — done. One row per
+       member into their own `dm-<id>` thread, in a single insert so a partial
+       send cannot leave half the testers answering a question the other half
+       never got. Group messaging dropped on his call.
+2. [x] **Deactivate / reactivate** — done, and it had to be given a meaning
+       first. Before today "inactive" was a label on the admin list and nothing
+       else: proven 2026-10-13 that a paused member still appeared in challenge
+       standings and in the group roster, and the member app has never read the
+       field at all. An inactive member on a leaderboard is wrong under any
+       reading of the word, so `groupMembers` and `challengeStandings` now
+       exclude them, and the table carries a quiet "Paused" tag since Setup
+       replaced Status as a column.
+       **It deliberately does NOT revoke access.** An inactive member can still
+       sign in and train. Taking away what somebody paid for is a commercial
+       decision, not a checkbox, and it belongs with the refund and
+       lapsed-subscription questions in the post-sale flow — Chris's call,
+       not assumed. The confirm dialog says so in as many words.
+3. [ ] **Add to custom group** — the missing direction. Today the only way in
+       is from the group's side: open the group, tick names, save. There is no
+       path from a member to a group.
+4. [ ] **Invite-only challenges**, and "add to challenge" writing a real list.
+
+**How membership actually works, since it decided the above:**
+- **Program groups** are automatic — membership IS being on the program.
+- **Custom groups** carry an explicit list, edited only from the group page.
+- **Teams** are drawn by the app per challenge, not hand-managed.
+- **Challenges have no member list at all.** `challengeStandings` computes it
+  live from program scope plus attached groups. Proven 2026-10-13 by adding a
+  member mid-challenge and watching the standings go 2 → 3 with no action.
+  **That is why challenges must not simply get a member list** — a stored list
+  is a snapshot, and Chris's first requirement is that a mid-program joiner is
+  added automatically. The derived behaviour already does that; a list would
+  break it.
+  His second requirement — a private challenge between friends who are all in
+  Burn Club — needs a scope matching NOBODY plus named members. So: add an
+  "Invite only" scope (`programId` that matches no program, which the existing
+  filter handles for free) and an explicit `memberIds` alongside the derived
+  sources. Old challenges, having neither, behave exactly as now.
+
 ### The first-run experience
 
 - [x] **The login screen showed two forms at once** — found and fixed
