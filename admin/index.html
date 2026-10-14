@@ -956,7 +956,14 @@
               </select>
             </label>
             <label class="modal-field">Member Since
-              <input type="text" id="member-modal-member-since" placeholder="e.g. Jul 2026" />
+              <!-- A date input, not text (2026-10-14). members.member_since is a
+                   DATE column, and this box invited "Jul 2026" — which Postgres
+                   rejects outright: "column member_since is of type date but
+                   expression is of type text". It would have failed the first
+                   time anyone edited a member. The placeholder was a leftover
+                   from when this array was seeded and the field was a display
+                   string nobody stored. -->
+              <input type="date" id="member-modal-member-since" />
             </label>
             <label class="modal-field">Membership Badge
               <input type="text" id="member-modal-badge" placeholder="e.g. Founding Member (optional)" />

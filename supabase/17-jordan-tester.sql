@@ -50,7 +50,11 @@ begin
     -- combo member ever sees.
     access       = 'both',
     start_date   = current_date - 10,
-    member_since = to_char(current_date - 10, 'Mon YYYY'),
+    -- A DATE, not a formatted string. to_char() here returned text and
+    -- Postgres refused it outright: "column member_since is of type date but
+    -- expression is of type text". The admin modal had the same mistake — a
+    -- text box inviting "Jul 2026" into a date column — fixed the same day.
+    member_since = current_date - 10,
     badge        = 'Demo Account'
   where id = jid;
 

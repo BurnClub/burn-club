@@ -7300,7 +7300,7 @@ function openEditMemberModal(memberId) {
   document.getElementById("member-modal-email").value = m.email;
   ensureProgramOptionFor(m.program);
   document.getElementById("member-modal-program").value = m.program;
-  document.getElementById("member-modal-member-since").value = m.memberSince;
+  document.getElementById("member-modal-member-since").value = m.memberSince || "";
   document.getElementById("member-modal-badge").value = m.badge;
   document.getElementById("member-modal-notes").value = m.notes;
   document.getElementById("member-modal-habits").textContent = m.habits && m.habits.length ? m.habits.join(", ") : "None set";
@@ -7330,7 +7330,9 @@ function saveMember() {
   }
   const email = document.getElementById("member-modal-email").value.trim();
   const program = document.getElementById("member-modal-program").value;
-  const memberSince = document.getElementById("member-modal-member-since").value.trim();
+  // A date input yields "" or "YYYY-MM-DD"; the empty string is not a date and
+  // has to reach the column as null rather than as a blank.
+  const memberSince = document.getElementById("member-modal-member-since").value;
   const badge = document.getElementById("member-modal-badge").value.trim();
   const notes = document.getElementById("member-modal-notes").value.trim();
   const statusInput = document.querySelector("#member-modal-status input:checked");
