@@ -708,6 +708,7 @@ function saveGroup() {
     selectedGroupId = id;
   }
 
+  flushAdminState();
   closeGroupModal();
   renderGroupList();
   if (document.getElementById("group-detail-view").style.display !== "none") renderGroupDetail();
@@ -722,6 +723,7 @@ function deleteGroup() {
   CUSTOM_GROUPS.splice(CUSTOM_GROUPS.findIndex((g) => g.id === group.id), 1);
   const convIdx = CONVERSATIONS.findIndex((c) => c.id === "group-" + group.id);
   if (convIdx !== -1) CONVERSATIONS.splice(convIdx, 1);
+  flushAdminState();
   backToGroups();
 }
 
@@ -763,6 +765,7 @@ function confirmGroupChallenge() {
   const challenge = challengeById(document.getElementById("group-challenge-select").value);
   if (!group || !challenge) return;
   challenge.groupIds = [...new Set([...(challenge.groupIds || []), group.id])];
+  flushAdminState();
   document.getElementById("group-challenge-overlay").classList.remove("visible");
   renderChallenges();
 }
@@ -4875,6 +4878,14 @@ function adminStateSnapshot() {
     // not in the seed, and saving only the counts meant it came back as
     // nothing at all.
     programs: PROGRAMS,
+    // Added 2026-10-14, found while building "add to group". Neither of these
+    // was ever saved: a custom group created in admin, and every challenge
+    // ever set up, existed only until the page reloaded. The same shape of bug
+    // as saveAdminCircuits having one call site — work that looks saved and
+    // is not. Found before building the bulk action that writes into them,
+    // which would otherwise have written into something that evaporates.
+    customGroups: CUSTOM_GROUPS,
+    challenges: CHALLENGES,
   });
 }
 
@@ -4934,6 +4945,16 @@ function loadAdminCircuits() {
         if (m.workoutsPerWeek) p.workoutsPerWeek = m.workoutsPerWeek;
         if (m.circuitsPerWeek) p.circuitsPerWeek = m.circuitsPerWeek;
       });
+    }
+    // Restored only when there is something to restore, so an admin that has
+    // never created a group still gets the seeded ones.
+    if (Array.isArray(saved.customGroups)) {
+      CUSTOM_GROUPS.length = 0;
+      CUSTOM_GROUPS.push(...saved.customGroups);
+    }
+    if (Array.isArray(saved.challenges)) {
+      CHALLENGES.length = 0;
+      CHALLENGES.push(...saved.challenges);
     }
     lastAdminSnapshot = adminStateSnapshot();
     adminStateReady = true;
@@ -7113,6 +7134,82 @@ async function setMemberStatus(status) {
   renderMemberTable();
 }
 
+// ---------------- Bulk: add to a group or a challenge (2026-10-14) ----------
+// The missing direction. Until now the only way into a custom group was from
+// the group's own page — open it, tick names in a list of every member, save.
+// Fine for building a group; useless for "these four, into that group".
+//
+// Only CUSTOM groups are offered. A programme group is automatic — membership
+// is being on the programme, so the way in is to change someone's programme —
+// and teams are drawn per challenge rather than hand-picked.
+let bulkTargetKind = null;
+
+function openBulkTarget(kind) {
+  const ids = [...selectedMemberIds];
+  if (!ids.length) return;
+  bulkTargetKind = kind;
+
+  const names = ids.map((id) => (memberById(id) || {}).name).filter(Boolean);
+  document.getElementById("bulk-target-title").textContent =
+    kind === "group" ? "Add to group" : "Add to challenge";
+  document.getElementById("bulk-target-who").textContent =
+    `${names.length} selected: ${names.join(", ")}`;
+  document.getElementById("bulk-target-result").textContent = "";
+
+  const sel = document.getElementById("bulk-target-select");
+  const note = document.getElementById("bulk-target-note");
+
+  if (kind === "group") {
+    sel.innerHTML = CUSTOM_GROUPS.map((g) =>
+      `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join("");
+    note.textContent = CUSTOM_GROUPS.length
+      ? "Only custom groups are listed. Programme groups follow the programme itself, and teams are drawn per challenge."
+      : "No custom groups yet — make one on the Groups page first.";
+  } else {
+    // Only invite-only challenges. Adding someone by name to a programme
+    // challenge would be writing a list for people who are already in it by
+    // derivation, and the two would disagree the moment anyone changed
+    // programme.
+    const open = CHALLENGES.filter((c) => c.programId === "none");
+    sel.innerHTML = open.map((c) =>
+      `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+    note.textContent = open.length
+      ? "Only invite-only challenges are listed. In a programme challenge everyone on the programme is already in, including anyone who joins later."
+      : "No invite-only challenges yet — make one on the Challenges page and set its Program to \"Invite only\".";
+  }
+  document.getElementById("bulk-target-add-btn").disabled = !sel.options.length;
+  document.getElementById("bulk-target-overlay").classList.add("visible");
+}
+
+function closeBulkTarget() {
+  document.getElementById("bulk-target-overlay").classList.remove("visible");
+}
+
+function confirmBulkTarget() {
+  const id = document.getElementById("bulk-target-select").value;
+  if (!id) return;
+  const ids = [...selectedMemberIds];
+  const result = document.getElementById("bulk-target-result");
+
+  // A Set because adding someone already in is a no-op, not a duplicate — and
+  // a duplicate would double-count them in the standings.
+  const target = bulkTargetKind === "group"
+    ? CUSTOM_GROUPS.find((g) => g.id === id)
+    : challengeById(id);
+  if (!target) return;
+  const before = (target.memberIds || []).length;
+  target.memberIds = [...new Set([...(target.memberIds || []), ...ids])];
+  const added = target.memberIds.length - before;
+
+  flushAdminState();
+  renderGroupList();
+  renderChallenges();
+  result.textContent = added
+    ? `Added ${added} to ${target.name}.`
+    : `They were all already in ${target.name}.`;
+  setTimeout(closeBulkTarget, 1200);
+}
+
 function renderMemberBulkBar() {
   const bar = document.getElementById("member-bulk-bar");
   bar.classList.toggle("visible", selectedMemberIds.size > 0);
@@ -7337,12 +7434,27 @@ function challengeById(id) {
 // so existing challenges keep working untouched — a challenge with no groupIds
 // behaves exactly as before.
 function challengeStandings(challenge) {
+  // Three sources, deliberately kept separate (2026-10-14).
+  //
+  // The programme scope is DERIVED and must stay that way: Chris's first
+  // requirement is that someone joining a programme mid-challenge is in it
+  // automatically, and because this runs at render time they already are —
+  // proven by adding a member and watching the standings go 2 to 3. A stored
+  // list would be a snapshot and would break exactly that.
+  //
+  // memberIds is the opposite and that is the point: his second requirement is
+  // a private challenge between friends who all happen to be in Burn Club.
+  // That needs people named one by one, and a scope of "none" so the rest of
+  // the programme does not pour in. An old challenge has neither field and
+  // behaves exactly as it did.
   const byProgram = MEMBERS.filter((m) =>
     isActiveMember(m) && (challenge.programId === "all" || m.program === challenge.programId));
   const byGroup = (challenge.groupIds || []).flatMap((gid) => groupMembers(groupById(gid)));
+  const byMember = (challenge.memberIds || [])
+    .map((id) => memberById(id)).filter(Boolean).filter(isActiveMember);
 
   const seen = new Set();
-  const members = [...byProgram, ...byGroup].filter((m) => {
+  const members = [...byProgram, ...byGroup, ...byMember].filter((m) => {
     if (seen.has(m.id)) return false;
     seen.add(m.id);
     return true;
@@ -7740,6 +7852,7 @@ function saveChallenge() {
     challenge.teams = [];
   }
 
+  flushAdminState();
   closeChallengeModal();
   syncChallengeTeamsToMemberApp();
   // The format and the dates both decide whether this challenge's team chats
@@ -8090,6 +8203,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (selectedChallengeId) openEditChallengeModal(selectedChallengeId);
   });
   document.getElementById("member-bulk-message-btn").addEventListener("click", openBulkMessage);
+  document.getElementById("member-bulk-group-btn").addEventListener("click", () => openBulkTarget("group"));
+  document.getElementById("member-bulk-challenge-btn").addEventListener("click", () => openBulkTarget("challenge"));
+  document.getElementById("bulk-target-close-btn").addEventListener("click", closeBulkTarget);
+  document.getElementById("bulk-target-cancel-btn").addEventListener("click", closeBulkTarget);
+  document.getElementById("bulk-target-add-btn").addEventListener("click", confirmBulkTarget);
   document.getElementById("member-bulk-deactivate-btn").addEventListener("click", () => setMemberStatus("inactive"));
   document.getElementById("member-bulk-reactivate-btn").addEventListener("click", () => setMemberStatus("active"));
   document.getElementById("bulk-message-close-btn").addEventListener("click", closeBulkMessage);

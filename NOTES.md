@@ -452,10 +452,27 @@ Agreed build order for the bulk actions, from his list:
        decision, not a checkbox, and it belongs with the refund and
        lapsed-subscription questions in the post-sale flow — Chris's call,
        not assumed. The confirm dialog says so in as many words.
-3. [ ] **Add to custom group** — the missing direction. Today the only way in
-       is from the group's side: open the group, tick names, save. There is no
-       path from a member to a group.
-4. [ ] **Invite-only challenges**, and "add to challenge" writing a real list.
+3. [x] **Add to custom group** — done. Only CUSTOM groups are offered: a
+       programme group is automatic (the way in is to change someone's
+       programme) and teams are drawn per challenge.
+4. [x] **Invite-only challenges** — done. A `programId` of `"none"` matches no
+       programme, so nothing is swept in and membership is only what you add;
+       `challenge.memberIds` holds those people. Both verified: an invite-only
+       challenge starts empty while a programme challenge still returns
+       everyone, and adding two of three Burn Club members to a private
+       challenge leaves the third out.
+       "Add to challenge" offers invite-only challenges ONLY. Naming someone on
+       a programme challenge would write a list for people who are already in
+       by derivation, and the two would disagree the moment anyone changed
+       programme.
+
+**Found while building 3, and fixed first:** `adminStateSnapshot` saved
+circuits, schedules, folders and programs — **not CUSTOM_GROUPS and not
+CHALLENGES**. Every custom group and every challenge ever set up existed only
+until the page reloaded. The same shape of bug as `saveAdminCircuits` having
+one call site: work that looks saved and is not. Both are in the snapshot now,
+restored on load, and `saveGroup` / `deleteGroup` / `saveChallenge` /
+"add group to challenge" all flush. Proven by reloading and reading them back.
 
 **How membership actually works, since it decided the above:**
 - **Program groups** are automatic — membership IS being on the program.

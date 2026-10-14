@@ -845,9 +845,38 @@
           <!-- Both shown rather than one toggle: a selection can hold active
                and inactive members at once, and a toggle would have to guess
                which way the person meant. -->
+          <button class="btn-ghost-lg small" id="member-bulk-group-btn">Add to group</button>
+          <button class="btn-ghost-lg small" id="member-bulk-challenge-btn">Add to challenge</button>
           <button class="btn-ghost-lg small" id="member-bulk-deactivate-btn">Deactivate</button>
           <button class="btn-ghost-lg small" id="member-bulk-reactivate-btn">Reactivate</button>
           <button class="btn-ghost-lg small" id="member-bulk-clear-btn">Clear Selection</button>
+        </div>
+      </div>
+
+      <!-- One picker for both "add to group" and "add to challenge": the
+           question is the same shape — which one — and two near-identical
+           dialogs would be two things to keep in step. -->
+      <div class="builder-overlay" id="bulk-target-overlay">
+        <div class="builder-panel small">
+          <div class="builder-header">
+            <h2 id="bulk-target-title">Add to group</h2>
+            <button class="player-exit" id="bulk-target-close-btn">✕</button>
+          </div>
+          <div class="builder-body">
+            <p class="settings-field-help" id="bulk-target-who"></p>
+            <label class="modal-field" id="bulk-target-field">Choose
+              <select id="bulk-target-select"></select>
+            </label>
+            <p class="settings-field-help" id="bulk-target-note"></p>
+            <p class="settings-field-help" id="bulk-target-result"></p>
+          </div>
+          <footer class="builder-footer">
+            <span></span>
+            <div>
+              <button class="btn-ghost-lg" id="bulk-target-cancel-btn">Cancel</button>
+              <button class="btn-primary" id="bulk-target-add-btn">Add</button>
+            </div>
+          </footer>
         </div>
       </div>
 
@@ -1199,6 +1228,13 @@
           <label class="modal-field">Program
             <select id="challenge-modal-program">
               <option value="all">All Programs</option>
+              <!-- Matches no programme, so nobody is swept in and the only
+                   members are the ones named on the challenge or in a group
+                   attached to it. This is what makes a private challenge
+                   between friends possible while they all stay in Burn Club
+                   (2026-10-14, Chris). The existing filter handles it for
+                   free: programId is neither "all" nor any member's program. -->
+              <option value="none">Invite only — nobody unless you add them</option>
             </select>
           </label>
           <label class="modal-field">Format
