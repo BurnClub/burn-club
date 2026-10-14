@@ -236,6 +236,25 @@ As of 2026-09-28:
 - Sizes were the whole problem: the median camera clip is 14 seconds and 30 MB
   (~18 Mbps), which is why nothing can be uploaded straight off the drive.
 
+## The next real piece of work: admin content on the backend
+
+Raised by a real failure 2026-10-14, not by planning. Programmes, workouts and
+folders created in admin live in that browser's localStorage and never reach
+Supabase. That was harmless while nothing on the server read them — and stopped
+being harmless the moment a real `members` row had to point at a programme,
+because `program_id` is a foreign key and the server only has the three seeded
+ones.
+
+**It does not block the trial** as long as the six testers go on Burn Club, 30
+Minute Burn or Fit & Functional. It blocks everything after: every programme
+Chris builds from here is invisible to the database, and the member app still
+reads its workouts from the bundled `data.js`, so content changes cost a push.
+
+Order worth considering when it starts: programmes first (smallest, and the
+thing foreign keys point at), then folders, then workouts and their blocks —
+which is the same order `03-seed-content.sql` writes them in, for the same
+reason.
+
 ## Final Walkthrough
 
 Opened 2026-10-14 at Chris's request: "a few weeks before final launch." Things
@@ -417,10 +436,23 @@ it would be nice. Things that can follow launch belong in the sections below.
       in `enterAsAuthedMember`. A rolling programme needs no start date and the
       field disables itself.
       Staff may write those columns: "staff manage members" covers the table
-      and the `protect_member_columns` trigger only blocks NON-staff. Reasoned
-      from the policies rather than proven on the live database — the browser
-      session had expired and passwords are not mine to handle, so **Chris
-      should confirm one save works** before relying on it for six people.
+      and the `protect_member_columns` trigger only blocks NON-staff.
+      **Proven on the live database 2026-10-14** — Chris edited Jordan Tester's
+      name and internal note and both landed, which matters because they go to
+      two different tables (`members` and `member_private`) and a partial
+      success would have been the easy thing to miss.
+
+      The first attempt failed, and the failure was worth having: *"violates
+      foreign key constraint members_program_id_fkey"*. `members.program_id`
+      points at the SERVER's `programs` table, which holds the three seeded
+      programmes; admin's list is local to the browser and includes everything
+      created in admin since. The modal was offering a choice the database
+      would refuse. It now builds that list from the server, keeps a member's
+      existing programme visible but labelled "not on the server yet" rather
+      than silently reassigning them, and translates that one error into
+      something actionable.
+      Note it did not matter which field he changed: `saveMemberToServer` sends
+      the whole record, so `program_id` rides along with every save.
 
 - [ ] **Invites for the first six are hand-delivered** (Chris, 2026-10-13).
       The invite email still lands in spam and that is not being fixed before
