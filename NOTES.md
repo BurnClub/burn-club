@@ -236,6 +236,24 @@ As of 2026-09-28:
 - Sizes were the whole problem: the median camera clip is 14 seconds and 30 MB
   (~18 Mbps), which is why nothing can be uploaded straight off the drive.
 
+## Final Walkthrough
+
+Opened 2026-10-14 at Chris's request: "a few weeks before final launch." Things
+that are **not** tester blockers and should not be allowed to look like them —
+polish, wording and judgement calls that want fresh eyes once the product has
+stopped moving. Nothing here stops a trial; everything here would be noticed by
+a paying member.
+
+The distinction that keeps this list honest: an item belongs **here** if the app
+works without it and a tester would not be confused by its absence. It belongs
+in *Before we go live* if launching without it causes a problem.
+
+- [ ] **Tour copy is placeholder** (moved here 2026-10-14 — Chris: "tour copy
+      is fine, let's drop it off the list for the tester priorities"). Five
+      slides, editable at Admin → Settings → Member-Facing Copy, no code change
+      needed. It is the first thing a member reads, which is exactly why it
+      wants writing once rather than twice.
+
 ## Before we go live
 
 Started 2026-09-18. One list of everything that must be true before real
@@ -529,8 +547,6 @@ restored on load, and `saveGroup` / `deleteGroup` / `saveChallenge` /
       **Still open:** nothing asks for a notification permission anywhere, and
       the profile is the only thing flagged — if anything else should carry a
       badge later, `renderHealthProfileFlag` is the pattern to copy.
-- [ ] **Tour copy is placeholder**, five slides, editable at Admin → Settings →
-      Member-Facing Copy. It is the first thing a member reads.
 - [ ] **No invite button in admin.** Admin's Members section creates a member
       record; the auth invite itself is sent by hand from the Supabase
       dashboard. Workable for 6–10 testers, not past that.
