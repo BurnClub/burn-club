@@ -5607,6 +5607,17 @@ function memberById(id) {
 // the inbox true. Moving the rest of admin is its own job.
 let REAL_MEMBERS = [];
 let SERVER_MESSAGES = [];
+// The programmes the SERVER knows about (2026-10-14). Admin's PROGRAMS is a
+// local list — seeded, plus anything created in admin, saved to this browser.
+// members.program_id is a foreign key to the server's `programs` table, so
+// assigning someone to a programme that exists only in admin is refused:
+//   insert or update on table "members" violates foreign key constraint
+//   "members_program_id_fkey"
+// Chris hit that on the first real save. The member modal is therefore limited
+// to what the server actually has, rather than offering a choice that cannot
+// be honoured. The proper fix is admin's content moving onto the backend; this
+// stops it being a wrong answer in the meantime.
+let SERVER_PROGRAMS = [];
 
 function adminMessagingLive() {
   return typeof SB !== "undefined" && !!SB && !!ADMIN_STAFF;
@@ -5638,6 +5649,9 @@ async function loadRealMembers() {
   ]);
   if (rows.error) { console.warn("[admin] members:", rows.error.message); return; }
   REAL_MEMBERS = rows.data || [];
+
+  const progs = await SB.from("programs").select("id,name");
+  if (!progs.error) SERVER_PROGRAMS = progs.data || [];
 
   const privBy = {};
   (priv.data || []).forEach((r) => { privBy[r.member_id] = r; });
@@ -7244,6 +7258,26 @@ function updateMemberProgramFields() {
   updateMemberAccessField();
 }
 
+// Built from the server's programmes, not admin's, for the reason on
+// SERVER_PROGRAMS. A member already on a programme the server does not have
+// keeps it as an option — removing it would silently reassign them on the next
+// save, which is worse than showing the truth — but it is labelled so the
+// refusal is explained before it happens rather than afterwards.
+function populateMemberModalPrograms(currentProgramId) {
+  const sel = document.getElementById("member-modal-program");
+  if (!adminMessagingLive() || !SERVER_PROGRAMS.length) return;
+  const known = SERVER_PROGRAMS.map((p) =>
+    `<option value="${esc(p.id)}">${esc(p.name)}</option>`);
+  const onServer = SERVER_PROGRAMS.some((p) => p.id === currentProgramId);
+  if (currentProgramId && !onServer) {
+    const local = programById(currentProgramId);
+    known.unshift(
+      `<option value="${esc(currentProgramId)}">${esc(local ? local.name : currentProgramId)} — not on the server yet</option>`);
+  }
+  sel.innerHTML = `<option value="">— none —</option>` + known.join("");
+  sel.value = currentProgramId || "";
+}
+
 function openMemberModal() {
   // Admin cannot create an account, and the honest place to say so is before
   // a form is filled in rather than after Save. The key this page holds is not
@@ -7299,6 +7333,7 @@ function openEditMemberModal(memberId) {
   document.getElementById("member-modal-name").value = m.name;
   document.getElementById("member-modal-email").value = m.email;
   ensureProgramOptionFor(m.program);
+  populateMemberModalPrograms(m.program);
   document.getElementById("member-modal-program").value = m.program;
   document.getElementById("member-modal-member-since").value = m.memberSince || "";
   document.getElementById("member-modal-badge").value = m.badge;
@@ -7398,6 +7433,18 @@ async function saveMemberToServer(v) {
   const { error } = await SB.from("members").update(patch).eq("id", id);
   if (error) {
     btn.disabled = false; btn.textContent = "Save Member";
+    // The one failure worth translating: the raw text names a constraint, not
+    // a thing anyone can act on.
+    if (/members_program_id_fkey/.test(error.message)) {
+      const local = programById(patch.program_id);
+      alert(
+        `Not saved — "${local ? local.name : patch.program_id}" only exists in this admin, not on the server.\n\n` +
+        "Members can only be put on a programme the server has: " +
+        SERVER_PROGRAMS.map((p) => p.name).join(", ") + ".\n\n" +
+        "Programmes created in admin do not reach the server yet — that is the content migration."
+      );
+      return;
+    }
     alert("Not saved: " + error.message);
     return;
   }
