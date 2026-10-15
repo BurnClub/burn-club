@@ -4964,9 +4964,55 @@ function saveAdminCircuits() {
   flushAdminState();
 }
 
+// One naming convention for week folders: `<programId>-week-<n>` (2026-10-14).
+//
+// The seed used to carry two shapes — `ff-home-week-N` and `tmb-week-N` — and
+// ensureWeekFolders() added a third. Fixing the seed is not enough: Chris's
+// real content lives in this browser's saved state and still points at the old
+// ids, so this repairs what is already there.
+//
+// Derived from each folder's own `program` rather than from a list of known
+// prefixes. That way it also catches anything made under a convention nobody
+// has thought of yet, and it does nothing at all to a folder already correct.
+//
+// Runs on every load and is idempotent. It has to be: the alternative is a
+// one-shot flag, and a one-shot that runs before the data it was meant to fix
+// has loaded is a migration that silently never happens.
+function normaliseWeekFolderIds() {
+  const renames = {};
+  FOLDERS.forEach((f) => {
+    const m = /-week-(\d+)$/.exec(f.id || "");
+    if (!m || !f.program) return;
+    const want = `${f.program}-week-${m[1]}`;
+    if (f.id === want) return;
+    // Refuse rather than merge if the target already exists — two folders
+    // collapsing into one would silently move workouts between weeks, which is
+    // worse than leaving an odd id alone.
+    if (FOLDERS.some((other) => other.id === want)) {
+      console.warn("[admin] week folder", f.id, "wants to become", want, "but that exists — left alone");
+      return;
+    }
+    renames[f.id] = want;
+    f.id = want;
+  });
+
+  const ids = Object.keys(renames);
+  if (!ids.length) return 0;
+  // Every workout citing a renamed folder has to follow in the same pass, or
+  // it is orphaned: folderById() returns nothing and it vanishes from its week.
+  let moved = 0;
+  CIRCUITS.forEach((c) => {
+    if (renames[c.folderId]) { c.folderId = renames[c.folderId]; moved++; }
+  });
+  console.info(`[admin] week folder ids unified: ${ids.length} folder(s), ${moved} workout(s) followed.`);
+  return ids.length;
+}
+
 function loadAdminCircuits() {
   const raw = localStorage.getItem(ADMIN_PROGRAM_DATA_KEY);
-  if (!raw) { adminStateReady = true; return; }
+  // No saved state: the seed is already correct, but run it anyway so there is
+  // one code path rather than two that have to agree.
+  if (!raw) { normaliseWeekFolderIds(); adminStateReady = true; return; }
   try {
     const saved = JSON.parse(raw);
     if (Array.isArray(saved.circuits) && saved.circuits.length) {
@@ -5005,6 +5051,11 @@ function loadAdminCircuits() {
     }
     lastAdminSnapshot = adminStateSnapshot();
     adminStateReady = true;
+    // AFTER adminStateReady, not before. flushAdminState() returns early while
+    // it is false, so an earlier call renamed everything in memory and wrote
+    // none of it — the UI looked right and the next reload undid the lot.
+    // Caught by reading the saved copy back rather than trusting the screen.
+    if (normaliseWeekFolderIds()) flushAdminState();
   } catch (e) {
     // A corrupt value is still the only copy of someone's work, so it is put
     // aside rather than overwritten by the next save. Saving stays off for

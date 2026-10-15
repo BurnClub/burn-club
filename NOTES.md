@@ -254,9 +254,23 @@ programme, workout or block is cheap now and a second migration later.
        would make the member app learn all three and any future fourth.
        `memberWeekNoteKey()` in admin emits the logical key and `WEEK_NOTES` in
        data.js consumes it.
-       **For the migration: those ids want unifying.** It is a data change, not
-       a code one, and it is the sort of thing that is nearly free now and
-       expensive once rows point at them.
+       **Unified 2026-10-14, ahead of the migration.** One convention now:
+       `<programId>-week-<n>`. The seed is fixed and
+       `normaliseWeekFolderIds()` repairs state already saved in a browser,
+       renaming the folder and every workout citing it in the same pass —
+       otherwise a workout is orphaned and vanishes from its week.
+       Derived from each folder's own `program` rather than a list of known
+       prefixes, so it also catches a convention nobody has invented yet.
+       Idempotent, and it refuses to rename when the target id already exists:
+       two folders collapsing into one would silently move workouts between
+       weeks, which is worse than one odd id.
+
+       **Chris's naming holds up.** He builds a new Fit & Functional every two
+       months — "26' Nov-Dec Fit & Functional" — and asked whether folders
+       keyed on the programme would collide. They will not: a new programme id
+       is `slug + Date.now()`, unique even for two identically-named
+       programmes, and editing a programme deliberately does not change its id,
+       so a rename cannot orphan a folder.
 
 2. [x] **The Calendar is pinned to the programme week** — done, same day.
        It ran today → today+6, so from Tuesday on it straddled two programme
@@ -274,6 +288,28 @@ programme, workout or block is cheap now and a second migration later.
        `calendarWeekStart` already exists for this and resets to the member's
        own week whenever the tab is opened — a preview is a look ahead, not a
        new place to be.
+
+## Settled: programmes are hand-built on purpose — do not "fix" this
+
+I raised the absence of a "duplicate programme" feature on 2026-10-14 as a
+workflow cost. It is not. Chris, same day:
+
+> "we build all of the new programs by hand, and its for a reason. We do this
+> because we promise new, unique, hand built workouts every new program. Its a
+> major selling point for us that our members are not getting some cookie
+> cutter, boring, repeating every 2 weeks plan."
+
+So: 48 hand-built workouts every two months is the product, not an
+inefficiency. **Do not propose programme duplication as a time-saver**, and do
+not let the content migration quietly make copying the path of least
+resistance — a feature that is easy to reach is a feature that gets used.
+
+The distinction that stays open, and only this one: the SKELETON of a
+programme is mechanical and repeats — its length, its variants, its week
+folders, and which day of the week each session falls on. None of that is the
+promise; the promise is the exercises inside. `ensureWeekFolders()` already
+automates part of it. If anything else here is ever worth automating it is
+that, and it has to be obvious it carries no content with it.
 
 ## The next real piece of work: admin content on the backend
 

@@ -894,8 +894,15 @@ const FOLDERS = [
   // actual workout content, which gets "published" by being slotted into
   // SCHEDULE_TEMPLATES instead. One folder per week rather than one folder
   // for the whole program, since every week's 6 workouts are fully unique.
-  ...Array.from({ length: 8 }, (_, i) => ({ id: `ff-home-week-${i + 1}`, name: `F&F Week ${i + 1}`, program: "fit-functional" })),
-  ...Array.from({ length: 8 }, (_, i) => ({ id: `tmb-week-${i + 1}`, name: `30 Min Burn Week ${i + 1}`, program: "thirty-minute-burn" })),
+  // One convention: `<programId>-week-<n>` (2026-10-14). These were
+  // `ff-home-week-N` and `tmb-week-N` — two shapes, and `ensureWeekFolders()`
+  // added a third for programmes created in admin. Three names for one idea.
+  // Harmless while only this browser read them; a liability once the content
+  // migration makes them keys that workout rows point at, because renaming one
+  // then means rewriting every reference in the right order.
+  // normaliseWeekFolderIds() in admin/app.js repairs anything already saved.
+  ...Array.from({ length: 8 }, (_, i) => ({ id: `fit-functional-week-${i + 1}`, name: `F&F Week ${i + 1}`, program: "fit-functional" })),
+  ...Array.from({ length: 8 }, (_, i) => ({ id: `thirty-minute-burn-week-${i + 1}`, name: `30 Min Burn Week ${i + 1}`, program: "thirty-minute-burn" })),
 ];
 
 // ---------------- Fit & Functional content generator ----------------
@@ -965,7 +972,7 @@ function ffPickRotating(pool, week, count) {
 function buildFitFunctionalCircuits() {
   const circuits = [];
   for (let week = 1; week <= 8; week++) {
-    const folderId = `ff-home-week-${week}`;
+    const folderId = `fit-functional-week-${week}`;
     const difficulty = week <= 6 ? "Intermediate" : "Advanced";
     const sets = 3 + Math.floor((week - 1) / 2); // 3 sets weeks 1-2, up to 6 sets weeks 7-8
 
@@ -1069,7 +1076,7 @@ const TMB_FOCUS_AREAS = [
 function buildThirtyMinuteBurnCircuits() {
   const circuits = [];
   for (let week = 1; week <= 8; week++) {
-    const folderId = `tmb-week-${week}`;
+    const folderId = `thirty-minute-burn-week-${week}`;
     const difficulty = week <= 5 ? "Intermediate" : "Advanced";
     const rounds = 3 + Math.floor((week - 1) / 3);
 
