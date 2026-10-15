@@ -236,6 +236,45 @@ As of 2026-09-28:
 - Sizes were the whole problem: the median camera clip is 14 seconds and 30 MB
   (~18 Mbps), which is why nothing can be uploaded straight off the drive.
 
+## Programme building — changes before the migration (2026-10-14)
+
+Chris wants a few builder changes first, which is the right order: the
+migration turns this data into tables, so anything that changes the SHAPE of a
+programme, workout or block is cheap now and a second migration later.
+
+1. [x] **A note per week folder, shown to the member** — done. Written on the
+       week's card in admin (on blur, no second button), read at the top of
+       that week in the member's Calendar. Structured programmes only; Chris
+       explicitly left on-demand folders out for now.
+
+       **Keyed by programme + week number, NOT by folder id.** The folder ids
+       are three conventions for one idea: `ff-home-week-N` for Fit &
+       Functional, `tmb-week-N` for 30 Minute Burn, and `<programId>-week-N`
+       from `ensureWeekFolders()`, added 2026-10-08. Keying the note on the id
+       would make the member app learn all three and any future fourth.
+       `memberWeekNoteKey()` in admin emits the logical key and `WEEK_NOTES` in
+       data.js consumes it.
+       **For the migration: those ids want unifying.** It is a data change, not
+       a code one, and it is the sort of thing that is nearly free now and
+       expensive once rows point at them.
+
+2. [x] **The Calendar is pinned to the programme week** — done, same day.
+       It ran today → today+6, so from Tuesday on it straddled two programme
+       weeks: the heading said one thing and half the rows belonged to the
+       next. Home's week strip had always followed the programme week, so the
+       two screens disagreed about what "this week" meant.
+       Past days stay in the list and stay tappable (Chris: "keep past days
+       tappable") — a missed Tuesday is still openable on Thursday. They are
+       receded, which says "behind you", not "locked".
+
+3. [ ] **Preview next week** — Chris wants a button to look ahead, and said it
+       could come later. Worth noting that pinning the Calendar made it less
+       optional than it was: on a Saturday the screen now shows one day, which
+       is exactly when someone is thinking about what is next.
+       `calendarWeekStart` already exists for this and resets to the member's
+       own week whenever the tab is opened — a preview is a look ahead, not a
+       new place to be.
+
 ## The next real piece of work: admin content on the backend
 
 Raised by a real failure 2026-10-14, not by planning. Programmes, workouts and

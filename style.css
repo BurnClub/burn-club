@@ -4281,3 +4281,28 @@ h1, h2, h3 {
 }
 .login-unassigned h2 { margin: 0; font-size: 18px; }
 .login-unassigned p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-muted); }
+
+/* The coach's note for the programme week (2026-10-14). Sits between the
+   heading and the days it governs, styled as something written by a person
+   rather than as another card — it is a sentence from a coach, and a box with
+   an icon would make it furniture. */
+.calendar-week-note {
+  margin: -4px 0 14px;
+  padding: 10px 14px;
+  background: var(--pill-surface);
+  border-left: 3px solid var(--accent-text);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text);
+}
+/* A day already behind the member (2026-10-14). Receded, not disabled: a
+   missed Tuesday is still openable on Thursday, which is Chris's call and the
+   kind someone actually needs. Opacity alone would take the text under
+   contrast, so the row keeps full-strength text and loses its weight instead. */
+.calendar-day-row.is-past .calendar-item-btn,
+.calendar-day-row.is-past .calendar-item-scheduled { opacity: 0.55; }
+.calendar-day-row.is-past .calendar-day-date { opacity: 0.6; }
+.calendar-day-row.is-past:hover .calendar-item-btn,
+.calendar-day-row.is-past:hover .calendar-item-scheduled { opacity: 0.85; }

@@ -2393,3 +2393,35 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   border-radius: 999px;
   vertical-align: 1px;
 }
+
+/* ---------- WEEK FOLDER NOTE (2026-10-14) ---------- */
+/* The card's open-the-folder area is now its own element, because the note
+   sits inside the same card and clicking into a textarea must not also open
+   the folder underneath it. */
+.folder-card-open { cursor: pointer; }
+.folder-note-field {
+  display: block;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--periwinkle);
+}
+.folder-note-field span {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--deepblue);
+  margin-bottom: 4px;
+}
+.folder-note-field textarea {
+  width: 100%;
+  border: 2px solid var(--periwinkle);
+  border-radius: var(--radius-sm);
+  background: var(--field-bg);
+  padding: 7px 9px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+  resize: vertical;
+}

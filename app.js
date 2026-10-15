@@ -6351,7 +6351,33 @@ function calendarReminderHtml(item) {
   return `<span class="calendar-item-reminder">${esc(label)}</span>`;
 }
 
-function renderCalendarDayRow(date, member, template) {
+// The heading, and the coach's note for whichever week is on screen.
+//
+// The week NUMBER is derived from the start date rather than taken from
+// `pos.week`, because the preview button moves `weekStart` without moving the
+// member — pos.week is always the week they are actually in.
+function renderCalendarWeekHeader(pos, weekStart) {
+  const m = CURRENT_MEMBER;
+  const dayOffset = daysBetween(m.startDate, dateKey(weekStart));
+  const weekNumber = Math.floor(dayOffset / 7) + 1;
+  const isCurrent = weekNumber === pos.week;
+
+  const title = document.getElementById("calendar-week-title");
+  if (title) title.textContent = isCurrent ? `Week ${weekNumber}` : `Week ${weekNumber} — a look ahead`;
+
+  const note = document.getElementById("calendar-week-note");
+  if (!note) return;
+  const text = (typeof WEEK_NOTES !== "undefined" && WEEK_NOTES[`${m.programId}-week-${weekNumber}`]) || "";
+  note.hidden = !text;
+  note.textContent = text;
+}
+
+// Which week the Calendar is showing. null means "the one the member is in",
+// which is what it resets to every time the tab is opened — a preview is a
+// look ahead, not a new place to be.
+let calendarWeekStart = null;
+
+function renderCalendarDayRow(date, member, template, isPast) {
   const today = new Date();
   const isToday = dateKey(date) === dateKey(today);
   // Same guard as upcomingScheduledItems — see the note there.
@@ -6408,7 +6434,7 @@ function renderCalendarDayRow(date, member, template) {
   }
 
   return `
-    <div class="calendar-day-row ${isToday ? "today" : ""}">
+    <div class="calendar-day-row ${isToday ? "today" : ""}${isPast ? " is-past" : ""}">
       <div class="calendar-day-date">
         <span>${formatWeekdayDate(date)}</span>
         ${isToday ? `<span class="calendar-today-tag">Today</span>` : ""}
@@ -6427,15 +6453,30 @@ function renderCalendarTab() {
   // undefined date rather than just showing nothing (2026-08-13).
   if (member.scheduleType !== "structured" || !member.startDate) return;
   const template = SCHEDULE_TEMPLATES[member.programId] || [];
-  const today = new Date();
+
+  // Pinned to the PROGRAMME week, not the next seven days (2026-10-14, Chris).
+  // It used to run today → today+6, which meant that from Tuesday onward it
+  // straddled two programme weeks: the heading said one thing and half the
+  // rows belonged to the next. Home's week strip has always followed the
+  // programme week for exactly that reason, so the two screens disagreed about
+  // what "this week" meant.
+  //
+  // Days already past stay in the list rather than being dropped — a member
+  // who missed Tuesday can still open it on Thursday (Chris: "keep past days
+  // tappable"). They are only receded, which says "behind you", not "locked".
+  const pos = memberProgramPosition();
+  if (!pos) return;
+  const weekStart = calendarWeekStart || pos.weekStartDate;
+  const todayKey = dateKey(new Date());
 
   const rows = [];
   for (let i = 0; i < 7; i++) {
-    const date = new Date(today);
+    const date = new Date(weekStart);
     date.setDate(date.getDate() + i);
-    rows.push(renderCalendarDayRow(date, member, template));
+    rows.push(renderCalendarDayRow(date, member, template, dateKey(date) < todayKey));
   }
 
+  renderCalendarWeekHeader(pos, weekStart);
   document.getElementById("calendar-day-list").innerHTML = rows.join("");
   document.querySelectorAll("#calendar-day-list [data-open-circuit]").forEach((btn) => {
     btn.addEventListener("click", () => openCircuit(btn.dataset.openCircuit));

@@ -273,9 +273,15 @@
           <div class="topbar-actions"><button class="msg-icon-btn" data-action="open-notebook" aria-label="Notebook" title="Notebook"><span class="msg-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M8 4v16"/></svg></span><span class="checkin-done-dot" data-role="checkin-done-dot" style="display:none;"></span></button><button class="msg-icon-btn" data-action="open-messages" aria-label="Messages"><span class="msg-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button></div>
         </header>
         <div class="calendar-list-header">
-          <h2 class="section-title">This Week</h2>
+          <h2 class="section-title" id="calendar-week-title">This Week</h2>
           <button class="btn-primary small" id="calendar-add-btn">+ Add</button>
         </div>
+        <!-- The coach's note for this programme week (2026-10-14, Chris).
+             Written per week folder in admin and shown here, under the
+             heading and above the days it governs. Hidden entirely when there
+             is none — an empty box every week would teach members to stop
+             reading it. -->
+        <p class="calendar-week-note" id="calendar-week-note" hidden></p>
         <div class="calendar-day-list" id="calendar-day-list"></div>
       </section>
 

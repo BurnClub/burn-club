@@ -1440,18 +1440,62 @@ function openAllPrograms() {
   renderPrograms();
 }
 
+// A note the member reads at the top of that week's Calendar (2026-10-14,
+// Chris). Structured programmes only: a rolling programme has no weeks to
+// attach one to, and he explicitly left on-demand folders out for now.
+//
+// Edited on the card rather than behind a modal, because it is one short
+// field and the thing it belongs to is right there. Saved on blur, so there
+// is no second button to forget — and `data-action` is deliberately absent so
+// clicking into the textarea does not also open the folder.
 function folderCardHtml(f) {
   const count = CIRCUITS.filter((c) => c.folderId === f.id).length;
+  const isWeek = /-week-\d+$/.test(f.id);
   return `
-    <div class="folder-card ${f.program ? "tagged" : ""} ${f.live ? "live" : ""}" data-action="open-folder" data-folder-id="${f.id}">
+    <div class="folder-card ${f.program ? "tagged" : ""} ${f.live ? "live" : ""}">
       ${f.live ? "" : `<button class="folder-delete-btn" data-action="delete-folder" data-folder-id="${f.id}" title="Delete folder">✕</button>`}
-      <div class="folder-card-top">
-        <h3>${f.name}</h3>
-        ${f.live ? `<span class="folder-live-badge">● LIVE</span>` : ""}
+      <div class="folder-card-open" data-action="open-folder" data-folder-id="${f.id}">
+        <div class="folder-card-top">
+          <h3>${esc(f.name)}</h3>
+          ${f.live ? `<span class="folder-live-badge">● LIVE</span>` : ""}
+        </div>
+        <p class="folder-count">${count} workout${count === 1 ? "" : "s"}</p>
       </div>
-      <p class="folder-count">${count} workout${count === 1 ? "" : "s"}</p>
+      ${isWeek ? `
+        <label class="folder-note-field">
+          <span>Note to members${f.note ? "" : " (optional)"}</span>
+          <textarea rows="2" data-folder-note="${esc(f.id)}"
+                    placeholder="Shown at the top of this week in their Calendar">${esc(f.note || "")}</textarea>
+        </label>` : ""}
     </div>
   `;
+}
+
+// The key the MEMBER app looks a note up by: programme plus week number, not
+// the folder's own id.
+//
+// That matters because the folder ids are not one convention. The seed uses
+// `ff-home-week-N` for Fit & Functional and `tmb-week-N` for 30 Minute Burn,
+// while ensureWeekFolders() — added 2026-10-08 for programmes created in
+// admin — uses `<programId>-week-N`. Three shapes for the same idea. Keying
+// the note on the id would mean the member app had to know all three and any
+// future fourth; keying it on what the week IS does not.
+//
+// Flagged for the content migration: those ids want unifying, and that is a
+// data change, not a code one.
+function memberWeekNoteKey(folder) {
+  const m = /-week-(\d+)$/.exec(folder.id || "");
+  if (!m || !folder.program) return null;
+  return `${folder.program}-week-${m[1]}`;
+}
+
+function saveFolderNote(folderId, value) {
+  const folder = FOLDERS.find((f) => f.id === folderId);
+  if (!folder) return;
+  const next = value.trim();
+  if ((folder.note || "") === next) return;      // nothing typed, nothing to save
+  folder.note = next;
+  flushAdminState();
 }
 
 // Folders for a program (or "general" for unassigned), live folders first,
@@ -1533,6 +1577,9 @@ function renderFolderGrid() {
   const folders = orderedFoldersForScope(scope);
   grid.innerHTML = folders.map(folderCardHtml).join("")
     || `<p style="color:var(--deepblue);font-weight:700;">No folders here yet. Click "+ New Folder" to add one.</p>`;
+  grid.querySelectorAll("[data-folder-note]").forEach((el) => {
+    el.addEventListener("blur", () => saveFolderNote(el.dataset.folderNote, el.value));
+  });
 }
 
 // Previous weeks start collapsed (2026-08-17, Chris's layout). This is the

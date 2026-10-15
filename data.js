@@ -1670,6 +1670,23 @@ function buildFitFunctionalSchedule() {
   return days;
 }
 
+// A coach's note per programme week (2026-10-14, Chris). Keyed by what the
+// week IS — programme plus week number — rather than by the folder's id.
+//
+// Deliberate: admin's week folders are not one convention. The seed uses
+// `ff-home-week-N` and `tmb-week-N`, while folders created by
+// ensureWeekFolders() use `<programId>-week-N`. Keying on the id would make
+// this side learn all three; keying on programme and number does not. See
+// memberWeekNoteKey() in admin/app.js, which emits exactly this.
+//
+// Mirrors admin's folder notes, hand-carried like every other piece of
+// content: admin writes to its own storage and nothing reaches a member until
+// it comes through here. That is the limitation the content migration exists
+// to remove, and this is one more reason to do it.
+const WEEK_NOTES = {
+  "fit-functional-week-2": "Week 2 is the one that usually bites — the volume steps up before your body has caught up with it. If something has to give, drop a set rather than a session.",
+};
+
 const SCHEDULE_TEMPLATES = {
   "fit-functional": buildFitFunctionalSchedule(),
 };
