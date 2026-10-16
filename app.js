@@ -5762,6 +5762,21 @@ function resetCalendarWeek() {
   document.getElementById("tab-calendar").scrollTop = 0;
 }
 
+// The furthest week the Calendar will show: one past the member's own, and
+// never past the end of the programme (Chris, 2026-10-16: "I don't need them
+// moving forward a bunch of weeks, just one"). A look ahead is for deciding
+// whether to swap a session or book a gym slot; reading week 7 in week 2 is
+// not planning, it is browsing, and it invites "why has this changed?" when
+// the programme is still being written.
+//
+// ONE function, used by both the bounds check and the button's own hidden
+// state. Two copies of the same arithmetic is how you end up with a Next
+// button that shows and then refuses — the exact bug the comment above
+// records, and the same class as the dead pencils.
+function calendarMaxWeek(pos) {
+  return Math.min(pos.week + 1, pos.totalWeeks);
+}
+
 function shiftCalendarWeek(deltaWeeks) {
   const pos = memberProgramPosition();
   if (!pos) return;
@@ -5771,7 +5786,7 @@ function shiftCalendarWeek(deltaWeeks) {
 
   const offset = daysBetween(CURRENT_MEMBER.startDate, dateKey(next));
   const weekNumber = Math.floor(offset / 7) + 1;
-  if (weekNumber < pos.week || weekNumber > pos.totalWeeks) return;
+  if (weekNumber < pos.week || weekNumber > calendarMaxWeek(pos)) return;
 
   // null rather than the member's own week start, so "which week am I on"
   // stays a question answered by the date and not by a stored copy of it that
@@ -6719,13 +6734,13 @@ function renderCalendarWeekHeader(pos, weekStart) {
   if (title) title.textContent = isCurrent ? `Week ${weekNumber}` : `Week ${weekNumber} — a look ahead`;
 
   // Back only exists when there is somewhere to go back to, and Next stops at
-  // the last week of the programme rather than running off into empty days.
+  // calendarMaxWeek() — one week ahead, or the end of the programme, whichever
+  // comes first — rather than running off into empty days.
   const back = document.getElementById("calendar-week-back");
   const next = document.getElementById("calendar-week-next");
   if (back) back.hidden = isCurrent;
   if (next) {
-    const atEnd = weekNumber >= pos.totalWeeks;
-    next.hidden = atEnd;
+    next.hidden = weekNumber >= calendarMaxWeek(pos);
     next.textContent = `Week ${weekNumber + 1} ›`;
   }
 

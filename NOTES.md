@@ -288,6 +288,17 @@ programme, workout or block is cheap now and a second migration later.
        Back is a RESET, not a shift — written as a shift first, which the
        bounds check would have refused outright, leaving a button that looked
        fine and did nothing.
+       **Capped at ONE week ahead** (Chris, 2026-10-16: "I don't need them
+       moving forward a bunch of weeks, just one"). A look ahead is for
+       deciding whether to swap a session or book a gym slot; reading week 7
+       in week 2 is browsing, not planning, and it invites "why has this
+       changed?" while the programme is still being written. `calendarMaxWeek`
+       is one function used by BOTH the bounds check and the button's hidden
+       state — two copies of that arithmetic is how you get a Next button that
+       shows and then refuses, which is the same bug as the paragraph above.
+       Verified by calling `shiftCalendarWeek(1)` from the console with the
+       button hidden: refused, so the cap is in the logic and not just in what
+       is on screen.
 
        **Two bugs the preview surfaced, both older than it:**
 
