@@ -4297,15 +4297,31 @@ h1, h2, h3 {
 /* The coach's note for the programme week (2026-10-14). Sits between the
    heading and the days it governs, styled as something written by a person
    rather than as another card — it is a sentence from a coach, and a box with
-   an icon would make it furniture. */
+   an icon would make it furniture.
+   Recoloured 2026-10-16 to the Daily Habits green: the Calendar is otherwise a
+   column of white rows and "that page needs a splash of color". The blue rule
+   down the left went with it — the colour already marks the note as different
+   from the days under it, and the bar was saying the same thing a second time
+   in a heavier voice. */
 .calendar-week-note {
   margin: -4px 0 14px;
-  padding: 10px 14px;
-  background: var(--pill-surface);
-  border-left: 3px solid var(--accent-text);
+  padding: 12px 14px;
+  background: var(--card-habits);
   border-radius: var(--radius-sm);
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+/* Top-aligned, not centred: the note runs to four lines on a phone and a
+   badge floating in the middle of a paragraph reads as punctuation. Every
+   other card puts it level with the first line, so this one does too. */
+.calendar-week-note .section-icon { margin-top: -1px; }
+.calendar-week-note p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.45;
   color: var(--text);
 }
@@ -4426,3 +4442,19 @@ h1, h2, h3 {
   padding: 0;
 }
 .calendar-day-add:hover { background: var(--accent-text); }
+
+/* ---------- TODAY ON HOME (2026-10-16) ---------- */
+/* A finished session stays on the card rather than vanishing — an empty
+   section on a day someone has already trained reads as "nothing scheduled",
+   which is the opposite of what happened. Receded, same language the Calendar
+   uses for a day behind you. */
+.circuit-card-upcoming.is-done { opacity: 0.6; }
+.circuit-tag.is-done { background: var(--green-dark, #4C7D5B); color: white; }
+
+/* Card titles at normal weight, descriptions at light — the same treatment
+   the Calendar rows got on 2026-10-15 ("the text feels too bold for me").
+   Scoped to .circuit-card rather than lowered on --title-weight, because that
+   token also sets section headings, which are meant to carry more weight than
+   the cards under them. */
+.circuit-card h3 { font-weight: 400; }
+.circuit-card p { font-weight: 300; }

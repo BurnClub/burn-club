@@ -5842,65 +5842,68 @@ function completionForSlotOnDate(slotId, dateStr) {
 // Their schedule decides what's next, so Home answers "what's coming up"
 // instead of "what's available."
 
-function upcomingDayLabel(date) {
-  const key = dateKey(date);
-  if (key === dateKey(new Date())) return "Today";
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  if (key === dateKey(tomorrow)) return "Tomorrow";
-  return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-}
-
-// Next N scheduled items from today forward — workouts, and since 2026-10-10
-// the coach's cardio and reminders too, which were being dropped here as well
-// as in the Calendar. Rest days are skipped (they'd waste one of only three
-// slots), and anything already completed on its own scheduled date drops off
-// so all three are genuinely still ahead of you — completions are matched by
-// date, not just workout id, the same way the Calendar tab does it.
-function upcomingScheduledItems(limit) {
+// Everything on TODAY, and nothing else (2026-10-16, Chris: "for the coming
+// up section i want to just show what is on the calendar for today, thats
+// it"). Home had been showing the next three items from today forward, which
+// on a Tuesday meant Wednesday and Thursday's sessions sitting under today's
+// — three cards to read before knowing what to do now. Looking ahead is what
+// the Calendar is for, and it has a week preview of its own since today.
+//
+// A finished item is KEPT and marked rather than dropped: an empty section on
+// a day the member has already trained reads as "nothing scheduled", which is
+// the opposite of what happened. Their day should close, not disappear.
+function todayScheduledItems() {
   const member = CURRENT_MEMBER;
   const template = SCHEDULE_TEMPLATES[member.programId] || [];
-  // A structured member with no start date is a data error, not a state the
-  // app should have to render — but it used to reach daysBetween() as
-  // undefined and throw inside init(), so their Home never drew at all
-  // (2026-08-23). Degrade to "nothing scheduled" instead. The admin's
-  // validation report is where this gets surfaced to the coach; the member's
-  // app just shouldn't die of it.
   if (!member.startDate) return [];
   const today = new Date();
-  const todayProgramDay = daysBetween(member.startDate, dateKey(today)) + 1;
+  const todayKey = dateKey(today);
+  const todayProgramDay = daysBetween(member.startDate, todayKey) + 1;
+
   const out = [];
-
-  for (const item of template) {
-    if (item.day < todayProgramDay || item.type === "rest") continue;
-
-    const date = new Date(today);
-    date.setDate(date.getDate() + (item.day - todayProgramDay));
-
+  template.forEach((item) => {
+    if (item.day !== todayProgramDay) return;
+    if (item.type === "rest") { out.push({ kind: "rest" }); return; }
     if (item.type === "cardio") {
-      // Same done-test the Calendar uses, so the two screens agree.
-      if (cardioLoggedOnDate(dateKey(date)).done) continue;
-      out.push({ kind: "cardio", item, date });
+      out.push({ kind: "cardio", item, date: today, done: cardioLoggedOnDate(todayKey).done });
     } else if (item.type === "note") {
-      // A reminder has nothing to complete, so it stays on the list until its
-      // day passes — which is the point of a reminder.
-      out.push({ kind: "note", item, date });
+      out.push({ kind: "note", item, date: today });
     } else {
-      if (completionForSlotOnDate(item.workoutId, dateKey(date))) continue;
-      // Home counts a day once even for combo members — showing the same
-      // session twice in a three-slot "what's next" list would crowd out the
-      // days behind it. The Calendar is where both variants are offered.
-      const [circuit] = workoutsForSlot(item.workoutId);
-      if (!circuit) continue;
-      out.push({ kind: "workout", circuit, date });
+      // BOTH variants for a combo member, which is what the Calendar does and
+      // what this failed to do when first written: it took only the first,
+      // carrying over a rule from the old three-item list where showing two
+      // would have crowded it. That reason left with the list.
+      // workoutsForSlot already filters by what the member bought, so a
+      // home-only member still sees one.
+      const options = workoutsForSlot(item.workoutId);
+      if (!options.length) return;
+      const completion = completionForSlotOnDate(item.workoutId, todayKey);
+      // The day is done once EITHER variant is, so the one they did keeps its
+      // tick and the other stops being offered — no half-finished day for a
+      // combo member. Same rule as the Calendar.
+      options
+        .filter((c) => !completion || completion.workoutId === c.id)
+        .forEach((circuit) => {
+          out.push({ kind: "workout", circuit, date: today,
+                     done: !!completion,
+                     variant: options.length > 1 ? circuit.variant : null });
+        });
     }
-    if (out.length === limit) break;
-  }
+  });
   return out;
 }
 
 function renderUpcomingWorkoutCard(entry) {
-  const { kind, circuit, item, date } = entry;
+  const { kind, circuit, item, date, done, variant } = entry;
+  // The day tag said "Today" under a heading that says Today (2026-10-16).
+  // The corner carries what is actually useful instead: which variant this is
+  // while there is a choice to make, and whether it is finished once there is
+  // not.
+  const tag = done
+    ? `<span class="circuit-tag is-done">✓ Done</span>`
+    : variant
+    ? `<span class="circuit-tag">${esc(variantLabel(variant))}</span>`
+    : "";
 
   // Cardio and reminders ride in the same list as the workouts (2026-10-10),
   // because "what is next" is the question Home answers and the coach put them
@@ -5912,13 +5915,13 @@ function renderUpcomingWorkoutCard(entry) {
     const label = item.text && item.text.trim() ? item.text.trim() : "Cardio";
     const isFuture = daysBetween(dateKey(new Date()), dateKey(date)) > 0;
     return `
-      <button class="circuit-card circuit-card-upcoming color-blue"
-              ${isFuture ? "disabled" : `data-coach-cardio="${esc(dateKey(date))}"`}>
+      <button class="circuit-card circuit-card-upcoming color-blue ${done ? "is-done" : ""}"
+              ${isFuture || done ? "disabled" : `data-coach-cardio="${esc(dateKey(date))}"`}>
         <div class="circuit-card-top">
           <h3>${esc(label)}</h3>
-          <span class="circuit-tag">${upcomingDayLabel(date)}</span>
+          ${tag}
         </div>
-        <p>Cardio${isFuture ? "" : " · tap to log it"}</p>
+        <p>Cardio${done ? " · logged" : isFuture ? "" : " · tap to log it"}</p>
       </button>
     `;
   }
@@ -5929,7 +5932,6 @@ function renderUpcomingWorkoutCard(entry) {
       <div class="circuit-card circuit-card-upcoming circuit-card-reminder">
         <div class="circuit-card-top">
           <h3>${esc(label)}</h3>
-          <span class="circuit-tag">${upcomingDayLabel(date)}</span>
         </div>
         <p>Reminder from your coach</p>
       </div>
@@ -5937,11 +5939,11 @@ function renderUpcomingWorkoutCard(entry) {
   }
 
   return `
-    <button class="circuit-card circuit-card-upcoming color-${circuit.color}" data-open-circuit="${circuit.id}">
+    <button class="circuit-card circuit-card-upcoming color-${circuit.color} ${done ? "is-done" : ""}" data-open-circuit="${circuit.id}">
       <span class="circuit-bg-icon">${CIRCUIT_ICONS[circuitIconKey(circuit)]}</span>
       <div class="circuit-card-top">
         <h3>${circuit.title}</h3>
-        <span class="circuit-tag">${upcomingDayLabel(date)}</span>
+        ${tag}
       </div>
       <p>${circuit.meta}</p>
     </button>
@@ -5949,7 +5951,7 @@ function renderUpcomingWorkoutCard(entry) {
 }
 
 function renderHomeUpcomingWorkouts() {
-  const upcoming = upcomingScheduledItems(3);
+  const items = todayScheduledItems();
   const card = document.getElementById("home-circuit-list").closest(".home-section-card");
   const pos = memberProgramPosition();
   // Once the programme is over this card has nothing to say, and "you're all
@@ -5957,12 +5959,19 @@ function renderHomeUpcomingWorkouts() {
   // completion card is what answers "what now" (2026-08-23).
   if (card) card.style.display = pos && pos.finished ? "none" : "";
   if (pos && pos.finished) return;
-  // "Upcoming Workouts" stops being true the moment the list can hold a cardio
-  // session or a reminder.
-  document.getElementById("home-workouts-title").textContent = "Coming Up";
-  document.getElementById("home-circuit-list").innerHTML = upcoming.length
-    ? upcoming.map(renderUpcomingWorkoutCard).join("")
-    : `<p class="home-upcoming-empty">You're all caught up — nothing left on your schedule.</p>`;
+
+  document.getElementById("home-workouts-title").textContent = "Today";
+
+  // A rest day is a thing the coach said, not an absence — so it gets said
+  // back, rather than falling through to the empty state as if the schedule
+  // had a hole in it.
+  const onlyRest = items.length && items.every((i) => i.kind === "rest");
+  const real = items.filter((i) => i.kind !== "rest");
+
+  document.getElementById("home-circuit-list").innerHTML =
+    real.length ? real.map(renderUpcomingWorkoutCard).join("")
+    : onlyRest ? `<p class="home-upcoming-empty">Rest day — nothing scheduled. Take it.</p>`
+    : `<p class="home-upcoming-empty">Nothing scheduled today.</p>`;
 }
 
 function renderCircuitLists() {
@@ -6721,10 +6730,14 @@ function renderCalendarWeekHeader(pos, weekStart) {
   }
 
   const note = document.getElementById("calendar-week-note");
-  if (!note) return;
+  const noteText = document.getElementById("calendar-week-note-text");
+  if (!note || !noteText) return;
   const text = (typeof WEEK_NOTES !== "undefined" && WEEK_NOTES[`${m.programId}-week-${weekNumber}`]) || "";
   note.hidden = !text;
-  note.textContent = text;
+  // On the inner <p>, not the wrapper: the wrapper now holds the coach badge
+  // too, and textContent on it would delete the badge the first time a note
+  // was written.
+  noteText.textContent = text;
 }
 
 // Which week the Calendar is showing. null means "the one the member is in",
@@ -6735,7 +6748,11 @@ let calendarWeekStart = null;
 function renderCalendarDayRow(date, member, template, isPast, lastDay) {
   const today = new Date();
   const isToday = dateKey(date) === dateKey(today);
-  // Same guard as upcomingScheduledItems — see the note there.
+  // A structured member with no start date is a data error, not a state to
+  // render: it used to reach daysBetween() as undefined and throw inside
+  // init(), so their Home never drew at all (2026-08-23). Degrade to showing
+  // nothing instead. (This note used to point at upcomingScheduledItems,
+  // which was removed 2026-10-16 when Home stopped looking ahead.)
   if (!member.startDate) {
     return `<div class="calendar-day-row${isToday ? " today" : ""}">
       <span class="calendar-day-label">${formatShortDate(dateKey(date))}</span>

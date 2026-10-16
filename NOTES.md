@@ -326,6 +326,43 @@ programme, workout or block is cheap now and a second migration later.
        had turned the header into a title and a gap with a row of buttons
        beneath it.
 
+7. [x] **Home's "Coming Up" shows only today** — 2026-10-16, Chris: "it looks
+       a little too busy ... just show what is on the calendar for today,
+       thats it." It had been the next three items from today forward, so on a
+       Tuesday you read Wednesday and Thursday's sessions before knowing what
+       to do now. Looking ahead belongs to the Calendar, which got a week
+       preview the same day. Retitled "Today".
+       Three states where there had been one: a session, a **rest day** said
+       back as a rest day rather than falling through to an empty state as if
+       the schedule had a hole in it, and genuinely nothing.
+       **A finished session stays on the card, marked and receded**, instead of
+       dropping off the way the forward-looking list dropped it — an empty
+       section on a day the member has already trained reads as "nothing
+       scheduled", which is the opposite of what happened.
+       `upcomingScheduledItems` and `upcomingDayLabel` were left with no
+       callers and have been deleted; git has them if the three-day view is
+       ever wanted back.
+       **Both Home and Gym now show**, as two cards tagged accordingly.
+       The old list took `const [circuit] = workoutsForSlot(...)` — the first
+       variant only — under a rule that one card per session was enough and
+       the Home/Gym choice belonged on the Calendar. That rule existed to stop
+       a three-slot list reading as six cards; a one-day list has nothing to
+       crowd, and a combo member who could not see the choice on the screen
+       they open first was being asked to go looking for it. Completing either
+       variant still closes the day: the other card drops and what is left is
+       the one that was done, marked.
+       Two self-inflicted bugs on the way, both worth remembering.
+       `todayScheduledItems` itself was **deleted** while clearing out those
+       two dead functions above — the removal started at a comment that sat
+       directly beneath it. Home would have thrown for every structured
+       member. The `jsc` syntax check passed, because a function that is gone
+       is valid JavaScript right up until something calls it: syntax checking
+       proves a file parses, not that it works.
+       And the variant tag was written by a script that failed its own
+       assertion partway through and therefore saved nothing, while reporting
+       the earlier steps as done. Caught by asking the rendered page whether
+       the tag was there, rather than by trusting the edit had landed.
+
 4. [x] **More than one drop set per exercise** — done 2026-10-15. There was
        only ever one because "+ Add Drop Set" lives in the combine bar, which
        only appears for a SINGLE-exercise block — and adding a drop turns that
