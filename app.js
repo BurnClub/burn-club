@@ -1527,7 +1527,14 @@ function memberProgramPosition() {
   if (!template.length) return null;
 
   const day = daysBetween(m.startDate, dateKey(new Date())) + 1;
-  const totalDays = template.length;
+  // The LAST DAY, not the number of items. template.length was right only
+  // while every day held exactly one entry — which stopped being true on
+  // 2026-10-10 when cardio and reminders could share a day with a workout.
+  // An 8-week programme with 10 extra items read as 10 weeks: "Week 2 of 10",
+  // a completion card that never came, and two weeks of empty days after the
+  // programme had actually finished. Caught 2026-10-16 by the week-preview
+  // button offering a Week 9 that does not exist.
+  const totalDays = template.reduce((max, it) => Math.max(max, it.day || 0), 0);
   const totalWeeks = Math.ceil(totalDays / 7);
   // Clamped so a member who hasn't started, or who finished last month, still
   // gets a sensible week to look at rather than "Week 0" or "Week 12 of 8".
@@ -5742,6 +5749,38 @@ function stopThreadPoll() {
   threadPollId = null;
 }
 
+// Moving the Calendar's week. Bounded at both ends: never before the member's
+// own week — the Calendar is for what is ahead, and what is behind is in
+// Progress — and never past the last week of the programme.
+// "This week" is a reset, not a shift. Written as a shift first, which the
+// bounds check below would have refused outright — the button would have
+// looked fine and done nothing, which is the same class of bug as the
+// pencils.
+function resetCalendarWeek() {
+  calendarWeekStart = null;
+  renderCalendarTab();
+  document.getElementById("tab-calendar").scrollTop = 0;
+}
+
+function shiftCalendarWeek(deltaWeeks) {
+  const pos = memberProgramPosition();
+  if (!pos) return;
+  const base = calendarWeekStart || pos.weekStartDate;
+  const next = new Date(base);
+  next.setDate(next.getDate() + deltaWeeks * 7);
+
+  const offset = daysBetween(CURRENT_MEMBER.startDate, dateKey(next));
+  const weekNumber = Math.floor(offset / 7) + 1;
+  if (weekNumber < pos.week || weekNumber > pos.totalWeeks) return;
+
+  // null rather than the member's own week start, so "which week am I on"
+  // stays a question answered by the date and not by a stored copy of it that
+  // goes stale at midnight.
+  calendarWeekStart = weekNumber === pos.week ? null : next;
+  renderCalendarTab();
+  document.getElementById("tab-calendar").scrollTop = 0;
+}
+
 function openMessagesInbox() {
   openThreadId = null;
   stopThreadPoll();
@@ -6083,7 +6122,14 @@ function wireStaticControls() {
     if (e.target.files && e.target.files[0]) uploadAvatar(e.target.files[0]);
   });
 
-  document.getElementById("calendar-add-btn").addEventListener("click", openCalendarAddPopup);
+  // Delegated: the day rows are rebuilt on every week change, so handlers
+  // bound to the buttons themselves would be thrown away with the markup.
+  document.getElementById("calendar-day-list").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-add-on]");
+    if (btn) openCalendarAddPopup(btn.dataset.addOn);
+  });
+  document.getElementById("calendar-week-next").addEventListener("click", () => shiftCalendarWeek(1));
+  document.getElementById("calendar-week-back").addEventListener("click", resetCalendarWeek);
   document.getElementById("calendar-add-close-btn").addEventListener("click", closeCalendarAddPopup);
   document.getElementById("calendar-add-save-btn").addEventListener("click", saveScheduledCardio);
   document.querySelectorAll("#calendar-add-activity-picker .pill-filter").forEach((btn) => {
@@ -6537,12 +6583,19 @@ function confirmCompleteScheduled() {
   note.style.display = "block";
 }
 
-function openCalendarAddPopup() {
+function openCalendarAddPopup(presetDate) {
   schedSelectedActivity = SCHEDULE_ACTIVITY_TYPES[0];
   renderCalendarAddActivityPicker();
   const dateInput = document.getElementById("calendar-add-date");
-  dateInput.value = dateKey(new Date());
+  dateInput.value = presetDate || dateKey(new Date());
   dateInput.min = dateKey(new Date());
+  // Opened from a specific day, the date is already answered — showing the
+  // field would invite changing it and make the + on that row a lie. The
+  // heading says which day instead, so nothing is hidden, only settled.
+  const dateField = dateInput.closest(".field");
+  if (dateField) dateField.hidden = !!presetDate;
+  document.querySelector("#calendar-add-overlay .cardio-log-title").textContent =
+    presetDate ? `Add to ${formatWeekdayDate(parseDateKey(presetDate))}` : "Add to Calendar";
   document.getElementById("calendar-add-saved").style.display = "none";
   document.getElementById("calendar-add-overlay").classList.add("visible");
 }
@@ -6656,6 +6709,17 @@ function renderCalendarWeekHeader(pos, weekStart) {
   const title = document.getElementById("calendar-week-title");
   if (title) title.textContent = isCurrent ? `Week ${weekNumber}` : `Week ${weekNumber} — a look ahead`;
 
+  // Back only exists when there is somewhere to go back to, and Next stops at
+  // the last week of the programme rather than running off into empty days.
+  const back = document.getElementById("calendar-week-back");
+  const next = document.getElementById("calendar-week-next");
+  if (back) back.hidden = isCurrent;
+  if (next) {
+    const atEnd = weekNumber >= pos.totalWeeks;
+    next.hidden = atEnd;
+    next.textContent = `Week ${weekNumber + 1} ›`;
+  }
+
   const note = document.getElementById("calendar-week-note");
   if (!note) return;
   const text = (typeof WEEK_NOTES !== "undefined" && WEEK_NOTES[`${m.programId}-week-${weekNumber}`]) || "";
@@ -6668,7 +6732,7 @@ function renderCalendarWeekHeader(pos, weekStart) {
 // look ahead, not a new place to be.
 let calendarWeekStart = null;
 
-function renderCalendarDayRow(date, member, template, isPast) {
+function renderCalendarDayRow(date, member, template, isPast, lastDay) {
   const today = new Date();
   const isToday = dateKey(date) === dateKey(today);
   // Same guard as upcomingScheduledItems — see the note there.
@@ -6683,7 +6747,18 @@ function renderCalendarDayRow(date, member, template, isPast) {
 
   let bodyHtml;
   if (!items.length) {
-    bodyHtml = `<span class="calendar-item-label calendar-item-muted">${programDay < 1 ? "Not started yet" : "Program complete"}</span>`;
+    // Three different nothings, and they were two (2026-10-16). A day INSIDE
+    // the programme with no entry at all used to read "Program complete" —
+    // mid-week, often with a Rest Day the day after it. A member seeing that
+    // would reasonably think their programme had ended.
+    //
+    // A gap says so plainly rather than borrowing the rest-day wording,
+    // because an explicit rest is a coach's instruction and a gap is an
+    // omission — and saying which lets Chris spot his own while building.
+    const label = programDay < 1 ? "Not started yet"
+                : programDay > lastDay ? "Program complete"
+                : "Nothing scheduled";
+    bodyHtml = `<span class="calendar-item-label calendar-item-muted">${label}</span>`;
   } else {
     // Every item on the day, in the order the coach left them — a workout and
     // a reminder on one day are two things to show, not a choice between them.
@@ -6729,6 +6804,12 @@ function renderCalendarDayRow(date, member, template, isPast) {
       <div class="calendar-day-date">
         <span>${formatWeekdayDate(date)}</span>
         ${isToday ? `<span class="calendar-today-tag">Today</span>` : ""}
+        <!-- One + per day instead of one for the whole week (2026-10-16,
+             Chris). The day you tapped IS the date, so the popup stops asking
+             for one — which was the only question in it a member could get
+             wrong. Not offered on a day already behind them: scheduling a
+             session for last Tuesday is not a thing anyone means to do. -->
+        ${isPast ? "" : `<button class="calendar-day-add" data-add-on="${esc(dateKey(date))}" aria-label="Add to ${esc(formatWeekdayDate(date))}" title="Add to this day">+</button>`}
       </div>
       ${bodyHtml}
       ${renderScheduledItems(dateKey(date))}
@@ -6764,7 +6845,7 @@ function renderCalendarTab() {
   for (let i = 0; i < 7; i++) {
     const date = new Date(weekStart);
     date.setDate(date.getDate() + i);
-    rows.push(renderCalendarDayRow(date, member, template, dateKey(date) < todayKey));
+    rows.push(renderCalendarDayRow(date, member, template, dateKey(date) < todayKey, pos.totalDays));
   }
 
   renderCalendarWeekHeader(pos, weekStart);

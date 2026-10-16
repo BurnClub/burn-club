@@ -281,6 +281,51 @@ programme, workout or block is cheap now and a second migration later.
        tappable") — a missed Tuesday is still openable on Thursday. They are
        receded, which says "behind you", not "locked".
 
+3. [x] **Preview next week** — done 2026-10-16. "Week 3 ›" steps forward,
+       "‹ This week" comes home. Bounded both ways: never before the member's
+       own week (what is behind is in Progress) and never past the last week
+       of the programme, so the forward button simply disappears at the end.
+       Back is a RESET, not a shift — written as a shift first, which the
+       bounds check would have refused outright, leaving a button that looked
+       fine and did nothing.
+
+       **Two bugs the preview surfaced, both older than it:**
+
+       - `memberProgramPosition` computed `totalDays` as `template.length` —
+         the number of ENTRIES, not the last day. True only while every day
+         held exactly one, which stopped being the case on 2026-10-10 when
+         cardio and reminders could share a day with a workout. An 8-week
+         programme with 10 extra items read as **10 weeks**: "Week 2 of 10",
+         a completion card that never arrived, and two weeks of empty days
+         after the programme had really ended. Found because the preview
+         button offered a Week 9 that does not exist.
+       - A day INSIDE the programme with no entry read **"Program complete"**
+         — mid-week, often with a Rest Day the day after it. There were two
+         empty states where there needed to be three; a gap now says "Nothing
+         scheduled", which also lets Chris spot his own while building.
+6. [x] **The + moved onto each day, and the card text lightened** —
+       2026-10-16, Chris. One blue + per day row instead of one for the whole
+       week: the day you tapped IS the date, so the popup stops asking for one,
+       which was its only question a member could answer wrongly. The heading
+       says which day instead, so nothing is hidden — only settled. Not offered
+       on a day already past.
+       Titles dropped to normal, the line under them to light, and the
+       HOME/GYM pills and the + to normal as well. The pills keep their
+       uppercase and letter-spacing, which is what makes a 10px label legible
+       — the weight was not doing that work.
+       **"✓ Done" is still 800 and deliberately so:** it is the one mark on a
+       card that reports a fact rather than describing the workout, and it is
+       the thing a member scans a week for. Flag it if it now looks out of
+       place against everything around it.
+       **The font link had to change first:** Nunito was loaded at 600-800 and
+       Inter from 400 up, so asking for 300 or 400 would have rendered as the
+       nearest loaded weight and changed nothing visible. Verified with
+       `document.fonts.check()` that both faces are real rather than
+       synthesised.
+       The week nav then moved up onto the title row, since "+ Add" leaving
+       had turned the header into a title and a gap with a row of buttons
+       beneath it.
+
 4. [x] **More than one drop set per exercise** — done 2026-10-15. There was
        only ever one because "+ Add Drop Set" lives in the combine bar, which
        only appears for a SINGLE-exercise block — and adding a drop turns that
@@ -308,13 +353,6 @@ programme, workout or block is cheap now and a second migration later.
        builder column has a 460px minimum so it never fires, but if it ever
        does the result is ugly rather than broken.
 
-3. [ ] **Preview next week** — Chris wants a button to look ahead, and said it
-       could come later. Worth noting that pinning the Calendar made it less
-       optional than it was: on a Saturday the screen now shows one day, which
-       is exactly when someone is thinking about what is next.
-       `calendarWeekStart` already exists for this and resets to the member's
-       own week whenever the tab is opened — a preview is a look ahead, not a
-       new place to be.
 
 ## Settled: programmes are hand-built on purpose — do not "fix" this
 

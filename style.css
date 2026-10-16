@@ -1448,9 +1448,14 @@ h1, h2, h3 {
 /* Completed workouts recede to the muted blue rather than the old light
    grey — white text still needs to read against it. */
 .calendar-item-btn.done { background: var(--deepblue); }
-.calendar-item-label { font-weight: 800; font-size: 14px; color: white; }
+/* Normal, not 800 (2026-10-16, Chris: "the text feels too bold for me").
+   Needed the 400 weight adding to the font link first — asking for it while
+   only 600-800 were loaded would have rendered as 600 and changed nothing. */
+.calendar-item-label { font-weight: 400; font-size: 14px; color: white; }
 /* Same white-on-blue secondary-text value the blue DM conversation row uses. */
-.calendar-item-meta { font-size: 12px; color: rgba(255,255,255,0.75); font-weight: 600; }
+/* Light. One step below the title it sits under, so the two read as a
+   heading and its detail rather than as two competing lines. */
+.calendar-item-meta { font-size: 12px; color: rgba(255,255,255,0.75); font-weight: 300; }
 .calendar-item-muted { font-size: 13px; font-weight: 700; color: var(--text-muted); opacity: 0.7; padding: 10px 12px; display: block; }
 .calendar-item-check { position: absolute; top: 10px; right: 12px; font-size: 11px; font-weight: 800; color: white; }
 /* Home / Gym marker, only drawn when a member has access to both variants of
@@ -1460,7 +1465,10 @@ h1, h2, h3 {
   top: 10px;
   right: 12px;
   font-size: 10px;
-  font-weight: 800;
+  /* Normal, with the card's title (2026-10-16, Chris). It keeps its uppercase
+     and letter-spacing, which is what makes a 10px pill legible — the weight
+     was not doing that work. */
+  font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--accent-text);
@@ -4380,3 +4388,41 @@ h1, h2, h3 {
   font-weight: 700;
   color: var(--accent-text);
 }
+
+/* ---------- CALENDAR WEEK NAV (2026-10-16) ---------- */
+/* Back on the left, forward on the right, which is the direction they move
+   you. When there is no Back the Next button sits alone on the right rather
+   than jumping to the left — the control should not move under the thumb
+   depending on which week you happen to be looking at. */
+/* In the header row now, so it needs no vertical space of its own. Back sits
+   to the left of Next, which is the direction each one moves you. */
+.calendar-week-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.calendar-week-nav button { flex: 0 0 auto; }
+
+/* ---------- PER-DAY ADD (2026-10-16) ---------- */
+/* Small and on the day's own line, where the date already is — the point of
+   moving it here is that tapping it answers "which day" without asking. */
+.calendar-day-add {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--blue);
+  color: white;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.calendar-day-add:hover { background: var(--accent-text); }

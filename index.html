@@ -7,7 +7,11 @@
 <title>Burn Club</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+<!-- 300 and 400 added 2026-10-16. Nunito was loaded at 600-800 and Inter from
+     400 up, so asking for "normal" or "light" anywhere in the CSS quietly
+     rendered as the nearest weight that WAS loaded — the rule would look
+     correct and change nothing on screen. -->
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
 <!-- Tokens first (Kelly's palette), then the stylesheet that maps the app's own
      names onto them. Order matters: style.css reads these variables. -->
 <link rel="stylesheet" href="palette.css" />
@@ -272,9 +276,16 @@
           </div>
           <div class="topbar-actions"><button class="msg-icon-btn" data-action="open-notebook" aria-label="Notebook" title="Notebook"><span class="msg-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M8 4v16"/></svg></span><span class="checkin-done-dot" data-role="checkin-done-dot" style="display:none;"></span></button><button class="msg-icon-btn" data-action="open-messages" aria-label="Messages"><span class="msg-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button></div>
         </header>
+        <!-- The week nav sits ON the title row (2026-10-16). It had its own
+             line underneath while "+ Add" occupied the right of the header;
+             with that moved onto the days, the header was a title and a gap,
+             and the nav was a row of vertical space for two small buttons. -->
         <div class="calendar-list-header">
           <h2 class="section-title" id="calendar-week-title">This Week</h2>
-          <button class="btn-primary small" id="calendar-add-btn">+ Add</button>
+          <div class="calendar-week-nav" id="calendar-week-nav">
+            <button class="btn-ghost-lg small" id="calendar-week-back" hidden>‹ This week</button>
+            <button class="btn-ghost-lg small" id="calendar-week-next">Next week ›</button>
+          </div>
         </div>
         <!-- The coach's note for this programme week (2026-10-14, Chris).
              Written per week folder in admin and shown here, under the

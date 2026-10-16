@@ -17,7 +17,7 @@
 // it is how a deploy actually reaches a member. Bump it on any deploy that
 // changes app.js, sync.js, data.js, style.css or index.html — not just on
 // changes to this file.
-const CACHE = "burnclub-v17";
+const CACHE = "burnclub-v18";
 
 // The shell: enough to open the app and run a workout from local data.
 // Deliberately not the demo videos — they are ~1MB each and the browser's own
