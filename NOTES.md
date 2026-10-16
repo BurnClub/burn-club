@@ -529,6 +529,18 @@ it would be nice. Things that can follow launch belong in the sections below.
       Note it did not matter which field he changed: `saveMemberToServer` sends
       the whole record, so `program_id` rides along with every save.
 
+- [x] **Members can change their own password** — built 2026-10-15, because
+      hand-delivered invites made it necessary. A tester is handed a password
+      set for them in the Supabase dashboard, and until now the only way to
+      change it was the emailed reset link — the exact channel landing in spam.
+      So they would have kept whatever they were given, indefinitely.
+      Profile → Change Password. It asks for the current password and proves it
+      by signing in with it, because Supabase will change a password on a live
+      session alone — fine for a recovery link, which was itself proof, not
+      fine for a phone left unlocked on a bench. Supabase's own reauthentication
+      flow emails a code, which is the channel being routed around.
+      Hidden for a demo session, which has no account to change.
+
 - [ ] **Invites for the first six are hand-delivered** (Chris, 2026-10-13).
       The invite email still lands in spam and that is not being fixed before
       the trial. The decision is to send the link personally and walk each

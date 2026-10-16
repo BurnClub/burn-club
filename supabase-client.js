@@ -208,6 +208,31 @@ function arrivedFromEmailLink() {
   return /type=(invite|recovery|signup)/.test(hash) || /access_token=/.test(hash);
 }
 
+// Changing a password from inside the app, which is different from setting one
+// from an emailed link (2026-10-15). Both end at updateUser(); this one proves
+// the member first.
+//
+// Supabase does not require the current password to change it — a live session
+// is enough. That is fine for a recovery link, which was itself proof. It is
+// not fine for a phone left unlocked on a bench, so the old password is checked
+// by signing in with it. Supabase's own "reauthentication" flow would be the
+// textbook answer and it emails a code, which is precisely the channel this
+// app is routing around until deliverability is fixed.
+async function changePassword(currentPassword, newPassword) {
+  if (!SB) return { error: "Can't reach the server. Check your connection." };
+  const { data: { user } } = await SB.auth.getUser();
+  if (!user) return { error: "You're signed out — sign in again to change your password." };
+
+  // Signing in again rather than comparing anything locally: the server is the
+  // only thing that knows the password, and a check this side would be theatre.
+  const check = await SB.auth.signInWithPassword({ email: user.email, password: currentPassword });
+  if (check.error) return { error: "That current password doesn't match." };
+
+  const { error } = await SB.auth.updateUser({ password: newPassword });
+  if (error) return { error: friendlyAuthError(error) };
+  return {};
+}
+
 async function setPassword(password) {
   if (!SB) return { error: "Can't reach the server. Check your connection." };
   const { data, error } = await SB.auth.updateUser({ password });

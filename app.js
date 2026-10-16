@@ -2679,6 +2679,58 @@ function fillHealthProfileSelect(elId, options, savedValue) {
   el.value = savedValue || "";
 }
 
+// ---------------- Change password (2026-10-15) ----------------
+// Testers are handed a password set for them in the Supabase dashboard,
+// because the invite email lands in spam. Without this the only way to change
+// it is that same emailed link — so a member keeps whatever they were given,
+// forever, in the one part of the app that should be theirs.
+function openPasswordScreen() {
+  ["pw-current", "pw-new", "pw-confirm"].forEach((id) => { document.getElementById(id).value = ""; });
+  document.getElementById("pw-error").hidden = true;
+  document.getElementById("pw-saved").style.display = "none";
+  document.getElementById("password-overlay").classList.add("visible");
+}
+
+function closePasswordScreen() {
+  document.getElementById("password-overlay").classList.remove("visible");
+}
+
+async function savePasswordForm() {
+  const err = document.getElementById("pw-error");
+  const btn = document.getElementById("pw-save-btn");
+  const current = document.getElementById("pw-current").value;
+  const next = document.getElementById("pw-new").value;
+  const confirmed = document.getElementById("pw-confirm").value;
+  const fail = (msg) => { err.textContent = msg; err.hidden = false; };
+  err.hidden = true;
+
+  if (!current) return fail("Enter your current password.");
+  // Matches the invite form's rule, and Supabase's own minimum.
+  if (next.length < 8) return fail("Use at least 8 characters.");
+  // Checked here rather than after the round trip: a typo in the confirm box
+  // should not cost a network call, and should certainly not change anything.
+  if (next !== confirmed) return fail("Those two don't match.");
+  if (next === current) return fail("That's the password you already have.");
+
+  btn.disabled = true;
+  btn.textContent = "Saving…";
+  const res = await changePassword(current, next);
+  btn.disabled = false;
+  btn.textContent = "Save Password";
+  if (res.error) return fail(res.error);
+
+  ["pw-current", "pw-new", "pw-confirm"].forEach((id) => { document.getElementById(id).value = ""; });
+  document.getElementById("pw-saved").style.display = "block";
+  setTimeout(closePasswordScreen, 1200);
+}
+
+// Only a real account has a password. A demo session has nothing to change,
+// and offering it there would be a row that can only fail.
+function applyPasswordRowVisibility() {
+  const row = document.getElementById("open-password-btn");
+  if (row) row.hidden = typeof AUTH_MEMBER === "undefined" || !AUTH_MEMBER;
+}
+
 function openHealthProfileScreen() {
   const saved = loadHealthProfiles()[CURRENT_MEMBER.id] || {};
   const opts = APP_SETTINGS.healthProfileOptions;
@@ -5943,6 +5995,7 @@ function init() {
   // In init() rather than wired once: switchMemberProfile() re-runs init(),
   // and the badge belongs to the member, not the page.
   renderHealthProfileFlag();
+  applyPasswordRowVisibility();
 }
 
 // One-time wiring for static elements that exist from page load and are
@@ -5981,6 +6034,9 @@ function wireStaticControls() {
 
   document.getElementById("open-notifications-btn").addEventListener("click", openNotificationsScreen);
   document.getElementById("notifications-close-btn").addEventListener("click", closeNotificationsScreen);
+  document.getElementById("open-password-btn").addEventListener("click", openPasswordScreen);
+  document.getElementById("password-close-btn").addEventListener("click", closePasswordScreen);
+  document.getElementById("pw-save-btn").addEventListener("click", savePasswordForm);
   document.getElementById("open-health-profile-btn").addEventListener("click", openHealthProfileScreen);
   document.getElementById("health-profile-close-btn").addEventListener("click", closeHealthProfileScreen);
   document.getElementById("health-profile-save-btn").addEventListener("click", saveHealthProfileForm);

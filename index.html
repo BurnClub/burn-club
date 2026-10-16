@@ -859,12 +859,40 @@
                Chris: "i don't mind if we leave it up to the user to fill it
                out on their own, we just need to make sure they know that it is
                'incomplete'"). -->
+          <!-- Hidden for a demo session, which has no account to change
+               (2026-10-15). Added because testers are being handed a password
+               set for them in the Supabase dashboard — without this the only
+               way to change it is the emailed reset link, which is the channel
+               landing in spam. -->
+          <button class="settings-row" id="open-password-btn" hidden><span>Change Password</span><span>›</span></button>
           <button class="settings-row" id="open-health-profile-btn"><span>My Health Profile</span><span class="settings-row-right"><span class="settings-badge" id="health-profile-badge" hidden>Incomplete</span><span>›</span></span></button>
           <button class="settings-row" id="open-invite-btn"><span>Invite a Friend</span><span>›</span></button>
           <button class="settings-row" id="open-support-btn"><span>Help &amp; Support</span><span>›</span></button>
           <button class="settings-row danger" id="logout-btn"><span>Log Out</span><span>›</span></button>
         </div>
       </section>
+
+      <div class="cardio-log-overlay" id="password-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="password-close-btn">✕</button>
+          <h2 class="cardio-log-title">Change Password</h2>
+          <label class="field">
+            <span>Current password</span>
+            <input type="password" id="pw-current" autocomplete="current-password" />
+          </label>
+          <label class="field">
+            <span>New password</span>
+            <input type="password" id="pw-new" autocomplete="new-password" placeholder="At least 8 characters" />
+          </label>
+          <label class="field">
+            <span>Confirm new password</span>
+            <input type="password" id="pw-confirm" autocomplete="new-password" />
+          </label>
+          <p class="login-error" id="pw-error" role="alert" hidden></p>
+          <button class="btn-primary" id="pw-save-btn">Save Password</button>
+          <p class="cardio-log-saved" id="pw-saved" style="display:none;">✓ Password changed</p>
+        </div>
+      </div>
 
       <!-- ---------- NOTIFICATIONS POPUP (2026-08-12) ---------- -->
       <!-- ---------- DAILY CHECK-IN SETTING (2026-08-30) ----------
