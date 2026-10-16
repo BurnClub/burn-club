@@ -1342,17 +1342,35 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
      column hugs whichever is wider — the box or its label. Every pixel saved
      here goes to the exercise name, which is the one thing on the row worth
      reading in full. */
-  flex: 0 0 auto;
+  /* `0 1 auto`, not `0 0 auto` (2026-10-15, Chris). These never shrank, so a
+     narrow panel pushed the buttons past the right edge instead — on an EMOM,
+     where Duration and Interval are both wide fields, "+ Exercise" and "Split"
+     went off screen entirely. A number box is readable at half its preferred
+     width; a button you cannot reach is not a button. */
+  flex: 0 1 auto;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
   font-size: 10px;
   font-weight: 700;
   color: var(--deepblue);
+  /* Kept on one line, but allowed to trail off rather than force the column
+     wider than the box beneath it. */
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.builder-block-top .inline-field.wide { flex: 0 0 112px; }
+/* 112px preferred, 56px floor — two digits plus padding still fit, which is
+   the whole range these hold. */
+.builder-block-top .inline-field.wide { flex: 0 1 112px; min-width: 56px; }
 .builder-block-top .inline-field.wide input { width: 100%; }
+/* A flex item will not shrink below its content without this. */
+.builder-block-top .inline-field input { min-width: 0; }
+/* The buttons and the ✕ are what the space is being taken FROM, so they must
+   not give any of it back. */
+.builder-block-top > button,
+.builder-block-top .remove-block-btn { flex-shrink: 0; }
 .builder-block-top .inline-field input {
   width: 100%;
   border: 2px solid var(--periwinkle);
@@ -1689,7 +1707,13 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 .builder-blocks { display: flex; flex-direction: column; gap: 14px; }
 
 .builder-block-card { background: white; border: 1px solid var(--periwinkle); border-radius: var(--radius-md); padding: 16px; }
-.builder-block-top { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+/* flex-wrap as the last resort (2026-10-15): once the number fields have
+   shrunk to their floor there is nothing left to give, and a second row is
+   strictly better than content sitting off the right edge where it cannot be
+   clicked. In practice the builder column has a 460px floor so this never
+   fires — it is here so that the failure, if it ever comes, is ugly rather
+   than broken. */
+.builder-block-top { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; align-items: center; }
 .builder-block-top select { border: 2px solid var(--periwinkle); border-radius: var(--radius-sm); padding: 8px 10px; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 13px; }
 .builder-block-top input[data-field="label"] { flex: 1; }
 .remove-block-btn, .remove-ex-btn { background: none; border: none; color: #e0435f; font-weight: 800; cursor: pointer; font-size: 16px; }

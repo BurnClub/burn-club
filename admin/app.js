@@ -3047,6 +3047,50 @@ function blockAddExerciseBtn(block, i) {
   return `<button class="btn-ghost-lg small" data-action="add-exercise" data-block-index="${i}">${label}</button>`;
 }
 
+// A SECOND drop set, and a third (2026-10-15, Chris: "right now i can only add
+// one drop set to an exercise").
+//
+// Why there was only ever one: "+ Add Drop Set" lives in the combine bar,
+// which only appears for a SINGLE-exercise block. Adding a drop turns that
+// block into a superset — so the button that made it vanishes the moment it
+// is used, and there is no way back to it.
+//
+// Here instead of on the exercise row, because a per-row control was
+// deliberately rejected once already (2026-08-19: the row should not "gain a
+// permanent column" for something used rarely). This is the same kind of
+// thing as "+ Exercise" and sits beside it.
+//
+// Only on a superset: a drop is a lighter repeat of the set you just did,
+// which a timed circuit, an AMRAP and an EMOM have no notion of.
+function blockAddDropBtn(block, i) {
+  if (block.type !== "superset") return "";
+  const rows = (block.values.exercises || []).filter((e) => e.name && e.name.trim());
+  if (!rows.length) return "";
+  return `<button class="btn-ghost-lg small" data-action="add-drop-row" data-block-index="${i}">+ Drop Set</button>`;
+}
+
+// Appended after the LAST real row, copying its exercise. That is what a drop
+// stack is: the same lift again, lighter each time. Copying the last row
+// rather than the first means a second drop drops from the first drop, which
+// is the order someone building one is thinking in.
+function addDropRowToBlock(i) {
+  const v = builderBlocks[i] && builderBlocks[i].values;
+  if (!v || !v.exercises) return;
+  const rows = v.exercises.filter((e) => e.name && e.name.trim());
+  const last = rows[rows.length - 1];
+  if (!last) return;
+  v.exercises.push({
+    name: last.name,
+    exerciseId: last.exerciseId,
+    // Its own rep target, copied from the row above as a starting point —
+    // a drop is usually the same reps at a lighter load, and it is one field
+    // to change when it is not.
+    reps: last.reps || 10,
+    drop: true,
+  });
+  renderBuilderBlocks();
+}
+
 // The exercise list, for the formats that hold more than one.
 function blockExerciseList(block, i) {
   const v = block.values;
@@ -3086,6 +3130,7 @@ function renderBuilderBlocks() {
         ${blockIsCardioChoice(block) ? `<span class="block-static-type">${blockTypeLabel(block.type)}</span>` : ""}
         ${blockTopFields(block, i)}
         ${blockAddExerciseBtn(block, i)}
+        ${blockAddDropBtn(block, i)}
         ${isCombined ? `<button class="btn-ghost-lg small" data-action="split-block" data-block-index="${i}">Split</button>` : ""}
         <button class="remove-block-btn" data-action="remove-block" data-block-index="${i}">✕</button>
       </div>
@@ -5646,6 +5691,9 @@ document.addEventListener("click", (e) => {
   }
   if (action === "add-hold") {
     addSegmentToSelected("hold");
+  }
+  if (action === "add-drop-row") {
+    addDropRowToBlock(Number(el.dataset.blockIndex));
   }
   if (action === "add-drop") {
     addSegmentToSelected("drop");

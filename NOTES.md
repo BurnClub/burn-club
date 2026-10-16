@@ -281,6 +281,33 @@ programme, workout or block is cheap now and a second migration later.
        tappable") — a missed Tuesday is still openable on Thursday. They are
        receded, which says "behind you", not "locked".
 
+4. [x] **More than one drop set per exercise** — done 2026-10-15. There was
+       only ever one because "+ Add Drop Set" lives in the combine bar, which
+       only appears for a SINGLE-exercise block — and adding a drop turns that
+       block into a superset, so the button that made it disappears the moment
+       it is used. A "+ Drop Set" now sits in the superset's own header beside
+       "+ Exercise", appending a drop that copies the LAST row rather than the
+       first: a second drop drops from the first drop, which is the order
+       someone building one is thinking in.
+       On the block header, not the exercise row, because a per-row control
+       was deliberately rejected in August — the row should not gain a
+       permanent column for something used rarely.
+       The member app already handled any number of drops; only the builder
+       could not make them. What it did NOT handle: the workout breakdown
+       listed a drop as an ordinary exercise, so a stack read as "Lat Pulldown
+       (10 reps)" four times over. Marked now.
+
+5. [x] **The block header stopped pushing its buttons off the edge** — fixed
+       2026-10-15 from Chris's screenshot, where an EMOM's "+ Exercise" and
+       "Split" sat past the right edge. `.inline-field` was `flex: 0 0 auto`,
+       so the number boxes never gave up a pixel and the buttons absorbed the
+       whole shortfall. They shrink first now, to a floor that still holds two
+       digits, and the buttons do not shrink at all: a number box is readable
+       at half its preferred width, a button you cannot reach is not a button.
+       `flex-wrap` added as a last resort below that floor — in practice the
+       builder column has a 460px minimum so it never fires, but if it ever
+       does the result is ugly rather than broken.
+
 3. [ ] **Preview next week** — Chris wants a button to look ahead, and said it
        could come later. Worth noting that pinning the Calendar made it less
        optional than it was: on a Saturday the screen now shows one day, which

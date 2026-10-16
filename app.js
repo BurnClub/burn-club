@@ -3263,8 +3263,13 @@ function blockExerciseNames(block) {
   // bullet is exactly the "two exercises" reading the modifier exists to
   // avoid (2026-08-21).
   const suffix = (hold) => (hold ? ` + ${holdLabel(hold)}` : "");
+  // Drops are marked (2026-10-15). A drop row was always invisible here — it
+  // read as a second identical exercise — and that got worse the moment a
+  // stack could hold three of them: "Lat Pulldown (10 reps)" four times over
+  // tells a member nothing about what they are being asked to do.
+  const dropTag = (e) => (e.drop ? " — drop set" : "");
   if (block.exercise) return [exerciseDisplayName(block.exercise) + suffix(block.hold)];
-  if (block.exercises) return block.exercises.map((e) => exerciseDisplayName(e) + (e.reps ? ` (${e.reps} reps)` : "") + suffix(e.hold));
+  if (block.exercises) return block.exercises.map((e) => exerciseDisplayName(e) + (e.reps ? ` (${e.reps} reps)` : "") + suffix(e.hold) + dropTag(e));
   return [];
 }
 
