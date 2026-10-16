@@ -5462,6 +5462,12 @@ function memberConversations() {
   if (team && !messagingIsLive()) {
     list.push({ id: `group-team-${team.id}`, type: "group", name: `${team.name} Team Chat` });
   }
+  // Custom groups a coach put them in (2026-10-15) — the peer room. Named for
+  // the group rather than "Group Chat", because a member who is in two should
+  // be able to tell them apart.
+  MY_GROUPS.forEach((g) => {
+    list.push({ id: `group-${g.id}`, type: "group", name: g.name });
+  });
   return list;
 }
 
@@ -5592,6 +5598,10 @@ function conversationTarget(conversationId) {
     return { kind: "dm", memberId: AUTH_MEMBER ? AUTH_MEMBER.id : null, programId: null };
   }
   if (conversationId.startsWith("group-team-")) return null;   // no table yet
+  if (conversationId.startsWith("group-custom-")) {
+    return { kind: "custom", memberId: null, programId: null,
+             groupId: conversationId.slice("group-".length) };
+  }
   if (conversationId.startsWith("group-")) {
     return { kind: "group", memberId: null, programId: conversationId.slice("group-".length) };
   }
@@ -5605,8 +5615,13 @@ function messagingIsLive() {
   return typeof SB !== "undefined" && !!SB && !!AUTH_MEMBER;
 }
 
+// Custom groups this member is in, filled from the server. Empty for a demo
+// session and for anyone in no groups, which is most people.
+let MY_GROUPS = [];
+
 async function loadMessagesFromServer() {
   if (!messagingIsLive() || typeof fetchMessages !== "function") return;
+  if (typeof fetchMyGroups === "function") MY_GROUPS = await fetchMyGroups();
   const res = await fetchMessages();
   if (!res.ok) return;
   // Replace rather than merge: the server is the whole truth for a shared
@@ -5653,7 +5668,8 @@ async function sendThreadMessage(text) {
 
   const res = await pushMessage({
     conversationId: openThreadId, kind: target.kind,
-    memberId: target.memberId, programId: target.programId, body,
+    memberId: target.memberId, programId: target.programId,
+    groupId: target.groupId, body,
   });
 
   const i = MESSAGES.findIndex((m) => m.id === pendingId);

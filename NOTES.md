@@ -763,6 +763,24 @@ restored on load, and `saveGroup` / `deleteGroup` / `saveChallenge` /
       Verified end to end on the live site: member sends → appears in admin's
       inbox with an unread dot → opening it stamps `staff_read_at` in Postgres
       → coach replies → the reply shows in the member app.
+      **Custom group chats — added 2026-10-15 (`18-group-chats.sql`).** Chris
+      is putting all six testers in one group so they can talk to each other,
+      which the peer-room thesis depends on: three rooms of two would not test
+      it. The group and its roster now live on the server (`member_groups`,
+      `group_members`), because RLS decides who may read a thread by asking the
+      database and the membership was previously in admin's localStorage only.
+      A policy cannot check a fact the database does not have, and filtering in
+      the browser is hiding, not security.
+      `messages` gained a `group_id` and a third `kind`. The one-target check
+      constraint was rewritten rather than extended: the old one asserted that
+      member_id and program_id were the only possibilities and would have
+      refused every custom row.
+      A member may read the groups they are in but **only their own row** in
+      `group_members` — handing over the roster would turn a group chat into a
+      member directory for anyone who opens the console.
+      Team chats still have no table. They are drawn per challenge and were
+      never what this was for.
+
       **Still open:** admin's Members section is still seeded — only the
       conversation list reads the real table, which is the smallest slice that
       makes the inbox true. Challenge team chats and custom-group chats have no

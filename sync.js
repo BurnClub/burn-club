@@ -831,6 +831,24 @@ function markThreadRead(conversationId) {
   localStorage.setItem(memberKey(THREAD_READ_KEY), JSON.stringify(reads));
 }
 
+// The custom groups this member belongs to (2026-10-15). Two reads rather
+// than a join, because PostgREST's embedding would need a foreign-key hint
+// and this is two small queries against indexed columns.
+//
+// What comes back is decided by RLS: group_members returns only this member's
+// own rows, and member_groups only the groups they are in. If either ever
+// returns somebody else's, the bug is in the policy — there is deliberately no
+// filter here that would paper over it.
+async function fetchMyGroups() {
+  if (!SB || !AUTH_MEMBER) return [];
+  const mine = await SB.from("group_members").select("group_id");
+  if (mine.error || !mine.data || !mine.data.length) return [];
+  const ids = mine.data.map((r) => r.group_id);
+  const groups = await SB.from("member_groups").select("id,name").in("id", ids);
+  if (groups.error) return [];
+  return groups.data || [];
+}
+
 async function fetchMessages() {
   if (!SB || !AUTH_MEMBER) return { ok: false, reason: "not signed in" };
   // Oldest first so a thread reads top to bottom with no sort on the client.
@@ -846,13 +864,14 @@ async function fetchMessages() {
 // One row, inserted and returned, so the caller renders the server's copy
 // rather than a local guess that might differ. Returns null on failure and
 // says why — a send that silently vanishes is worse than one that errors.
-async function pushMessage({ conversationId, kind, memberId, programId, body }) {
+async function pushMessage({ conversationId, kind, memberId, programId, groupId, body }) {
   if (!SB || !AUTH_MEMBER) return { ok: false, reason: "not signed in" };
   const row = {
     conversation_id: conversationId,
     kind,
     member_id: kind === "dm" ? memberId : null,
     program_id: kind === "group" ? programId : null,
+    group_id: kind === "custom" ? groupId : null,
     sender_id: AUTH_MEMBER.id,
     sender_name: [AUTH_MEMBER.first_name, AUTH_MEMBER.last_name].filter(Boolean).join(" ")
                  || AUTH_MEMBER.first_name || "Member",

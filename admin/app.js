@@ -709,9 +709,46 @@ function saveGroup() {
   }
 
   flushAdminState();
+  syncGroupToServer(editingGroupId || CUSTOM_GROUPS[CUSTOM_GROUPS.length - 1]);
   closeGroupModal();
   renderGroupList();
   if (document.getElementById("group-detail-view").style.display !== "none") renderGroupDetail();
+}
+
+// A custom group and its roster live on the server as well as in admin
+// (2026-10-15), because that is the only way its chat can exist: RLS decides
+// who may read a thread by asking the database, and until now the membership
+// was in this browser only. See 18-group-chats.sql.
+//
+// Pushed on save rather than continuously — a group is edited rarely and all
+// at once, and a write per checkbox tick would be a lot of requests for a
+// roster nobody has finished choosing yet.
+async function syncGroupToServer(groupOrId) {
+  if (!adminMessagingLive()) return;
+  const group = typeof groupOrId === "string"
+    ? CUSTOM_GROUPS.find((g) => g.id === groupOrId)
+    : groupOrId;
+  if (!group) return;
+
+  const up = await SB.from("member_groups").upsert({
+    id: group.id, name: group.name, description: group.description || "",
+  }, { onConflict: "id" });
+  if (up.error) { console.warn("[admin] group:", up.error.message); return; }
+
+  // Only ids the server knows: admin's roster can still hold seeded members
+  // who are not real accounts, and a foreign key would refuse the whole batch
+  // for one of them — taking the real five down with the fake one.
+  const real = new Set(REAL_MEMBERS.map((m) => m.id));
+  const wanted = (group.memberIds || []).filter((id) => real.has(id));
+
+  // Replace rather than add: removing someone from a group has to remove them
+  // from its conversation, and an upsert alone would leave them reading it.
+  const del = await SB.from("group_members").delete().eq("group_id", group.id);
+  if (del.error) { console.warn("[admin] group roster:", del.error.message); return; }
+  if (!wanted.length) return;
+  const ins = await SB.from("group_members")
+    .insert(wanted.map((id) => ({ group_id: group.id, member_id: id })));
+  if (ins.error) console.warn("[admin] group roster:", ins.error.message);
 }
 
 function deleteGroup() {
@@ -724,6 +761,11 @@ function deleteGroup() {
   const convIdx = CONVERSATIONS.findIndex((c) => c.id === "group-" + group.id);
   if (convIdx !== -1) CONVERSATIONS.splice(convIdx, 1);
   flushAdminState();
+  // The cascade on member_groups takes group_members and its messages with it.
+  if (adminMessagingLive()) {
+    SB.from("member_groups").delete().eq("id", group.id)
+      .then((r) => { if (r.error) console.warn("[admin] delete group:", r.error.message); });
+  }
   backToGroups();
 }
 
@@ -6006,8 +6048,10 @@ function adminConversationTarget(conversationId) {
   }
   if (conversationId.startsWith("group-")) {
     const rest = conversationId.slice("group-".length);
-    // Custom groups and team chats have no table; only program groups do.
-    if (rest.startsWith("custom-") || rest.startsWith("team-")) return null;
+    // Team chats still have no table — they are drawn per challenge and were
+    // never the thing Chris needed. Custom groups got one in 18-group-chats.
+    if (rest.startsWith("team-")) return null;
+    if (rest.startsWith("custom-")) return { kind: "custom", groupId: rest };
     return { kind: "group", memberId: null, programId: rest };
   }
   return null;
@@ -6049,6 +6093,7 @@ async function sendAdminReply(text) {
     kind: target.kind,
     member_id: target.kind === "dm" ? target.memberId : null,
     program_id: target.kind === "group" ? target.programId : null,
+    group_id: target.kind === "custom" ? target.groupId : null,
     sender_id: user.id,
     // The coach's own name, not the word "Staff": a member reading a reply
     // should see who answered.

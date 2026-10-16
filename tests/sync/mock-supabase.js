@@ -7,6 +7,7 @@ function Q(table) { this.t = table; this.f = null; }
 Q.prototype.select = function () { this.op = "select"; return this; };
 Q.prototype.order = function () { return this; };
 Q.prototype.eq = function (col, val) { this.f = [col, val]; return this; };
+Q.prototype.in = function (col, vals) { this.inf = [col, vals]; return this; };
 Q.prototype.limit = function () { return this; };
 Q.prototype.maybeSingle = function () {
   // After an insert, "the single row" is the one just written — that is what
@@ -48,7 +49,10 @@ Q.prototype.then = function (res) {
     SERVER[this.t] = tbl(this.t).filter(function (r) { return !(self.f && r[self.f[0]] === self.f[1]); });
     return Promise.resolve({ error: null }).then(res);
   }
-  return Promise.resolve({ data: tbl(this.t).slice(), error: null }).then(res);
+  var rows = tbl(this.t).slice();
+  if (this.f) rows = rows.filter(function (r) { return r[self.f[0]] === self.f[1]; });
+  if (this.inf) rows = rows.filter(function (r) { return self.inf[1].indexOf(r[self.inf[0]]) !== -1; });
+  return Promise.resolve({ data: rows, error: null }).then(res);
 };
 var SB = { from: function (t) { return new Q(t); } };
 

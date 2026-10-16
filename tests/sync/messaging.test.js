@@ -79,6 +79,55 @@ function check(ok, msg) { print((ok ? "  PASS  " : "  FAIL  ") + msg); }
   var dmStill = got.messages.find(function (m) { return m.conversationId === "dm-member-1"; });
   check(!!dmStill, "and reading one thread does not touch another");
 
+  // --- the peer room: a custom group ------------------------------------
+  // The thread six testers share. Its whole reason for existing server-side
+  // is that RLS cannot decide who may read it unless the database holds the
+  // roster — so the row must carry group_id and NOTHING else, or the policy
+  // for the wrong shape is the one that gets consulted.
+  onDevice("phone");
+  tbl("group_members").push({ group_id: "custom-testers", member_id: "member-1" });
+  tbl("member_groups").push({ id: "custom-testers", name: "Tester Room" });
+
+  var mine = await fetchMyGroups();
+  check(mine.length === 1 && mine[0].name === "Tester Room",
+        "a member sees the custom group they are in");
+
+  var sentGroup = await pushMessage({
+    conversationId: "group-custom-testers", kind: "custom",
+    memberId: null, programId: null, groupId: "custom-testers",
+    body: "Anyone else find week one harder than expected?",
+  });
+  check(sentGroup.ok, "a member can post in their custom group");
+
+  var crow = tbl("messages").filter(function (r) { return r.kind === "custom"; })[0];
+  print("custom row " + JSON.stringify({
+    conv: crow.conversation_id, kind: crow.kind, group: crow.group_id,
+    member: crow.member_id, program: crow.program_id,
+  }));
+  check(crow.group_id === "custom-testers",
+        "the row carries the group it belongs to");
+  check(crow.member_id === null && crow.program_id === null,
+        "and carries neither a member nor a programme — the check constraint allows exactly one");
+  check(crow.is_staff === false && crow.sender_id === "member-1",
+        "a peer message is not staff, and is from its sender");
+
+  // NOT tested here, deliberately: that a member sees only the groups they are
+  // in. fetchMyGroups() sends no `where` because the policy on group_members
+  // ("read your own membership") is what filters it, and this mock has no RLS
+  // — so a check here would be asserting the mock's fiction, not the app's
+  // behaviour. It would pass whatever the policy said, including nothing.
+  // The real check is the policy in 18-group-chats.sql, and the way to prove
+  // it is two signed-in accounts against the live database.
+  //
+  // What IS worth pinning: no group rows at all yields no groups, rather than
+  // throwing or returning undefined for a member in none — which is most of
+  // them.
+  SERVER.group_members = [];
+  SERVER.member_groups = [];
+  var none = await fetchMyGroups();
+  check(Array.isArray(none) && none.length === 0,
+        "a member with no group rows gets an empty list, not a crash");
+
   // --- a second device ---------------------------------------------------
   // Thread reads are per browser on purpose: unread is about a person at a
   // screen. A laptop that has never opened the thread should still show it.
