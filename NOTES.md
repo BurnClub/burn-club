@@ -357,6 +357,32 @@ thing foreign keys point at), then folders, then workouts and their blocks —
 which is the same order `03-seed-content.sql` writes them in, for the same
 reason.
 
+## window.prompt() is not safe to use in the member app
+
+Found 2026-10-16 when Chris reported both profile pencils doing nothing.
+`prompt()` **throws** — "prompt() is not supported" — in some contexts and
+works fine in others: it worked in his normal browser and failed in the
+in-app one, and an installed home-screen app is the usual place it is
+blocked. That is worse than simply broken. It would have worked for some
+testers and silently done nothing for others, with no pattern any of them
+could have described.
+
+All four member-app uses are gone, replaced by `askText()` — one dialog with
+the same resolve-or-null contract prompt had, so call sites read the way they
+did before. The profile name, the session note, a new notebook note and
+editing one.
+
+**Admin still uses prompt()** in three places (benchmark name and subtitle,
+the importer's programme picker). Left deliberately: admin is used by Chris
+and Kelly in a desktop browser where it works. Worth moving if admin ever
+gets opened on a phone.
+
+The email pencil was removed rather than fixed. A member cannot change their
+own email: `protect_member_columns` blocks the column, and the address they
+sign in with lives in auth rather than in `members`. It had been dead for its
+whole life and nobody noticed, which is the real lesson here — a control whose
+only failure mode is silence will sit broken for weeks.
+
 ## Final Walkthrough
 
 - [ ] **Benchmarks are named for their workout now** (2026-10-16) — "The

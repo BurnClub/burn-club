@@ -845,7 +845,12 @@
         </div>
 
         <div class="profile-info-list">
-          <div class="profile-info-row"><span>Email</span><span class="profile-info-value-group"><span id="profile-email"></span><button class="edit-field-btn" id="edit-email-btn" type="button" aria-label="Edit email"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button></span></div>
+          <!-- No pencil here (2026-10-16). A member cannot change their own email:
+               protect_member_columns blocks the column, and the address they
+               sign in with lives in auth rather than this table, so the button
+               could never do what it promised. It had also been silently dead
+               for as long as it existed — see the prompt() note in app.js. -->
+          <div class="profile-info-row"><span>Email</span><span id="profile-email"></span></div>
           <div class="profile-info-row"><span>Program</span><span id="profile-program"></span></div>
           <div class="profile-info-row"><span>Member Since</span><span id="profile-member-since"></span></div>
         </div>
@@ -909,6 +914,27 @@
           <p class="login-error" id="pw-error" role="alert" hidden></p>
           <button class="btn-primary" id="pw-save-btn">Save Password</button>
           <p class="cardio-log-saved" id="pw-saved" style="display:none;">✓ Password changed</p>
+        </div>
+      </div>
+
+      <!-- One dialog standing in for window.prompt everywhere in this app
+           (2026-10-16). prompt() is not supported in every context a member
+           might open this from — an installed home-screen app being the usual
+           one — where it THROWS and the tap silently does nothing. It worked
+           in Chris's browser and not in the pane, which is the worst version
+           of that bug: it would have worked for some testers and not others
+           with no pattern anyone could report. -->
+      <div class="cardio-log-overlay" id="text-prompt-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="text-prompt-close">✕</button>
+          <h2 class="cardio-log-title" id="text-prompt-title">Edit</h2>
+          <label class="field">
+            <span id="text-prompt-label"></span>
+            <input type="text" id="text-prompt-input" />
+            <textarea id="text-prompt-textarea" rows="4" hidden></textarea>
+          </label>
+          <p class="login-error" id="text-prompt-error" role="alert" hidden></p>
+          <button class="btn-primary" id="text-prompt-save">Save</button>
         </div>
       </div>
 

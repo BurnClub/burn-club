@@ -876,22 +876,32 @@ function wireNotebookBody() {
       const action = btn.dataset.notebookAction;
       if (action === "checkin") { closeNotebook(); openCheckinModal(); return; }
       if (action === "choose-prs") { closeNotebook(); openPRPicker(); return; }
+      // askText, not prompt — see its note. These three were the same silent
+      // failure as the profile pencils: in a context where prompt() is not
+      // supported the tap did nothing at all, and the Notebook is something
+      // testers are being asked to use.
       if (action === "edit-session-note") {
         const id = btn.dataset.entry;
-        const next = prompt("Note about this session", sessionNoteFor(id));
-        if (next === null) return;
-        if (next.trim()) SESSION_NOTES[id] = next.trim(); else delete SESSION_NOTES[id];
-        saveSessionNotes();
-        renderNotebook();
+        // allowEmpty, because clearing the box is how a note is deleted.
+        askText({ title: "Session note", label: "How did today go?",
+                  value: sessionNoteFor(id), multiline: true, allowEmpty: true }).then((next) => {
+          if (next === null) return;
+          if (next.trim()) SESSION_NOTES[id] = next.trim(); else delete SESSION_NOTES[id];
+          saveSessionNotes();
+          renderNotebook();
+        });
         return;
       }
       if (action === "add-note") {
         const kind = btn.dataset.kind;
-        const text = prompt(kind === "coach" ? "Something to ask your coach" : "Note");
-        if (!text || !text.trim()) return;
-        NOTEBOOK_NOTES[kind].push(text.trim());
-        saveNotebookNotes();
-        renderNotebook();
+        askText({ title: kind === "coach" ? "Ask your coach" : "New note",
+                  label: kind === "coach" ? "Something to ask your coach" : "Note",
+                  multiline: true }).then((text) => {
+          if (!text || !text.trim()) return;
+          NOTEBOOK_NOTES[kind].push(text.trim());
+          saveNotebookNotes();
+          renderNotebook();
+        });
       }
     });
   });
@@ -912,12 +922,14 @@ function wireNotebookBody() {
   document.querySelectorAll("#notebook-content [data-note-kind]").forEach((el) => {
     el.addEventListener("click", () => {
       const kind = el.dataset.noteKind, i = Number(el.dataset.noteIndex);
-      const next = prompt("Edit note (clear it to delete)", NOTEBOOK_NOTES[kind][i]);
-      if (next === null) return;
-      if (next.trim()) NOTEBOOK_NOTES[kind][i] = next.trim();
-      else NOTEBOOK_NOTES[kind].splice(i, 1);
-      saveNotebookNotes();
-      renderNotebook();
+      askText({ title: "Edit note", label: "Clear it to delete",
+                value: NOTEBOOK_NOTES[kind][i], multiline: true, allowEmpty: true }).then((next) => {
+        if (next === null) return;
+        if (next.trim()) NOTEBOOK_NOTES[kind][i] = next.trim();
+        else NOTEBOOK_NOTES[kind].splice(i, 1);
+        saveNotebookNotes();
+        renderNotebook();
+      });
     });
   });
 }
@@ -6058,8 +6070,12 @@ function wireStaticControls() {
   document.getElementById("program-complete-cta").addEventListener("click", () => {
     openThread(`dm-${CURRENT_MEMBER.id}`);
   });
-  document.getElementById("edit-email-btn").addEventListener("click", editEmail);
-  document.getElementById("edit-name-btn").addEventListener("click", editName);
+  document.getElementById("edit-name-btn").addEventListener("click", openNameScreen);
+  document.getElementById("text-prompt-close").addEventListener("click", () => closeTextPrompt(null));
+  document.getElementById("text-prompt-save").addEventListener("click", submitTextPrompt);
+  document.getElementById("text-prompt-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") submitTextPrompt();
+  });
   document.getElementById("avatar-btn").addEventListener("click", () => {
     document.getElementById("avatar-input").click();
   });
@@ -6202,12 +6218,76 @@ function applyAvatar() {
 // first_name and last_name are the two columns a member IS allowed to write:
 // protect_member_columns blocks role, program_id, start_date, access, email,
 // member_since, badge and data_epoch, and deliberately leaves these alone.
-async function editName() {
-  const current = CURRENT_MEMBER.name || "";
-  const next = window.prompt("What should we call you?", current);
+// A real dialog, not window.prompt (2026-10-16). prompt() THROWS here —
+// "prompt() is not supported" — so the pencil looked clickable and did
+// nothing at all. The email pencil beside it had the same fault and had
+// therefore never worked in its life; it has been removed, since a member
+// cannot change their own email anyway.
+//
+// The lesson is not about prompt: it is that a control whose only failure
+// mode is silence will sit broken for weeks. This one reports.
+// Resolves to the text, or to null when dismissed — the same contract
+// window.prompt had, so call sites read the way they always did. The
+// difference is that this one exists in every context.
+let textPromptResolve = null;
+
+function askText({ title, label, value = "", placeholder = "", multiline = false, allowEmpty = false }) {
+  const overlay = document.getElementById("text-prompt-overlay");
+  const input = document.getElementById(multiline ? "text-prompt-textarea" : "text-prompt-input");
+  const other = document.getElementById(multiline ? "text-prompt-input" : "text-prompt-textarea");
+  document.getElementById("text-prompt-title").textContent = title;
+  document.getElementById("text-prompt-label").textContent = label || "";
+  document.getElementById("text-prompt-error").hidden = true;
+  other.hidden = true;
+  input.hidden = false;
+  input.value = value || "";
+  input.placeholder = placeholder || "";
+  overlay.dataset.allowEmpty = allowEmpty ? "1" : "";
+  overlay.dataset.multiline = multiline ? "1" : "";
+  overlay.classList.add("visible");
+  input.focus();
+  if (!multiline) input.select();
+
+  // A previous dialog left unresolved would leak its caller; settle it as a
+  // dismissal before taking over.
+  if (textPromptResolve) textPromptResolve(null);
+  return new Promise((resolve) => { textPromptResolve = resolve; });
+}
+
+function closeTextPrompt(value) {
+  document.getElementById("text-prompt-overlay").classList.remove("visible");
+  const done = textPromptResolve;
+  textPromptResolve = null;
+  if (done) done(value);
+}
+
+function submitTextPrompt() {
+  const overlay = document.getElementById("text-prompt-overlay");
+  const multiline = overlay.dataset.multiline === "1";
+  const input = document.getElementById(multiline ? "text-prompt-textarea" : "text-prompt-input");
+  const value = input.value;
+  if (!value.trim() && !overlay.dataset.allowEmpty) {
+    const err = document.getElementById("text-prompt-error");
+    err.textContent = "Type something, or close this to cancel.";
+    err.hidden = false;
+    return;
+  }
+  closeTextPrompt(value);
+}
+
+async function openNameScreen() {
+  const next = await askText({
+    title: "Your name",
+    label: "What should we call you?",
+    value: CURRENT_MEMBER.name || "",
+    placeholder: "e.g. Jordan Tester",
+  });
   if (next === null) return;
-  const trimmed = next.trim();
-  if (!trimmed) return;
+  const res = await applyMemberName(next.trim());
+  if (res && res.error) alert(res.error);
+}
+
+async function applyMemberName(trimmed) {
 
   // Split the way the rest of the app does: everything after the first space
   // is the surname, so a two-word surname survives.
@@ -6219,24 +6299,15 @@ async function editName() {
   document.getElementById("profile-name").textContent = trimmed;
   document.getElementById("home-greeting-name").textContent = first;
 
-  if (!AUTH_MEMBER || typeof SB === "undefined" || !SB) return;   // demo session
+  if (!AUTH_MEMBER || typeof SB === "undefined" || !SB) return {};   // demo session
   const { error } = await SB.from("members")
     .update({ first_name: first, last_name: last }).eq("id", AUTH_MEMBER.id);
-  if (error) {
-    alert("Couldn't save your name: " + error.message);
-    return;
-  }
+  // Returned rather than alerted: the dialog shows it in place, where the
+  // person is already looking.
+  if (error) return { error: "Couldn't save: " + error.message };
   AUTH_MEMBER.first_name = first;
   AUTH_MEMBER.last_name = last;
-}
-
-function editEmail() {
-  const next = window.prompt("Update your email", CURRENT_MEMBER.email);
-  if (next === null) return;
-  const trimmed = next.trim();
-  if (!trimmed) return;
-  CURRENT_MEMBER.email = trimmed;
-  document.getElementById("profile-email").textContent = trimmed;
+  return {};
 }
 
 // ---------------- Program mode (rolling vs. structured) ----------------
