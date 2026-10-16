@@ -359,6 +359,27 @@ reason.
 
 ## Final Walkthrough
 
+- [ ] **Benchmarks are named for their workout now** (2026-10-16) — "The
+      Gauntlet" rather than "Benchmark A", with the format underneath. The IDS
+      stay `benchmark-a/b/c`: they are what every recorded score is filed
+      under, and renaming them would orphan a member's history for a cosmetic
+      change. Nothing to do here unless the three seeded names change when
+      Chris writes the real ones.
+
+
+- [ ] **Turn wearables back on.** Greyed out 2026-10-16 (Chris: "this feature
+      will not be available for some time"). One flag — `WEARABLES_AVAILABLE`
+      in app.js — set it true and both buttons come back; the notice above them
+      hides itself off the same flag.
+      Greyed rather than hidden on purpose: the Today card still shows steps
+      and resting heart rate for a connected member, so removing the section
+      would leave someone wondering where that number comes from with no way to
+      ask. **Disconnect is disabled too**, which is the part worth keeping —
+      Jordan Tester is connected deliberately, his watch figures are what the
+      demo visuals are built on, and a live Disconnect beside a dead Connect is
+      a one-way door.
+
+
 Opened 2026-10-14 at Chris's request: "a few weeks before final launch." Things
 that are **not** tester blockers and should not be allowed to look like them —
 polish, wording and judgement calls that want fresh eyes once the product has
@@ -568,11 +589,48 @@ it would be nice. Things that can follow launch belong in the sections below.
       flow emails a code, which is the channel being routed around.
       Hidden for a demo session, which has no account to change.
 
-- [ ] **Invites for the first six are hand-delivered** (Chris, 2026-10-13).
-      The invite email still lands in spam and that is not being fixed before
-      the trial. The decision is to send the link personally and walk each
-      tester through setting a password. Fixing deliverability is wanted soon
-      after, not before.
+- [x] **Invites: use the MAGIC LINK, not the invite email** (Chris,
+      2026-10-16). He created a user and sent a magic link — **it arrived in
+      the inbox, not spam**, and he will use that for the testers.
+      Worth knowing why, because it is not luck: a magic link is a different
+      Supabase template from the invite, and the invite's default is one bare
+      "Accept the invite" button with no sender name, no product name and no
+      reason for arriving — which is structurally what phishing looks like and
+      is scored that way. See the invite-template rewrite further down; the
+      magic link sidesteps it rather than solving it, and bulk sending will
+      still need the real fix.
+      **The actual flow, confirmed by Chris doing it 2026-10-16:**
+      1. Create the user in the dashboard WITH an email and password. The
+         password only has to exist; the tester never needs to know it.
+      2. Send a magic link.
+      3. They land in the app already signed in, on the "Choose a password to
+         finish setting up your account" form — and set their own there.
+
+      Caught by `access_token=` in `arrivedFromEmailLink()`, not by the type
+      list; "magiclink" has been added to that list too so the path is
+      explicit rather than incidental.
+
+      **The trap, if a tester skips that screen:** the session persists, so
+      they come back signed in — not knowing their password, and Profile →
+      Change Password asks for the current one. Keep the passwords you type at
+      creation; it is the fallback that always works. If someone does get
+      stuck, the fix is a "send me a reset link" escape on the change-password
+      screen, which should deliver like the magic link did.
+
+- [x] **A member can change their own name and picture** — built 2026-10-16.
+      Neither was possible: the name came from whatever the account was
+      created with, which for an emailed invite is the part before the @, so
+      "jordan.tester" rather than Jordan. `first_name`, `last_name` and the new
+      `avatar_url` are exactly the columns `protect_member_columns` leaves
+      alone — a member owns their own name and face.
+      The picture is downscaled in the browser to a 512px square before upload
+      (a phone photo is 3-5MB and 4000px wide for a circle rendered at 96), and
+      one file per member, overwritten. The stored URL carries a cache-busting
+      suffix, which is the reason for storing a URL rather than deriving one:
+      the path never changes, so every browser and CDN would otherwise keep
+      serving the old picture.
+      Needs `supabase/19-avatars.sql` — the bucket, and policies scoped to
+      `avatars/<auth uid>/`, so a member can only write in their own folder.
 
 - [ ] **Plan the whole post-sale path, end to end** (Chris, 2026-10-13) —
       "from the listing on our shopify site, to the download of the app."

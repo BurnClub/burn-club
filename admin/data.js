@@ -844,9 +844,9 @@ const PROGRAMS = [
     // can carry its own set, or none — a retest only means anything against
     // the programming it belongs to.
     benchmarks: [
-      { id: "benchmark-a", name: "Benchmark A", subtitle: "The Gauntlet — 12-Minute AMRAP", scoreType: "rounds" },
-      { id: "benchmark-b", name: "Benchmark B", subtitle: "Sprint 500 — For Time", scoreType: "time" },
-      { id: "benchmark-c", name: "Benchmark C", subtitle: "Endurance Test — 15-Minute AMRAP", scoreType: "rounds" },
+      { id: "benchmark-a", name: "The Gauntlet", subtitle: "12-Minute AMRAP", scoreType: "rounds" },
+      { id: "benchmark-b", name: "Sprint 500m", subtitle: "For Time", scoreType: "time" },
+      { id: "benchmark-c", name: "Endurance Test", subtitle: "15-Minute AMRAP", scoreType: "rounds" },
     ],
   },
   {

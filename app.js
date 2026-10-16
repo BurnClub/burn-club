@@ -2356,20 +2356,39 @@ function renderTodayStats() {
   `;
 }
 
+// Wearables are off until the integration is real (2026-10-16, Chris: "can we
+// make the buttons to connect to a wearable in the profile greyed out for now
+// since this feature will not be available for some time").
+//
+// Off rather than hidden: the Today card already shows steps and resting heart
+// rate for a connected member, so removing the section would leave a member
+// wondering where that data comes from and no way to ask. Greyed says "not
+// yet"; absent says nothing at all.
+//
+// DISCONNECT is disabled too, and that is the part worth getting right.
+// Jordan Tester is connected on purpose — his watch figures are what the
+// demo visuals are built on — and leaving Disconnect live next to a dead
+// Connect is a one-way door: one tap and the data is gone with no way back.
+const WEARABLES_AVAILABLE = false;
+
 function renderWearableSection() {
   const container = document.getElementById("wearable-section");
   if (!container) return;
+  const notice = document.getElementById("wearable-coming-soon");
+  if (notice) notice.hidden = WEARABLES_AVAILABLE;
+
   container.innerHTML = ["apple", "garmin"].map((provider) => {
     const connected = WEARABLE.provider === provider;
+    const off = !WEARABLES_AVAILABLE;
     return `
-      <div class="wearable-row">
+      <div class="wearable-row${off ? " is-unavailable" : ""}">
         <div>
           <p class="wearable-name">${WEARABLE_LABELS[provider]}</p>
           <p class="wearable-status ${connected ? "connected" : ""}">${connected ? "● Connected" : "Not connected"}</p>
         </div>
         ${connected
-          ? `<button class="btn-ghost-lg small" data-disconnect-provider="${provider}">Disconnect</button>`
-          : `<button class="btn-ghost-lg small" data-connect-provider="${provider}">Connect</button>`}
+          ? `<button class="btn-ghost-lg small" ${off ? `disabled title="Not available yet"` : `data-disconnect-provider="${provider}"`}>Disconnect</button>`
+          : `<button class="btn-ghost-lg small" ${off ? `disabled title="Not available yet"` : `data-connect-provider="${provider}"`}>Connect</button>`}
       </div>
     `;
   }).join("");
@@ -6017,6 +6036,7 @@ function init() {
   // and the badge belongs to the member, not the page.
   renderHealthProfileFlag();
   applyPasswordRowVisibility();
+  applyAvatar();
 }
 
 // One-time wiring for static elements that exist from page load and are
@@ -6039,6 +6059,13 @@ function wireStaticControls() {
     openThread(`dm-${CURRENT_MEMBER.id}`);
   });
   document.getElementById("edit-email-btn").addEventListener("click", editEmail);
+  document.getElementById("edit-name-btn").addEventListener("click", editName);
+  document.getElementById("avatar-btn").addEventListener("click", () => {
+    document.getElementById("avatar-input").click();
+  });
+  document.getElementById("avatar-input").addEventListener("change", (e) => {
+    if (e.target.files && e.target.files[0]) uploadAvatar(e.target.files[0]);
+  });
 
   document.getElementById("calendar-add-btn").addEventListener("click", openCalendarAddPopup);
   document.getElementById("calendar-add-close-btn").addEventListener("click", closeCalendarAddPopup);
@@ -6087,6 +6114,122 @@ function wireStaticControls() {
 // Prototype-level edit: prompt + in-memory update, no backend to save to yet
 // (2026-08-12, Chris: "an edit button ... if they want to change their
 // email"). Real path would be a proper edit form + account API call.
+// Downscaled in the browser before upload (2026-10-16). A phone photo is
+// 3-5MB and 4000px wide; the avatar is displayed at 96px. Sending the
+// original would cost a member on gym wifi half a minute to upload a file the
+// app immediately throws 95% of away — and would trip the bucket's 2MB cap.
+// 512px square is generous for a circle that renders at 96.
+const AVATAR_MAX_PX = 512;
+
+function downscaleImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      // Square, cropped from the centre: the frame it goes into is a circle,
+      // so letterboxing a portrait photo would just add bars nobody asked for.
+      const side = Math.min(img.width, img.height);
+      const size = Math.min(side, AVATAR_MAX_PX);
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+      canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Couldn't read that image.")),
+                    "image/jpeg", 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("That file isn't an image we can read.")); };
+    img.src = url;
+  });
+}
+
+async function uploadAvatar(file) {
+  const note = document.getElementById("avatar-note");
+  const say = (msg) => { note.hidden = false; note.textContent = msg; };
+
+  if (!AUTH_MEMBER || typeof SB === "undefined" || !SB) {
+    say("Sign in to change your picture.");
+    return;
+  }
+  say("Uploading…");
+  let blob;
+  try {
+    blob = await downscaleImage(file);
+  } catch (e) {
+    say(e.message);
+    return;
+  }
+
+  // One file per member, overwritten. Without upsert every change would leave
+  // the old one behind, and a member who changed their picture ten times would
+  // be paying for ten files nothing points at.
+  const path = `${AUTH_MEMBER.id}/avatar.jpg`;
+  const up = await SB.storage.from("avatars")
+    .upload(path, blob, { upsert: true, contentType: "image/jpeg" });
+  if (up.error) { say("Couldn't upload: " + up.error.message); return; }
+
+  // The cache-buster is the point of storing a URL rather than deriving one:
+  // the path never changes, so without it every browser and CDN would keep
+  // serving the picture it already had.
+  const base = SB.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+  const url = `${base}?v=${Date.now()}`;
+
+  const { error } = await SB.from("members").update({ avatar_url: url }).eq("id", AUTH_MEMBER.id);
+  if (error) { say("Uploaded, but couldn't save it: " + error.message); return; }
+
+  AUTH_MEMBER.avatar_url = url;
+  CURRENT_MEMBER.avatarUrl = url;
+  applyAvatar();
+  say("Picture updated");
+  setTimeout(() => { note.hidden = true; }, 2000);
+}
+
+function applyAvatar() {
+  const img = document.getElementById("profile-avatar");
+  if (!img) return;
+  img.src = CURRENT_MEMBER.avatarUrl || "assets/burn-club-logo.png";
+  // No picture yet: the logo is a placeholder, not a portrait, so the hint
+  // says what to do rather than sitting silently over it.
+  const hint = document.getElementById("avatar-hint");
+  if (hint) hint.textContent = CURRENT_MEMBER.avatarUrl ? "Change" : "Add photo";
+}
+
+// ---------------- Your own name and picture (2026-10-16) ----------------
+// A member could change neither. The name came from whatever the account was
+// created with — for a tester invited by email that is the bit before the @,
+// so "jordan.tester" rather than Jordan.
+//
+// first_name and last_name are the two columns a member IS allowed to write:
+// protect_member_columns blocks role, program_id, start_date, access, email,
+// member_since, badge and data_epoch, and deliberately leaves these alone.
+async function editName() {
+  const current = CURRENT_MEMBER.name || "";
+  const next = window.prompt("What should we call you?", current);
+  if (next === null) return;
+  const trimmed = next.trim();
+  if (!trimmed) return;
+
+  // Split the way the rest of the app does: everything after the first space
+  // is the surname, so a two-word surname survives.
+  const parts = trimmed.split(/\s+/);
+  const first = parts[0];
+  const last = parts.slice(1).join(" ") || null;
+
+  CURRENT_MEMBER.name = trimmed;
+  document.getElementById("profile-name").textContent = trimmed;
+  document.getElementById("home-greeting-name").textContent = first;
+
+  if (!AUTH_MEMBER || typeof SB === "undefined" || !SB) return;   // demo session
+  const { error } = await SB.from("members")
+    .update({ first_name: first, last_name: last }).eq("id", AUTH_MEMBER.id);
+  if (error) {
+    alert("Couldn't save your name: " + error.message);
+    return;
+  }
+  AUTH_MEMBER.first_name = first;
+  AUTH_MEMBER.last_name = last;
+}
+
 function editEmail() {
   const next = window.prompt("Update your email", CURRENT_MEMBER.email);
   if (next === null) return;
@@ -6662,6 +6805,10 @@ function applyAuthMemberToProfile() {
     scheduleType: program ? program.schedule_type : CURRENT_MEMBER.scheduleType,
     memberSince: AUTH_MEMBER.member_since || CURRENT_MEMBER.memberSince,
     badge: AUTH_MEMBER.badge || "",
+    // null, not undefined: the spread above would otherwise leave a real
+    // member wearing the demo profile's picture, which renders perfectly and
+    // is somebody else's face.
+    avatarUrl: AUTH_MEMBER.avatar_url || null,
     // Both of these were missing and both fall through the spread above to the
     // demo profile if they are not set explicitly. start_date is the worse of
     // the two: memberProgramDay() counts from it, so an unmapped one put a

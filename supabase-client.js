@@ -203,9 +203,17 @@ async function loadAuthMember(user) {
 // is configured with detectSessionInUrl, so by the time this runs the session
 // already exists — what is missing is a password the member chose themselves,
 // which is the whole reason the spreadsheet never held one.
+// NOTE (2026-10-16): a MAGIC LINK is caught by the `access_token=` test, not
+// the type list — "magiclink" is deliberately not in it and does not need to
+// be, but the two conditions are not interchangeable and the second one is
+// load-bearing. Tester onboarding runs through here: Chris creates the account
+// with a password in the dashboard, sends a magic link, and the member lands
+// signed in on the set-a-password form. Narrowing this to the type list would
+// break that path silently — they would arrive signed in with a password only
+// Chris knows.
 function arrivedFromEmailLink() {
   const hash = window.location.hash || "";
-  return /type=(invite|recovery|signup)/.test(hash) || /access_token=/.test(hash);
+  return /type=(invite|recovery|signup|magiclink)/.test(hash) || /access_token=/.test(hash);
 }
 
 // Changing a password from inside the app, which is different from setting one

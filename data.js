@@ -1465,11 +1465,11 @@ const CIRCUITS = [
     category: "circuit",
     tag: "Benchmark",
     title: "The Gauntlet",
-    meta: "12 min · Full Body · Benchmark A",
+    meta: "12 min · Full Body · Benchmark",
     color: "yellow",
     isBenchmark: true,
     benchmarkId: "benchmark-a",
-    desc: "Benchmark A — see how many rounds you can complete in 12 minutes. This one gets retested every few months so you can watch your score climb.",
+    desc: "See how many rounds you can complete in 12 minutes. This one gets retested every few months so you can watch your score climb.",
     blocks: [
       {
         type: "amrap",
@@ -2028,7 +2028,16 @@ function buildSeedCompletionsForMember(member) {
 }
 
 // ---------------- Benchmarks ----------------
-// Benchmark A/B/C are retest circuits programmed into "This Week's
+// A benchmark is NAMED FOR ITS WORKOUT (2026-10-16, Chris: "lets take out the
+// benchmark a,b,c labels and just make the title of these the workout name").
+// "Benchmark A" told a member nothing — the card now leads with The Gauntlet
+// and keeps the format underneath.
+//
+// The IDS stay benchmark-a/b/c on purpose: they are what every recorded score
+// is filed under, and renaming them would orphan a member's whole history for
+// a cosmetic change. Same rule as exercise ids.
+//
+// Benchmarks are retest circuits programmed into "This Week's
 // Workouts" every few months, same as any other workout — the only
 // difference is scores get tracked as a long-running history (per
 // benchmark, not per week) so a member can see improvement over time.
@@ -2039,9 +2048,9 @@ function buildSeedCompletionsForMember(member) {
 // Seeded so the demo has something before anything is bridged; a real member's
 // list arrives with their program.
 const BENCHMARKS_SEED = [
-  { id: "benchmark-a", name: "Benchmark A", subtitle: "The Gauntlet — 12-Minute AMRAP", scoreType: "rounds" },
-  { id: "benchmark-b", name: "Benchmark B", subtitle: "Sprint 500 — For Time", scoreType: "time" },
-  { id: "benchmark-c", name: "Benchmark C", subtitle: "Endurance Test — 15-Minute AMRAP", scoreType: "rounds" },
+  { id: "benchmark-a", name: "The Gauntlet", subtitle: "12-Minute AMRAP", scoreType: "rounds" },
+  { id: "benchmark-b", name: "Sprint 500m", subtitle: "For Time", scoreType: "time" },
+  { id: "benchmark-c", name: "Endurance Test", subtitle: "15-Minute AMRAP", scoreType: "rounds" },
 ];
 
 let BENCHMARKS = [...BENCHMARKS_SEED];

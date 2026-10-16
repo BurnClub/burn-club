@@ -2893,7 +2893,11 @@ h1, h2, h3 {
    if they want to change their email"). Circular ghost button matching the
    size/weight of other small icon buttons in the app (msg-icon-btn, etc.)
    but transparent/outlined since it sits on the plain page background now. */
-.profile-info-row .edit-field-btn {
+/* Unscoped 2026-10-16: this was `.profile-info-row .edit-field-btn`, so the
+   same button beside the profile NAME inherited nothing — it drew as a bare
+   browser button with a 0x0 icon inside it. The pencil is one control
+   wherever it sits. */
+.edit-field-btn {
   width: 26px;
   height: 26px;
   border-radius: 50%;
@@ -2907,8 +2911,8 @@ h1, h2, h3 {
   padding: 0;
   margin-left: 8px;
 }
-.profile-info-row .edit-field-btn:hover { background: rgba(120,140,227,0.12); }
-.profile-info-row .edit-field-btn svg { width: 14px; height: 14px; }
+.edit-field-btn:hover { background: rgba(120,140,227,0.12); }
+.edit-field-btn svg { width: 14px; height: 14px; }
 .profile-info-row .profile-info-value-group { display: flex; align-items: center; }
 
 .habit-remove-btn {
@@ -4306,3 +4310,73 @@ h1, h2, h3 {
 .calendar-day-row.is-past .calendar-day-date { opacity: 0.6; }
 .calendar-day-row.is-past:hover .calendar-item-btn,
 .calendar-day-row.is-past:hover .calendar-item-scheduled { opacity: 0.85; }
+
+/* ---------- WEARABLES, UNAVAILABLE (2026-10-16) ---------- */
+/* The explanation sits above both rows rather than on each — two rows saying
+   "coming soon" is the same sentence twice. */
+.wearable-coming-soon {
+  margin: -4px 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+/* The row keeps full-strength text and loses only the control: a greyed name
+   would read as a device that is broken rather than a feature that is not
+   here yet. */
+.wearable-row.is-unavailable button[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---------- YOUR OWN NAME AND PICTURE (2026-10-16) ---------- */
+/* The avatar is the button: a picture is changed where it is seen, not from a
+   settings row three taps away. */
+.avatar-edit {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 50%;
+  line-height: 0;
+}
+/* A real photo is cropped to the circle; the fallback logo is not a portrait
+   and is left to sit as it always has. */
+.avatar-edit .avatar-lg {
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--pill-surface);
+}
+.avatar-edit-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* Sits on the lower third of the circle, clear of a face. */
+  bottom: 10px;
+  background: rgba(23, 36, 63, 0.72);
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 3px 0;
+  border-bottom-left-radius: 42px;
+  border-bottom-right-radius: 42px;
+  line-height: 1.4;
+}
+/* The pencil sits beside the name rather than under it, so the two read as
+   one thing you can change. */
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.avatar-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-text);
+}

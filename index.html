@@ -828,9 +828,20 @@
         </header>
 
         <div class="profile-card">
-          <img class="avatar-lg" src="assets/burn-club-logo.png" alt="" />
-          <h2 id="profile-name">Chris</h2>
+          <!-- The avatar is a button so the picture is changed where it is
+               seen (2026-10-16). The file input is the thing actually doing
+               the work and stays out of the way. -->
+          <button class="avatar-edit" id="avatar-btn" type="button" aria-label="Change your picture">
+            <img class="avatar-lg" id="profile-avatar" src="assets/burn-club-logo.png" alt="" />
+            <span class="avatar-edit-hint" id="avatar-hint">Change</span>
+          </button>
+          <input type="file" id="avatar-input" accept="image/*" hidden />
+          <div class="profile-name-row">
+            <h2 id="profile-name">Chris</h2>
+            <button class="edit-field-btn" id="edit-name-btn" type="button" aria-label="Edit your name"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>
+          </div>
           <span class="badge" id="profile-badge">Founding Member</span>
+          <p class="avatar-note" id="avatar-note" hidden></p>
         </div>
 
         <div class="profile-info-list">
@@ -841,6 +852,13 @@
 
         <div id="profile-wearables-section">
           <h2 class="section-title">Connected Devices</h2>
+          <!-- Said once at the top rather than on each row (2026-10-16,
+               Chris). Two rows both saying "coming soon" is the same sentence
+               twice; the greyed buttons below carry it from there. -->
+          <p class="wearable-coming-soon" id="wearable-coming-soon">
+            Connecting a watch isn't available yet — it's on the way. Your
+            workouts, habits and progress all work without one.
+          </p>
           <div class="wearable-section" id="wearable-section"></div>
         </div>
 
