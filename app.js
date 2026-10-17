@@ -3133,7 +3133,7 @@ function holdLabel(seconds) {
 // So the row says what to do and the member does it. Nothing to tap, nothing
 // to start, and — the point — the reps and the hold are now ONE row rather
 // than the same exercise listed twice. Completion is the tap that was always
-// going to happen anyway: Done on a straight set, Finish round on a superset.
+// going to happen anyway: Done on a straight set, Finish set on a superset.
 // One place that knows what a finished row looks like, because two call it:
 // the tap itself, and the resume path that re-applies ticks after a render.
 function markSetRowDone(setIndex) {
@@ -3282,7 +3282,7 @@ function blockSummaryLine(block) {
     case "interval":
       return `${block.rounds} rounds · ${block.work}s work / ${block.rest}s rest`;
     case "superset":
-      return `${block.rounds} rounds · rest ${block.rest}s between rounds`;
+      return `${block.rounds} sets · rest ${block.rest}s between sets`;
     case "straight":
       return `${block.sets} sets × ${block.reps} reps · rest ${block.rest}s`;
     case "ladder":
@@ -3833,7 +3833,13 @@ function weightEntriesForBlock(block, blockIndex) {
         // lighter than the set before by definition — neither takes a number
         // of its own (Chris, 2026-08-23).
         if (e.hold || e.drop) return;
-        add(e.name, e.cue, `Round ${round}`, Array.isArray(e.scheme) ? e.scheme[round - 1] : e.reps);
+        // "Set", like the player now says (2026-10-16). This label is
+        // persisted as set_label — "what the member saw" — so changing it
+        // means a record written before today reads "Round 1" and one written
+        // after reads "Set 1" for the same thing. Worth doing NOW, while the
+        // only weight history on the database is Jordan's demo account, and
+        // much worse to do once six testers have a month of it.
+        add(e.name, e.cue, `Set ${round}`, Array.isArray(e.scheme) ? e.scheme[round - 1] : e.reps);
       });
     }
   }
@@ -3939,7 +3945,16 @@ function buildPhaseQueue(circuit) {
             ...e,
             reps: Array.isArray(e.scheme) ? e.scheme[round - 1] : e.reps,
           })),
-          progressLabel: `Round ${round} of ${block.rounds}`,
+          // A superset counts SETS, not rounds (Chris, 2026-10-16: "round is
+          // for circuits"). A round is a lap of several stations; going down
+          // two exercises back to back and resting is one set of the pair.
+          // The loop variable keeps its name because the data does — a block
+          // stores `rounds` — but nothing a member reads says round.
+          progressLabel: `Set ${round} of ${block.rounds}`,
+          // What happens when they press the button, carried on the phase so
+          // the button can say it. 0 on the last set, where no rest phase is
+          // pushed below and the block simply ends.
+          restAfter: round !== block.rounds ? block.rest : 0,
         });
         if (round !== block.rounds) {
           phases.push({
@@ -3947,7 +3962,7 @@ function buildPhaseQueue(circuit) {
             kind: "rest",
             duration: block.rest,
             upNext: exerciseDisplayName(block.exercises[0]),
-            progressLabel: `Round ${round} of ${block.rounds}`,
+            progressLabel: `Set ${round} of ${block.rounds}`,
           });
         }
       }
@@ -4007,6 +4022,91 @@ function buildPhaseQueue(circuit) {
   return phases;
 }
 
+// ---------------- "Up next", at the bottom of the player ----------------
+// Chris, 2026-10-16: built for the superset first, then "add it everywhere".
+//
+// Why it earns the space. On a descending scheme — his real programming is
+// "Barbell Bench Press 10, 8, 8, 6" against "Tricep Bench Dips 10, 10, 10,
+// 10" — the numbers change under you between sets, and nothing told you until
+// you were already in the next one and had the wrong weight in your hands.
+//
+// Read off the next PHASE rather than recomputed from the block, so it cannot
+// disagree with the screen it is predicting.
+
+// Rests are skipped: "up next: rest" is not news. The button says the rest is
+// starting, and the rest screen carries its own Up next line. log-weights is
+// skipped for the same reason — it is bookkeeping, not the next thing you do.
+function nextWorkingPhase(phases, index) {
+  for (let i = index + 1; i < phases.length; i++) {
+    const p = phases[i];
+    if (p.kind !== "rest" && p.kind !== "log-weights") return p;
+  }
+  return null;
+}
+
+function previewLinesFor(phase) {
+  const amount = (e) => (e.reps ? `${e.reps} reps` : e.hold ? holdLabel(e.hold) : "");
+  const join = (name, a) => (a ? `${name} · ${a}` : name);
+  const named = (e) => exerciseDisplayName(e);
+
+  if (phase.kind === "superset") {
+    const shared = new Set(phase.exercises.map((e) => e.name)).size === 1;
+    return phase.exercises.map((e) => join(rowLabelFor(e, shared), amount(e)));
+  }
+  if (phase.kind === "sets") {
+    // One phase holds every set, so the preview describes the SHAPE rather
+    // than listing four identical lines. A ladder says its scheme, which is
+    // the whole point of a ladder.
+    const name = named({ name: phase.exerciseName, cue: phase.exerciseCue });
+    const reps = phase.sets.map((x) => x.reps).filter(Boolean);
+    const same = reps.length && reps.every((r) => r === reps[0]);
+    const detail = !reps.length
+      ? `${phase.sets.length} sets`
+      : same
+      ? `${phase.sets.length} × ${reps[0]} reps`
+      : `${reps.join("-")} reps`;
+    return [join(name, detail)];
+  }
+  if (phase.kind === "work") {
+    return [join(named({ name: phase.exerciseName, cue: phase.exerciseCue }),
+                 phase.duration ? `${phase.duration}s` : "")];
+  }
+  if (phase.kind === "emom" || phase.kind === "amrap") {
+    return phase.exercises.map((e) => join(named(e), amount(e)));
+  }
+  if (phase.kind === "cardio-choice") {
+    return [`${Math.round(phase.duration / 60)} minutes, your pick`];
+  }
+  return [];
+}
+
+// Shown on every working screen; hidden on rests, on the logging screen, and
+// on the last piece of work in the session, where there is nothing to say.
+function renderNextUp(phases, index) {
+  const el = document.getElementById("player-next-set");
+  if (!el) return;
+  const current = phases[index];
+  const next = current && current.kind !== "rest" && current.kind !== "log-weights"
+    ? nextWorkingPhase(phases, index)
+    : null;
+  const lines = next ? previewLinesFor(next) : [];
+  if (!next || !lines.length) {
+    el.hidden = true;
+    return;
+  }
+  // Crossing into a new block, the block is the news; inside one, the
+  // position is ("Set 3 of 4"). progressLabel is per-phase and a sets phase
+  // has none, hence the fallbacks.
+  const crossesBlock = next.blockIndex !== current.blockIndex;
+  const where = crossesBlock
+    ? next.blockLabel || blockTypeLabel(next.blockType)
+    : next.progressLabel || next.blockLabel || "";
+  el.innerHTML = `
+    <p class="next-set-label">Up next${where ? ` · ${esc(where)}` : ""}</p>
+    ${lines.map((t) => `<p class="next-set-line">${esc(t)}</p>`).join("")}`;
+  el.hidden = false;
+}
+
 // Per-exercise demo video, poppable over the AMRAP list without pausing the clock —
 // the workout keeps running underneath, same as glancing at a demo mid-round would.
 function openExerciseVideo(name) {
@@ -4057,6 +4157,13 @@ function attachDemoControls(frame, video) {
       tryPlayDemo(video);
     } else {
       setDemoStopped(frame, video, true);
+      // Back to the first frame (2026-10-16). A demo that has played itself
+      // out sits on its LAST frame, and these clips end dark — a black
+      // rectangle where the exercise should be, which reads as broken rather
+      // than as "tap to watch it again". Only on this path: a member who hit
+      // pause did it to look at something, and yanking them back to the start
+      // would be the opposite of what they asked for.
+      video.currentTime = 0;
     }
   });
 
@@ -4198,7 +4305,6 @@ function renderDemoStrip(exercises) {
         </div>
         <p class="demo-card-name">
           <span>${esc(rowLabelFor(e, sharedName))}</span>
-          ${e.reps ? `<span class="demo-card-reps">${e.reps} reps</span>` : ""}
         </p>
       </div>`;
   }).join("");
@@ -4245,7 +4351,16 @@ function playVisibleDemo(strip) {
       // preload="none" means there is nothing to play on the first attempt and
       // the call is simply ignored — the same cold-start that caught the demo
       // popup. Start on the video's own ready event as well.
-      v.oncanplay = () => tryPlayDemo(v);
+      // ONE SHOT, and only while the demo is still running. Left standing it
+      // becomes a perpetual motion machine now that a finished demo rewinds:
+      // the rewind is a seek, a seek fires canplay, and canplay started the
+      // clip again — it played forever while the pause button said otherwise
+      // (found 2026-10-16 by reading the live elements, which said
+      // stopped: "1" with paused: false and a play count past its limit).
+      v.oncanplay = () => {
+        v.oncanplay = null;
+        if (frame && frame.dataset.stopped !== "1") tryPlayDemo(v);
+      };
       if (v.paused) { v.dataset.played = "0"; tryPlayDemo(v); }
     } else if (!v.paused) {
       v.pause();
@@ -5093,8 +5208,11 @@ const Player = {
     // Closed on every phase change: an overview left open over a rest timer
     // hides the clock the member is waiting on.
     closeWorkoutOverview();
-    document.getElementById("player-progress-text").textContent =
-      `Block ${phase.blockIndex + 1} of ${phase.totalBlocks}`;
+    // "Block 1 of 1" is noise in a prime corner — a count is only worth the
+    // space when there is something to count (2026-10-16).
+    const progressText = document.getElementById("player-progress-text");
+    progressText.textContent = `Block ${phase.blockIndex + 1} of ${phase.totalBlocks}`;
+    progressText.style.visibility = phase.totalBlocks > 1 ? "visible" : "hidden";
     const pct = Math.round(((this.index) / this.phases.length) * 100);
     document.getElementById("player-progress-fill").style.width = `${pct}%`;
 
@@ -5104,6 +5222,8 @@ const Player = {
     document.getElementById("player-round-counter").style.display = "none";
     document.getElementById("player-controls").style.display = "none";
     document.getElementById("player-complete-set-btn").style.display = "none";
+    const nextSetEl = document.getElementById("player-next-set");
+    if (nextSetEl) nextSetEl.hidden = true;
     document.getElementById("player-start-btn").style.display = "none";
     closeBlockNotes();
     document.getElementById("player-total-clock").style.display = "none";
@@ -5175,23 +5295,48 @@ const Player = {
     // (same pattern as the AMRAP list). Mark Set Complete advances to the
     // rest phase between rounds, same as every other kind.
     if (phase.kind === "superset") {
-      // "2-Exercise Superset" is right for a superset of different lifts, but
-      // a reps-then-hold set is one movement and should say so.
       const names = new Set(phase.exercises.map((e) => e.name));
-      setPlayerExerciseHeading(
-        names.size === 1 ? [...names][0] : `${phase.exercises.length}-Exercise Superset`);
-      // The round moves under the heading, right above the list it governs
-      // (2026-10-02, Chris) — on a descending scheme the round IS what
-      // changes. The pill above keeps the block's name.
+      // A reps-then-hold set is ONE movement and says so — that name is the
+      // thing you read from three feet away, which is what the big slot is for.
+      //
+      // A real superset has no single name, so this slot used to take a
+      // derived one: "2-Exercise Superset". That is a description of the
+      // block's SHAPE, which cannot change while you are inside the block,
+      // printed in the largest type on the screen — while the round, the one
+      // thing that does change, sat small underneath it. On a descending
+      // scheme (the demo block drops 10 reps to 8 in round 2) the round is
+      // the only way to know which numbers apply to you. The hierarchy was
+      // upside down, which is what Chris could feel on 2026-10-16 without it
+      // having a name: "it has never felt right to me."
+      //
+      // So the round takes the big slot and the separate round line goes.
+      // Nothing is lost — the pill above still names the block.
+      const oneMovement = names.size === 1;
+      setPlayerExerciseHeading(oneMovement ? [...names][0] : phase.progressLabel);
       document.getElementById("player-sub-pill").textContent = phase.blockLabel || "";
       const roundLine = document.getElementById("player-round-line");
-      roundLine.textContent = phase.progressLabel;
-      roundLine.style.display = "block";
+      if (oneMovement) {
+        // Still wanted here: the heading is the movement's name, so the round
+        // needs somewhere of its own, right above the list it governs
+        // (2026-10-02, Chris).
+        roundLine.textContent = phase.progressLabel;
+        roundLine.style.display = "block";
+      }
       renderDemoStrip(phase.exercises);
       document.getElementById("player-video").style.display = "none";
       setPlayerExerciseTechnique(null);
       const supersetListEl = document.getElementById("player-superset-list");
       supersetListEl.style.display = "flex";
+      // The set number goes on the OUTSIDE of the card, centred against the
+      // whole of it (2026-10-16, Chris: "something that tells you these
+      // exercises are meant to be done together ... anything that connects
+      // the two"). One marker spanning both rows is what says they are one
+      // unit — the rows cannot say it themselves, because a list of two
+      // things looks the same whether or not they belong together.
+      //
+      // Carried as a data attribute and drawn by CSS, so the card needs no
+      // extra element and the rows keep the markup they already have.
+      supersetListEl.dataset.set = phase.round || "";
       // Weight goes inline here rather than in the rest popup the way Straight
       // Sets does (2026-08-18). The reason weight moved off those rows was that
       // Done started the rest clock, so typing a number competed with finishing
@@ -5221,7 +5366,7 @@ const Player = {
           <div class="amrap-row superset-row">
             <div class="amrap-row-line1">
               <div class="amrap-row-left">
-                <span class="amrap-ex-name">${esc(rowLabelFor(e, names.size === 1))}</span>
+                <span class="amrap-ex-name">${esc(rowLabelFor(e, oneMovement))}</span>
                 ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
               </div>
             </div>
@@ -5238,9 +5383,25 @@ const Player = {
       });
       // Held on the player, not the DOM, so it survives the re-render between
       // rounds and carries into the completion record.
+      // The button says what it DOES (2026-10-16, Chris: "it marks the set
+      // complete, and triggers the rest period. so lets say that"). "Finish
+      // set ✓" named the first half and left the second — the rest clock
+      // starting is the part that surprises people, because it starts whether
+      // or not they were ready for it.
+      //
+      // The second line also carries the rest LENGTH, which is the one number
+      // a member wants before they commit to pressing it, and on the last set
+      // it says there is no rest coming at all rather than lying by omission.
       const roundBtn = document.getElementById("player-complete-set-btn");
-      roundBtn.textContent = "Finish round ✓";
-      roundBtn.style.display = "block";
+      roundBtn.innerHTML = phase.restAfter
+        ? `<span class="cta-main">Mark Set Complete</span>
+           <span class="cta-sub">Starts your ${phase.restAfter}s rest</span>`
+        : `<span class="cta-main">Mark Set Complete</span>
+           <span class="cta-sub">Last set — finishes this block</span>`;
+      // flex, not block: the inline style wins over the stylesheet, so the
+      // two lines would not stack if this said block.
+      roundBtn.style.display = "flex";
+
     }
 
     if (phase.kind === "log-weights") {
@@ -5359,19 +5520,25 @@ const Player = {
       // big one; the box stays as the thing that *says* where to tap. It is a
       // span rather than a nested <button>, which would not be valid inside
       // one — it looks and reads like the control it has always been.
+      // The set numbers sit OUTSIDE the card, which starts just before the
+      // reps (2026-10-16, from Chris's sketch). The rows therefore need a
+      // wrapper to be the card, so the numbers can hang off its left edge
+      // while the title still lines up above them.
       listEl.innerHTML = `
         <p class="set-card-title">Sets</p>
+        <div class="set-rows">
         ${phase.sets.map((s, i) => `
-        <button class="set-row" type="button" data-set-index="${i}" aria-pressed="false">
-          <span class="set-row-num">${s.num}</span>
-          <span class="set-row-main">
-            <span class="set-row-reps">${s.reps ? `${s.reps} reps` : holdLabel(s.hold)}</span>
-            ${s.reps && s.hold ? `<span class="set-row-sub">${holdSubText(s.hold)}</span>` : ""}
-          </span>
-          <span class="set-row-leader"></span>
-          <span class="set-row-done">Done</span>
-        </button>
-      `).join("")}`;
+          <button class="set-row" type="button" data-set-index="${i}" aria-pressed="false">
+            <span class="set-row-num">${s.num}</span>
+            <span class="set-row-main">
+              <span class="set-row-reps">${s.reps ? `${s.reps} reps` : holdLabel(s.hold)}</span>
+              ${s.reps && s.hold ? `<span class="set-row-sub">${holdSubText(s.hold)}</span>` : ""}
+            </span>
+            <span class="set-row-leader"></span>
+            <span class="set-row-done">Done</span>
+          </button>
+        `).join("")}
+        </div>`;
       listEl.querySelectorAll(".set-row").forEach((row) => {
         row.addEventListener("click", () => this.toggleSetChecked(Number(row.dataset.setIndex)));
       });
@@ -5463,6 +5630,10 @@ const Player = {
       this.updateClock();
       if (this.isNewBlockStart() || this.steppingBack) this.awaitStart(); else this.beginPhaseTimer();
     }
+
+    // One call for every phase kind rather than a copy in each branch — the
+    // branches above already disagree about enough.
+    renderNextUp(this.phases, this.index);
 
     this.renderBackBtn();
     this.persist();

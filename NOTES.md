@@ -402,6 +402,161 @@ programme, workout or block is cheap now and a second migration later.
        does the result is ugly rather than broken.
 
 
+## The workout player — the 2026-10-16 pass
+
+Chris: "I keep coming back to this page ... it is almost there, but it has
+never felt right to me." Every detail on the superset screen had already been
+tuned — ticks removed, numbering circles removed, weight moved off the rows.
+The problem was underneath the details, and fixing it opened up the rest.
+
+### A superset counts SETS, not rounds
+
+"Round is for circuits." A round is a lap of several stations; going down two
+exercises back to back and resting is one set of the pair. Changed in five
+places, not just the heading: the big heading, the button, the rest screen
+between sets, the overview's summary line ("4 sets · rest 90s between sets")
+and the Before You Start explainer. Circuits and AMRAP keep *Round*.
+
+The fifth place is the one to remember. The superset weight-log labels are
+persisted as `set_label` — "what the member saw" — so a record written before
+today reads "Round 1" and one after reads "Set 1" for the same thing. Done NOW
+deliberately, while the only weight history on the database is Jordan's demo
+account; after six testers have a month of it, it would not have been worth it.
+
+### The hierarchy was upside down
+
+The 39px slot belongs to `setPlayerExerciseHeading`, built for the
+single-exercise player where the exercise name IS the thing you read from
+three feet away. A superset has no single name, so the code made one up:
+`${length}-Exercise Superset` — a description of the block's SHAPE, which
+cannot change while you are inside the block, printed in the largest type on
+the screen, while the set, the one thing that does change, sat small
+underneath. On a descending scheme the set number is the only way to know
+which numbers apply to you. The set now takes the big slot. A one-movement
+superset — reps then a hold of the same lift — keeps its name there and keeps
+its separate round line.
+
+### Space that was paying for furniture that no longer exists
+
+Chris: "I don't like how there is so much empty space in the exercise lines."
+Measured rather than guessed, and most of it was structural:
+
+- BOTH lines were indented **32px to clear a numbering circle removed on
+  2026-10-06**. 32 of the row's 306px, paying for nothing. The divider was
+  inset to clear the same ghost.
+- `.amrap-row-line2` reserved a 26px min-height for the weight input that can
+  sit there. A plain "10 reps" is 16px, so every row carried 10px of air.
+- 12px top and bottom put another 24px around two lines totalling 36px.
+
+73px tall for 36px of text, floating 32px in from a card edge it should have
+been flush with. Then reps moved to the right of the name (Chris tried it both
+ways and picked one line), and the card went **150px to 84px**.
+
+Then back the other way, deliberately: "the text is too bold, and I think we
+can add 20% more space in the card." Name 700 to 400, reps 500 to 300, demo
+caption 800 to 400 — the rule he set on the Calendar and Home cards, title
+normal and the line under it light. Card 84px to 100px. **Inter loads a 300 and
+Nunito does not**, which is why nothing here asks the heading face for a light.
+
+### Set numbers outside the card, and the bracket
+
+From Chris's sketch: cut the straight-sets card off before the number, so the
+numbers run down the cream outside it. Dark circle, white numeral — white read
+as a hole punched in the page, periwinkle was too quiet, and `--text` is the
+app's own black (nothing in Burn Club uses a true #000).
+
+Two things that came out of it:
+
+- The number is a child of the row, so **it fades when the set is done** — you
+  read your progress down the left column without looking inside the card.
+  That was not designed, it fell out, and it is better than what it replaced.
+- The whole row has been the button since 2026-10-05, so a tap on a number now
+  sitting OUTSIDE the card still had to register. Verified: it does.
+
+Then Chris saw it and said "this may be what I have been waiting for on the
+superset ... anything that connects the two." The superset card now carries
+the same marker, centred against the whole card, **plus a connector line** he
+picked over the number alone. The number says which set; the line is what says
+the exercises inside are one thing. Two rows in a card look identical whether
+they are a superset or just two exercises listed — nothing on the screen said
+otherwise except the word "Superset" in a pill.
+
+### The button says what it does
+
+"It marks the set complete, and triggers the rest period. So lets say that."
+Two lines, no checkmark: **Mark Set Complete** / *Starts your 90s rest*. The
+rest length is read off the block, and on the last set it says "Last set —
+finishes this block" instead, because no rest phase is pushed there and the
+old copy would have promised one that never comes.
+
+The button had to go from `display: block` to `flex` in JS — an inline style
+beats the stylesheet, so the two lines would have sat side by side whatever
+the CSS said. The sub-line is Inter: Nunito has no weight below 400 to say
+something quietly in.
+
+### "Up next", anchored to the bottom
+
+Built for the superset, then "add it everywhere **where it is applicable**".
+
+One helper, one call site at the end of `renderPhase`, rather than a copy in
+each branch — the branches already disagree about enough. `nextWorkingPhase`
+skips rests and the logging screen ("up next: rest" is not news; the button
+already said it), `previewLinesFor` describes whatever it finds, and the
+preview hides when there is nothing after.
+
+Where it lands:
+
+| screen | shows |
+|---|---|
+| Superset | the next set, with its reps — the original case |
+| Interval work | the next station and its work time |
+| Last block of any kind | nothing |
+| Last set / last station | nothing |
+| Crossing into a new block | that block, named, with what it opens with |
+| Rest, log-weights | nothing — rest already has its own Up next |
+| Single-block Straight Sets, Ladder, AMRAP, EMOM, Cardio | nothing |
+
+It reads the next PHASE, never recomputed from the block, so it cannot
+disagree with the screen it is predicting. `margin-top: auto` inside the
+player's flex column puts it on the floor on a tall phone and lets it follow
+the button on a short one, instead of overlapping.
+
+**Open:** on an interval circuit every work screen gets one, and the rest
+screen between stations already says "Up next" 40 seconds later. Arguably the
+work screen's is the useful one and the rest screen's is the echo — but if it
+reads as noise, `previewLinesFor` returning `[]` for `kind === "work"` removes
+it and nothing else changes.
+
+### Tried and REVERTED: videos merged into the list rows
+
+The first attempt replaced the demo strip with one row per exercise — small
+thumbnail, name, reps — on the grounds that it removed duplication and put
+both exercises on screen without a sideways scroll. Chris, same day: "not a
+fan of the videos inside the lines. I liked having them up above, i think it
+matched what we are doing in other spots, and i like that they are big enough
+to see without having to squint."
+
+Both reasons beat the one they overruled: the strip is the pattern used
+elsewhere, and a demo you squint at is not doing its job. **Do not re-propose
+shrinking these.** The duplication was real but only the reps were worth
+removing — the demo caption keeps the name, since that is what says which clip
+you are looking at.
+
+### Two bugs made and caught on the way
+
+- **A finished demo rewinds to its first frame** now, because these clips end
+  dark and a played-out demo sat on a black rectangle. That rewind is a seek,
+  a seek fires `canplay`, and the cold-start handler
+  (`v.oncanplay = () => tryPlayDemo(v)`, there because `preload="none"` makes
+  the first `play()` a no-op) started the clip again — forever. The live
+  elements said `stopped: "1"` with `paused: false` and a play count past its
+  limit while the screen looked fine. One-shot now, and it checks the flag.
+  **A standing handler plus anything that seeks is a loop waiting to happen.**
+- The local server served a **stale `app.js`** through three test runs — the
+  rename looked like it had not worked. `fetch(f, {cache: 'reload'})` on each
+  file before reloading is what finally cleared it. Check the running page has
+  the new code before believing a negative result.
+
 ## Settled: programmes are hand-built on purpose — do not "fix" this
 
 I raised the absence of a "duplicate programme" feature on 2026-10-14 as a
@@ -1634,6 +1789,61 @@ rules, which are real logic rather than config and want their own design pass.
   special case, or it won't exercise what a reviewer is checking. Tabled for a
   later session (2026-08-27) — it's gated on the App Store submission actually
   being imminent, so there's no value in building it early.
+
+- **Download a workout as an image** (Chris, 2026-10-16). "We have some users
+  who like to do the workouts on their own, not go through the progression
+  within the app ... a version of a workout that they can pull up outside of
+  the app (like in their photos or similar)." Deferred the same day, once the
+  shape was clear: "hold off on this build for now ... we can revisit when we
+  aren't preparing for a live test." **Not for the tester trial.** The design
+  below is the whole conversation, so this does not have to be re-derived.
+
+  **Source: the workout overview screen** (`#screen-detail`), which is what
+  Chris pictured and is already the one page showing the whole session at once.
+  It serves structured and on-demand workouts both, so the feature covers both
+  with no extra work.
+
+  **Draw it on a canvas from the data — do NOT screenshot the DOM.** The
+  obvious route is html2canvas, and it is the wrong one: a ~50KB dependency on
+  a PWA that must work offline (and that already has a service-worker cache
+  coherence problem), output that differs per browser engine, and known
+  trouble with exactly what this app uses — custom fonts, inline SVG icons,
+  CSS custom properties. It would also export the furniture: back button, week
+  pill, bottom nav, Start Workout.
+
+  Drawing it instead costs more code and buys three things. `blockHeading()`,
+  `blockSummaryLine()` and `blockExerciseNames()` already produce every string
+  on that screen, so the exporter reuses them and cannot drift from what
+  members read. Exercise cues come along free, since they live in
+  `exerciseDisplayName()`. And the sheet becomes a document rather than a photo
+  of an app — wordmark (`assets/burn-club-wordmark.png`), title, programme and
+  week, then the blocks. Render at 2x for a crisp image.
+
+  **PNG, not PDF**, because Chris said Photos: on iOS a PDF goes to Files.
+
+  **Delivery is two taps and there is no way around it.** `navigator.share({files})`
+  opens the share sheet, where the member taps "Save Image"; no web API writes
+  to the camera roll directly. Desktop falls back to a download.
+  **Verify Web Share inside the INSTALLED home-screen app, not just Safari** —
+  that standalone context is exactly where `window.prompt()` turned out to be
+  unsupported (see the section on it above), and the same class of surprise is
+  likely here.
+
+  **Open question Chris had not answered when this was parked:** blank weight
+  lines beside each exercise. It is the one thing a sheet can do that the
+  screen cannot, and it changes the layout rather than a line of code — it
+  turns the export from a picture of the workout into the thing someone
+  carries round a gym. Decide this before building, not during.
+
+  **The real product question, also unanswered.** A workout trained off a saved
+  image **is not logged**: no completion, no streak, no benchmark entry,
+  nothing in the Community feed, and holes in Progress on days the member
+  actually trained. Chris knows these members and says some already train this
+  way, so this may be acceptable — but it should be chosen, not discovered.
+  Three options: accept the gap, print "log it in the app when you're done" on
+  the sheet, or have the export set up a one-tap "mark as done". Related, and
+  accepted: an image cannot carry the demo videos. For the experienced members
+  this is aimed at, that is the point rather than a loss.
 
 ## Settled — don't revisit
 

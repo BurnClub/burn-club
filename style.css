@@ -4458,3 +4458,217 @@ h1, h2, h3 {
    the cards under them. */
 .circuit-card h3 { font-weight: 400; }
 .circuit-card p { font-weight: 300; }
+
+/* ---------- SUPERSET / AMRAP ROWS: THE ORPHANED INDENT (2026-10-16) ----------
+   Chris: "I don't like how there is so much empty space in the exercise lines."
+   Measured rather than guessed, and most of it was structural:
+
+     - BOTH lines were indented 32px to clear a numbering circle that was
+       removed on 2026-10-06. 32 of the row's 306px, paying for nothing. The
+       divider was inset to clear the same circle.
+     - .amrap-row-line2 reserved a 26px min-height for the weight input and
+       hold pill that can sit there. A plain "10 reps" is 16px, so every row
+       carried 10px of air under its name.
+     - 12px top and bottom put another 24px around two lines of text that
+       come to 36px between them.
+
+   73px tall for 36px of text, floating 32px in from a card edge it should
+   have been flush with. Written against .player-amrap-list so the superset
+   and AMRAP lists cannot drift apart — the point of unifying them in
+   August. */
+.player-amrap-list .amrap-row-left,
+.player-amrap-list .amrap-row-line2 { padding-left: 0; }
+.player-amrap-list .amrap-row:not(:last-child)::after { left: 0; right: 0; }
+/* Enough for the weight input when there is one, nothing when there is not. */
+.player-amrap-list .amrap-row-line2 { min-height: 0; }
+.player-amrap-list .amrap-row-line2:has(.superset-weight-input) { min-height: 26px; }
+.player-amrap-list .amrap-row { padding: 10px 0; }
+
+/* ---------- REPS ON THE RIGHT (2026-10-16) ----------
+   Chris wanted to see it on one line after all: name left, reps right, plain
+   text and no pill. Pure layout — the markup still writes the two lines, they
+   just sit side by side, so nothing about rowLabelFor, the drop tag or the
+   hold pill changes.
+
+   Scoped to the superset list on purpose. The AMRAP list went to two lines on
+   2026-08-23 because its rows carry a weight input and a play button as well,
+   and putting five things on one line is the "much too busy" that change was
+   fixing. */
+#player-superset-list .amrap-row { flex-direction: row; align-items: center; gap: 12px; }
+#player-superset-list .amrap-row-line1 { flex: 1 1 auto; min-width: 0; }
+/* No shrink: the reps are two or three characters and should never be the
+   thing that gets squeezed — a long exercise name wraps to its two lines
+   instead, which is what the clamp is already there for. */
+#player-superset-list .amrap-row-line2 { flex: 0 0 auto; }
+
+/* ---------- SET NUMBERS OUTSIDE THE CARD (2026-10-16) ----------
+   Chris's sketch: cut the card off before the set number, so the numbers run
+   down the cream outside it and the card holds only the prescription — reps,
+   leader dots, Done. A trial, not settled.
+
+   The card moves from .player-sets-list to a .set-rows wrapper inside it, so
+   the list can carry the 36px of left margin the numbers hang in while the
+   SETS header still sits above them at the true left edge. */
+.player-sets-list {
+  background: none;
+  box-shadow: none;
+  padding: 0 0 0 36px;
+}
+.set-card-title { margin-left: -36px; }
+.set-rows {
+  background: var(--periwinkle);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px var(--card-shadow);
+  padding: 4px 16px;
+}
+/* Absolute, not a flex child with a negative margin: the row's content box
+   starts 52px in (36 of list padding + 16 of card padding), so -52px puts the
+   circle exactly on the screen's own left margin and the arithmetic is
+   readable instead of tuned by eye. */
+.set-row { position: relative; }
+.player-sets-list .set-row-num {
+  position: absolute;
+  left: -52px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+/* The circle was white to lift off the periwinkle card. Outside it, on the
+   cream, white reads as a hole — so it inverts: the app's darkest ink with
+   the numeral knocked out of it. --text rather than #000, which is off this
+   palette entirely and would be the only true black in the app. */
+.player-sets-list .set-row-num {
+  background: var(--text);
+  color: #FFFFFF;
+}
+
+/* ---------- THE SUPERSET'S SET MARKER (2026-10-16) ----------
+   Chris, after seeing the numbers move outside the straight-sets card: "I
+   think this may be what I have been waiting for on the superset ... anything
+   that connects the two."
+
+   The problem it solves: two rows in a card look identical whether they are a
+   superset or just two exercises listed. Nothing on the screen said "these go
+   together" except the word Superset in a pill at the top. One number
+   bracketing the whole card does say it — it is the same gesture as the
+   straight-sets column, except there one number marks one row and here one
+   number marks the pair.
+
+   Drawn from data-set with a pseudo-element, so no extra markup and nothing
+   for the row renderer to know about. */
+#player-superset-list { position: relative; margin-left: 36px; }
+/* The connector (Chris picked it over the number alone, 2026-10-16). The
+   number says WHICH set; the line is what says the exercises inside the card
+   are one thing. It is the oldest notation there is for "these go together" —
+   a brace down the margin — and it does the job the pill at the top of the
+   screen was doing in words.
+   Inset 8px top and bottom so it reads as a bracket spanning the card rather
+   than as a border drawn down its edge. 22% so it supports the number instead
+   of competing with it. */
+#player-superset-list::after {
+  content: "";
+  position: absolute;
+  left: -24.5px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--text);
+  opacity: 0.22;
+}
+#player-superset-list::before {
+  content: attr(data-set);
+  position: absolute;
+  /* Above the line, which runs behind it. */
+  z-index: 2;
+  left: -36px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--text);
+  color: #FFFFFF;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- SUPERSET CARD: WEIGHT AND BREATHING ROOM (2026-10-16) ----------
+   Chris: "the text is too bold, and I think we can add 20% more space in the
+   card, it feels a little cramped."
+
+   Weight follows the rule he set on the Calendar and Home cards: the title
+   goes to normal and the line describing it goes to light. Name 700 -> 400,
+   reps 500 -> 300, and the demo caption 800 -> 400 — it was the boldest text
+   on the screen, and leaving it would have been half the job.
+
+   Inter loads 300, so the light is a real face and not the browser picking
+   the nearest one. Nunito does NOT load 300, which is why nothing here asks
+   it for one.
+
+   Space: row padding 10 -> 12 and the card's own 2 -> 6 top and bottom, which
+   takes the card from 84px to 100px. Scoped to the superset — the AMRAP list
+   shares this class and has a weight input and a play button on every row,
+   so it is not cramped in the same way. */
+#player-superset-list { padding: 6px 16px; }
+#player-superset-list .amrap-row { padding: 12px 0; gap: 14px; }
+#player-superset-list .amrap-ex-name { font-weight: 400; }
+#player-superset-list .amrap-reps { font-weight: 300; }
+.demo-card-name { font-weight: 400; }
+
+/* ---------- THE SET BUTTON SAYS WHAT IT DOES (2026-10-16) ----------
+   Two lines: the action, then its consequence and the number that matters.
+   Taller than a one-line CTA on purpose — Chris wanted the empty space under
+   the card used, and a button a tired person presses with one thumb is a good
+   place to spend it. */
+#player-complete-set-btn {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 16px;
+  line-height: 1.25;
+}
+#player-complete-set-btn .cta-main { font-size: 16px; font-weight: 800; }
+/* Inter, not the heading face: this is a sentence about what will happen, and
+   Nunito has no weight under 400 to say it quietly in. */
+#player-complete-set-btn .cta-sub {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.82;
+}
+
+/* ---------- NEXT SET PREVIEW (2026-10-16) ----------
+   Anchored to the bottom of the screen, not parked under the button (Chris:
+   "lets anchor it to the bottom of the screen instead of right below").
+   margin-top: auto does it inside .player-screen's flex column — the gap
+   above it absorbs whatever space the screen has spare, so it sits on the
+   floor on a tall phone and simply follows the button on a short one. */
+.player-next-set {
+  margin-top: auto;
+  padding-top: 20px;
+  text-align: center;
+}
+.next-set-label {
+  margin: 0 0 4px;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+/* Light, and quieter than anything on the card above: this is a thing that
+   has not happened yet and must not compete with the set being done now. */
+.next-set-line {
+  margin: 0;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.5;
+  color: var(--text-muted);
+}

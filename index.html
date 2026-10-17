@@ -500,7 +500,13 @@
         <button class="player-back-btn" id="player-back-btn" style="display:none;">← Back</button>
 
         <button class="btn-primary sticky-cta" id="player-start-btn" style="display:none;">Start</button>
-        <button class="btn-primary sticky-cta" id="player-complete-set-btn">Mark Set Complete ✓</button>
+        <button class="btn-primary sticky-cta" id="player-complete-set-btn">Mark Set Complete</button>
+
+        <!-- What the NEXT set asks for, anchored to the bottom of the screen
+             rather than tucked under the button (2026-10-16, Chris). It earns
+             the space because the reps change between sets on a descending
+             scheme and nothing else warns you. -->
+        <div class="player-next-set" id="player-next-set" hidden></div>
       </section>
 
       <!-- ---------- BLOCK NOTES POPUP (2026-08-12) ---------- -->
