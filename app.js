@@ -1896,6 +1896,19 @@ function renderProgressTab() {
   document.getElementById("workout-mix-donut").innerHTML = renderWorkoutMixDonut(counts);
   document.getElementById("stat-bubbles").innerHTML = renderStatBubbles(minutes, calories);
 
+  // Rendered from settings rather than left in the markup (2026-10-17): it is
+  // the closing line of the page and the one bit of member-facing copy that
+  // used to need a deploy to change. textContent, not innerHTML — this string
+  // comes from an editable field, and the day it holds an apostrophe or an
+  // ampersand it should read as one, not break the card.
+  const motivation = document.getElementById("progress-motivation-text");
+  if (motivation) motivation.textContent = APP_SETTINGS.copy.motivation || "";
+  const motivationCard = document.getElementById("progress-motivation");
+  // An empty quote hides the card instead of leaving a coloured blank — a
+  // coach who clears the field means "no quote", not "a quote with nothing
+  // in it".
+  if (motivationCard) motivationCard.hidden = !(APP_SETTINGS.copy.motivation || "").trim();
+
   const streak = currentStreak();
   document.getElementById("progress-streak-num").textContent = `${streak} Day Streak`;
   document.getElementById("progress-streak-sub").textContent =
@@ -5833,6 +5846,31 @@ function messagingIsLive() {
 // session and for anyone in no groups, which is most people.
 let MY_GROUPS = [];
 
+// Settings a coach edited in admin, which until 2026-10-17 never left their
+// browser. Applied over whatever is already loaded, then cached, so the NEXT
+// start has them even with no signal — the member app has to work in a gym
+// basement, and copy that arrives one session late beats copy that never
+// arrives at all.
+//
+// Demo sessions are skipped on purpose: the demo is meant to show the app as
+// built, not as one particular coach has configured it.
+async function loadAppSettingsFromServer() {
+  if (typeof fetchAppSettings !== "function" || isDemoSession()) return;
+  const fetched = await fetchAppSettings();
+  if (!fetched) return;
+  APP_SETTINGS = mergeAppSettings(APP_SETTINGS_DEFAULTS, fetched);
+  try {
+    localStorage.setItem(LIVE_APP_SETTINGS_KEY, JSON.stringify(fetched));
+  } catch (e) {
+    // A full or blocked store costs the offline copy, not this session.
+  }
+  // Re-render what is on screen: wording may have changed under it. Progress
+  // is the only tab that reads this copy at render time — the tour, the
+  // check-in and Help & Support all read APP_SETTINGS when they open, so they
+  // pick up new wording without being told.
+  if (document.getElementById("tab-progress").classList.contains("visible")) renderProgressTab();
+}
+
 async function loadMessagesFromServer() {
   if (!messagingIsLive() || typeof fetchMessages !== "function") return;
   if (typeof fetchMyGroups === "function") MY_GROUPS = await fetchMyGroups();
@@ -7104,6 +7142,10 @@ async function enterAsAuthedMember() {
   // Not awaited: the inbox badge is worth having as soon as it arrives, and
   // nothing on Home should wait on a message fetch to render.
   loadMessagesFromServer();
+  // Likewise. Settings a coach changed are worth picking up, but the app has
+  // a perfectly good copy on disk and must not sit on a blank screen waiting
+  // for the network to confirm the wording.
+  loadAppSettingsFromServer();
   onEnterApp();
 }
 

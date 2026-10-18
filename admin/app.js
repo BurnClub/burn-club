@@ -6637,6 +6637,13 @@ const APP_SETTING_PANELS = {
         ${slide("community", "Community")}
         ${slide("progress", "Progress")}
         ${slide("contact", "Closing slide")}
+        <h3 class="settings-subhead">Progress page quote</h3>
+        <div class="settings-note-card">
+          <p class="settings-field-help">The card at the very bottom of a member's Progress tab. Leave it empty to hide the card altogether.</p>
+          <label class="modal-field">Quote
+            <textarea data-motivation rows="3">${esc(APP_SETTINGS.copy.motivation || "")}</textarea>
+          </label>
+        </div>
         <h3 class="settings-subhead">End-of-program card</h3>
         <div class="settings-note-card">
           <p class="settings-field-help">The three stats are computed from the member's own history and aren't editable. In the headline and subline you can use <code>{weeks}</code>, <code>{program}</code> and <code>{date}</code> — each is filled in from the member's record.</p>
@@ -6671,7 +6678,16 @@ const APP_SETTING_PANELS = {
       document.querySelectorAll("#settings-panel-body [data-pc-field]").forEach((el) => {
         programComplete[el.dataset.pcField] = el.value.trim();
       });
-      return { copy: { tour, programComplete } };
+      const motivationEl = document.querySelector("#settings-panel-body [data-motivation]");
+      return {
+        copy: {
+          tour,
+          programComplete,
+          // Not trimmed away to undefined when empty: an empty string is a
+          // real choice here, and it is what hides the card.
+          motivation: motivationEl ? motivationEl.value.trim() : APP_SETTINGS.copy.motivation,
+        },
+      };
     },
     afterRender: () => {
       renderProgramCompletePreview();
@@ -7076,6 +7092,25 @@ function diffFromDefaults(value, base) {
 
 function storeAppSettings() {
   localStorage.setItem(LIVE_APP_SETTINGS_KEY, JSON.stringify(diffFromDefaults(APP_SETTINGS, APP_SETTINGS_DEFAULTS) || {}));
+  // AND to the server (2026-10-17). localStorage alone meant a coach's edits
+  // never left their own browser, while the panel said "members will see this
+  // the next time their app loads" — true only if the member was Chris, on
+  // Chris's laptop. Same shape as the messages that sat in localStorage until
+  // 16-messages.sql.
+  //
+  // Not awaited: Settings is a form, and a save that blocks on the network is
+  // a save that feels broken on hotel wifi. The local copy is already written
+  // above, so a failed push costs reach, not the edit.
+  if (typeof saveAppSettingsToServer === "function") {
+    saveAppSettingsToServer(APP_SETTINGS, APP_SETTINGS_DEFAULTS).then((res) => {
+      const note = document.getElementById("settings-panel-saved");
+      if (!note || res.ok) return;
+      // Say which half failed. "Saved" over a push that did not land is how
+      // someone finds out a week later that nobody saw their change.
+      note.textContent = "Saved on this computer, but not sent to members — check your connection and save again.";
+      note.style.display = "block";
+    });
+  }
 }
 
 function saveAppSettingPanel() {

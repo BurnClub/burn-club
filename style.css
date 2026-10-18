@@ -1308,7 +1308,20 @@ h1, h2, h3 {
    it — otherwise the caption reads like it's floating between two sections
    instead of captioning the one above it. */
 .stat-bubbles-caption { margin: 6px 0 24px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-.stat-bubbles-row { display: flex; justify-content: center; gap: 16px; margin-bottom: 0; }
+/* Wraps rather than shrinking (2026-10-18, Chris). Three bubbles at 132px
+   need 428px and a phone gives 335, so a third metric has to go somewhere.
+   The choice was smaller bubbles on one line or full-size ones on two, and
+   two lines won: the number is the thing being read, and dropping it from
+   38px to 28px to save a row is paying in the wrong currency.
+   justify-content: center was already here, so the odd one out centres under
+   the pair on its own — no extra rule, and it works the same for four. */
+.stat-bubbles-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 0;
+}
 .stat-bubble {
   width: 132px;
   height: 132px;
@@ -1322,12 +1335,26 @@ h1, h2, h3 {
 /* Minutes: purple bg, white text (was --ink). Calories: green bg, text
    matches the same --deepblue used in the Workouts tab's green Stretch &
    Core Library card (was --ink) (2026-08-11). */
-.stat-bubble-minutes { background: var(--purple); color: white; }
+/* DEEP JADE, and the reasoning matters more than the colour (2026-10-18).
+   The palette is three hues — blue, jade, and persimmon, which palette.css
+   calls "the one warm accent". There is no fourth to reach for, and the page
+   was already carrying blue three times (the donut, Benchmarks, the streak
+   banner) and persimmon twice (the quote card and its badge).
+   So the minutes bubble takes the DARK end of the hue its neighbour already
+   uses. The two bubbles are one pair — minutes and calories, the same
+   measurement, side by side — and light/dark of one hue says they belong
+   together in a way two unrelated colours cannot. Same argument as the
+   bracket on the superset card.
+   White on jade-700 is 5.05:1, so the 11px "min" label passes AA and not
+   just the 38px number. jade-500 was the first choice and came to 3.59:1,
+   which the big number survives and the label does not. */
+.stat-bubble-minutes { background: var(--jade-700); color: #FFFFFF; }
 .stat-bubble-calories { background: var(--green); color: var(--text-muted); }
 /* +25% (2026-08-11) — was 30px. */
 .stat-bubble-num { margin: 0; font-family: var(--font-heading); font-size: 38px; font-weight: 800; line-height: 1; }
 .stat-bubble-unit { margin: 2px 0 0; font-size: 11px; font-weight: 700; opacity: 0.75; }
 .stat-bubble-delta { margin-top: 6px; font-size: 11px; font-weight: 800; }
+/* Back to white-on-fill, now that the fill is dark again. */
 .stat-bubble-minutes .stat-bubble-delta.up { color: #FFFFFF; }
 .stat-bubble-minutes .stat-bubble-delta.down { color: rgba(255,255,255,0.75); }
 .stat-bubble-minutes .stat-bubble-delta.neutral { color: rgba(255,255,255,0.6); }
@@ -2833,14 +2860,37 @@ h1, h2, h3 {
 
 .motivation-card {
   margin-top: 20px;
-  background: var(--yellow);
+  /* The CARD fill, not the accent (2026-10-17, Chris: "match the quote card
+     to the orange on the front"). It was var(--yellow) = #F1A07F, which is
+     the saturated persimmon used for small marks and section badges — so the
+     one full-width panel on Progress was shouting in a colour every other
+     surface only whispers in. --card-community (#FBEADC) is exactly what
+     Community Buzz on Home is painted with.
+     The note at the top of this file already said the two card-like surfaces
+     should take the community fill; this one never actually did. */
+  background: var(--card-community);
   border-radius: var(--radius-md);
   padding: 16px;
   font-weight: 700;
   font-size: 13px;
   color: var(--text);
   text-align: center;
+  /* Badge above the line, both centred — the quote is centred text with no
+     heading to sit beside, so the badge stacks rather than sitting in a
+     .section-head row the way every other card's does. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
+/* Persimmon fill, dark glyph — the same treatment .card-community gives its
+   own badge. This card is painted in that card's fill, so it takes that
+   card's badge. */
+.motivation-icon {
+  background: var(--persimmon-400);
+  color: var(--text);
+}
+.motivation-card p { margin: 0; }
 
 /* ---------- PROFILE ---------- */
 .profile-card {

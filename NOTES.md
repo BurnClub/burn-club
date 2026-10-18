@@ -557,6 +557,101 @@ you are looking at.
   file before reloading is what finally cleared it. Check the running page has
   the new code before believing a negative result.
 
+## The Progress page, and settings that finally leave the building (2026-10-18)
+
+### Colour, and a rule that came out of it
+
+Chris tried the Workout Mix card in green and reverted it the same hour:
+"cards that have a lot of stuff going on in them don't look good with any
+colors other than white." A donut, a four-row legend and four counts is a lot
+of stuff. **Benchmarks is the card on this page that can take a fill** — three
+tiles with a number each and nothing for a colour to compete with — so it
+moved above Check-Ins and the page now alternates white, blue, white, peach
+instead of running two plain cards together with all the colour at the bottom.
+
+The quote card was `var(--yellow)` = #F1A07F, the **saturated persimmon used
+for small marks and section badges**. So the one full-width panel on Progress
+was shouting in a colour every other surface only whispers in. It now takes
+`--card-community` (#FBEADC), exactly what Community Buzz is painted with —
+which the note at the top of style.css had already said these card-like
+surfaces should do, and this one never did.
+
+It also gained a horns badge, because Chris is right that the pale fill needs
+anchoring. Drawn as a line icon to match the other section badges, and
+**judged at 19px rather than at full size**: a version with a thumb (closer to
+his reference) collapsed into a blob at real size, and the thumbless
+silhouette reads as horns far more clearly.
+
+### The stat bubbles are a jade ramp
+
+The palette is three hues — palette.css calls persimmon "the one warm accent"
+— and the page was already carrying blue three times and persimmon twice. So
+the minutes bubble took the DARK end of the hue its neighbour already used
+rather than a fourth colour that does not exist. The two bubbles are one pair,
+and light/dark of a single hue says they belong together.
+
+| | fill | text | contrast |
+|---|---|---|---|
+| minutes | jade-700 #3F7A5E | white | 5.05:1 |
+| *a third would slot here* | jade-400 #9DBFA8 | ink | 6.67:1 |
+| calories | jade-100 #E3EEE6 | muted | 4.54:1 |
+
+jade-500 was the obvious midpoint and is **not usable**: 3.59:1 with white,
+which the 38px number survives and the 11px label does not. The ramp works
+because jade-400 flips to dark text.
+
+**Three bubbles do not fit on one line** — 3×132 + 2×16 = 428px against 335px
+on a phone. The row now wraps at full size, giving two over one centred, which
+is what Chris sketched. The alternative was shrinking the number from 38px to
+28px to save a row, which is paying in the wrong currency. `justify-content:
+center` was already there, so wrapping needed one property and handles four
+the same way.
+
+### Admin Settings has never reached a single member
+
+Found while making the Progress quote editable, and it is the headline here.
+
+Every Settings panel — tour copy, FAQs, check-in wording, habit presets,
+cardio types, support details — wrote to `localStorage` in the COACH's
+browser, and the member app read `localStorage` in the MEMBER's browser.
+Nothing connected them. The panel has been saying "members will see this the
+next time their app loads", which was only ever true if the member was Chris,
+on Chris's laptop. Same shape as the messages that sat in localStorage until
+16-messages.sql, and as the staff policies is_staff() never matched.
+
+**No migration was needed**, which is the good news: `app_settings` (key text
+primary key, value jsonb) has existed since 01-schema.sql, 02-policies.sql
+already grants it "signed-in members read / staff write", and
+03-seed-content.sql already seeded nine keys. Only the client code was
+missing.
+
+- `fetchAppSettings()` / `saveAppSettingsToServer()` in supabase-client.js.
+- Admin upserts on every save, and **says so when the push fails** rather than
+  claiming success — "Saved on this computer, but not sent to members".
+  Written back diffed against the defaults, so a value nobody touched keeps
+  tracking the code instead of freezing at whatever it said the first time
+  someone opened Settings.
+- The member app loads them on sign-in, caches them for offline, and
+  re-renders Progress if it is open. Not awaited: a gym basement must not get
+  a blank screen while the network confirms some wording.
+- Demo sessions skip it — the demo shows the app as built, not as one coach
+  configured it.
+
+That fixes every panel at once, not just the quote.
+
+**STILL UNTESTED AGAINST THE REAL DATABASE.** It needs Chris signed into admin
+as staff and a member account on the other side; the harness has no RLS and
+cannot prove this. Until that test runs, treat admin→member settings as
+plausible rather than working.
+
+### The quote itself
+
+`APP_SETTINGS.copy.motivation`, edited in admin → Settings → Member-Facing
+Copy. Clearing it hides the card rather than leaving a coloured blank — a
+coach who empties the field means "no quote". Rendered with `textContent`, not
+innerHTML: it comes from a free-text field and the day it holds an ampersand
+it should read as one.
+
 ## Settled: programmes are hand-built on purpose — do not "fix" this
 
 I raised the absence of a "duplicate programme" feature on 2026-10-14 as a

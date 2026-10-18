@@ -793,6 +793,11 @@
              workout-type mix for the same range as the stats grid above,
              4 categorical series (fixed hue order) with a legend, per the
              dataviz skill's rules for a ≥2-series chart. -->
+        <!-- Tried green on 2026-10-17 and reverted the same hour. Chris:
+             "cards that have a lot of stuff going on in them don't look good
+             with any colors other than white." A donut, a four-row legend and
+             four counts is a lot of stuff; the card has to stay out of its
+             way. The rule is now general — see the Check-Ins card below. -->
         <div class="home-section-card card-white">
           <div class="section-head"><span class="section-icon section-icon-workouts" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15 3.6A9 9 0 0 1 20.4 9H15z"/></svg></span><h2 class="home-section-title has-icon">Workout Mix</h2></div>
           <div id="workout-mix-donut"></div>
@@ -818,19 +823,35 @@
         <!-- Chart and insights only (2026-09-06). The written entries moved to
              the Notebook's Log: Progress shows what the app worked out, the
              notebook holds what the member wrote. -->
+        <!-- Benchmarks above Check-Ins (2026-10-17, Chris: "switch the
+             benchmark and check in cards to space out the white cards").
+             With the mix donut back to white, the page ran white, white,
+             blue, peach — two plain cards butted together and all the colour
+             at the bottom. The blue one in the middle separates them.
+             Benchmarks is the card that can take a colour: three tiles with a
+             number each, and nothing a fill would compete with. -->
+        <div class="home-section-card card-blue">
+          <div class="section-head"><span class="section-icon section-icon-workouts" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 9M17 6h2.5A2.5 2.5 0 0 1 17 9"/><path d="M12 14v3M9 21h6"/></svg></span><h2 class="home-section-title has-icon">Benchmarks</h2></div>
+          <div class="benchmark-list" id="benchmark-list"></div>
+        </div>
+
         <div class="home-section-card card-white">
           <div class="section-head"><span class="section-icon section-icon-habits" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M8 4v16"/></svg></span><h2 class="home-section-title has-icon">Check-Ins</h2></div>
           <div id="checkin-insights"></div>
           <div id="checkin-chart"></div>
         </div>
 
-        <div class="home-section-card card-blue">
-          <div class="section-head"><span class="section-icon section-icon-workouts" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 9M17 6h2.5A2.5 2.5 0 0 1 17 9"/><path d="M12 14v3M9 21h6"/></svg></span><h2 class="home-section-title has-icon">Benchmarks</h2></div>
-          <div class="benchmark-list" id="benchmark-list"></div>
-        </div>
-
-        <div class="motivation-card" id="progress-motivation">
-          <p>"Every drop counts." — keep sweating, you're building something real. 🔥</p>
+        <!-- Text comes from APP_SETTINGS.copy.motivation, editable in admin
+             Settings (2026-10-17). Empty here so a stale default cannot flash
+             before the real one lands. -->
+        <div class="motivation-card" id="progress-motivation" hidden>
+          <!-- Chris, 2026-10-18: "that color never looks good unless it is
+               anchored by the dark orange icon". The same .section-icon badge
+               every other card carries, so it takes the warm card's persimmon
+               on its own — and the horns, because this is the one card on the
+               page whose whole job is to be fun. -->
+          <span class="section-icon motivation-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 15V6.2a1.6 1.6 0 0 1 3.2 0v6.3a1.4 1.4 0 0 1 2.8 0a1.4 1.4 0 0 1 2.8 0V6.2a1.6 1.6 0 0 1 3.2 0V15a6 4.5 0 0 1-12 0Z"/></svg></span>
+          <p id="progress-motivation-text"></p>
         </div>
       </section>
 

@@ -990,6 +990,11 @@ const APP_SETTINGS_DEFAULTS = {
       cta: "Message your coach",
       note: "Ask about repeating this program, or what to move on to next.",
     },
+    // The card at the foot of Progress (2026-10-17, Chris asked for this to be
+    // editable). It had been a sentence hardcoded in index.html since the
+    // first build, which made it the one piece of member-facing copy nobody
+    // could change without a deploy.
+    motivation: "\"Every drop counts.\" — keep sweating, you're building something real. \uD83D\uDD25",
   },
   // The three dropdowns on a member's Health Profile (2026-10-12). Lists, not
   // hardcoded <option> markup, because Chris asked to be able to change them

@@ -261,3 +261,42 @@ async function sendPasswordReset(email) {
   return { error: error && /rate limit|too many/i.test(error.message)
     ? "Too many attempts. Wait a minute and try again." : null };
 }
+
+// ---------------- App settings, from the server (2026-10-17) ----------------
+// Admin's Settings screens have always written to localStorage, and the member
+// app has always read localStorage. Those are two different browsers on two
+// different machines, so nothing a coach changed in Settings has ever reached
+// a member — the panel said "members will see this the next time their app
+// loads" and that was only ever true if the member was Chris, on Chris's
+// laptop. Same shape of bug as the messages that lived in localStorage until
+// 16-messages.sql, and as the staff policies that is_staff() never matched.
+//
+// No migration needed, which is the good news: `app_settings` (key text
+// primary key, value jsonb) has existed since 01-schema.sql, 02-policies.sql
+// already gives it "signed-in members read / staff write", and
+// 03-seed-content.sql already seeded nine keys into it. Only the client code
+// was missing.
+
+// Every row, flattened to { key: value } the way both data.js files expect.
+async function fetchAppSettings() {
+  const { data, error } = await dbSelect("app_settings");
+  if (error || !Array.isArray(data)) return null;
+  const out = {};
+  data.forEach((row) => { out[row.key] = row.value; });
+  return out;
+}
+
+// Write back only what differs from the built-in defaults, one row per
+// top-level key. Diffed rather than dumped whole so that a default someone
+// never touched keeps tracking the code instead of being frozen at whatever
+// it happened to say the first time a coach opened Settings.
+async function saveAppSettingsToServer(settings, defaults) {
+  if (!SB) return { ok: false, error: new Error("offline") };
+  const rows = Object.keys(settings).map((key) => ({
+    key,
+    value: settings[key] === undefined ? defaults[key] : settings[key],
+  }));
+  const { error } = await SB.from("app_settings").upsert(rows, { onConflict: "key" });
+  if (error) console.warn("[db] save app_settings:", error.message);
+  return { ok: !error, error };
+}
