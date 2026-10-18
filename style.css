@@ -2870,18 +2870,24 @@ h1, h2, h3 {
      should take the community fill; this one never actually did. */
   background: var(--card-community);
   border-radius: var(--radius-md);
-  padding: 16px;
+  /* 18 + 1px border = the 19px inset .home-section-card gives its badge. At
+     the old 16px the horns sat 3px left of every other badge on the page —
+     invisible on its own, obvious once you scroll past four cards whose
+     badges all line up and one that does not. */
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
   font-weight: 700;
   font-size: 13px;
   color: var(--text);
   text-align: center;
-  /* Badge above the line, both centred — the quote is centred text with no
-     heading to sit beside, so the badge stacks rather than sitting in a
-     .section-head row the way every other card's does. */
+  /* Badge top-left with the quote beside it (2026-10-18, Chris sketched it).
+     Row, not column: the first line of the quote starts level with the badge
+     and every line after it starts at the same x, so a three-line quote grows
+     the card downward and the badge stays where it is. */
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
 }
 /* Persimmon fill, dark glyph — the same treatment .card-community gives its
    own badge. This card is painted in that card's fill, so it takes that
@@ -2890,7 +2896,16 @@ h1, h2, h3 {
   background: var(--persimmon-400);
   color: var(--text);
 }
-.motivation-card p { margin: 0; }
+/* Takes the rest of the row, and reads left: centred text beside a
+   left-aligned badge has a ragged left edge that fights the badge it is
+   supposed to sit with. min-width: 0 so a long unbroken word wraps instead of
+   pushing the badge off the card. */
+.motivation-card p {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
 
 /* ---------- PROFILE ---------- */
 .profile-card {

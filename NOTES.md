@@ -639,10 +639,35 @@ missing.
 
 That fixes every panel at once, not just the quote.
 
-**STILL UNTESTED AGAINST THE REAL DATABASE.** It needs Chris signed into admin
-as staff and a member account on the other side; the harness has no RLS and
-cannot prove this. Until that test runs, treat admin→member settings as
-plausible rather than working.
+**TESTED AND WORKING** (2026-10-18). Chris edited the Progress quote in admin
+and it appeared in the member app — "worked". So `is_staff()` does pass for a
+real admin session writing `app_settings`, and the upsert's `onConflict: "key"`
+behaves. Every Settings panel is now live, not just the quote.
+
+### The quote card's badge, and what moving it exposed
+
+Chris, after seeing it centred: "can we make the icon appear in the upper
+corner like we have in all of the other cards?" Then, with a sketch: text to
+the right of the badge, all lines starting at the same x, the card growing
+downward if the quote runs long.
+
+Moving the badge left exposed a 3px misalignment. The quote card had 16px of
+padding; every `.home-section-card` has 18px plus a 1px border, so its badge
+sat 3px left of every other badge on the page. Invisible on its own, obvious
+once you scroll past four cards whose badges line up and one that does not.
+All four now measure x=39.
+
+Text went left-aligned with it: centred text beside a left-aligned badge has a
+ragged left edge that fights the badge it is meant to sit with. `min-width: 0`
+on the paragraph so a long unbroken word wraps rather than shoving the badge
+off the card — the failure mode a free-text field invites.
+
+Growth verified rather than assumed: a four-line quote took the card from 72px
+to 100px with the badge unmoved at top-left and the text still starting at
+x=85.
+
+Left alone: the card still uses `--radius-md` where the others use
+`--radius-lg`, so its corners are slightly tighter. Not raised as a problem.
 
 ### The quote itself
 
