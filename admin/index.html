@@ -12,7 +12,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="style.css" />
+<!-- ADMIN CACHE BUSTING (2026-10-19). Admin is plain files on GitHub Pages,
+     which serves cache-control: max-age=600 — so for ten minutes a browser
+     answers from its own cache without asking the server, and a deploy looks
+     like nothing happened. The member app does not have this problem because
+     its service worker stamps every request with ?v=<CACHE>; admin had
+     nothing.
+
+     Chris hit it twice in one afternoon: pushed, refreshed, no new feature.
+
+     BUMP THIS STRING whenever an admin file changes. It only has to differ
+     from last time; the date plus a letter is enough. -->
+<link rel="stylesheet" href="style.css?v=2026-10-19a" />
 </head>
 <body>
 
@@ -1523,8 +1534,8 @@
 <!-- The same configured client the member app uses, one directory up: one
      place holds the project URL and the publishable key, and admin cannot
      drift onto a different project by accident. -->
-<script src="../supabase-client.js"></script>
-<script src="data.js"></script>
-<script src="app.js"></script>
+<script src="../supabase-client.js?v=2026-10-19a"></script>
+<script src="data.js?v=2026-10-19a"></script>
+<script src="app.js?v=2026-10-19a"></script>
 </body>
 </html>
