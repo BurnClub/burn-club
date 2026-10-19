@@ -28,10 +28,13 @@ function parseDateKey(str) {
   return new Date(y, m - 1, d);
 }
 
-// Weeks start Sunday, matching the day Chris already rotates content on.
+// Weeks start MONDAY (2026-10-18). Must stay identical to data.js: admin tags
+// a workout into a week and the member app decides whether that week is live,
+// so a one-day disagreement here publishes the wrong circuits with nothing on
+// screen to show for it.
 function startOfWeek(d) {
   const s = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  s.setDate(s.getDate() - s.getDay());
+  s.setDate(s.getDate() - ((s.getDay() + 6) % 7));
   return s;
 }
 
@@ -41,7 +44,7 @@ function shiftWeeks(weekStartKeyStr, n) {
   return dateKey(d);
 }
 
-// The Sunday of the week containing a given YYYY-MM-DD.
+// The Monday of the week containing a given YYYY-MM-DD.
 function weekStartKey(dateStr) {
   return dateKey(startOfWeek(parseDateKey(dateStr)));
 }

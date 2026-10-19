@@ -677,6 +677,76 @@ coach who empties the field means "no quote". Rendered with `textContent`, not
 innerHTML: it comes from a free-text field and the day it holds an ampersand
 it should read as one.
 
+## Weeks start Monday (2026-10-18)
+
+Chris: "we default the start of the week to Monday in everything we do."
+
+`getDay()` calls Sunday 0, so `- d.getDay()` was giving Sunday weeks
+everywhere. The fix is `- ((d.getDay() + 6) % 7)`, which maps Mon 0 ... Sun 6,
+so a Sunday walks back six days to the Monday that began its week instead of
+starting a new one. Verified across all seven days plus both edges on a
+Sunday, which was the one day of the week where the old and new answers
+differ most visibly.
+
+**THREE copies of `startOfWeek` exist and must stay identical** — app.js,
+data.js, admin/data.js. The last two are not cosmetic: admin tags a workout
+into a week and the member app decides whether that week is the live one, so a
+one-day disagreement silently publishes the wrong circuits with nothing on
+screen to show for it. The warning is written into both files.
+
+What moved:
+
+- Home's week strip for ROLLING members, and Progress's "This Week"
+- `completionsInRange("week")` / `completionsInPreviousRange("week")` — so the
+  stat bubbles, the mix donut and every weekly sum
+- The month grid's leading blanks, `(getDay() + 6) % 7`
+- **The content rotation.** Chris chose to move his drop day rather than run
+  two different weeks in one app. **A circuit dated to a Sunday now belongs to
+  the week ENDING that day**, not the one starting it — date new ones to
+  Mondays. Landed deliberately before the real Burn Club content was built.
+- Admin's activity chart, which needed no edit: its columns come from
+  `currentWeekStartKey()` and its labels from `getDay()`, so both follow.
+
+What deliberately did NOT move, and should not be "fixed" later:
+
+**Structured programme weeks stay anchored to the member's start date.** A
+member who starts on a Thursday has their Week 2 begin on a Thursday, and the
+Calendar, the "Week 2 · Day 4" counter and the schedule template's day 1..N
+all depend on that. Forcing Monday would mean start dates had to be Mondays,
+with a short or delayed first week for anyone joining mid-week. Chris was
+asked directly and chose to leave it (2026-10-18). Verified after the change:
+the Fit & Functional demo member starts Thu 2026-10-08 and still shows a
+programme week beginning Thu 2026-10-15.
+
+Not touched: `data.js`'s seed generator still treats Sunday as the demo rest
+day (`date.getDay() === 0`), which is about which day is a rest day, not about
+where a week begins.
+
+## The admin export was lossy (2026-10-18)
+
+Found while confirming the content-migration workflow with Chris, BEFORE he
+built the real Burn Club programme.
+
+`exportAllPrograms()` carried a comment saying "an export is a snapshot of
+admin's own state" and then exported five hand-picked fields per programme:
+id, name, durationWeeks, workoutsPerWeek, circuitsPerWeek. It silently dropped
+
+- `benchmarks` — The Gauntlet and friends live on the programme, and the
+  member app's Progress tab reads them
+- `scheduleType` — which decides whether a member gets a Calendar at all
+- `status`, `color`, `description`
+- the entire `EXERCISE_LIBRARY` — workouts reference exercises by NAME, so an
+  export carrying circuits but not the library cannot be rebuilt anywhere the
+  exercises were never typed in
+
+Now exports whole objects plus the library. Admin is not in the service
+worker's SHELL list, so admin-only changes need no cache bump.
+
+The workflow itself, confirmed: build in admin, Programs page → Export All →
+send the JSON. There is no importer on the other end; the file is read and
+turned into content, not loaded back into admin. And admin's state lives in
+one browser's localStorage, so export often rather than once at the end.
+
 ## Settled: programmes are hand-built on purpose — do not "fix" this
 
 I raised the absence of a "duplicate programme" feature on 2026-10-14 as a

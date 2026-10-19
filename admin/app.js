@@ -4491,15 +4491,26 @@ let workoutUploadProgramId = null;
 // The shape matches what saveAdminCircuits persists, so an export is a
 // snapshot of admin's own state rather than a format to keep in step.
 function exportAllPrograms() {
+  // WHOLE objects, not a hand-picked five fields (2026-10-18). The comment
+  // above claims "an export is a snapshot of admin's own state", and it was
+  // not: PROGRAMS entries also carry scheduleType, status, color, description
+  // and their own benchmarks, and the old map dropped every one of them. A
+  // programme exported and re-imported came back without the benchmark
+  // definitions Progress reads, and without the scheduleType that decides
+  // whether a member gets a Calendar at all.
+  //
+  // The exercise library goes too. A workout references exercises by name, so
+  // an export carrying circuits but not the library is an export that cannot
+  // be restored on a machine where those exercises were never typed in.
+  //
+  // Found before Chris built the real Burn Club content, not after.
   const payload = {
     exportedAt: new Date().toISOString(),
     circuits: CIRCUITS,
     schedules: SCHEDULE_TEMPLATES,
     folders: FOLDERS,
-    programs: PROGRAMS.map((p) => ({
-      id: p.id, name: p.name, durationWeeks: p.durationWeeks,
-      workoutsPerWeek: p.workoutsPerWeek, circuitsPerWeek: p.circuitsPerWeek,
-    })),
+    programs: PROGRAMS,
+    exercises: EXERCISE_LIBRARY,
   };
   const stamp = new Date().toISOString().slice(0, 10);
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });

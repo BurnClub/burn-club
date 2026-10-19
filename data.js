@@ -1126,10 +1126,13 @@ let APP_SETTINGS = loadAppSettings();
 // tagged into a "this week" or "previous week" bucket by admin. The app works
 // out which bucket a workout is in every time it renders, so content moves
 // itself when the week turns — nobody has to publish or retire anything.
-// Mirrors admin/data.js; weeks start Sunday, matching Chris's rotation day.
+// Mirrors admin/data.js. Weeks start MONDAY as of 2026-10-18, and so does the
+// content rotation that hangs off this function — Chris moved his drop day
+// with it rather than run two different weeks in one app. A circuit dated to
+// a Sunday now belongs to the week ENDING that day, not the one starting it.
 function startOfWeek(d) {
   const s = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  s.setDate(s.getDate() - s.getDay());
+  s.setDate(s.getDate() - ((s.getDay() + 6) % 7));
   return s;
 }
 

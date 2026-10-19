@@ -1437,9 +1437,20 @@ function syncCardioFromWearable() {
   renderCardioLog();
 }
 
+// Weeks start MONDAY (2026-10-18, Chris: "we default the start of the week to
+// Monday in everything we do"). Was Sunday, which is what `- d.getDay()`
+// gives, because getDay() calls Sunday 0.
+//
+//   (getDay() + 6) % 7  ->  Mon 0, Tue 1 ... Sun 6
+//
+// so Sunday walks back six days to the Monday that began its week instead of
+// starting a new one. There are THREE copies of this function — here, in
+// data.js and in admin/data.js — and they must agree: admin tags a workout
+// into a week and the member app decides whether that week is the live one,
+// so a one-day disagreement silently publishes the wrong circuits.
 function startOfWeek(date) {
   const d = new Date(date);
-  d.setDate(d.getDate() - d.getDay());
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   return d;
 }
 
@@ -1592,7 +1603,11 @@ function renderMonthGrid() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const byDate = completionsByDate();
   let html = "";
-  for (let i = 0; i < first.getDay(); i++) html += `<div class="cal-day empty"></div>`;
+  // Leading blanks before the 1st. Monday-first, so the columns line up with
+  // every other week view in the app rather than being the one grid still
+  // reading Sunday-first.
+  const lead = (first.getDay() + 6) % 7;
+  for (let i = 0; i < lead; i++) html += `<div class="cal-day empty"></div>`;
   for (let day = 1; day <= daysInMonth; day++) html += renderDayCell(new Date(year, month, day), byDate, today);
   return html;
 }
