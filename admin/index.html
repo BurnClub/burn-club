@@ -316,6 +316,32 @@
     </div>
 
     <!-- ---------- NEW PROGRAM MODAL ---------- -->
+    <!-- Deleting a programme (2026-10-19). Archive is the reversible one and
+         stays the default; this is the escape hatch for a programme that
+         should never have existed.
+
+         Two guards, as Chris asked. The first is absolute: if any member is
+         on the programme there is no confirm button at all, because the
+         database would refuse the delete anyway — members.program_id has no
+         ON DELETE clause, so Postgres raises a foreign key error. Better to
+         say so in words than to let someone meet that error.
+
+         The second is the typed name, and the panel says plainly what the
+         cascade will take with it. -->
+    <div class="builder-overlay" id="delete-program-overlay">
+      <div class="builder-panel small">
+        <header class="builder-header">
+          <h2>Delete program</h2>
+          <button class="player-exit" id="delete-program-close-btn">✕</button>
+        </header>
+        <div class="builder-body" id="delete-program-body"></div>
+        <footer class="builder-footer">
+          <button class="btn-ghost-lg" id="delete-program-cancel-btn">Cancel</button>
+          <button class="btn-primary btn-danger" id="delete-program-confirm-btn" disabled>Delete permanently</button>
+        </footer>
+      </div>
+    </div>
+
     <div class="builder-overlay" id="program-modal-overlay">
       <div class="builder-panel small">
         <header class="builder-header">

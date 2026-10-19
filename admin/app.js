@@ -1059,6 +1059,7 @@ function renderPrograms() {
           <button class="btn-ghost-lg small" data-edit-program="${p.id}">Edit</button>
           ${isStructured ? `<button class="btn-ghost-lg small" data-manage-schedule="${p.id}">Schedule</button>` : ""}
           <button class="btn-ghost-lg small" data-archive-program="${p.id}" title="Moves this program and its folders to the Library">Archive</button>
+          <button class="btn-ghost-lg small btn-danger" data-delete-program="${p.id}" title="Permanently removes this program and everything in it">Delete</button>
         </div>
         <p class="program-type-tag ${isStructured ? "structured" : "on-demand"}">${isStructured ? "Structured" : "On Demand"}</p>
       </div>
@@ -1077,10 +1078,184 @@ function renderPrograms() {
   document.querySelectorAll("[data-archive-program]").forEach((btn) => {
     btn.addEventListener("click", () => toggleProgramArchived(btn.dataset.archiveProgram));
   });
+  document.querySelectorAll("[data-delete-program]").forEach((btn) => {
+    btn.addEventListener("click", () => openDeleteProgramModal(btn.dataset.deleteProgram));
+  });
 
   // The tree lists the same programs, so it goes stale on exactly the same
   // events — archiving, creating, renaming, saving a workout.
   renderProgramTree();
+}
+
+// ---------------- Deleting a program (2026-10-19) ----------------
+// Chris: "I really need to be able to delete programs ... there has to be
+// double verification before deletion that nobody is current on the program."
+//
+// TWO GUARDS, and the first one is not a confirmation — it is a refusal.
+//
+// 1. Anyone assigned to the programme and there is no delete button at all.
+//    This is not belt-and-braces: members.program_id carries no ON DELETE
+//    clause, so Postgres raises a foreign key error and the delete fails
+//    anyway. The check exists so a coach reads a sentence naming the members
+//    instead of meeting a constraint violation.
+//
+// 2. Nobody on it, and the panel lists exactly what the cascade will take,
+//    then asks for the programme's name typed out. Everything below the
+//    programme goes with it — folders, workouts, schedule, benchmarks and the
+//    programme's group chat — because every one of those foreign keys is
+//    ON DELETE CASCADE.
+//
+// What SURVIVES, and it is worth knowing before anyone panics: member
+// history. completions.workout_id is ON DELETE SET NULL and the title is
+// copied onto the completion when it is logged, so a deleted programme leaves
+// everyone's logged sessions intact and readable. Progress does not go blank.
+let deleteProgramId = null;
+
+// Counted on the SERVER, not from p.memberCount. That field is admin's own
+// local number and a member assigned from another machine would not be in it
+// — which is exactly the member this guard exists to catch.
+async function membersOnProgram(programId) {
+  if (!SB) return { ok: false, rows: [] };
+  const { data, error } = await SB.from("members")
+    .select("id, first_name, last_name, email")
+    .eq("program_id", programId);
+  if (error) return { ok: false, rows: [], error };
+  return { ok: true, rows: data || [] };
+}
+
+function programContentCounts(programId) {
+  const folders = FOLDERS.filter((f) => f.program === programId);
+  const folderIds = new Set(folders.map((f) => f.id));
+  const workouts = CIRCUITS.filter((c) => c.programId === programId || folderIds.has(c.folderId));
+  const schedule = (SCHEDULE_TEMPLATES[programId] || []).length;
+  const p = programById(programId);
+  const benchmarks = p && Array.isArray(p.benchmarks) ? p.benchmarks.length : 0;
+  return { folders: folders.length, workouts: workouts.length, schedule, benchmarks };
+}
+
+async function openDeleteProgramModal(programId) {
+  const p = programById(programId);
+  if (!p) return;
+  deleteProgramId = programId;
+  const body = document.getElementById("delete-program-body");
+  const confirmBtn = document.getElementById("delete-program-confirm-btn");
+  confirmBtn.disabled = true;
+  body.innerHTML = `<p class="modal-desc">Checking who is on ${esc(p.name)}…</p>`;
+  document.getElementById("delete-program-overlay").classList.add("visible");
+
+  const { ok, rows, error } = await membersOnProgram(programId);
+
+  // A failed check is NOT a pass. If we cannot tell whether anyone is on it,
+  // the answer is no — the one outcome worth being wrong about is deleting a
+  // programme out from under a member.
+  if (!ok) {
+    body.innerHTML = `
+      <p class="modal-desc"><strong>Could not check who is on this program.</strong></p>
+      <p class="modal-desc">${esc(error ? error.message : "No connection to the server.")}</p>
+      <p class="modal-desc">Deleting is blocked until that check succeeds.</p>`;
+    return;
+  }
+
+  if (rows.length) {
+    const names = rows.map((m) =>
+      `<li>${esc([m.first_name, m.last_name].filter(Boolean).join(" ") || m.email)}</li>`).join("");
+    body.innerHTML = `
+      <p class="modal-desc"><strong>${rows.length} member${rows.length === 1 ? " is" : "s are"} on ${esc(p.name)}.</strong></p>
+      <ul class="delete-program-list">${names}</ul>
+      <p class="modal-desc">Move ${rows.length === 1 ? "them" : "them all"} to another program first, then delete this one. Archiving instead keeps everything and takes it off the active list.</p>`;
+    return;
+  }
+
+  const c = programContentCounts(programId);
+  const line = (n, one, many) => (n ? `<li>${n} ${n === 1 ? one : many}</li>` : "");
+  body.innerHTML = `
+    <p class="modal-desc">Nobody is on <strong>${esc(p.name)}</strong>, so it can be deleted.</p>
+    <p class="modal-desc">This permanently removes:</p>
+    <ul class="delete-program-list">
+      ${line(c.folders, "folder", "folders")}
+      ${line(c.workouts, "workout", "workouts")}
+      ${line(c.schedule, "scheduled day", "scheduled days")}
+      ${line(c.benchmarks, "benchmark", "benchmarks")}
+      <li>the program's group chat and its messages</li>
+    </ul>
+    <p class="modal-desc">Members' logged sessions are <strong>not</strong> affected — those keep their own copy of the workout title.</p>
+    <label class="modal-field">Type <strong>${esc(p.name)}</strong> to confirm
+      <input type="text" id="delete-program-confirm-input" placeholder="${esc(p.name)}" autocomplete="off" />
+    </label>`;
+
+  const input = document.getElementById("delete-program-confirm-input");
+  input.addEventListener("input", () => {
+    // Exact, but forgiving of a stray space either end — a name pasted from
+    // the card often brings one.
+    confirmBtn.disabled = input.value.trim() !== p.name.trim();
+  });
+  input.focus();
+}
+
+function closeDeleteProgramModal() {
+  deleteProgramId = null;
+  document.getElementById("delete-program-overlay").classList.remove("visible");
+}
+
+async function confirmDeleteProgram() {
+  const programId = deleteProgramId;
+  const p = programById(programId);
+  if (!p) return closeDeleteProgramModal();
+  const btn = document.getElementById("delete-program-confirm-btn");
+  btn.disabled = true;
+  btn.textContent = "Deleting…";
+
+  // Re-check immediately before deleting. The modal may have been open for a
+  // while, and somebody could have been assigned in another tab since.
+  const check = await membersOnProgram(programId);
+  if (!check.ok || check.rows.length) {
+    btn.textContent = "Delete permanently";
+    alert(check.ok
+      ? `Not deleted — ${check.rows.length} member(s) were assigned to ${p.name} while this was open.`
+      : "Not deleted — could not confirm who is on this program.");
+    return;
+  }
+
+  if (SB) {
+    const { error } = await SB.from("programs").delete().eq("id", programId);
+    if (error) {
+      btn.disabled = false; btn.textContent = "Delete permanently";
+      // The race we just checked for, caught by the database instead.
+      alert(/foreign key|violates/i.test(error.message)
+        ? `Not deleted — the database still has something attached to ${p.name}, most likely a member assigned in the last moment.`
+        : "Not deleted: " + error.message);
+      return;
+    }
+  }
+
+  // Local copy, which is the one admin renders from. The server cascades;
+  // nothing here does, so every local list has to be cleared by hand.
+  //
+  // SPLICED IN PLACE, not reassigned. PROGRAMS, FOLDERS and CIRCUITS are all
+  // declared `const` in admin/data.js, so `CIRCUITS = CIRCUITS.filter(...)`
+  // throws "Assignment to constant variable" the first time anyone presses
+  // the button — and a syntax check never sees it, because that is a runtime
+  // error in code that parses perfectly.
+  const folderIds = new Set(FOLDERS.filter((f) => f.program === programId).map((f) => f.id));
+  const dropFrom = (arr, pred) => {
+    for (let i = arr.length - 1; i >= 0; i--) if (pred(arr[i])) arr.splice(i, 1);
+  };
+  dropFrom(CIRCUITS, (c) => c.programId === programId || folderIds.has(c.folderId));
+  // Folder notes are the week notes — they live on the folder as `note`
+  // rather than in a store of their own, so they go with it.
+  dropFrom(FOLDERS, (f) => f.program === programId);
+  dropFrom(PROGRAMS, (x) => x.id === programId);
+  delete SCHEDULE_TEMPLATES[programId];
+
+  flushAdminState();
+  // The programme dropdowns are built once at startup, so without this it
+  // stays assignable in the member modal until someone reloads — the same
+  // bug archiving had.
+  populateProgramFilters();
+  closeDeleteProgramModal();
+  renderPrograms();
+  renderLibrary();
+  alert(`${p.name} deleted.`);
 }
 
 // Archiving is reversible and destroys nothing — the program keeps its
@@ -8480,6 +8655,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("new-program-btn").addEventListener("click", openProgramModal);
   document.getElementById("program-modal-close-btn").addEventListener("click", closeProgramModal);
+  document.getElementById("delete-program-close-btn").addEventListener("click", closeDeleteProgramModal);
+  document.getElementById("delete-program-cancel-btn").addEventListener("click", closeDeleteProgramModal);
+  document.getElementById("delete-program-confirm-btn").addEventListener("click", confirmDeleteProgram);
   document.getElementById("program-modal-cancel-btn").addEventListener("click", closeProgramModal);
   document.getElementById("program-modal-save-btn").addEventListener("click", saveProgram);
   document.getElementById("builder-filter-btn").addEventListener("click", toggleBuilderFilters);

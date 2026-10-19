@@ -2477,3 +2477,25 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 }
 .nutrition-readout span.tracked { background: #9DBFA8; }
 .nutrition-readout span.hit { background: #3F7A5E; }
+
+/* ---------- DELETE PROGRAM (2026-10-19) ---------- */
+.delete-program-list {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.7;
+  color: var(--text);
+}
+.delete-program-list li { margin: 0; }
+/* The confirm button starts disabled and only wakes once the name matches, so
+   it has to look disabled rather than merely be it. */
+#delete-program-confirm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+/* .btn-danger is written for ghost buttons — danger-coloured text on a pale
+   border. On the primary confirm that would be red text on blue, so the
+   destructive button takes the fill instead. */
+#delete-program-confirm-btn {
+  background: var(--danger);
+  color: #FFFFFF;
+  border-color: var(--danger);
+}
