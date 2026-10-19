@@ -869,12 +869,29 @@ checked." His screenshot showed TEN rows in a list capped at three — three
 "10,000 Steps", three "100oz Water", three "Outdoor Activity", one
 "25 Push-ups" — and the footer underneath cheerfully reading "3 of 3".
 
-### Root cause: habit removals never reached the server
+### Root cause: LOCAL, not the server — first diagnosis was wrong
 
-The `myHabits` sync store pushed with `onConflict` only and had no `replace`
-flag, which means it could ADD a row and never delete one. A habit removed on
-the phone stayed on the server, and the next pull handed it straight back.
-Over time the server accumulated every habit the member had ever set.
+The first call was "removals never reached the server, so the pull handed
+them back". Chris's own query killed it: every account had `habit_rows` equal
+to `distinct_labels`, and his held four rows, not ten. **The server was
+clean.** The duplication lived entirely in one browser's localStorage.
+
+The ten entries also carried only FOUR distinct ids, which is how we know.
+The push upserts on `(member_id, habit_id)`, so ten distinct ids would have
+produced ten server rows; four means the same habits were appended repeatedly
+under the SAME id. That also explains the reported symptom exactly — identical
+ids share one checked state, so ticking one ticked all three.
+
+The likely mechanism is the one fixed alongside it: habit handlers bound with
+a document-wide `querySelectorAll`, which stacks a listener per render, so one
+tap can call `addHabit` several times. Three stacked listeners on one click
+gives precisely three identical entries, and `addHabit` had no duplicate
+guard to stop it.
+
+**The `replace` fix below is still correct and still shipped** — a removed
+habit genuinely never deleted server-side, which is a real bug waiting to
+bite. It just was not the cause of this one. Keep the two separate when
+reading this back.
 
 The all-boxes-check symptom was downstream of that: `isHabitChecked()` keys
 off the habit id, so three rows carrying the same id all render checked. The
@@ -918,10 +935,26 @@ now prints the real numbers — forced to a broken state it reads "5 of 3".
   fires several times. All three are scoped to their own container now.
 - **`MAX_HABITS`** replaces four scattered literal 3s.
 
+### Verified on a real account (2026-10-19)
+
+Chris opened the app on the affected device. It healed to three, the
+replacing push rewrote his rows, and the database came back
+`steps-10k / water-100oz / pushups-25` at positions 0, 1, 2 — contiguous,
+so the set was rewritten rather than patched. App and database agree.
+
+Worth knowing for next time: **the local copy wins.** The heal marks the
+store dirty and the push replaces, so editing habits directly in SQL is
+pointless — whatever the app settles on overwrites it. Change them in
+Profile → Manage your daily habits instead.
+
 ### Still open
 
-The local repair pushes a clean list up, but only once that device syncs.
-Rows already on the server for other members are untouched. To look:
+The cap of 3 is enforced in the app only; nothing stops the database holding
+more, which is how Chris came to have four. Chris confirmed 3 is the real
+limit (2026-10-19) and deleted one by hand. If it ever needs to vary per
+member it should become a setting rather than `MAX_HABITS`.
+
+To survey everyone:
 
     select habit_id, label, position from member_habits
     where member_id = (select id from members where email = '...')
