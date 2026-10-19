@@ -977,6 +977,130 @@ it. Move only the section and the next profile switch yanks it back to the
 old position. Verified both ways after the change: rolling keeps it last on
 the Program tab, structured still sends it to Home with its button intact.
 
+## Deleting a programme (2026-10-19)
+
+Chris: "I really need to be able to delete programs ... there has to be
+double verification before deletion that nobody is current on the program."
+
+**Archive stays the default.** It is reversible and destroys nothing. Delete
+is the escape hatch for a programme that should never have existed.
+
+### Half the guard already existed and nobody could see it
+
+`members.program_id` carries **no ON DELETE clause**, so Postgres raises a
+foreign key error if anyone is assigned. Correct, but it surfaced as a raw
+constraint violation. The UI now says it in words instead.
+
+### What dies, and what does not
+
+Everything below the programme cascades: folders, workouts, schedule_slots,
+benchmarks — **and `messages` for that programme, which is its group chat and
+every message in it.** That one is easy to miss and irreversible, so the
+confirm panel names it explicitly.
+
+**Member history SURVIVES.** `completions.workout_id` is ON DELETE SET NULL
+and the workout title is copied onto the completion when it is logged, so a
+deleted programme leaves everyone's logged sessions intact. Progress does not
+go blank. The panel says so, because the natural assumption is the opposite.
+
+### The two guards
+
+1. **A refusal, not a confirmation.** Anyone on the programme and there is no
+   confirm field at all — just their names and "move them first". The check
+   is **fail-closed**: if it cannot reach the server it blocks, because the
+   one outcome worth being wrong about is deleting a programme out from under
+   a member. Re-checked immediately before deleting, since the modal can sit
+   open while someone is assigned elsewhere, and the FK error is translated if
+   the database catches the race first.
+2. **The programme's name, typed out**, over a panel listing what goes.
+
+**Counted on the SERVER, not from `p.memberCount`.** That field is admin's own
+local number — Burn Club's card reads 214, which is demo data, not real
+members. The card's number is decorative; the guard's number is live.
+
+### A const trap worth remembering
+
+`PROGRAMS`, `FOLDERS` and `CIRCUITS` are declared **`const`** in
+admin/data.js. The obvious `CIRCUITS = CIRCUITS.filter(...)` throws
+"Assignment to constant variable" the first time anyone presses the button —
+and `jsc` passes it, because that is a runtime error in code that parses
+perfectly. They are spliced in place. Anything else pruning those arrays must
+do the same.
+
+**Verified end to end by Chris** (2026-10-19): refused on Burn Club, deleted
+the test programme.
+
+### Left undone
+
+Deleting clears the server row and THIS admin browser's local state. Another
+machine with admin open would still hold the programme in its own
+localStorage until the content migration puts programmes on the server for
+real.
+
+## Admin deploys were invisible for ten minutes (2026-10-19)
+
+Chris pushed the delete feature, refreshed admin twice, and saw nothing. The
+code was live and correct; his browser was not being given it.
+
+GitHub Pages serves **`cache-control: max-age=600`**, so for ten minutes a
+browser answers from its own cache without asking the server at all. The
+member app has been immune since 2026-10-12 because its service worker stamps
+every request `?v=<CACHE>` — a bumped version is a URL no cache has ever seen.
+**Admin had nothing equivalent**, so every admin deploy has been silently
+delayed since the project began.
+
+Admin now versions its own `app.js`, `data.js`, `supabase-client.js` and
+`style.css` from **one string in its `<head>`**. BUMP IT whenever an admin
+file changes; it only has to differ from last time.
+
+Also bumped `sw.js`: it registers at `/burn-club/` scope, which **covers
+`/burn-club/admin/` too**, so it was serving admin through a version stamp
+from before the feature existed.
+
+**A wrong turn worth not repeating:** `?v=2` on `admin/index.html` does
+nothing for this. It busts index.html alone, and index.html referenced
+`app.js` with no query string — so the stale app.js was still used. The
+version has to be on the ASSET urls, not the page's.
+
+## Rest as a block (2026-10-19)
+
+Chris: "I am programing a workout with a 15 minute amrap, but I want them to
+take a dedicated 2 minute rest between that and the next block. Need a button
+for it, just with the option to pick time."
+
+**This is a different thing from every other `rest` in the builder.** Those
+are a NUMBER ON a block — seconds between that block's own rounds or sets.
+This is a block in its own right, and it is the only way to put a gap
+*between* two blocks.
+
+Seconds, not minutes, because every other rest field in the builder is
+seconds and one unit meaning two things is how 120 gets typed into a box
+expecting 2. Defaults to 120.
+
+**The player needed no new screen.** It already had a `rest` phase with a
+clock and an "Up next" line, so a rest block pushes one of those. `upNext` is
+resolved at build time from the NEXT block, falling back to "the end of the
+workout" — a coach can legitimately finish on one.
+
+**A rest never waits for Start.** `isNewBlockStart()` is true for a
+standalone rest block, which would have put a Start button in front of a
+break: pressing a button to begin resting, while the rest you are already
+taking goes uncounted. Stepping back still pauses, because that is a
+deliberate rewind.
+
+### The bug this surfaced, and the fix worth keeping
+
+Adding the type by hand threw `Cannot read properties of undefined (reading
+'map')` the first time a rest block rendered — `blockExerciseList` mapped
+`values.exercises`, which a rest does not have.
+
+Four places in the builder were asking "does this block hold no exercises?"
+and all four asked it as `blockIsCardioChoice(block)`. Four call sites is
+four chances to forget one. They now share **`blockHoldsNoExercises()`**:
+no exercise list, no "+ Add Exercise", no type dropdown, a static type label
+instead. **Any future block type that holds nothing goes in there, not into
+four separate conditions.**
+
 ## Settled: programmes are hand-built on purpose — do not "fix" this
 
 I raised the absence of a "duplicate programme" feature on 2026-10-14 as a

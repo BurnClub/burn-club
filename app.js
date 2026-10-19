@@ -3525,6 +3525,7 @@ function blockTypeLabel(type) {
     amrap: "AMRAP",
     emom: "EMOM",
     "cardio-choice": "Cardio — Your Choice",
+    rest: "Rest",
   }[type] || type;
 }
 
@@ -3542,6 +3543,10 @@ function blockSummaryLine(block) {
       return `${formatClock(block.duration)} as many rounds as possible`;
     case "emom":
       return `${formatClock(block.duration)} · new exercise every ${block.interval}s`;
+    // A rest block is its own thing: a programmed break between blocks, not
+    // the seconds between a block's own rounds (2026-10-19, Chris).
+    case "rest":
+      return `${formatClock(block.duration)} — take a breather`;
     default:
       return "";
   }
@@ -4258,6 +4263,26 @@ function buildPhaseQueue(circuit) {
         interval: block.interval,
         exercises: block.exercises,
         progressLabel: "Every Minute On the Minute",
+      });
+    }
+
+    // A programmed rest between blocks. The player already has a `rest` phase
+    // with a clock and an "Up next" line, so this reuses it rather than
+    // inventing a screen — the only new thing is that the rest is a block of
+    // its own rather than a gap inside one.
+    //
+    // upNext is resolved at build time from the NEXT block, because by the
+    // time this renders the member wants to know what they are resting FOR.
+    // Falls back to "the end" on the last block, which a coach can legitimately
+    // program — a cooldown rest to finish on.
+    if (block.type === "rest") {
+      const nextBlock = circuit.blocks[blockIndex + 1];
+      phases.push({
+        ...blockMeta,
+        kind: "rest",
+        duration: block.duration,
+        upNext: nextBlock ? (nextBlock.label || blockTypeLabel(nextBlock.type)) : "the end of the workout",
+        progressLabel: blockTypeLabel("rest"),
       });
     }
 
@@ -5538,7 +5563,13 @@ const Player = {
       setPlayerExerciseTechnique(phase.kind === "work" ? phase.exerciseName : null);
       this.remaining = phase.duration;
       this.updateClock();
-      if (this.isNewBlockStart() || this.steppingBack) this.awaitStart(); else this.beginPhaseTimer();
+      // A REST never waits for Start (2026-10-19). isNewBlockStart() is true
+      // for a standalone rest block, which would have put a Start button in
+      // front of a break — asking someone to press a button to begin resting,
+      // while the rest they are already taking goes uncounted. Stepping back
+      // still pauses, because that is a deliberate rewind.
+      const waitForStart = (this.isNewBlockStart() && phase.kind !== "rest") || this.steppingBack;
+      if (waitForStart) this.awaitStart(); else this.beginPhaseTimer();
     }
 
     // The "set" phase kind that lived here is gone (2026-08-18) — it was the

@@ -71,6 +71,7 @@ function blockTypeLabel(type) {
     amrap: "AMRAP",
     emom: "EMOM",
     "cardio-choice": "Cardio — Your Choice",
+    rest: "Rest",
   }[type] || type;
 }
 
@@ -80,6 +81,30 @@ function blockTypeLabel(type) {
 // a combine checkbox nor an exercise list.
 function blockIsCardioChoice(block) {
   return block.type === "cardio-choice";
+}
+
+// A programmed rest BETWEEN blocks (2026-10-19, Chris: "I am programing a
+// workout with a 15 minute amrap, but I want them to take a dedicated 2
+// minute rest between that and the next block"). Holds no exercises, same as
+// cardio-choice — so no combine checkbox and no exercise list.
+//
+// Distinct from every other `rest` in the builder, which is a NUMBER ON a
+// block: seconds between that block's own rounds or sets. This one is a block
+// in its own right, and it is the only way to put a gap between two blocks.
+function blockIsRest(block) {
+  return block.type === "rest";
+}
+
+// "Holds no exercises at all" — the question the builder actually asks in
+// four places: no exercise list, no "+ Add Exercise", no type dropdown, and a
+// static type label instead. Both cardio-choice and rest answer yes.
+//
+// One predicate rather than `|| blockIsRest(block)` repeated: adding the rest
+// type by hand missed the exercise list and threw
+// "Cannot read properties of undefined (reading 'map')" the first time one
+// was rendered. Four call sites is four chances to forget.
+function blockHoldsNoExercises(block) {
+  return blockIsCardioChoice(block) || blockIsRest(block);
 }
 
 function categoryLabel(category) {
@@ -202,6 +227,7 @@ function estimateBlockSeconds(block) {
     case "cardio-choice":
     case "amrap":
     case "emom":
+    case "rest":
       return block.duration;
     default:
       return 0;
@@ -2669,6 +2695,12 @@ function defaultBlockValues(type) {
       return { label: "New Rep Ladder", exerciseName: "", scheme: "10,8,6,4,2,4,6,8,10", rest: 15 };
     case "cardio-choice":
       return { label: "Cardio — Your Choice", durationMin: 15 };
+    // Seconds, not minutes: every other rest field in this builder is
+    // seconds, and one unit that means two things is how 120 gets typed into
+    // a box expecting 2. 120 is the default because the case Chris described
+    // was a two-minute break after an AMRAP.
+    case "rest":
+      return { label: "Rest", rest: 120 };
     case "amrap":
       return { label: "New AMRAP", durationMin: 10, exercises: [{ name: "", reps: 10 }] };
     case "emom":
@@ -3014,6 +3046,9 @@ function openEditBuilder(circuitId) {
 // between those two families.
 function compatibleTypesFor(block) {
   if (block.type === "cardio-choice") return ["cardio-choice"];
+  // Nothing to convert to or from: a rest holds no exercises, so turning it
+  // into a superset would invent two empty ones.
+  if (block.type === "rest") return ["rest"];
   if (block.type === "straight" || block.type === "ladder") return ["straight", "ladder"];
   return ["superset", "interval", "amrap", "emom"];
 }
@@ -3205,6 +3240,8 @@ function blockTopFields(block, i) {
         + num("Rest (s)", "rest", v.rest, 0);
     case "cardio-choice":
       return num("Duration (min)", "durationMin", v.durationMin, 1, "wide");
+    case "rest":
+      return num("Rest (s)", "rest", v.rest, 0, "wide");
     case "amrap":
       return num("Duration (min)", "durationMin", v.durationMin, 1, "wide");
     case "emom":
@@ -3217,7 +3254,7 @@ function blockTopFields(block, i) {
 // Sits in the header beside Split, rather than on a line of its own under
 // the list — that line was costing every combined block ~40px (2026-08-19).
 function blockAddExerciseBtn(block, i) {
-  if (blockHasOneExercise(block) || blockIsCardioChoice(block)) return "";
+  if (blockHasOneExercise(block) || blockHoldsNoExercises(block)) return "";
   const label = block.type === "interval" ? "+ Station" : "+ Exercise";
   return `<button class="btn-ghost-lg small" data-action="add-exercise" data-block-index="${i}">${label}</button>`;
 }
@@ -3269,7 +3306,7 @@ function addDropRowToBlock(i) {
 // The exercise list, for the formats that hold more than one.
 function blockExerciseList(block, i) {
   const v = block.values;
-  if (blockHasOneExercise(block) || blockIsCardioChoice(block)) return "";
+  if (blockHasOneExercise(block) || blockHoldsNoExercises(block)) return "";
   const withReps = block.type !== "interval";
   return `
     <div class="builder-ex-list">
@@ -3297,12 +3334,12 @@ function renderBuilderBlocks() {
       <div class="builder-block-top">
         <span class="drag-handle" data-drag="block" data-block-index="${i}" title="Drag to reorder">${icon("grip")}</span>
         ${blockHasOneExercise(block) ? `<input type="checkbox" class="select-item-checkbox" data-role="select-item" data-block-index="${i}" ${block.selected ? "checked" : ""} title="Select to change its format, or check two or more to combine them" />` : ""}
-        ${blockHasOneExercise(block) || blockIsCardioChoice(block) ? "" : `
+        ${blockHasOneExercise(block) || blockHoldsNoExercises(block) ? "" : `
           <select data-block-index="${i}" data-role="block-type">
             ${compatTypes.map((t) => `<option value="${t}" ${t === block.type ? "selected" : ""}>${blockTypeLabel(t)}</option>`).join("")}
           </select>
         `}
-        ${blockIsCardioChoice(block) ? `<span class="block-static-type">${blockTypeLabel(block.type)}</span>` : ""}
+        ${blockHoldsNoExercises(block) ? `<span class="block-static-type">${blockTypeLabel(block.type)}</span>` : ""}
         ${blockTopFields(block, i)}
         ${blockAddExerciseBtn(block, i)}
         ${blockAddDropBtn(block, i)}
@@ -3616,6 +3653,8 @@ function builderBlocksToSchema() {
         return { type: "ladder", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "", ...(v.cue && v.cue.trim() ? { cue: v.cue.trim() } : {}) }, scheme: String(v.scheme).split(",").map((n) => Number(n.trim())).filter((n) => !isNaN(n)), rest: Number(v.rest) || 0 };
       case "cardio-choice":
         return { type: "cardio-choice", label: derivedBlockLabel(b), duration: (Number(v.durationMin) || 1) * 60 };
+      case "rest":
+        return { type: "rest", label: derivedBlockLabel(b), duration: Number(v.rest) || 0 };
       case "amrap":
         return { type: "amrap", label: derivedBlockLabel(b), duration: (Number(v.durationMin) || 1) * 60, exercises: v.exercises.filter((e) => e.name.trim()).map(exerciseWithHold) };
       case "emom":
@@ -5598,6 +5637,10 @@ document.addEventListener("click", (e) => {
 
   if (action === "add-cardio-block") {
     builderBlocks.push({ type: "cardio-choice", values: defaultBlockValues("cardio-choice") });
+    renderBuilderBlocks();
+  }
+  if (action === "add-rest-block") {
+    builderBlocks.push({ type: "rest", values: defaultBlockValues("rest") });
     renderBuilderBlocks();
   }
   if (action === "add-new-item") {
