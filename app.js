@@ -2613,17 +2613,61 @@ function renderWearableSection() {
 
 // ---------------- Daily Habits ----------------
 
+// The cap, in one place. It was the literal 3 in the guard, the literal 3 in
+// the "can add more" test, and the literal 3 twice over in a hardcoded
+// sentence that claimed "3 of 3 habits set" no matter how many there actually
+// were — which is what hid ten of them from view (2026-10-19).
+const MAX_HABITS = 3;
+
 const MY_HABITS_STORAGE_KEY = "burnclub-my-habits";
 const HABIT_CHECKS_STORAGE_KEY = "burnclub-habit-checks";
 let MY_HABITS = [];
 let HABIT_CHECKS = {};
 let habitPickerOpen = false;
 
+// One entry per habit, first wins, capped at the three the UI allows.
+//
+// Deduped by LABEL as well as id (2026-10-19). Same-id duplicates should be
+// impossible — the table's primary key is (member_id, habit_id) — but Chris's
+// account showed "10,000 Steps" three times, which means rows whose ids had
+// drifted apart while the label stayed. An admin edit to the Habit Library
+// reslugs a label into a new id, and the old row was never deleted because
+// habit removals did not reach the server until today. Deduping on the label
+// is what a member actually sees: two rows reading the same thing are the
+// same habit however they are filed.
+//
+// Exported-ish: sync.js calls this on pulled rows too, so a dirty server
+// cannot put the duplicates straight back.
+function dedupeHabits(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+  const out = [];
+  list.forEach((h) => {
+    if (!h || !h.id) return;
+    const key = String(h.label || h.id).trim().toLowerCase();
+    if (seen.has(h.id) || seen.has(key)) return;
+    seen.add(h.id);
+    seen.add(key);
+    out.push(h);
+  });
+  return out.slice(0, MAX_HABITS);
+}
+
 function loadMyHabits() {
   const stored = localStorage.getItem(memberKey(MY_HABITS_STORAGE_KEY));
   if (stored) {
     try {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      const clean = dedupeHabits(parsed);
+      // Self-healing: an account that already accumulated duplicates is fixed
+      // on the next load rather than needing anyone to notice and prune them
+      // by hand. Written back so the repair survives, and only when something
+      // actually changed, so a healthy account does no write at all.
+      if (!Array.isArray(parsed) || clean.length !== parsed.length) {
+        localStorage.setItem(memberKey(MY_HABITS_STORAGE_KEY), JSON.stringify(clean));
+        if (typeof queueSync === "function") queueSync("myHabits");
+      }
+      return clean;
     } catch (e) {
       // fall through and reseed
     }
@@ -2717,7 +2761,13 @@ function renderHabitsSection() {
         </button>
       `;
     }).join("");
-    document.querySelectorAll("[data-toggle-habit]").forEach((btn) => {
+    // Scoped to the container just rebuilt, not the whole document
+    // (2026-10-19). A document-wide query binds a fresh listener to every
+    // habit button on the page, including ones in a container this render did
+    // not replace — so those accumulate a listener per render and a single
+    // tap fires toggleHabit several times. The nodes here are new every time,
+    // so scoping also means nothing stacks.
+    container.querySelectorAll("[data-toggle-habit]").forEach((btn) => {
       btn.addEventListener("click", () => toggleHabit(btn.dataset.toggleHabit));
     });
   }
@@ -2726,7 +2776,12 @@ function renderHabitsSection() {
 }
 
 function addHabit(habit) {
-  if (MY_HABITS.length >= 3) return;
+  if (!habit || MY_HABITS.length >= MAX_HABITS) return;
+  // Never twice. The picker already filters out anything held, so this should
+  // be unreachable — but it is the only line that can grow the list, and the
+  // list growing past its cap is the bug this whole pass is about.
+  const key = String(habit.label || habit.id).trim().toLowerCase();
+  if (MY_HABITS.some((h) => h.id === habit.id || String(h.label || "").trim().toLowerCase() === key)) return;
   MY_HABITS.push(habit);
   habitPickerOpen = false;
   saveMyHabits();
@@ -2754,7 +2809,7 @@ function renderHabitManager() {
       `).join("")
     : `<div class="wearable-row"><p class="wearable-status">No habits set yet.</p></div>`;
 
-  const canAddMore = MY_HABITS.length < 3;
+  const canAddMore = MY_HABITS.length < MAX_HABITS;
   const availablePresets = HABIT_PRESETS.filter((p) => p.custom || !MY_HABITS.some((h) => h.id === p.id));
 
   let addUi = "";
@@ -2771,17 +2826,22 @@ function renderHabitManager() {
   } else if (canAddMore) {
     addUi = `<button class="btn-ghost-lg small" id="add-habit-btn">+ Add Habit</button>`;
   } else {
-    addUi = `<p class="habit-limit-note">3 of 3 habits set — remove one to add another.</p>`;
+    // The REAL count, not a hardcoded "3 of 3". The old string said three
+    // whatever the list held, so an account carrying ten of them read as
+    // perfectly normal and nobody could tell from this screen that anything
+    // was wrong (2026-10-19).
+    addUi = `<p class="habit-limit-note">${MY_HABITS.length} of ${MAX_HABITS} habits set — remove one to add another.</p>`;
   }
 
   container.innerHTML = `<div class="wearable-section">${rowsHtml}</div>${addUi}`;
 
-  document.querySelectorAll("[data-remove-habit]").forEach((btn) => {
+  // Same reasoning as renderHabitsSection: bind inside what was just drawn.
+  container.querySelectorAll("[data-remove-habit]").forEach((btn) => {
     btn.addEventListener("click", () => removeHabit(btn.dataset.removeHabit));
   });
   const addBtn = document.getElementById("add-habit-btn");
   if (addBtn) addBtn.addEventListener("click", () => { habitPickerOpen = true; renderHabitManager(); });
-  document.querySelectorAll("[data-pick-habit]").forEach((btn) => {
+  container.querySelectorAll("[data-pick-habit]").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (btn.dataset.pickHabit === "custom") {
         document.getElementById("habit-custom-row").style.display = "flex";

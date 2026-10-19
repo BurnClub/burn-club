@@ -84,7 +84,12 @@ function syncStores() {
         auto: h.auto || null, target: h.target || null, position: i,
       })),
       onConflict: "member_id,habit_id",
-      fromRows: (rows) => rows.map((r) => {
+      // Deduped on the way in as well as replaced on the way out. Belt and
+      // braces: the table's primary key is (member_id, habit_id) so same-id
+      // duplicates cannot exist, but a row whose id changed under it — an
+      // admin habit-library edit reslugging a label — would arrive as a
+      // second row with the same label, and the member would see it twice.
+      fromRows: (rows) => dedupeHabits(rows.map((r) => {
         const h = { id: r.habit_id, label: r.label };
         // Only set when present: the app checks `habit.auto === "steps"`, and
         // an explicit null would be a different shape from the seed's absent
@@ -92,8 +97,14 @@ function syncStores() {
         if (r.auto) h.auto = r.auto;
         if (r.target != null) h.target = r.target;
         return h;
-      }),
+      })),
       order: "position",
+      // REPLACE, not upsert (2026-10-19). This pushed with onConflict alone,
+      // which means it could only ever ADD: a habit removed on the phone was
+      // never deleted from the server, and the next pull handed it straight
+      // back. Chris's account had ten rows in a list capped at three —
+      // every habit he had ever set, restored over and over.
+      replace: true,
     },
     showcasedPRs: {
       key: SHOWCASED_PRS_KEY, table: "showcased_prs",
@@ -289,7 +300,16 @@ async function hydrateMemberData() {
       // last pin removed on one device never disappears from another. Safe
       // because a replacing store with an unsynced local edit is dirty, and
       // dirty stores were already skipped above.
-      if (REPLACE_STORES.has(name)) {
+      if (name === "myHabits") {
+        // The one replacing store where empty does NOT mean "the member has
+        // none". A brand new account has no habit rows yet and loadMyHabits()
+        // has just seeded three sensible defaults locally — clearing those
+        // would hand a new member an empty habits card on day one. Keep them
+        // and mark dirty so they go up and become real.
+        markDirty(name);
+        SYNC_STATE.queue.add(name);
+        report[name] = "empty on server — keeping local defaults, will push";
+      } else if (REPLACE_STORES.has(name)) {
         localStorage.setItem(memberKey(s.key), JSON.stringify(s.fromRows([])));
         report[name] = "empty on server — cleared";
       } else {
@@ -444,7 +464,10 @@ async function reconcileLocalUp() {
 // device signing in would delete everything newer on the server and pull its
 // own old list back. Chris hit exactly that: a PR pinned on his phone was
 // erased by his PC signing in afterwards.
-const REPLACE_STORES = new Set(["showcasedPRs", "notebookNotes", "scheduledItems", "preferences"]);
+// myHabits joined on 2026-10-19 — see the note on its store above. Being in
+// here is what stops a replacing push firing from a device that did not edit
+// the list, which would wipe newer habits with this device's stale copy.
+const REPLACE_STORES = new Set(["showcasedPRs", "notebookNotes", "scheduledItems", "preferences", "myHabits"]);
 function dirtyKey() { return `burnclub-sync-dirty-${AUTH_MEMBER ? AUTH_MEMBER.id : "demo"}`; }
 function loadDirty() {
   try { return new Set(JSON.parse(localStorage.getItem(dirtyKey()) || "[]")); }

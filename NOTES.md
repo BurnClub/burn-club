@@ -862,6 +862,88 @@ list is the whole week — verified on Week 3.
   saving targets, then a member account reading them back.
 - HealthKit import, parked behind the native build.
 
+## The duplicated habits (2026-10-19)
+
+Chris: "If you check 10 push ups, all of the boxes for 10 push ups get
+checked." His screenshot showed TEN rows in a list capped at three — three
+"10,000 Steps", three "100oz Water", three "Outdoor Activity", one
+"25 Push-ups" — and the footer underneath cheerfully reading "3 of 3".
+
+### Root cause: habit removals never reached the server
+
+The `myHabits` sync store pushed with `onConflict` only and had no `replace`
+flag, which means it could ADD a row and never delete one. A habit removed on
+the phone stayed on the server, and the next pull handed it straight back.
+Over time the server accumulated every habit the member had ever set.
+
+The all-boxes-check symptom was downstream of that: `isHabitChecked()` keys
+off the habit id, so three rows carrying the same id all render checked. The
+checking logic was never wrong — the list under it was.
+
+**Same label, different id** is the second half. `readHabitRows()` in admin
+computes `row.dataset.habitId || slugifyHabit(label)`, so a Habit Library row
+edited without a stored id gets a NEW id for the same label. The table's
+primary key is `(member_id, habit_id)`, so those are entirely different rows
+as far as Postgres is concerned — which is how the same label survived three
+times over despite the key.
+
+### What hid it for so long
+
+`"3 of 3 habits set — remove one to add another."` was a **hardcoded
+string**, shown whenever the count was >= 3. Ten habits read as completely
+normal. Nothing on that screen could have told anyone anything was wrong. It
+now prints the real numbers — forced to a broken state it reads "5 of 3".
+
+### The fixes
+
+- **`myHabits` is a REPLACE store now**, and in `REPLACE_STORES` so a device
+  that did not edit the list never fires a destructive push.
+- **One carve-out, and it matters:** an empty server does NOT clear local
+  habits for `myHabits`, the way it does for the other replacing stores. A
+  brand new account has no rows yet and `loadMyHabits()` has just seeded three
+  defaults — clearing those would hand a new member an empty habits card on
+  day one. They are kept and marked dirty so they push up and become real.
+- **`dedupeHabits()`** on load AND on pull, by LABEL as well as id. Label
+  matters because the drifted-id case is invisible to an id check, and two
+  rows reading the same thing are the same habit however they are filed.
+- **Self-healing.** An account already carrying duplicates is repaired on the
+  next load and the repair written back — no manual pruning. Tested by
+  planting Chris's exact list (ten rows, drifted ids, same interleaved order):
+  it collapsed to three and kept the auto-tracking flag on the steps habit.
+- **`addHabit` refuses a duplicate** by id or label. It is the only line that
+  can grow the list.
+- **Habit handlers were bound with document-wide `querySelectorAll`.** That
+  adds a listener to every habit button on the page each render, including
+  ones in a container the render did not replace — so those stack and one tap
+  fires several times. All three are scoped to their own container now.
+- **`MAX_HABITS`** replaces four scattered literal 3s.
+
+### Still open
+
+The local repair pushes a clean list up, but only once that device syncs.
+Rows already on the server for other members are untouched. To look:
+
+    select habit_id, label, position from member_habits
+    where member_id = (select id from members where email = '...')
+    order by position;
+
+## Program tab order (2026-10-19)
+
+Chris: targets below This Week's Workouts, Cardio Log at the very bottom.
+
+Both training tabs now follow one rule from opposite directions — **training
+first, targets after.** On the structured Calendar that is today's single
+session pinned at the top with the card below it; on the rolling Program tab
+the workout list IS the page, so the card sits under it.
+
+**The Cardio Log block is MOVED between tabs at runtime, not duplicated** —
+structured members have no Program tab, so the node is relocated to Home for
+them (2026-08-19). It is positioned with a marker element,
+`#workouts-cardio-slot`, so moving the section means moving the marker with
+it. Move only the section and the next profile switch yanks it back to the
+old position. Verified both ways after the change: rolling keeps it last on
+the Program tab, structured still sends it to Home with its button intact.
+
 ## Settled: programmes are hand-built on purpose — do not "fix" this
 
 I raised the absence of a "duplicate programme" feature on 2026-10-14 as a
