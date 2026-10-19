@@ -300,3 +300,41 @@ async function saveAppSettingsToServer(settings, defaults) {
   if (error) console.warn("[db] save app_settings:", error.message);
   return { ok: !error, error };
 }
+
+// ---------------- Nutrition (2026-10-19) ----------------
+// Targets the coach set, and the member's own daily "did I track" marks. See
+// supabase/20-nutrition.sql for why these are two tables with two different
+// owners: the member may not write their targets, and staff may not write
+// someone else's log.
+
+async function fetchNutritionTargets() {
+  const { data, error } = await dbSelect("member_nutrition", (q) => q.limit(1));
+  if (error || !data || !data.length) return null;
+  return data[0];
+}
+
+// A window, not everything: the card shows the last fortnight and nobody
+// scrolls a nutrition log back to January.
+async function fetchNutritionLog(sinceKey) {
+  const { data, error } = await dbSelect("nutrition_log", (q) =>
+    q.gte("log_date", sinceKey).order("log_date", { ascending: true }));
+  if (error || !Array.isArray(data)) return [];
+  return data;
+}
+
+// One row per member per day, so the mark is an upsert on that pair rather
+// than an insert that fails the second time someone changes their mind.
+async function saveNutritionMark(uid, dateKeyStr, tracked, hitTargets) {
+  if (!SB) return { ok: false, error: new Error("offline") };
+  const { error } = await SB.from("nutrition_log").upsert({
+    member_id: uid,
+    log_date: dateKeyStr,
+    tracked: !!tracked,
+    // null, never false, when the question was not asked — "didn't say" and
+    // "said no" are different answers and the chart must not confuse them.
+    hit_targets: tracked ? (hitTargets === null ? null : !!hitTargets) : null,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "member_id,log_date" });
+  if (error) console.warn("[db] nutrition mark:", error.message);
+  return { ok: !error, error };
+}

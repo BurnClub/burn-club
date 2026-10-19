@@ -2449,3 +2449,31 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   line-height: 1.4;
   resize: vertical;
 }
+
+/* ---------- MACRO TARGETS, member modal (2026-10-19) ---------- */
+/* Two per row so calories/protein and carbs/fat pair up the way a coach
+   writes them, collapsing to one column when the modal is narrow. */
+.macro-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+.field-group-note {
+  margin: -4px 0 12px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+/* The member's own marks, read back. Monospaced-ish spacing so a fortnight of
+   ticks lines up instead of wandering. */
+.nutrition-readout { display: flex; gap: 3px; flex-wrap: wrap; }
+.nutrition-readout span {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--periwinkle);
+  display: inline-block;
+}
+.nutrition-readout span.tracked { background: #9DBFA8; }
+.nutrition-readout span.hit { background: #3F7A5E; }

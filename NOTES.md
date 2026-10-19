@@ -747,6 +747,121 @@ send the JSON. There is no importer on the other end; the file is read and
 turned into content, not loaded back into admin. And admin's state lives in
 one browser's localStorage, so export often rather than once at the end.
 
+## Macro targets (2026-10-19)
+
+Chris, on the brief: "I do not want to be a food tracker whatsoever. I want
+the member to see targets, and if we can influence people to track, just to
+help build the discipline/habit — but more importantly, when they are
+tracking, they are at the same time learning more about food, serving sizes,
+where calories come from. That is the goal."
+
+So there is no food in this feature. No meals, no entries, no food database.
+The logging stays in MyFitnessPal, which is where they already are and where
+it belongs. **Do not propose building a diary.** Nobody logs their food twice,
+and a diary screen members ignore looks worse than no diary at all.
+
+### Why MyFitnessPal is not integrated
+
+Its public API has been partner-only for years — there is no self-serve
+developer access. The route that does exist is **Apple Health**, which MFP
+writes nutrition into, but HealthKit needs a native app and that is the same
+wall the wearables feature hit. Parked behind the native build, which Chris
+agreed to (2026-10-19). The schema below is shaped so daily actuals can land
+beside the targets later without a rewrite.
+
+### Two tables, deliberately opposite owners
+
+`20-nutrition.sql`, run 2026-10-19.
+
+- **`member_nutrition`** — calories, protein, carbs, fat, and a coach's note.
+  The member may READ it and has no write policy at all. These are explicitly
+  NOT in `health_profile`, which is the member's own jsonb and which the
+  member edits: **targets a member can change are not targets.**
+- **`nutrition_log`** — one row per member per day, two booleans. The member
+  owns it; staff may read it (so a coach sees adherence before a check-in)
+  and may not write it, because nobody should mark someone else's day as
+  tracked.
+
+**`hit_targets` is nullable, and that is load-bearing.** null is "didn't say",
+false is "said no". A member who never tracked cannot answer whether they hit
+their numbers. Defaulting it to false would quietly record a failed day every
+time someone forgot to open the app.
+
+Nulls in `member_nutrition` mean "not set", and the card hides entirely rather
+than showing four dashes — the right default for anyone not on the nutrition
+service.
+
+### Where it lives, and why not Profile
+
+Chris: "everything is too easily lost in the profile section ... I do want
+these numbers to be visible, with the goal to be a few times per week."
+
+It sits on the **training tab** — the screen opened on the way into a session,
+which is 3-5x a week without anyone going looking.
+
+**It is rendered into BOTH training tabs, and that is not redundancy.** The
+two are mutually exclusive per member: rolling members have Workouts and no
+Calendar, structured members have Calendar and no Workouts. A card on one tab
+alone would have reached exactly half the members — Fit & Functional would
+never have seen their macros.
+
+The Workouts tab is now **"Program"**, Chris's call: it stopped being a list
+of circuits the moment coach content that was not training landed on it. The
+section inside keeps the name "This Week's Workouts".
+
+### The two markers
+
+One question, and the second only appears once the first is yes:
+
+1. "Tracked your food today?" → Yes / Not today
+2. (only if yes) "Hit your targets?" → Yes / Not quite
+
+Asking both flat invites garbage, because the second is unanswerable without
+the first. Re-tapping "Yes" on the first keeps the second answer; switching to
+"Not today" clears it, because the question stops applying. Both paths tested.
+
+Ten days of dots underneath, not fourteen (Chris: "14 days is too much, lets
+see 10 and go from there"). Three states that mean three different things: not
+tracked, tracked but missed, tracked and hit.
+
+**Deliberately outside the three daily habits.** Members are capped at three,
+so making them spend a slot on food tracking would tax the exact behaviour
+this is trying to encourage.
+
+### Calendar order, which changed twice in a day
+
+Chris: "I don't like how after the second day, you have to scroll down to see
+your workout." By Thursday of a programme week today's session was the fourth
+row down — and the targets card had just made it worse.
+
+Final order: **the coach's note, today, the targets, then the rest of the
+week.** Chris moved the note back above today after seeing today-first: the
+note frames the whole week, so it reads before the day rather than
+interrupting after it. Today still precedes the targets and every other day,
+which was the actual complaint. Structured members only.
+
+**Three handlers broke silently when today moved out of the day list**, and
+testing found them, not reading:
+
+- the per-day **+** button, delegated to `#calendar-day-list` — so the one day
+  anybody actually adds to had a dead button
+- `data-open-circuit`, `data-remove-scheduled`, `data-complete-scheduled` and
+  `data-coach-cardio`, all scoped to that id
+
+All now cover `#calendar-day-list, #calendar-today`. **Anything new bound by
+that id needs both.**
+
+A previewed week has no today in it, and neither does a programme that has not
+started or has finished. The pinned block and its label simply hide and the
+list is the whole week — verified on Week 3.
+
+### Open
+
+- **Admin's macro fields are UNTESTED against the real database.** Same
+  caveat the settings wiring carried: it needs Chris signed in as staff
+  saving targets, then a member account reading them back.
+- HealthKit import, parked behind the native build.
+
 ## Settled: programmes are hand-built on purpose — do not "fix" this
 
 I raised the absence of a "duplicate programme" feature on 2026-10-14 as a

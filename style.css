@@ -4737,3 +4737,112 @@ h1, h2, h3 {
   line-height: 1.5;
   color: var(--text-muted);
 }
+
+/* ---------- NUTRITION TARGETS (2026-10-19) ----------
+   White, on purpose and by the rule Chris set on the Progress page: a card
+   with a lot going on in it does not take a fill. Four numbers, a note and
+   two questions is a lot going on. */
+.nutrition-card {
+  background: var(--card-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  padding: 18px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 12px var(--card-shadow);
+}
+.nutrition-icon { background: var(--jade-700); color: #FFFFFF; }
+/* Four across on a phone, and they stay four — these are read as a set, and
+   a 2x2 grid makes calories look like a heading for protein. */
+.nutrition-macros {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.nutrition-macro { flex: 1; min-width: 0; text-align: center; }
+.nutrition-macro-num {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+}
+.nutrition-macro-unit { font-size: 12px; font-weight: 700; margin-left: 1px; }
+.nutrition-macro-label {
+  margin: 2px 0 0;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+/* The coach's line. Light, because it is an aside to the numbers above it —
+   and it is the part that actually teaches, so it has to be readable rather
+   than loud. */
+.nutrition-note {
+  margin: 0 0 14px;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 300;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.nutrition-track { border-top: 1px solid var(--border-strong); padding-top: 12px; }
+.nutrition-ask { margin-bottom: 10px; }
+.nutrition-ask-q {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--text);
+}
+.nutrition-choices { display: flex; gap: 8px; }
+.nutrition-choice {
+  flex: 1;
+  border: 1px solid var(--border-strong);
+  background: none;
+  border-radius: 999px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--text);
+  cursor: pointer;
+}
+.nutrition-choice.is-on {
+  background: var(--jade-700);
+  border-color: var(--jade-700);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+.nutrition-choice:active { transform: scale(0.98); }
+/* Two weeks of dots. Three states that mean three different things: not
+   tracked, tracked but missed, tracked and hit. */
+.nutrition-dots { display: flex; gap: 4px; margin-top: 12px; }
+.nutrition-dot {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border-strong);
+}
+.nutrition-dot.is-tracked { background: var(--jade-400); }
+.nutrition-dot.is-hit { background: var(--jade-700); }
+/* Today keeps a mark of its own even before it is answered, so the row reads
+   as "here is where you are" and not just as history. */
+.nutrition-dot.is-today { box-shadow: 0 0 0 2px var(--card-white), 0 0 0 3.5px var(--jade-700); }
+
+/* ---------- TODAY, PINNED ON THE CALENDAR (2026-10-19) ---------- */
+/* The day you are on, lifted above the coach's note and the targets card.
+   No heading of its own: the row already says "FRI, OCT 16 · TODAY", and a
+   "Today" label above a row that says Today is the same word twice. */
+.calendar-today { margin-bottom: 14px; }
+/* The label for what follows. Quiet — it separates, it does not announce. */
+.calendar-rest-label {
+  margin: 18px 0 8px;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}

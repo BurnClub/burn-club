@@ -978,6 +978,39 @@
             </div>
           </div>
 
+          <!-- Macro targets (2026-10-19). Coach-set and coach-owned: these do
+               NOT live in the member's health profile above, which the member
+               edits. Leave them all blank and the member sees no card at all,
+               which is the right default for anyone not on the nutrition
+               service. -->
+          <div class="field-group">
+            <p class="field-group-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21c-3.9 0-6.5-3.4-6.5-7.4 0-3.2 2-5.6 4.3-5.6 1.2 0 1.8.5 2.2.5s1-.5 2.4-.5c2.2 0 4.1 2.2 4.1 5.4C18.5 17.5 15.9 21 12 21z"/><path d="M12 7.6c0-2 1.5-3.6 3.4-3.8"/></svg><span>Macro Targets</span></p>
+            <p class="field-group-note">Shown on the member's Program or Calendar tab. Leave every box empty to hide the card.</p>
+            <div class="macro-row">
+              <label class="modal-field">Calories
+                <input type="number" min="0" id="member-modal-calories" placeholder="e.g. 2100" />
+              </label>
+              <label class="modal-field">Protein (g)
+                <input type="number" min="0" id="member-modal-protein" placeholder="e.g. 165" />
+              </label>
+            </div>
+            <div class="macro-row">
+              <label class="modal-field">Carbs (g)
+                <input type="number" min="0" id="member-modal-carbs" placeholder="e.g. 190" />
+              </label>
+              <label class="modal-field">Fat (g)
+                <input type="number" min="0" id="member-modal-fat" placeholder="e.g. 65" />
+              </label>
+            </div>
+            <label class="modal-field">Note to the member <span class="modal-field-hint">(this is the part that teaches — numbers alone explain nothing)</span>
+              <textarea id="member-modal-macro-note" rows="2" placeholder="Protein first — hit that number every day. Carbs around training."></textarea>
+            </label>
+            <div class="modal-field">
+              <span class="modal-field-label">Tracking <span class="modal-field-hint">(last 14 days, from the member)</span></span>
+              <p class="modal-readonly-value" id="member-modal-nutrition-log">—</p>
+            </div>
+          </div>
+
           <div class="field-group staff-group">
             <p class="field-group-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Staff Only</span></p>
             <label class="modal-field" id="member-modal-startdate-wrap" style="display:none;">Program Start Date <span class="modal-field-hint">(required for structured programs — anchors their Day 1)</span>

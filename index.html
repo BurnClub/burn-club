@@ -214,12 +214,27 @@
       <section class="screen tab-screen" id="tab-circuits" data-tab>
         <header class="topbar">
           <div>
+            <!-- "Program", not "Workouts" (2026-10-19, Chris). The tab stopped
+                 being a list of circuits the moment the coach's macro targets
+                 landed on it: it is now everything the programme asks of you,
+                 training and otherwise. The section inside keeps the name
+                 "This Week's Workouts", so nothing is lost. -->
             <p class="eyebrow">This week</p>
-            <h1 class="topbar-title">Workouts</h1>
+            <h1 class="topbar-title">Program</h1>
           </div>
           <div class="topbar-actions"><button class="msg-icon-btn" data-action="open-notebook" aria-label="Notebook" title="Notebook"><span class="msg-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M8 4v16"/></svg></span><span class="checkin-done-dot" data-role="checkin-done-dot" style="display:none;"></span></button><button class="msg-icon-btn" data-action="open-messages" aria-label="Messages"><span class="msg-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg></span><span class="msg-unread-badge" data-role="msg-unread-badge"></span></button></div>
         </header>
         <div class="resume-banner" id="resume-banner-workouts" style="display:none;"></div>
+        <!-- Macro targets (2026-10-19). On the TRAINING tab, not Profile:
+             Chris wants these seen a few times a week without anyone going
+             looking, and this is the screen opened on the way into a session.
+             It is rendered into BOTH training tabs because the two are
+             mutually exclusive — rolling members have no Calendar and
+             structured members have no Program, so a card on one tab would
+             reach exactly half the members. Top of the page rather than under
+             the workout list, which runs long enough to bury it. -->
+        <div class="nutrition-card" id="nutrition-card-program" hidden></div>
+
         <div class="home-section-card card-blue">
           <span class="workouts-bg-icon"></span>
           <div class="section-head"><span class="section-icon section-icon-workouts" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="9" width="3" height="6" rx="1"/><rect x="18.5" y="9" width="3" height="6" rx="1"/><rect x="6" y="6.5" width="3.5" height="11" rx="1.2"/><rect x="14.5" y="6.5" width="3.5" height="11" rx="1.2"/><path d="M9.5 12h5"/></svg></span><h2 class="home-section-title has-icon">This Week's Workouts</h2></div>
@@ -287,12 +302,37 @@
             <button class="btn-ghost-lg small" id="calendar-week-next">Next week ›</button>
           </div>
         </div>
-        <!-- The coach's note for this programme week (2026-10-14, Chris).
-             Written per week folder in admin and shown here, under the
-             heading and above the days it governs. Hidden entirely when there
-             is none — an empty box every week would teach members to stop
-             reading it. -->
+        <!-- ORDER MATTERS HERE, and it changed on 2026-10-19.
+             Chris: "I don't like how after the second day, you have to scroll
+             down to see your workout." By Thursday of a programme week,
+             today's session was the fourth row down — under the coach's note
+             and, as of that morning, under the targets card as well.
+
+             The order is: the coach's note, today, the targets, then the rest
+             of the week. Chris put the note back on top the same day (he had
+             seen today-first and preferred this): the note is what frames the
+             whole week, so it reads before the day rather than interrupting
+             after it. Today still comes before the targets and before every
+             other day, which was the actual complaint.
+
+             Structured members only; the rolling Program tab has no day rows
+             to reorder.
+
+             The note (2026-10-14) is the coach's line for this programme
+             week, written per week folder in admin. Hidden entirely when
+             there is none — an empty box every week teaches members to stop
+             reading it.
+
+             The targets card (2026-10-19) is on the TRAINING tab rather than
+             Profile because Chris wants it seen a few times a week without
+             anyone going looking. It is rendered into BOTH training tabs,
+             which are mutually exclusive per member: rolling members have no
+             Calendar and structured members have no Program, so a card on one
+             tab alone would reach half the members. -->
         <div class="calendar-week-note" id="calendar-week-note" hidden><span class="section-icon section-icon-habits" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.6a7.9 7.9 0 0 1-8.5 7.9 9 9 0 0 1-2.7-.4L4.5 20.5l1.3-3.8a7.6 7.6 0 0 1-2.3-5.1A7.9 7.9 0 0 1 12 3.7a7.9 7.9 0 0 1 8.5 7.9z"/><path d="M8.8 9.9h6.4M8.8 13.2h3.8"/></svg></span><p id="calendar-week-note-text"></p></div>
+        <div class="calendar-today" id="calendar-today" hidden></div>
+        <div class="nutrition-card" id="nutrition-card-calendar" hidden></div>
+        <p class="calendar-rest-label" id="calendar-rest-label" hidden>The rest of this week</p>
         <div class="calendar-day-list" id="calendar-day-list"></div>
       </section>
 
@@ -1111,7 +1151,7 @@
           <span class="nav-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span><span>Home</span>
         </button>
         <button class="nav-btn" data-tab-target="tab-circuits" id="nav-workouts-btn">
-          <span class="nav-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s7 8 7 13a7 7 0 1 1-14 0c0-5 7-13 7-13z"/></svg></span><span>Workouts</span>
+          <span class="nav-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s7 8 7 13a7 7 0 1 1-14 0c0-5 7-13 7-13z"/></svg></span><span>Program</span>
         </button>
         <button class="nav-btn" data-tab-target="tab-calendar" id="nav-calendar-btn" style="display:none;">
           <span class="nav-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span><span>Calendar</span>

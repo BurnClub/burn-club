@@ -7546,6 +7546,10 @@ function openMemberModal() {
   document.getElementById("member-modal-notes").value = "";
   document.getElementById("member-modal-habits").textContent = "None set";
   document.getElementById("member-modal-health-profile").innerHTML = "No health profile submitted yet.";
+  ["member-modal-calories","member-modal-protein","member-modal-carbs","member-modal-fat","member-modal-macro-note"]
+    .forEach((elId) => { const el = document.getElementById(elId); if (el) el.value = ""; });
+  const emptyLog = document.getElementById("member-modal-nutrition-log");
+  if (emptyLog) emptyLog.textContent = "—";
   document.getElementById("member-modal-start-date").value = "";
   // Combo is the safe default on a new record: it shows the member everything
   // the program has, so a mis-set access level can't hide content they paid
@@ -7577,6 +7581,7 @@ function openEditMemberModal(memberId) {
   document.getElementById("member-modal-notes").value = m.notes;
   document.getElementById("member-modal-habits").textContent = m.habits && m.habits.length ? m.habits.join(", ") : "None set";
   document.getElementById("member-modal-health-profile").innerHTML = renderHealthProfileReadout(m.id);
+  loadMemberNutrition(m.id);
   document.getElementById("member-modal-start-date").value = m.startDate || "";
   document.getElementById("member-modal-access").value = m.access || "both";
   updateMemberProgramFields();
@@ -7649,6 +7654,48 @@ function saveMember() {
 // Two tables, because the coach-only fields are deliberately not columns on
 // `members`: RLS is row-level, so a policy letting a member read their own row
 // would have handed back their own coach notes and status with it.
+// Targets and the member's own tracking marks, read when the modal opens.
+// Cleared first: the modal is reused between members and a stale 2100 left in
+// a box is a target a coach could save onto the wrong person.
+async function loadMemberNutrition(id) {
+  const ids = ["member-modal-calories","member-modal-protein","member-modal-carbs","member-modal-fat","member-modal-macro-note"];
+  ids.forEach((elId) => { const el = document.getElementById(elId); if (el) el.value = ""; });
+  const out = document.getElementById("member-modal-nutrition-log");
+  if (out) out.textContent = "Loading…";
+  if (!SB) { if (out) out.textContent = "—"; return; }
+
+  const [{ data: t }, { data: log }] = await Promise.all([
+    SB.from("member_nutrition").select("*").eq("member_id", id).limit(1),
+    SB.from("nutrition_log").select("*").eq("member_id", id)
+      .order("log_date", { ascending: true }).limit(14),
+  ]);
+
+  const row = t && t[0];
+  if (row) {
+    const put = (elId, val) => {
+      const el = document.getElementById(elId);
+      if (el) el.value = val === null || val === undefined ? "" : val;
+    };
+    put("member-modal-calories", row.calories);
+    put("member-modal-protein", row.protein_g);
+    put("member-modal-carbs", row.carbs_g);
+    put("member-modal-fat", row.fat_g);
+    put("member-modal-macro-note", row.note || "");
+  }
+
+  if (!out) return;
+  if (!log || !log.length) {
+    out.textContent = "Nothing logged yet.";
+    return;
+  }
+  const hit = log.filter((r) => r.hit_targets === true).length;
+  const tracked = log.filter((r) => r.tracked).length;
+  out.innerHTML = `
+    <span class="nutrition-readout">${log.map((r) =>
+      `<span class="${r.hit_targets ? "hit" : r.tracked ? "tracked" : ""}" title="${r.log_date}"></span>`).join("")}</span>
+    <br>Tracked ${tracked} of the last ${log.length} days, hit targets on ${hit}.`;
+}
+
 async function saveMemberToServer(v) {
   const id = editingMemberId;
   const parts = String(v.name).trim().split(/\s+/);
@@ -7691,8 +7738,26 @@ async function saveMemberToServer(v) {
   const { error: pErr } = await SB.from("member_private")
     .upsert({ member_id: id, coach_notes: v.notes || "", status: v.status || "active" },
             { onConflict: "member_id" });
+
+  // Macro targets. A blank box is null, not 0 — null is "not set" and hides
+  // the card, 0 would be a target of zero calories.
+  const num = (elId) => {
+    const raw = String(document.getElementById(elId).value).trim();
+    return raw === "" ? null : Math.max(0, Number(raw) || 0);
+  };
+  const { error: nErr } = await SB.from("member_nutrition").upsert({
+    member_id: id,
+    calories: num("member-modal-calories"),
+    protein_g: num("member-modal-protein"),
+    carbs_g: num("member-modal-carbs"),
+    fat_g: num("member-modal-fat"),
+    note: document.getElementById("member-modal-macro-note").value.trim(),
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "member_id" });
+
   btn.disabled = false; btn.textContent = "Save Member";
   if (pErr) { alert("Saved, but the notes and status didn't: " + pErr.message); }
+  if (nErr) { alert("Saved, but the macro targets didn't: " + nErr.message); }
 
   await loadRealMembers();
   closeMemberModal();

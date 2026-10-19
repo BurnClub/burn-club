@@ -1895,6 +1895,169 @@ function renderStatBubbles(minutes, calories) {
   `;
 }
 
+// ---------------- Nutrition targets (2026-10-19) ----------------
+// Chris: "I do not want to be a food tracker whatsoever. I want the member to
+// see targets, and if we can influence people to track ... when they are
+// tracking, they are at the same time learning more about food, serving
+// sizes, where calories come from."
+//
+// So: four numbers, a line from the coach, and a daily yes/no about whether
+// they tracked — somewhere else. No meals, no foods, no entries.
+
+// Ten, not fourteen (2026-10-19, Chris: "14 days is too much, lets see 10
+// and go from there"). Wider dots, and a row you can count at a glance
+// instead of one you have to measure.
+const NUTRITION_DAYS = 10;
+
+let NUTRITION_TARGETS = null;   // what the coach set, or null if nothing set
+let NUTRITION_LOG = {};         // { "YYYY-MM-DD": { tracked, hit_targets } }
+
+const NUTRITION_DEMO_TARGETS = {
+  calories: 2100, protein_g: 165, carbs_g: 190, fat_g: 65,
+  note: "Protein first — hit that number every day. Carbs around training, fat fills the rest.",
+};
+
+async function loadNutrition() {
+  // The demo shows the card with plausible numbers; a real session reads the
+  // coach's. A member with no targets set sees nothing at all, which is the
+  // point of the nulls in member_nutrition.
+  if (isDemoSession()) {
+    NUTRITION_TARGETS = NUTRITION_DEMO_TARGETS;
+    NUTRITION_LOG = buildDemoNutritionLog();
+    renderNutritionCards();
+    return;
+  }
+  if (typeof fetchNutritionTargets !== "function") return;
+  const since = new Date();
+  since.setDate(since.getDate() - (NUTRITION_DAYS - 1));
+  const [targets, log] = await Promise.all([
+    fetchNutritionTargets(),
+    fetchNutritionLog(dateKey(since)),
+  ]);
+  NUTRITION_TARGETS = targets;
+  NUTRITION_LOG = {};
+  log.forEach((row) => { NUTRITION_LOG[row.log_date] = row; });
+  renderNutritionCards();
+}
+
+// A fortnight of plausible marks so the demo's dot row is not empty. Seeded
+// off the day offset rather than random, so a screenshot taken today still
+// matches one taken next week.
+function buildDemoNutritionLog() {
+  const out = {};
+  for (let i = 1; i < NUTRITION_DAYS; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const tracked = (i * 7) % 10 > 2;
+    out[dateKey(d)] = { tracked, hit_targets: tracked ? (i * 3) % 10 > 3 : null };
+  }
+  return out;
+}
+
+function nutritionMarkFor(key) {
+  return NUTRITION_LOG[key] || { tracked: false, hit_targets: null };
+}
+
+// Oldest first, today last — same direction as reading.
+function nutritionRecentDays() {
+  const out = [];
+  for (let i = NUTRITION_DAYS - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = dateKey(d);
+    out.push({ key, date: d, isToday: i === 0, ...nutritionMarkFor(key) });
+  }
+  return out;
+}
+
+function nutritionCardHtml() {
+  const t = NUTRITION_TARGETS;
+  const todayKey = dateKey(new Date());
+  const today = nutritionMarkFor(todayKey);
+  const macro = (label, value, unit) =>
+    value || value === 0
+      ? `<div class="nutrition-macro">
+           <p class="nutrition-macro-num">${esc(String(value))}<span class="nutrition-macro-unit">${unit}</span></p>
+           <p class="nutrition-macro-label">${label}</p>
+         </div>`
+      : "";
+  const days = nutritionRecentDays().map((d) => {
+    // Three states, and they are genuinely different: didn't track, tracked
+    // but missed, tracked and hit. A missed day is not a blank — blank is a
+    // day that has not happened yet or was never answered.
+    const state = !d.tracked ? "none" : d.hit_targets ? "hit" : "tracked";
+    return `<span class="nutrition-dot is-${state} ${d.isToday ? "is-today" : ""}"
+                  title="${esc(d.date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }))}"></span>`;
+  }).join("");
+
+  return `
+    <div class="section-head">
+      <span class="section-icon nutrition-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c-3.9 0-6.5-3.4-6.5-7.4 0-3.2 2-5.6 4.3-5.6 1.2 0 1.8.5 2.2.5s1-.5 2.4-.5c2.2 0 4.1 2.2 4.1 5.4C18.5 17.5 15.9 21 12 21z"/><path d="M12 7.6c0-2 1.5-3.6 3.4-3.8"/></svg></span>
+      <h2 class="home-section-title has-icon">Your Targets</h2>
+    </div>
+    <div class="nutrition-macros">
+      ${macro("Calories", t.calories, "")}
+      ${macro("Protein", t.protein_g, "g")}
+      ${macro("Carbs", t.carbs_g, "g")}
+      ${macro("Fat", t.fat_g, "g")}
+    </div>
+    ${t.note ? `<p class="nutrition-note">${esc(t.note)}</p>` : ""}
+    <div class="nutrition-track">
+      <div class="nutrition-ask">
+        <p class="nutrition-ask-q">Tracked your food today?</p>
+        <div class="nutrition-choices">
+          <button type="button" class="nutrition-choice ${today.tracked ? "is-on" : ""}" data-track="yes">Yes</button>
+          <button type="button" class="nutrition-choice ${!today.tracked && NUTRITION_LOG[todayKey] ? "is-on" : ""}" data-track="no">Not today</button>
+        </div>
+      </div>
+      ${today.tracked ? `
+        <div class="nutrition-ask">
+          <p class="nutrition-ask-q">Hit your targets?</p>
+          <div class="nutrition-choices">
+            <button type="button" class="nutrition-choice ${today.hit_targets === true ? "is-on" : ""}" data-hit="yes">Yes</button>
+            <button type="button" class="nutrition-choice ${today.hit_targets === false ? "is-on" : ""}" data-hit="no">Not quite</button>
+          </div>
+        </div>` : ""}
+      <div class="nutrition-dots" aria-label="Your last ${NUTRITION_DAYS} days">${days}</div>
+    </div>`;
+}
+
+// Both training tabs get the same card. They are mutually exclusive per
+// member, so this fills whichever one that member actually has.
+function renderNutritionCards() {
+  ["nutrition-card-program", "nutrition-card-calendar"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // No targets set means no card. A coach who has not set someone up yet
+    // should not leave them looking at four dashes.
+    if (!NUTRITION_TARGETS) { el.hidden = true; el.innerHTML = ""; return; }
+    el.innerHTML = nutritionCardHtml();
+    el.hidden = false;
+    el.querySelectorAll("[data-track]").forEach((b) => {
+      b.addEventListener("click", () => setNutritionMark(b.dataset.track === "yes", null));
+    });
+    el.querySelectorAll("[data-hit]").forEach((b) => {
+      b.addEventListener("click", () => setNutritionMark(true, b.dataset.hit === "yes"));
+    });
+  });
+}
+
+function setNutritionMark(tracked, hitTargets) {
+  const key = dateKey(new Date());
+  const prev = nutritionMarkFor(key);
+  // Answering "yes" again must not wipe an answer already given to the second
+  // question — only a switch to "not today" clears it, because the question
+  // stops applying.
+  const hit = tracked ? (hitTargets === null ? prev.hit_targets ?? null : hitTargets) : null;
+  NUTRITION_LOG[key] = { tracked, hit_targets: hit };
+  renderNutritionCards();
+  if (!isDemoSession() && AUTH_MEMBER && typeof saveNutritionMark === "function") {
+    // Not awaited: the tap has already been answered on screen, and a slow
+    // network must not make a yes/no feel broken.
+    saveNutritionMark(AUTH_MEMBER.id, key, tracked, hit);
+  }
+}
+
 function renderProgressTab() {
   const items = completionsInRange(progressRange);
   const counts = { circuit: 0, stretch: 0, "core-burn": 0, "cardio-activity": 0 };
@@ -3651,6 +3814,10 @@ function startResumeBannerTicker() {
 // An unfinished workout outranks the daily check-in nudge — it's the more
 // urgent of the two, and stacking both modals would bury one behind the other.
 function onEnterApp() {
+  // Before the early returns below: a member who lands on the resume prompt
+  // or the tour still has a Program tab behind it, and it should not be
+  // missing its targets card when they dismiss them.
+  loadNutrition();
   if (maybeOfferResume()) return;
   // The tour wins on a first entry and the check-in waits for it — otherwise
   // a brand new member's first sight of the app is two stacked overlays.
@@ -6372,9 +6539,17 @@ function wireStaticControls() {
 
   // Delegated: the day rows are rebuilt on every week change, so handlers
   // bound to the buttons themselves would be thrown away with the markup.
-  document.getElementById("calendar-day-list").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-add-on]");
-    if (btn) openCalendarAddPopup(btn.dataset.addOn);
+  //
+  // BOTH containers since 2026-10-19 — today's row moved out of the list into
+  // its own pinned block, and a listener on the list alone left the + on the
+  // one day anybody actually adds to doing nothing at all.
+  ["calendar-day-list", "calendar-today"].forEach((id) => {
+    const host = document.getElementById(id);
+    if (!host) return;
+    host.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-add-on]");
+      if (btn) openCalendarAddPopup(btn.dataset.addOn);
+    });
   });
   document.getElementById("calendar-week-next").addEventListener("click", () => shiftCalendarWeek(1));
   document.getElementById("calendar-week-back").addEventListener("click", resetCalendarWeek);
@@ -7097,25 +7272,49 @@ function renderCalendarTab() {
   const weekStart = calendarWeekStart || pos.weekStartDate;
   const todayKey = dateKey(new Date());
 
+  // Today comes out of the list and goes above everything (2026-10-19). The
+  // rest of the week keeps its order below, past days included and still
+  // tappable — a member who missed Tuesday can open it on Thursday.
+  //
+  // A previewed week has no today in it, and neither does a programme that
+  // has not started or has finished. In those cases the pinned block is
+  // simply absent and the list is the whole week, which is what it always
+  // was — no special-casing beyond `todayHtml` staying empty.
   const rows = [];
+  let todayHtml = "";
   for (let i = 0; i < 7; i++) {
     const date = new Date(weekStart);
     date.setDate(date.getDate() + i);
-    rows.push(renderCalendarDayRow(date, member, template, dateKey(date) < todayKey, pos.totalDays));
+    const key = dateKey(date);
+    const html = renderCalendarDayRow(date, member, template, key < todayKey, pos.totalDays);
+    if (key === todayKey) todayHtml = html;
+    else rows.push(html);
   }
 
   renderCalendarWeekHeader(pos, weekStart);
+  const todayEl = document.getElementById("calendar-today");
+  todayEl.innerHTML = todayHtml;
+  todayEl.hidden = !todayHtml;
+  // The label only earns its line when there is a pinned day above to be the
+  // rest OF. On a previewed week the list is simply the week.
+  const restLabel = document.getElementById("calendar-rest-label");
+  if (restLabel) restLabel.hidden = !todayHtml;
   document.getElementById("calendar-day-list").innerHTML = rows.join("");
-  document.querySelectorAll("#calendar-day-list [data-open-circuit]").forEach((btn) => {
+  // Both containers, not just the list. Today's row moved out of
+  // #calendar-day-list, so a selector scoped to that id alone would leave the
+  // one day a member actually taps with no handlers on it — the whole point
+  // of the change, silently dead.
+  const calendarScopes = "#calendar-day-list, #calendar-today";
+  document.querySelectorAll(`${calendarScopes} [data-open-circuit]`).forEach((btn) => {
     btn.addEventListener("click", () => openCircuit(btn.dataset.openCircuit));
   });
-  document.querySelectorAll("#calendar-day-list [data-remove-scheduled]").forEach((btn) => {
+  document.querySelectorAll(`${calendarScopes} [data-remove-scheduled]`).forEach((btn) => {
     btn.addEventListener("click", () => removeScheduledItem(btn.dataset.removeScheduled));
   });
-  document.querySelectorAll("#calendar-day-list [data-complete-scheduled]").forEach((btn) => {
+  document.querySelectorAll(`${calendarScopes} [data-complete-scheduled]`).forEach((btn) => {
     btn.addEventListener("click", () => openCompleteScheduledPopup(btn.dataset.completeScheduled));
   });
-  document.querySelectorAll("#calendar-day-list [data-coach-cardio]").forEach((btn) => {
+  document.querySelectorAll(`${calendarScopes} [data-coach-cardio]`).forEach((btn) => {
     btn.addEventListener("click", () => openCardioLogModal(btn.dataset.coachCardio));
   });
 }
