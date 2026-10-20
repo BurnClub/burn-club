@@ -478,6 +478,12 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
   padding: 15px 16px;
   box-shadow: 0 4px 14px rgba(10,19,64,0.05);
   border-top: 5px solid var(--blue);
+  /* The type pill is pinned to the bottom-right corner (2026-10-19, Chris),
+     so the card is its positioning context and keeps enough room under the
+     buttons for it to sit in. 40px is the pill's own height plus the gap it
+     used to get from its 14px top margin. */
+  position: relative;
+  padding-bottom: 40px;
 }
 .program-card.color-deepblue { border-top-color: var(--deepblue); }
 .program-card.color-yellow { border-top-color: var(--yellow); }
@@ -2250,9 +2256,17 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
    button and the row wraps at some widths — anything above it lands in a
    different place card to card. Last is the only position that is the same on
    every one. */
+/* Bottom-right of the card, not trailing the action buttons (2026-10-19,
+   Chris). Absolute rather than a flex row of its own, because the buttons
+   above wrap to two rows on a structured programme — Open, Edit, Schedule,
+   Archive, Delete — and a pill in the flow would sit at a different height on
+   every card. Pinned, it lines up across the whole grid whatever the buttons
+   do. */
 .program-type-tag {
-  display: inline-block;
-  margin: 14px 0 0;
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  margin: 0;
   padding: 4px 11px;
   border-radius: 999px;
   font-size: 11px;
