@@ -49,13 +49,32 @@ the cream page background (`--cream` #FAF7F2)** but is shipping it to see what
 Kelly thinks — he is discussing it with her and will decide next session. It is
 one value in `palette.css`; changing it moves the whole app.
 
-**Card titles need resizing or more breathing room (Chris, 2026-10-01).**
-"Community Buzz" looks like it is hanging off the edge of its card. Those two
-Home cards (Daily Habits and Community Buzz) sit side by side at half width, and
-Nunito is wider than the condensed face it replaced, so a 16px title nearly
-fills the card. Fix by some combination of title size, card padding (18px now)
-and letting the longer ones wrap — check every card title at phone width, not
-just these two. Kelly flagged the same risk in her handoff.
+**Card titles — DONE 2026-10-19.** Was: "Community Buzz" looks like it is
+hanging off the edge of its card.
+
+Measured every card title on every tab at phone width first, which changed
+what the fix was. **Full-width cards were never the problem** — every title
+there has 157-233px of slack. It was only the two half-width Home cards, and
+the cause was not the title size but the BADGE: a 162px card spends 18+18 on
+its own padding and another 28+8 on the badge and its gap, leaving the title
+88px. "Community Buzz" needs 115 and wrapped. "Daily Habits" needs 84 and fit
+with four pixels to spare — luck, not a fix.
+
+**Tried and rejected: stacking the badge above the title.** That gave the
+title the full 124px and put both on one line, but Chris: "I don't like that
+the title is sitting below the icon. We need to keep it inline with the icon,
+even if that means putting community buzz on two lines centred vertically to
+the icon." A badge beside its title is what every other card does, and
+consistency beats a line break. **Do not re-stack it.**
+
+The actual fix is one word. The row was `align-items: flex-start`, so a
+two-line title hung off the TOP of the badge with its second line dangling —
+which is what read as falling off the card. `center` makes the wrap look
+deliberate. Verified by comparing midpoints, not by eye: title and badge
+centre to within 2px on both cards, and the cards stay the same height.
+
+Degrades sanely at 320px (iPhone SE): the title still wraps inside the card,
+no overflow, no horizontal page scroll.
 
 **Where the palette landed (2026-10-01).** Kelly's colours throughout, but a
 good way from her intent, which puts every card on its lightest tint. Chris's

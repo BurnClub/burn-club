@@ -530,9 +530,28 @@ h1, h2, h3 {
 /* Half-width cards: the title has roughly 150px to work in. nowrap was fine
    for a condensed face with no icon beside it; with Nunito and a 34px badge
    "Community Buzz" ran off the card. It wraps now, and the badge shrinks
-   (2026-10-01). */
+   (2026-10-01).
+
+   Measured 2026-10-19 rather than guessed: a 162px card spends 18+18 on its
+   own padding and another 28+8 on the badge and its gap, leaving the title
+   88px. "Community Buzz" needs 115, so it wraps. "Daily Habits" needs 84 and
+   fits with four pixels to spare.
+
+   STACKING THE BADGE ABOVE THE TITLE WAS TRIED AND REJECTED the same day.
+   It bought the title the full 124px and put both on one line, but Chris:
+   "I don't like that the title is sitting below the icon. We need to keep it
+   inline with the icon, even if that means putting community buzz on two
+   lines centred vertically to the icon." He is right that a badge beside its
+   title is the pattern every other card uses, and consistency beats a line
+   break.
+
+   So it stays a row, and the fix is align-items: CENTER rather than
+   flex-start — a two-line title centres against the badge instead of hanging
+   off its top edge, which is what made it look like it was falling out of the
+   card. Full-width cards are untouched: every title there has 157-233px of
+   slack. */
 .home-split-row .home-section-title { font-size: 15px; line-height: 1.15; white-space: normal; }
-.home-split-row .section-head { gap: 8px; align-items: flex-start; }
+.home-split-row .section-head { gap: 8px; align-items: center; }
 .home-split-row .section-icon { width: 28px; height: 28px; }
 .home-split-row .section-icon svg { width: 16px; height: 16px; }
 .habit-streak-footer {
