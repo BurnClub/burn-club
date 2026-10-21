@@ -4881,3 +4881,49 @@ h1, h2, h3 {
   font-weight: 300;
   color: var(--text-muted);
 }
+
+/* ---------- BENCHMARK CARDS: TAPPABLE (2026-10-21) ----------
+   The card became a <button> when self-testing landed. These rules only undo
+   the browser's button defaults — the layout above is unchanged, so the three
+   columns still line up on the same baseline. */
+.benchmark-card {
+  border: none;
+  width: 100%;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.benchmark-card:active { transform: scale(0.98); }
+
+/* What tapping does. Needed because a card that acts has to say so, and the
+   two actions are genuinely different — one opens a number pad, the other
+   opens a workout. 10px to match the tags it sits under. */
+.benchmark-action {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--accent-text);
+}
+
+/* A program with no benchmarks. Centred inside the blue card, which stays —
+   see renderBenchmarkList for why it isn't just hidden. */
+.benchmark-list.is-empty { display: block; }
+.benchmark-empty {
+  margin: 0;
+  padding: 4px 2px 2px;
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Min : sec, side by side, matching the post-workout score prompt's row. */
+.benchmark-log-time-row { display: flex; align-items: center; gap: 8px; }
+.benchmark-log-time-row input { flex: 1; min-width: 0; }
+.benchmark-log-sub {
+  margin: 0 0 18px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.5;
+  color: var(--text-muted);
+}

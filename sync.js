@@ -122,11 +122,16 @@ function syncStores() {
       key: BENCHMARK_RESULTS_STORAGE_KEY, table: "benchmark_results",
       toRows: (list) => list.map((b) => ({
         member_id: me(), client_id: b.id, benchmark_id: b.benchmarkId,
+        // Carried so a result outlives its benchmark (2026-10-21). Older
+        // results stored before the field existed send null, which is honest:
+        // the name genuinely wasn't recorded at the time.
+        benchmark_name: b.benchmarkName || null,
         performed_on: b.date, score: b.score,
       })),
       onConflict: "member_id,client_id",
       fromRows: (rows) => rows.map((r) => ({
         id: r.client_id || `srv-${r.id}`, benchmarkId: r.benchmark_id,
+        benchmarkName: r.benchmark_name || "",
         date: r.performed_on, score: Number(r.score),
       })),
       order: "performed_on",

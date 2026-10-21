@@ -690,6 +690,49 @@
         </div>
       </div>
 
+      <!-- ---------- BENCHMARK: LOG A RESULT / RETEST (2026-10-21) ---------- -->
+      <!-- Tapping a benchmark card does one of two things, decided by whether
+           any workout in the member's program is tagged with it (Chris,
+           2026-10-21): "Say you click on 500 m run, I'd like to build a little
+           pop up screen that allows them to enter there, save and then it goes
+           away. But if they want to self test an amrap gauntlet for example,
+           it wouldn't just be a number to enter, it ask them if they want to
+           retest then would pop up to the actual workout where they can press
+           start and go."
+
+           One overlay, two bodies, because the header is the same both ways
+           and two shells would drift apart. -->
+      <div class="cardio-log-overlay" id="benchmark-log-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="benchmark-log-close-btn">✕</button>
+          <h2 class="cardio-log-title" id="benchmark-log-title">Benchmark</h2>
+          <p class="benchmark-log-sub" id="benchmark-log-sub"></p>
+
+          <div id="benchmark-log-fields">
+            <label class="field" id="benchmark-log-count-field">
+              <span id="benchmark-log-count-label">Rounds</span>
+              <input type="number" id="benchmark-log-count" min="0" step="1" placeholder="0" inputmode="numeric" />
+            </label>
+
+            <div class="field" id="benchmark-log-time-field">
+              <span>Finish time</span>
+              <div class="benchmark-log-time-row">
+                <input type="number" id="benchmark-log-min" min="0" step="1" placeholder="Min" inputmode="numeric" />
+                <span class="benchmark-score-colon">:</span>
+                <input type="number" id="benchmark-log-sec" min="0" max="59.9" step="0.1" placeholder="Sec" inputmode="decimal" />
+              </div>
+            </div>
+
+            <button class="btn-primary" id="benchmark-log-save-btn">Save Result</button>
+          </div>
+
+          <div class="skip-confirm-actions" id="benchmark-retest-actions">
+            <button class="btn-ghost-lg" id="benchmark-retest-cancel-btn">Not Now</button>
+            <button class="btn-primary" id="benchmark-retest-go-btn">Open Workout</button>
+          </div>
+        </div>
+      </div>
+
       <!-- ---------- EXERCISE LIBRARY FILTER POPUP (2026-08-10) ---------- -->
 
       <!-- ---------- EXERCISE LIBRARY DETAIL POPUP (2026-08-10) ---------- -->

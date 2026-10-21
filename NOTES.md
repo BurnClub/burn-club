@@ -1207,6 +1207,149 @@ Chris's browser. It never reaches a tester's phone, so even a programme that
 next thing after programmes that wants to come off the bridge and onto the
 server.
 
+## Benchmarks, and self-testing (2026-10-21)
+
+Chris asked how a push-up test, a 1 mile run or a 500m sprint would ever work,
+since none of them is a workout the builder can express: "do we need to build
+a new type of workout called a 'test'?"
+
+**No.** The gap was never a workout type. Every score type except time scores a
+whole workout, and the app cannot pace a mile run at all — wrap one in the
+player and you get a screen saying *go run* over a timer nobody looks at. What
+was actually missing is that **a benchmark with no workout attached had no way
+to be performed or scored**. That is a button.
+
+### Tapping a benchmark card does one of two things
+
+Decided by whether any workout in the member's own program is tagged with it,
+which is data that already existed (`isBenchmark` / `benchmarkId`):
+
+- **No workout tagged** → a small overlay: type the number, save, gone.
+- **A workout tagged** → "retesting runs the full workout", then straight to
+  that workout's detail screen, where Start already lives. The score is asked
+  for at the end by the prompt that was already there, so there is one prompt
+  rather than two that could disagree.
+
+Chris, 2026-10-21: *"Say you click on 500 m run, I'd like to build a little pop
+up screen that allows them to enter there, save and then it goes away. But if
+they want to self test an amrap gauntlet for example, it wouldn't just be a
+number to enter, it ask them if they want to retest then would pop up to the
+actual workout where they can press start and go."*
+
+The card says which — "Log result ›" or "Retest ›" — because a card that acts
+has to say so, and the two actions are genuinely different.
+
+`circuitForBenchmark()` is scoped to the member's own `programId`. Two programs
+can tag their own workouts against their own benchmark ids, and a member must
+only ever be sent to theirs.
+
+### Benchmarks are now BUNDLED, which is a correction
+
+They used to reach the member app only through admin's `localStorage` bridge,
+with a hardcoded demo list as the fallback. **That bridge is written by admin in
+Chris's browser and never reaches a member's phone**, so every real member saw
+the fallback: three benchmarks that were not theirs. Burn Club Test, which has
+none, would have shown all three of Burn Club's.
+
+They now live in `PROGRAM_BENCHMARKS` in data.js, keyed by programId —
+arriving the way content already arrives, costing a push to change, exactly
+like `CIRCUITS`. The bridge still *overrides* where it exists, so editing a
+program's benchmarks in admin previews them on that machine without a push.
+A program that is absent from the map has no benchmarks, and that is a real
+answer rather than a gap to fill with someone else's.
+
+When admin content moves to the server this moves with it.
+
+### Score types: reps added, weight deliberately refused
+
+`rounds` and `reps` are the same number counted differently — more is better,
+only the word changes, which is why admin's picker had always lumped them
+together as one option. But the member's card then printed "42 rounds" on a max
+push-ups test. Split, so the card can be honest.
+
+**`weight` is in the server's check constraint and is not offered.** Three
+reasons, the second being the real one:
+
+- It is the wrong shape: every other type scores a whole workout, weight scores
+  one lift.
+- **It already exists.** Personal Bests track weight per exercise, and Chris
+  decided on 2026-09-04 that *"this program isn't necessarily about breaking
+  PRs... that shouldn't be the goal of each workout"* — which is why they are
+  member-curated instead of a wall of numbers. A weight benchmark is a 1RM
+  test, which is a PR with a schedule on it, and it would put the same number
+  twice on one page, one of them deliberately quiet.
+- It forces the unit decision the player has avoided: the field just says
+  "Weight used", and only the health profile says lbs.
+
+If a strength re-test is ever wanted, it leans on Personal Bests. It is not a
+fourth score type.
+
+**A bug this nearly caused:** `best` was computed as `scoreType === "rounds" ?
+max : min`. Adding reps would have quietly taken the MINIMUM of a reps
+benchmark. Direction now comes from `benchmarkLowerIsBetter()`, which asks the
+question that actually decides it, and only `time` answers yes.
+
+Score type is also editable now. It wasn't, so a benchmark created with the
+wrong one could only be fixed by removing it — which untagged its workouts and,
+once results live on the server, would have taken every member's history.
+
+### The AMRAP counter counted, then asked again
+
+The player tallies rounds behind the "+ Add Round" button for the whole block.
+The benchmark prompt then **blanked the field** and asked the member to retype
+it from memory — on a benchmark AMRAP, the one number the entire test is about.
+It is prefilled now, and still editable, because a miscount is the member's to
+correct.
+
+Only prefilled when the workout has exactly ONE amrap block. With two, "the"
+round count is ambiguous, and a guess sitting in the box is worse than an empty
+one.
+
+**And the counter was per-session, not per-block.** `amrapRounds` was reset in
+`start()` and nowhere else, so a workout with two AMRAP blocks carried the first
+block's count into the second and kept adding. No workout has ever had two, so
+it was latent — but it is a count, and a count that silently belongs to the
+wrong block is exactly the kind of thing nobody notices until a benchmark
+depends on it. Now `amrapRoundsByBlock`, keyed on `blockIndex`, with +1 and −1
+both routed through `bumpRounds()` so the stored number and the number on
+screen cannot disagree. An in-flight resume record from the old shape is mapped
+onto its only AMRAP block.
+
+### Deleting a benchmark keeps the results
+
+Chris: *"Keep the workout data. only thing that gets deleted should be the view
+of that specific benchmark from the progress page, and likely replaced by
+another one."*
+
+`benchmark_results.benchmark_id` was `on delete cascade`, so removing a
+benchmark in admin would have wiped every member's history for it — and admin's
+own warning said members keep their results, which was true only by accident,
+because admin never touched the server table.
+
+`supabase/22-benchmarks.sql` changes it to ON DELETE SET NULL and copies the
+benchmark's **name** onto the result at save time, so a result can still say
+what it was a result for. Same decision, same shape, as
+`completions.workout_id`.
+
+### The empty state exists because of a colour decision
+
+A program with no benchmarks rendered an empty blue card: a title and nothing
+under it. Hiding the card is not the answer either — it is the blue one Chris
+deliberately put between the two white ones on 2026-10-18 ("the card that can
+take a colour"), and removing it leaves two plain cards butted together, which
+is the exact problem that placement solved. So: an empty state inside the card.
+
+### For the trial
+
+Burn Club Test gets **one** benchmark, 500m Sprint, scored by time and
+self-logged — the example Chris named himself. Nothing in the program is tagged
+as a benchmark, so the retest path is not exercised by the trial.
+
+**Still open:** which Burn Club Test circuit to tag, and what to call it, if
+Chris wants testers to try the retest path too. That is Kelly's content call.
+Tagging it is `isBenchmark: true` plus a `benchmarkId` on the circuit in
+data.js, an entry in `PROGRAM_BENCHMARKS`, and a row in `benchmarks`.
+
 ## Settled: programmes are hand-built on purpose — do not "fix" this
 
 I raised the absence of a "duplicate programme" feature on 2026-10-14 as a
@@ -1719,7 +1862,12 @@ restored on load, and `saveGroup` / `deleteGroup` / `saveChallenge` /
       content isn't written.
 - [ ] **Member import.** There's a documented CSV template and no importer.
       Members are added one at a time through a modal today.
-- [ ] **Benchmarks — Chris wants a bigger conversation than the bug**
+- [x] **Benchmarks — answered and built 2026-10-21** (see the benchmarks
+      section). Real members no longer inherit the demo three, results survive
+      a deleted benchmark, and a benchmark with no workout can be self-tested.
+      What is left is content: whether a Burn Club Test circuit gets tagged so
+      testers can try the retest path. Original note below.
+- [ ] ~~**Benchmarks — Chris wants a bigger conversation than the bug**~~
       (2026-10-20). Found while migrating Burn Club Test, and flagged as a
       decision rather than a fix. Full detail in the migration section; the
       short version is two separate problems that happen to show up as one

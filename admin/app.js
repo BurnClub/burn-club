@@ -2236,7 +2236,38 @@ function availabilityCellHtml(circuit) {
 // drove the builder's dropdown while a second copy in APP_SETTINGS drove the
 // member app, so renaming one didn't rename the other. The program owns them
 // now, and the member app reads them over the bridge.
-const BENCHMARK_SCORE_LABELS = { rounds: "Rounds / reps — more is better", time: "Time — faster is better" };
+// `reps` split out from `rounds` on 2026-10-21. They are the same number
+// counted differently — this label used to say "Rounds / reps" because they
+// were one option — but the member's card printed "42 rounds" on a max
+// push-ups test, which is just wrong. Same maths, different word.
+//
+// `weight` exists in the server's check constraint and is deliberately not
+// offered: a weight benchmark is a 1RM test, which is a Personal Best with a
+// date on it, and PRs are member-curated by design. See the note above
+// benchmarkLowerIsBetter in the member app.
+const BENCHMARK_SCORE_LABELS = {
+  rounds: "Rounds — more is better",
+  reps: "Reps — more is better",
+  time: "Time — faster is better",
+};
+
+const BENCHMARK_SCORE_ORDER = ["rounds", "reps", "time"];
+
+// A numbered prompt rather than a modal, to match the name/subtitle prompts
+// either side of it — a modal for one field of three would be the odd one
+// out. Returns null if cancelled, so a cancel part-way through an edit leaves
+// the benchmark alone.
+function askBenchmarkScoreType(current) {
+  const menu = BENCHMARK_SCORE_ORDER.map((t, i) => `${i + 1}. ${BENCHMARK_SCORE_LABELS[t]}`).join("\n");
+  const currentLine = current ? `\n\nCurrently: ${BENCHMARK_SCORE_LABELS[current]}` : "";
+  while (true) {
+    const answer = prompt(`How is this benchmark scored?\n\n${menu}${currentLine}\n\nEnter 1, 2 or 3:`,
+      current ? String(BENCHMARK_SCORE_ORDER.indexOf(current) + 1) : "1");
+    if (answer === null) return null;
+    const pick = BENCHMARK_SCORE_ORDER[Number(answer.trim()) - 1];
+    if (pick) return pick;
+  }
+}
 
 function renderProgramBenchmarks(programId) {
   const section = document.getElementById("program-benchmarks");
@@ -2276,7 +2307,8 @@ function addBenchmarkToProgram(programId) {
   const name = prompt("Benchmark name (e.g. The Gauntlet)");
   if (!name || !name.trim()) return;
   const subtitle = prompt("Short description (e.g. 12-Minute AMRAP)") || "";
-  const scoreType = confirm("OK = scored by rounds or reps (more is better)\nCancel = scored by time (faster is better)") ? "rounds" : "time";
+  const scoreType = askBenchmarkScoreType(null);
+  if (scoreType === null) return;
   program.benchmarks = program.benchmarks || [];
   program.benchmarks.push({
     id: slugify("benchmark", name.trim()) + "-" + Date.now(),
@@ -2298,6 +2330,12 @@ function editProgramBenchmark(programId, benchmarkId) {
   if (name.trim()) b.name = name.trim();
   const subtitle = prompt("Short description", b.subtitle);
   if (subtitle !== null) b.subtitle = subtitle.trim();
+  // Editable as of 2026-10-21. It wasn't before, so a benchmark created with
+  // the wrong score type could only be fixed by removing it — which
+  // untagged its workouts and, once results live on the server, would have
+  // taken every member's history with it.
+  const scoreType = askBenchmarkScoreType(b.scoreType);
+  if (scoreType !== null) b.scoreType = scoreType;
   syncBenchmarksToMemberApp();
   renderScopeDetail();
 }

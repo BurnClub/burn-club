@@ -2271,28 +2271,50 @@ function buildSeedCompletionsForMember(member) {
 // scoreType: "rounds" (AMRAP-style — how many rounds in a fixed time,
 // higher is better) or "time" (for-time — finish a fixed amount of work as
 // fast as possible, lower is better, stored in seconds).
-// The member's own program's benchmarks, set in Admin on the program itself.
-// Seeded so the demo has something before anything is bridged; a real member's
-// list arrives with their program.
-const BENCHMARKS_SEED = [
-  { id: "benchmark-a", name: "The Gauntlet", subtitle: "12-Minute AMRAP", scoreType: "rounds" },
-  { id: "benchmark-b", name: "Sprint 500m", subtitle: "For Time", scoreType: "time" },
-  { id: "benchmark-c", name: "Endurance Test", subtitle: "15-Minute AMRAP", scoreType: "rounds" },
-];
+// Benchmarks per program.
+//
+// BUNDLED HERE as of 2026-10-21, which is a correction. Benchmarks used to
+// reach a member only through admin's localStorage bridge, with a hardcoded
+// demo list as the fallback. That bridge is written by admin in Chris's
+// browser and never reaches a member's phone — so every real member saw the
+// fallback: three benchmarks that were not theirs, on whatever program they
+// were on. Burn Club Test, which has none, would have shown all three.
+//
+// Benchmarks are CONTENT, so they now arrive the way content already arrives:
+// bundled, costing a push to change, exactly like CIRCUITS. When admin content
+// moves to the server this moves with it — see "The next real piece of work"
+// in NOTES.md.
+//
+// Keyed by programId. A program that is absent has no benchmarks, and that is
+// a real answer rather than a gap to fill with someone else's.
+const PROGRAM_BENCHMARKS = {
+  "burn-club": [
+    { id: "benchmark-a", name: "The Gauntlet", subtitle: "12-Minute AMRAP", scoreType: "rounds" },
+    { id: "benchmark-b", name: "Sprint 500m", subtitle: "For Time", scoreType: "time" },
+    { id: "benchmark-c", name: "Endurance Test", subtitle: "15-Minute AMRAP", scoreType: "rounds" },
+  ],
+  // The trial program. One self-logged benchmark so testers can try the flow
+  // Chris described (2026-10-21): tap the card, type the time, done — no
+  // workout involved, because a 500m sprint is not something the app can pace.
+  "burn-club-test-1791470187441": [
+    { id: "bct-500m-sprint", name: "500m Sprint", subtitle: "For Time", scoreType: "time" },
+  ],
+};
 
-let BENCHMARKS = [...BENCHMARKS_SEED];
+let BENCHMARKS = [];
 
 function loadProgramBenchmarks() {
+  BENCHMARKS = (PROGRAM_BENCHMARKS[CURRENT_MEMBER.programId] || []).map((b) => ({ ...b }));
   try {
     const stored = JSON.parse(localStorage.getItem(LIVE_BENCHMARKS_KEY) || "null");
     if (!Array.isArray(stored)) return;
     const mine = stored.find((entry) => entry.programId === CURRENT_MEMBER.programId);
-    // Only replaced on a real match. A member whose program genuinely has no
-    // benchmarks should see none, but a bridge that was never written
-    // shouldn't wipe the seeded demo list.
+    // The bridge still wins where it exists, so editing a program's benchmarks
+    // in admin shows them in the member app on the same machine without a
+    // push. It can only ever override a program it actually names.
     if (mine && Array.isArray(mine.benchmarks)) BENCHMARKS = mine.benchmarks;
   } catch (e) {
-    // Keep the seed rather than blanking the section.
+    // Keep whatever was bundled rather than blanking the section.
   }
 }
 

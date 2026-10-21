@@ -2113,12 +2113,38 @@ function benchmarkResults(benchmarkId) {
 }
 
 // "rounds" -> "8 rounds"; "time" (seconds) -> "3:57.5"
+// Three score types, two shapes (2026-10-21). `rounds` and `reps` are the same
+// number counted differently — more is better and only the word changes, which
+// is why admin's picker has always lumped them together ("rounds or reps (more
+// is better)"). `time` is the odd one: fewer seconds is better, and it is
+// entered and shown as min:sec.
+//
+// `weight` is in the server's check constraint but deliberately NOT offered
+// (2026-10-21). A weight benchmark is a 1RM test, which is a Personal Best
+// with a date on it — and Chris already decided PRs are member-curated rather
+// than a wall of numbers. It also scores one lift where every other type
+// scores a whole workout, and it would force the unit question the player has
+// so far avoided (the field just says "Weight used").
+function benchmarkLowerIsBetter(benchmark) {
+  return benchmark.scoreType === "time";
+}
+
+// The unit word, singular. Anything that isn't `time` or `reps` counts rounds,
+// so an unrecognised type reads as a count rather than being mangled into a
+// clock — which is the way round that fails safely.
+function benchmarkUnit(benchmark) {
+  return benchmark.scoreType === "reps" ? "rep" : "round";
+}
+
 function formatBenchmarkScore(benchmark, score) {
-  if (benchmark.scoreType === "rounds") return `${score} round${score === 1 ? "" : "s"}`;
-  const mins = Math.floor(score / 60);
-  const secs = score - mins * 60;
-  const secsStr = Number.isInteger(secs) ? String(secs).padStart(2, "0") : secs.toFixed(1).padStart(4, "0");
-  return `${mins}:${secsStr}`;
+  if (benchmark.scoreType === "time") {
+    const mins = Math.floor(score / 60);
+    const secs = score - mins * 60;
+    const secsStr = Number.isInteger(secs) ? String(secs).padStart(2, "0") : secs.toFixed(1).padStart(4, "0");
+    return `${mins}:${secsStr}`;
+  }
+  const unit = benchmarkUnit(benchmark);
+  return `${score} ${unit}${score === 1 ? "" : "s"}`;
 }
 
 // Improvement since the first attempt: more rounds is better, less time is
@@ -2128,32 +2154,41 @@ function formatBenchmarkScore(benchmark, score) {
 function formatBenchmarkDelta(benchmark, beginning, best) {
   const delta = best - beginning;
   if (delta === 0) return null;
-  if (benchmark.scoreType === "rounds") {
-    return `+${delta} round${delta === 1 ? "" : "s"}`;
-  }
-  return `−${Math.abs(delta)} sec`;
+  if (benchmarkLowerIsBetter(benchmark)) return `−${Math.abs(delta)} sec`;
+  const unit = benchmarkUnit(benchmark);
+  return `+${delta} ${unit}${delta === 1 ? "" : "s"}`;
 }
 
 function renderBenchmarkCard(benchmark) {
   const results = benchmarkResults(benchmark.id);
+  // A benchmark backed by a workout retests THROUGH that workout; one that
+  // isn't is a number the member types in. The card says which, so tapping it
+  // is never a surprise.
+  const action = circuitForBenchmark(benchmark.id) ? "Retest" : "Log result";
   const nameBlock = `
     <p class="benchmark-name">${esc(benchmark.name)}</p>
     <p class="benchmark-subtitle">${esc(benchmark.subtitle)}</p>
   `;
+  const actionLine = `<span class="benchmark-action">${action} ›</span>`;
 
   if (results.length === 0) {
     return `
-      <div class="benchmark-card">
+      <button class="benchmark-card" type="button" data-benchmark-id="${esc(benchmark.id)}">
         ${nameBlock}
         <div class="benchmark-bottom">
           <span class="benchmark-baseline-tag">Not yet tested</span>
+          ${actionLine}
         </div>
-      </div>
+      </button>
     `;
   }
 
   const beginning = results[0].score;
-  const best = benchmark.scoreType === "rounds" ? Math.max(...results.map((r) => r.score)) : Math.min(...results.map((r) => r.score));
+  const scores = results.map((r) => r.score);
+  // Direction is decided by "is lower better", not by naming one type that
+  // goes up: the old test was `=== "rounds" ? max : min`, which would have
+  // quietly taken the MINIMUM of a reps benchmark.
+  const best = benchmarkLowerIsBetter(benchmark) ? Math.min(...scores) : Math.max(...scores);
   const delta = formatBenchmarkDelta(benchmark, beginning, best);
 
   const footer =
@@ -2164,24 +2199,164 @@ function renderBenchmarkCard(benchmark) {
       : `<span class="benchmark-baseline-tag">No change yet — keep retesting</span>`;
 
   return `
-    <div class="benchmark-card">
+    <button class="benchmark-card" type="button" data-benchmark-id="${esc(benchmark.id)}">
       ${nameBlock}
       <div class="benchmark-bottom">
         <span class="benchmark-best">${formatBenchmarkScore(benchmark, best)}</span>
         ${footer}
+        ${actionLine}
       </div>
-    </div>
+    </button>
   `;
 }
 
 function renderBenchmarkList() {
-  document.getElementById("benchmark-list").innerHTML = BENCHMARKS.map(renderBenchmarkCard).join("");
+  const list = document.getElementById("benchmark-list");
+  // A program with no benchmarks used to render an empty blue card with a
+  // title and nothing under it. Hiding the whole card isn't the answer either
+  // — it's the blue one Chris deliberately put between the two white ones
+  // (2026-10-18, "the card that can take a colour"), so removing it leaves two
+  // plain cards butted together. An empty state keeps the page's rhythm.
+  if (!BENCHMARKS.length) {
+    list.classList.add("is-empty");
+    list.innerHTML = `<p class="benchmark-empty">No benchmarks on your program yet — your coach sets these up as repeatable tests, so you can see progress over months rather than workouts.</p>`;
+    return;
+  }
+  list.classList.remove("is-empty");
+  list.innerHTML = BENCHMARKS.map(renderBenchmarkCard).join("");
+  list.querySelectorAll("[data-benchmark-id]").forEach((btn) => {
+    btn.addEventListener("click", () => openBenchmarkAction(btn.dataset.benchmarkId));
+  });
+}
+
+// ---- Self-testing a benchmark (2026-10-21) --------------------------------
+// Until now a benchmark could only be scored by finishing a workout tagged
+// with it, which left the useful ones unreachable: a 500m sprint or a mile run
+// isn't a workout the app can pace, so there was no way to record one at all.
+
+// The workout that IS this benchmark, within the member's own program. Scoped
+// to the program deliberately — two programs can tag their own workouts
+// against benchmark ids of their own, and a member should only ever be sent to
+// theirs.
+function circuitForBenchmark(benchmarkId) {
+  return CIRCUITS.find(
+    (c) => c.isBenchmark && c.benchmarkId === benchmarkId && c.programId === CURRENT_MEMBER.programId
+  ) || null;
+}
+
+let benchmarkLogId = null;
+let benchmarkRetestCircuitId = null;
+
+function openBenchmarkAction(benchmarkId) {
+  const benchmark = BENCHMARKS.find((b) => b.id === benchmarkId);
+  if (!benchmark) return;
+  const circuit = circuitForBenchmark(benchmarkId);
+  benchmarkLogId = benchmarkId;
+  benchmarkRetestCircuitId = circuit ? circuit.id : null;
+
+  document.getElementById("benchmark-log-title").textContent = benchmark.name;
+  const fields = document.getElementById("benchmark-log-fields");
+  const retest = document.getElementById("benchmark-retest-actions");
+
+  if (circuit) {
+    // No number to type: the workout's own completion screen asks for the
+    // score, which keeps one prompt rather than two that could disagree.
+    document.getElementById("benchmark-log-sub").textContent =
+      `Retesting runs the full workout — ${circuit.title}. You'll be asked for your score at the end.`;
+    fields.style.display = "none";
+    retest.style.display = "flex";
+  } else {
+    document.getElementById("benchmark-log-sub").textContent =
+      `${benchmark.subtitle} — test it whenever you like and record what you got.`;
+    fields.style.display = "";
+    retest.style.display = "none";
+
+    const countBased = !benchmarkLowerIsBetter(benchmark);
+    document.getElementById("benchmark-log-count-field").style.display = countBased ? "" : "none";
+    document.getElementById("benchmark-log-time-field").style.display = countBased ? "none" : "";
+    document.getElementById("benchmark-log-count-label").textContent =
+      benchmark.scoreType === "reps" ? "Reps completed" : "Rounds completed";
+    document.getElementById("benchmark-log-count").value = "";
+    document.getElementById("benchmark-log-min").value = "";
+    document.getElementById("benchmark-log-sec").value = "";
+  }
+
+  document.getElementById("benchmark-log-overlay").classList.add("visible");
+}
+
+function closeBenchmarkLog() {
+  document.getElementById("benchmark-log-overlay").classList.remove("visible");
+  benchmarkLogId = null;
+  benchmarkRetestCircuitId = null;
+}
+
+// Straight to the workout's detail screen rather than into the player: that
+// screen is where Start lives, and it shows the blocks first, which is what
+// Chris asked for ("pop up to the actual workout where they can press start
+// and go").
+function startBenchmarkRetest() {
+  const id = benchmarkRetestCircuitId;
+  closeBenchmarkLog();
+  if (id) openCircuit(id);
+}
+
+function saveBenchmarkLog() {
+  const benchmark = BENCHMARKS.find((b) => b.id === benchmarkLogId);
+  if (!benchmark) return;
+
+  let score;
+  if (!benchmarkLowerIsBetter(benchmark)) {
+    const input = document.getElementById("benchmark-log-count");
+    if (input.value.trim() === "") return;
+    score = Number(input.value);
+    if (isNaN(score) || score < 0) return;
+  } else {
+    const minInput = document.getElementById("benchmark-log-min");
+    const secInput = document.getElementById("benchmark-log-sec");
+    if (minInput.value.trim() === "" && secInput.value.trim() === "") return;
+    score = (Number(minInput.value) || 0) * 60 + (Number(secInput.value) || 0);
+    if (score <= 0) return;
+  }
+
+  // Same shape and same id prefix as a score saved from a finished workout:
+  // sync keys on `id` as client_id, so a self-logged result travels on the
+  // existing benchmarkResults store with no new plumbing.
+  BENCHMARK_RESULTS.push({
+    id: `br-${Date.now()}`,
+    benchmarkId: benchmark.id,
+    benchmarkName: benchmark.name,
+    date: dateKey(new Date()),
+    score,
+  });
+  saveBenchmarkResults();
+  closeBenchmarkLog();
+  renderBenchmarkList();
 }
 
 // Shows/configures the post-workout score prompt when the just-finished
 // circuit is flagged as a benchmark (isBenchmark/benchmarkId, set by admin's
 // workout builder) — hidden entirely for regular workouts.
-function setupBenchmarkScoreSection(circuit) {
+// The round total the player already counted (2026-10-21).
+//
+// The +1 button kept a running tally on screen for the whole block and then
+// the score prompt blanked the field and asked for it again from memory — on
+// a benchmark AMRAP, the one number the whole test is about. It is prefilled
+// here and still editable, because a miscount is the member's to correct.
+//
+// Only prefilled when the workout has exactly ONE AMRAP block: with two,
+// "the" round count is ambiguous, and a guess sitting in the box is worse
+// than an empty one.
+function countedRoundsFor(circuit, roundsByBlock) {
+  if (!roundsByBlock) return null;
+  const amrapIndexes = (circuit.blocks || [])
+    .map((b, i) => (b.type === "amrap" ? i : -1))
+    .filter((i) => i >= 0);
+  if (amrapIndexes.length !== 1) return null;
+  const counted = roundsByBlock[amrapIndexes[0]];
+  return counted ? counted : null;
+}
+
+function setupBenchmarkScoreSection(circuit, roundsByBlock) {
   const section = document.getElementById("benchmark-score-section");
   currentBenchmarkId = circuit.isBenchmark ? circuit.benchmarkId : null;
   const benchmark = currentBenchmarkId ? BENCHMARKS.find((b) => b.id === currentBenchmarkId) : null;
@@ -2194,16 +2369,23 @@ function setupBenchmarkScoreSection(circuit) {
   section.style.display = "";
   document.getElementById("benchmark-score-saved").style.display = "none";
   document.getElementById("benchmark-score-save-btn").style.display = "";
-  document.getElementById("benchmark-score-rounds").value = "";
   document.getElementById("benchmark-score-min").value = "";
   document.getElementById("benchmark-score-sec").value = "";
 
-  const isRounds = benchmark.scoreType === "rounds";
-  document.getElementById("benchmark-score-label").textContent = isRounds
-    ? `${benchmark.name} — how many rounds did you complete?`
+  // rounds and reps share one integer field; only `time` wants min:sec.
+  const countBased = !benchmarkLowerIsBetter(benchmark);
+  const counted = countBased ? countedRoundsFor(circuit, roundsByBlock) : null;
+  document.getElementById("benchmark-score-rounds").value = counted != null ? counted : "";
+
+  const askCount = benchmark.scoreType === "reps"
+    ? `${benchmark.name} — how many reps did you complete?`
+    : `${benchmark.name} — how many rounds did you complete?`;
+  document.getElementById("benchmark-score-label").textContent = countBased
+    ? askCount
     : `${benchmark.name} — what was your finish time?`;
-  document.getElementById("benchmark-score-rounds-row").style.display = isRounds ? "" : "none";
-  document.getElementById("benchmark-score-time-row").style.display = isRounds ? "none" : "";
+  document.getElementById("benchmark-score-rounds").placeholder = benchmark.scoreType === "reps" ? "Reps" : "Rounds";
+  document.getElementById("benchmark-score-rounds-row").style.display = countBased ? "" : "none";
+  document.getElementById("benchmark-score-time-row").style.display = countBased ? "none" : "";
 }
 
 function saveBenchmarkScore() {
@@ -2212,7 +2394,7 @@ function saveBenchmarkScore() {
   if (!benchmark) return;
 
   let score;
-  if (benchmark.scoreType === "rounds") {
+  if (!benchmarkLowerIsBetter(benchmark)) {
     const input = document.getElementById("benchmark-score-rounds");
     if (input.value.trim() === "") return;
     score = Number(input.value);
@@ -2228,6 +2410,11 @@ function saveBenchmarkScore() {
   BENCHMARK_RESULTS.push({
     id: `br-${Date.now()}`,
     benchmarkId: currentBenchmarkId,
+    // Copied, not looked up (2026-10-21). Chris: deleting a benchmark should
+    // take away the card, not the history. A result whose benchmark is gone
+    // still has to be able to say what it was a result FOR — same reason
+    // completions copy the workout title.
+    benchmarkName: benchmark.name,
     date: dateKey(new Date()),
     score,
   });
@@ -4839,7 +5026,7 @@ const Player = {
   heartbeatId: null,
   intervalId: null,
   paused: false,
-  amrapRounds: 0,
+  amrapRoundsByBlock: {},
   startedAt: null,
   setsChecked: [],
   notesShownFor: new Set(),
@@ -4853,7 +5040,7 @@ const Player = {
     this.circuit = circuit;
     this.phases = buildPhaseQueue(circuit);
     this.index = 0;
-    this.amrapRounds = 0;
+    this.amrapRoundsByBlock = {};
     this.startedAt = Date.now();
     this.deadlineAt = null;
     this.lastShownRemaining = null;
@@ -4910,7 +5097,7 @@ const Player = {
       awaitingStart,
       startedAt: this.startedAt,
       lastSeenAt: Date.now(),
-      amrapRounds: this.amrapRounds,
+      amrapRoundsByBlock: this.amrapRoundsByBlock,
       sessionWeights: this.sessionWeights,
       setWeights: this.setWeights,
       setsChecked: this.setsChecked,
@@ -4942,7 +5129,20 @@ const Player = {
     this.circuit = circuit;
     this.phases = buildPhaseQueue(circuit);
     this.index = Math.min(rec.index, this.phases.length - 1);
-    this.amrapRounds = rec.amrapRounds || 0;
+    // Was a single `amrapRounds` number until 2026-10-21. It was reset in
+    // start() and nowhere else, so a workout with two AMRAP blocks carried the
+    // first block's count into the second and kept adding. No workout has ever
+    // had two, so the bug was latent — but it is a count, and a count that
+    // silently belongs to the wrong block is the kind of thing nobody notices
+    // until a benchmark depends on it.
+    //
+    // An in-flight record from the old shape has exactly one AMRAP to belong
+    // to, by the same argument, so it is mapped onto that block.
+    this.amrapRoundsByBlock = rec.amrapRoundsByBlock || {};
+    if (!rec.amrapRoundsByBlock && rec.amrapRounds) {
+      const onlyAmrap = this.phases.find((ph) => ph.kind === "amrap");
+      if (onlyAmrap) this.amrapRoundsByBlock[onlyAmrap.blockIndex] = rec.amrapRounds;
+    }
     this.startedAt = rec.startedAt || Date.now();
     this.sessionWeights = rec.sessionWeights || {};
     this.setWeights = rec.setWeights || {};
@@ -5159,7 +5359,7 @@ const Player = {
       // fields) — this is a completion-screen-only change, not a data change.
       statsEl.innerHTML = `<div class="today-stat"><div><p class="today-stat-num">${formatClock(elapsedSec)}</p><p class="today-stat-label">Total Time</p></div></div>`;
     }
-    setupBenchmarkScoreSection(this.circuit);
+    setupBenchmarkScoreSection(this.circuit, this.amrapRoundsByBlock);
     const rpeSlider = document.getElementById("rpe-slider");
     rpeSlider.value = entry.rpe;
     document.getElementById("rpe-value").textContent = entry.rpe;
@@ -5210,6 +5410,21 @@ const Player = {
   // True only for the first phase of a block (including the very first phase of the
   // whole workout) — rounds/rest within a block still auto-chain hands-free once
   // that block has been started.
+  roundsForBlock(blockIndex) {
+    return this.amrapRoundsByBlock[blockIndex] || 0;
+  },
+
+  // +1 / −1 both come through here so the stored count and the number on
+  // screen can never disagree, and so neither can touch a phase that isn't
+  // counting rounds.
+  bumpRounds(delta) {
+    const phase = this.currentPhase();
+    if (!phase || phase.kind !== "amrap") return;
+    const next = Math.max(0, this.roundsForBlock(phase.blockIndex) + delta);
+    this.amrapRoundsByBlock[phase.blockIndex] = next;
+    document.getElementById("round-count").textContent = next;
+  },
+
   isNewBlockStart() {
     if (this.index === 0) return true;
     return this.phases[this.index - 1].blockIndex !== this.currentPhase().blockIndex;
@@ -5912,7 +6127,7 @@ const Player = {
       });
       // Visibility of player-round-counter is handled by awaitStart()/beginPhaseTimer()
       // below — it should only appear once the clock is actually running.
-      document.getElementById("round-count").textContent = this.amrapRounds;
+      document.getElementById("round-count").textContent = this.roundsForBlock(phase.blockIndex);
       this.remaining = phase.duration;
       this.updateClock();
       if (this.isNewBlockStart() || this.steppingBack) this.awaitStart(); else this.beginPhaseTimer();
@@ -7855,13 +8070,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (wasLastSet) Player.advance();
   });
   document.getElementById("round-plus-btn").addEventListener("click", () => {
-    Player.amrapRounds++;
-    document.getElementById("round-count").textContent = Player.amrapRounds;
+    Player.bumpRounds(1);
     Player.persist();
   });
+  document.getElementById("benchmark-log-close-btn").addEventListener("click", closeBenchmarkLog);
+  document.getElementById("benchmark-log-save-btn").addEventListener("click", saveBenchmarkLog);
+  document.getElementById("benchmark-retest-cancel-btn").addEventListener("click", closeBenchmarkLog);
+  document.getElementById("benchmark-retest-go-btn").addEventListener("click", startBenchmarkRetest);
   document.getElementById("round-minus-btn").addEventListener("click", () => {
-    Player.amrapRounds = Math.max(0, Player.amrapRounds - 1);
-    document.getElementById("round-count").textContent = Player.amrapRounds;
+    Player.bumpRounds(-1);
     Player.persist();
   });
 
