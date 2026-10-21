@@ -3314,6 +3314,33 @@ function speakText(text, button) {
   window.speechSynthesis.speak(utterance);
 }
 
+// The technique text, plus the FEEL CUE under it when there is one.
+//
+// Chris, 2026-10-19: "on exercises that are perhaps a little more complex, I
+// like to add an additional indicator ... on a db row, I would say it should
+// feel like you are trying to lift the weight to put it in your pocket. I
+// know this won't apply for all of them, or even most of them, but I have
+// gotten great feedback on it."
+//
+// A separate field rather than more words on the end of `technique`, because
+// the two answer different questions — technique is what to DO, the cue is
+// how you know it is working — and because most exercises will never have
+// one. Bolting it onto the sentence would make every technique note longer
+// to serve the handful that need it.
+//
+// Rendered inside the same element the read-aloud button reads from, so the
+// cue is spoken along with the mechanics rather than being the one part a
+// member listening instead of reading never hears.
+function techniqueBodyHtml(ex) {
+  const parts = [];
+  if (ex.technique) parts.push(esc(ex.technique));
+  // No invented lead-in. Chris's example is already a whole sentence in his
+  // own voice — "it should feel like..." — and prefixing it with a label of
+  // mine would put words in a coach's mouth.
+  if (ex.feelCue) parts.push(`<span class="technique-feel">${esc(ex.feelCue)}</span>`);
+  return parts.join("");
+}
+
 function setPlayerExerciseTechnique(exerciseName) {
   const row = document.getElementById("player-technique-row");
   const toggle = document.getElementById("player-technique-toggle");
@@ -3324,9 +3351,11 @@ function setPlayerExerciseTechnique(exerciseName) {
   // A cue for the previous exercise must not carry on over this one.
   stopSpeaking();
   const ex = exerciseName ? EXERCISE_LIBRARY.find((x) => x.name === exerciseName) : null;
-  if (ex && ex.technique) {
+  // Either one is enough to show the row. A complex lift might carry only a
+  // feel cue, and a simple one only the mechanics.
+  if (ex && (ex.technique || ex.feelCue)) {
     row.style.display = "flex";
-    body.textContent = ex.technique;
+    body.innerHTML = techniqueBodyHtml(ex);
     speak.style.display = canSpeak() ? "flex" : "none";
   } else {
     row.style.display = "none";
@@ -4392,7 +4421,7 @@ function renderNextUp(phases, index) {
 function openExerciseVideo(name) {
   document.getElementById("exercise-video-name").textContent = name;
   const ex = EXERCISE_LIBRARY.find((x) => x.name === name);
-  document.getElementById("exercise-video-technique").textContent = ex ? ex.technique : "";
+  document.getElementById("exercise-video-technique").innerHTML = ex ? techniqueBodyHtml(ex) : "";
   // Show the overlay first: a video inside a hidden element won't start
   // playing, and it would sit there on frame one until the member tapped it.
   document.getElementById("exercise-video-overlay").classList.add("visible");

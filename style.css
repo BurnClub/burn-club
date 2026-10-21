@@ -4865,3 +4865,19 @@ h1, h2, h3 {
   letter-spacing: 1px;
   color: var(--text-muted);
 }
+
+/* ---------- THE FEEL CUE (2026-10-19) ----------
+   A coach's "you'll know it's right when it feels like..." line, under the
+   mechanics. Its own line and its own voice: italic and a touch quieter, so
+   it reads as an aside rather than a second instruction to follow.
+
+   Only a minority of exercises will ever carry one — it exists for the lifts
+   complex enough that knowing WHAT to do is not the same as knowing whether
+   you are doing it. */
+.technique-feel {
+  display: block;
+  margin-top: 8px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--text-muted);
+}

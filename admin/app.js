@@ -4170,6 +4170,7 @@ function openExerciseModal() {
   document.getElementById("exercise-modal-name").value = "";
   document.getElementById("exercise-modal-video").value = "";
   document.getElementById("exercise-modal-technique").value = "";
+  document.getElementById("exercise-modal-feel-cue").value = "";
   renderTagCheckboxes("exercise-modal-bodyparts", BODY_PART_TAGS, []);
   renderModalityRadios("Strength");
   renderTagCheckboxes("exercise-modal-equipment", EQUIPMENT_TAGS, []);
@@ -4207,6 +4208,7 @@ function openEditExerciseModal(exerciseId, opts) {
   document.getElementById("exercise-modal-name").value = ex.name;
   document.getElementById("exercise-modal-video").value = ex.videoUrl || "";
   document.getElementById("exercise-modal-technique").value = ex.technique || "";
+  document.getElementById("exercise-modal-feel-cue").value = ex.feelCue || "";
   renderTagCheckboxes("exercise-modal-bodyparts", BODY_PART_TAGS, ex.bodyParts);
   renderModalityRadios(ex.modality);
   renderTagCheckboxes("exercise-modal-equipment", EQUIPMENT_TAGS, ex.equipment);
@@ -4264,6 +4266,7 @@ function saveExercise() {
   }
   const videoUrl = document.getElementById("exercise-modal-video").value.trim();
   const technique = document.getElementById("exercise-modal-technique").value.trim();
+  const feelCue = document.getElementById("exercise-modal-feel-cue").value.trim();
   const bodyParts = Array.from(document.querySelectorAll("#exercise-modal-bodyparts input:checked")).map((i) => i.value);
   const modalityInput = document.querySelector("#exercise-modal-modality input:checked");
   const modality = modalityInput ? modalityInput.value : "Strength";
@@ -4273,10 +4276,10 @@ function saveExercise() {
   if (editingExerciseId) {
     const ex = EXERCISE_LIBRARY.find((x) => x.id === editingExerciseId);
     const previousName = ex.name;
-    Object.assign(ex, { name, videoUrl, technique, bodyParts, modality, equipment, trackWeight });
+    Object.assign(ex, { name, videoUrl, technique, feelCue, bodyParts, modality, equipment, trackWeight });
     if (previousName !== name) renameExerciseInWorkouts(previousName, name);
   } else {
-    EXERCISE_LIBRARY.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now(), name, videoUrl, technique, bodyParts, modality, equipment, trackWeight });
+    EXERCISE_LIBRARY.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now(), name, videoUrl, technique, feelCue, bodyParts, modality, equipment, trackWeight });
   }
   saveExerciseLibrary();
   const wasFromBuilder = !!exerciseModalReturnsTo;
@@ -4326,7 +4329,7 @@ function loadExerciseLibrary() {
 //     field, so a partial sheet silently wiped everything it didn't carry.
 //     That's exactly the shape of the bulk technique upload Chris is doing
 //     once the technique column is finished.
-const EXERCISE_UPLOAD_HEADERS = ["Id", "Name", "Body Parts", "Equipment", "Type", "Technique", "Track Weight", "Video URL"];
+const EXERCISE_UPLOAD_HEADERS = ["Id", "Name", "Body Parts", "Equipment", "Type", "Technique", "Feel Cue", "Track Weight", "Video URL"];
 
 // header text -> field. Matched after lowercasing and stripping anything that
 // isn't a letter or digit, so "Body Parts", "body_parts" and "BodyParts" are
@@ -4345,6 +4348,13 @@ const EXERCISE_UPLOAD_FIELDS = {
   type: "modality",
   modality: "modality",
   technique: "technique",
+  // The "you'll know it's right when..." line (2026-10-19). Several spellings
+  // because a spreadsheet round-tripped through someone else's hands comes
+  // back with whichever one they typed.
+  feelcue: "feelCue",
+  feel: "feelCue",
+  feelslike: "feelCue",
+  shouldfeellike: "feelCue",
   trackweight: "trackWeight",
   videourl: "videoUrl",
   video: "videoUrl",
@@ -4390,7 +4400,7 @@ let exerciseUploadRows = []; // parsed + validated rows, held until Confirm Uplo
 let exerciseUploadFields = []; // which columns the uploaded file actually carried
 
 function downloadExerciseTemplate() {
-  const sampleRow = ["bulgarian-split-squats", "Bulgarian Split Squats", "Quads;Glutes", "Dumbbells", "Strength", "Rear foot elevated behind you, lower straight down until the front thigh is parallel to the floor.", "Yes", ""];
+  const sampleRow = ["bulgarian-split-squats", "Bulgarian Split Squats", "Quads;Glutes", "Dumbbells", "Strength", "Rear foot elevated behind you, lower straight down until the front thigh is parallel to the floor.", "It should feel like all the work is in the front leg, not the back one.", "Yes", ""];
   const csv = [EXERCISE_UPLOAD_HEADERS, sampleRow].map(csvEscapeRow).join("\r\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
@@ -4547,6 +4557,7 @@ function handleExerciseUploadFile(file) {
       }
 
       if (hasCol("technique")) parsed.technique = cellAt(cells, "technique");
+      if (hasCol("feelCue")) parsed.feelCue = cellAt(cells, "feelCue");
       if (hasCol("trackWeight")) parsed.trackWeight = parseBoolish(cellAt(cells, "trackWeight"));
       if (hasCol("videoUrl")) parsed.videoUrl = cellAt(cells, "videoUrl");
 

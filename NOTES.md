@@ -1120,6 +1120,93 @@ no exercise list, no "+ Add Exercise", no type dropdown, a static type label
 instead. **Any future block type that holds nothing goes in there, not into
 four separate conditions.**
 
+## Burn Club Test, migrated from the export (2026-10-20)
+
+Chris built the trial programme in admin and sent
+`burn-club-programs-2026-10-20.json`. Five workouts migrated into `data.js`:
+three circuits dated **Monday 2026-10-26**, plus October Warm Up and October
+Cool Down with no date, so they sit in the Stretch & Core library and are
+available from day one.
+
+The other two programmes in that export (30 Minute Burn Test, Pregnancy) and
+the Foundations: Week 1 orphan are **being deleted**, so nothing from them was
+migrated.
+
+### The export is missing two fields the member app cannot run without
+
+`meta` and `color` are not in the export, and both are load-bearing on the
+member side:
+
+- `parseInt(circuit.meta)` is where the duration badge comes from, and
+  `meta.split("·")[1]` is the focus line under the title.
+- `color-${c.color}` is a CSS class; without it a card renders unstyled.
+
+Admin does not store either one — it **derives** them at publish time from
+the blocks. So rather than inventing values, both were produced by running
+admin's own `estimateCircuitMinutes()` and `deriveWorkoutFocus()` against the
+exported blocks in the live admin page. Anything migrated from a future
+export has to do the same, or the numbers will not match what admin shows
+Chris.
+
+### What was checked before it went in
+
+- 6 programmes, 56 folders, 199 circuits, 688 exercises parsed.
+- All 29 exercise refs in the five workouts resolve to library ids.
+- Exercise library diffed against `data.js`: **identical**, 688/688, nothing
+  added, changed or removed. No exercise migration was needed.
+- Rest blocks carry their seconds through (90s and 120s).
+- `data.js` parses; `CIRCUITS` is 118.
+- Phase queues build for all five workouts.
+- Availability reads `scheduled (week of 2026-10-26)` for the three circuits
+  and `always` for the warm-up and cool-down.
+- With the clock faked to Mon 26 Oct, all three appear in This Week's
+  Workouts with the derived meta, and the two library pieces stay in Stretch
+  & Core. Before that date This Week's Workouts is correctly empty.
+
+### The id is deliberately ugly
+
+`burn-club-test-1791470187441` is the id admin generated and it was **not**
+tidied. It is the key the workouts in `data.js` reference and the key every
+member row will carry. Renaming it here would desync this from admin, which
+still holds the long id and would hand it back on the next export.
+
+### Rolling, so the date is the schedule
+
+`scheduleType` is `rolling`, so there is no `duration_weeks` and no
+`schedule_slots` — a rolling programme has no day-by-day template. Its
+workouts surface from `availableFrom`, which is the only reason the three
+circuits are dated to a Monday.
+
+### `supabase/21-burn-club-test.sql`
+
+One row in `programs`, for one reason: `members.program_id` is a foreign key,
+and without it the member modal refuses every assignment with "violates
+foreign key constraint members_program_id_fkey" — the error Chris hit on
+2026-10-13. The workouts themselves still live in the bundled `data.js`;
+this file is not content migration.
+
+### Open: Burn Club Test has no benchmarks, and testers will see three
+
+Found while checking this, **not introduced by it**. The programme carries no
+`benchmarks` array. Two things combine badly:
+
+- `syncBenchmarksToMemberApp()` filters to programmes that *have* benchmarks,
+  so Burn Club Test is never in the bridge payload.
+- `loadProgramBenchmarks()` only replaces `BENCHMARKS` on a real match, by
+  design — "a bridge that was never written shouldn't wipe the seeded demo
+  list". With no match it keeps `BENCHMARKS_SEED`.
+
+So a real tester's Progress → Benchmarks shows **The Gauntlet, Sprint 500m
+and Endurance Test** — three benchmarks that are not in their programme. The
+*results* are demo-gated and will be empty, so it reads as three untouched
+benchmarks rather than fake history, but they are still the wrong three.
+
+It is also worth noting the bridge is `localStorage`, written by admin in
+Chris's browser. It never reaches a tester's phone, so even a programme that
+*does* have benchmarks gets the seed on a real device. Benchmarks are the
+next thing after programmes that wants to come off the bridge and onto the
+server.
+
 ## Settled: programmes are hand-built on purpose — do not "fix" this
 
 I raised the absence of a "duplicate programme" feature on 2026-10-14 as a
@@ -1632,6 +1719,33 @@ restored on load, and `saveGroup` / `deleteGroup` / `saveChallenge` /
       content isn't written.
 - [ ] **Member import.** There's a documented CSV template and no importer.
       Members are added one at a time through a modal today.
+- [ ] **Benchmarks — Chris wants a bigger conversation than the bug**
+      (2026-10-20). Found while migrating Burn Club Test, and flagged as a
+      decision rather than a fix. Full detail in the migration section; the
+      short version is two separate problems that happen to show up as one
+      symptom.
+
+      **The symptom:** Burn Club Test carries no `benchmarks` array, so a
+      tester's Progress -> Benchmarks shows the three seeded demo ones — The
+      Gauntlet, Sprint 500m, Endurance Test. `syncBenchmarksToMemberApp()`
+      filters to programmes that *have* benchmarks, so there is no bridge
+      entry to match, and `loadProgramBenchmarks()` deliberately keeps the
+      seed when nothing matches. Results are demo-gated, so it reads as three
+      untouched benchmarks rather than invented history — still the wrong
+      three.
+
+      **The deeper half:** that bridge is `localStorage`, written by admin in
+      Chris's browser. It never reaches a tester's phone. So even a programme
+      that *does* have benchmarks hands a real member the seed. Benchmarks are
+      the next thing after programmes that wants to come off the bridge and
+      onto the server — same job as the content migration above, and probably
+      the same push.
+
+      **The question Chris is holding:** does Burn Club Test get real
+      benchmarks for the trial week, does the section hide itself for a
+      programme with none, or does the whole thing wait for the server move?
+      Don't pick one; this is his and Kelly's call, and the answer decides how
+      much of it is worth building now.
 
 ### Accessibility
 
