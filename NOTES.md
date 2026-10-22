@@ -1331,6 +1331,30 @@ benchmark's **name** onto the result at save time, so a result can still say
 what it was a result for. Same decision, same shape, as
 `completions.workout_id`.
 
+### When the test took place
+
+Chris, 2026-10-21: "can we add a button on the benchmark that tells them when
+this test took place?" A score with no date behind it can't be read — "8
+rounds, +2 since your first test" means something very different if the 8 was
+last week or two years ago.
+
+Done in two places rather than as a second button on the card, because the
+cards are a 3-column grid about 100px wide on a phone and two tap targets in
+that width is fiddly:
+
+- **On the card**, under the score, the date the BEST was set — not the
+  latest, because the best is the number printed above it.
+- **In the tap overlay**, which already existed, the full history: every
+  result newest first with the best marked. That answers the harder question
+  too, which is whether they have been retesting at all and how long it has
+  been. The list scrolls rather than growing the card, so a member two years
+  into retesting gets the same shaped popup as one on their second attempt.
+
+**The cards are denser now** — name, format, score, date, delta pill, action.
+It still holds at 375px and the three columns stay aligned. If it ever needs
+cutting, the delta pill is the one to go: "+2 rounds since your first test" is
+derivable from the history list that is now one tap away.
+
 ### The empty state exists because of a colour decision
 
 A program with no benchmarks rendered an empty blue card: a title and nothing

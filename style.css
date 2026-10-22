@@ -4927,3 +4927,52 @@ h1, h2, h3 {
   line-height: 1.5;
   color: var(--text-muted);
 }
+
+/* ---------- WHEN THE BEST WAS SET (2026-10-21) ----------
+   Under the score on the card. Quiet and small: it qualifies the number above
+   it rather than competing with it. */
+.benchmark-when {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-top: -2px;
+}
+
+/* The full history, inside the tap overlay. Scrolls rather than growing the
+   card, so a member two years into retesting gets the same shaped popup as one
+   on their second attempt. */
+.benchmark-history-head {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  text-align: center;
+}
+.benchmark-history-list {
+  max-height: 168px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  border-radius: var(--radius-md);
+  background: var(--card-community);
+}
+.benchmark-history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  font-size: 13px;
+}
+.benchmark-history-row + .benchmark-history-row { border-top: 1px solid rgba(23,36,63,0.08); }
+.benchmark-history-date { font-weight: 600; color: var(--text-muted); }
+.benchmark-history-score { font-weight: 800; color: var(--text); }
+/* The one the card is showing, so the two surfaces agree. */
+.benchmark-history-row.is-best .benchmark-history-score { color: var(--accent-text); }
+.benchmark-history-row.is-best .benchmark-history-score::after {
+  content: " · best";
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+}

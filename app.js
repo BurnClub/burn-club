@@ -2198,11 +2198,18 @@ function renderBenchmarkCard(benchmark) {
       ? `<span class="benchmark-delta">${delta} since your first test</span>`
       : `<span class="benchmark-baseline-tag">No change yet — keep retesting</span>`;
 
+  // WHEN the best was set (2026-10-21, Chris). A number with no date behind it
+  // can't be read: "8 rounds, +2 since your first test" means something very
+  // different if the 8 was last week or two years ago. The date of the BEST
+  // result, not the latest — it's the number printed above it.
+  const bestResult = results.filter((r) => r.score === best).pop();
+
   return `
     <button class="benchmark-card" type="button" data-benchmark-id="${esc(benchmark.id)}">
       ${nameBlock}
       <div class="benchmark-bottom">
         <span class="benchmark-best">${formatBenchmarkScore(benchmark, best)}</span>
+        <span class="benchmark-when">${formatShortDate(bestResult.date)}</span>
         ${footer}
         ${actionLine}
       </div>
@@ -2247,6 +2254,33 @@ function circuitForBenchmark(benchmarkId) {
 let benchmarkLogId = null;
 let benchmarkRetestCircuitId = null;
 
+// Every result, newest first, with the best one marked. The card only has room
+// for one number and one date; this is where a member checks whether they have
+// actually been retesting, and how long ago.
+function renderBenchmarkHistory(benchmark) {
+  const host = document.getElementById("benchmark-log-history");
+  const results = benchmarkResults(benchmark.id);
+  if (!results.length) {
+    host.innerHTML = "";
+    host.style.display = "none";
+    return;
+  }
+  const scores = results.map((r) => r.score);
+  const best = benchmarkLowerIsBetter(benchmark) ? Math.min(...scores) : Math.max(...scores);
+  host.style.display = "";
+  host.innerHTML = `
+    <p class="benchmark-history-head">Your results</p>
+    <div class="benchmark-history-list">
+      ${[...results].reverse().map((r) => `
+        <div class="benchmark-history-row${r.score === best ? " is-best" : ""}">
+          <span class="benchmark-history-date">${formatShortDate(r.date)}</span>
+          <span class="benchmark-history-score">${formatBenchmarkScore(benchmark, r.score)}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 function openBenchmarkAction(benchmarkId) {
   const benchmark = BENCHMARKS.find((b) => b.id === benchmarkId);
   if (!benchmark) return;
@@ -2255,6 +2289,7 @@ function openBenchmarkAction(benchmarkId) {
   benchmarkRetestCircuitId = circuit ? circuit.id : null;
 
   document.getElementById("benchmark-log-title").textContent = benchmark.name;
+  renderBenchmarkHistory(benchmark);
   const fields = document.getElementById("benchmark-log-fields");
   const retest = document.getElementById("benchmark-retest-actions");
 
