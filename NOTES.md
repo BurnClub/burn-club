@@ -1374,6 +1374,140 @@ Chris wants testers to try the retest path too. That is Kelly's content call.
 Tagging it is `isBenchmark: true` plus a `benchmarkId` on the circuit in
 data.js, an entry in `PROGRAM_BENCHMARKS`, and a row in `benchmarks`.
 
+## The laptop (2026-10-22)
+
+Feedback plus competitor research: a lot of women training at home bring a
+laptop into the space rather than propping a phone. Bigger screen, nothing to
+balance, phone stays free. Chris: "This is mainly to be a player, and whatever
+is needed to get the person from logging on, and getting to/starting the
+workout. that is all i care about right now."
+
+**The website already existed.** The app is served over HTTPS at a URL; a
+laptop could always open it. What it GOT was a 402px drawing of a phone,
+bezel and all, floating in the middle of the window — about four inches of app
+on a fifteen inch screen.
+
+### Not a second codebase
+
+Two builds means every feature built twice, and the player alone has had months
+of iteration. Auth, sync, Supabase, the service worker and all the content are
+shared. A separate desktop app duplicates all of it to serve the same product
+on a bigger screen. One codebase, one media query.
+
+### Stretching does not work, and that is measured
+
+With the bezel removed and nothing else changed, the superset player at 1440px
+wide: videos letterboxed with the aspect ratio shot, exercise names and their
+rep counts a foot apart at opposite edges, a 1400px-wide button, "Up next"
+stranded at the bottom with a dead zone above it. **Nothing broke** — every
+screen still worked — but "make it responsive" is not a flag to flip.
+
+### Why 640 and not wider
+
+The app is designed at 402x860. **A laptop viewport is roughly 650-900 tall**,
+so there is no room to grow vertically — the only axis with slack is width, and
+using it properly means a two-column player, which is a real design job and was
+explicitly deferred. 640 is as wide as the phone-shaped layout stretches before
+it reads badly.
+
+So Phase 1 is: same layout, about 60% bigger, filling the height, no toy bezel.
+**The bigger win still needs the two-column player.** Don't let anyone think
+this was that.
+
+### The two things that actually needed fixing
+
+**Video frames were fixed heights** — 180px for the single demo above a
+straight set, 170px per card in a superset pair. Right at 402 wide, letterbox
+strips at 640, and `object-fit: cover` then crops the lift out of the middle of
+the frame.
+
+Now `aspect-ratio: 16/9` (the clips are 1280x720) with the cap on **width**,
+not height. Capping height fights aspect-ratio: the frame stops at the cap,
+keeps its full width and is a letterbox again. Capping width lets it shrink
+whole, so the ratio always holds.
+
+Two different caps, because the two sit differently: the single demo has the
+column to itself (32vh), the superset pair is already half-width each (18vh).
+18 is not arbitrary — at 650px tall, anything more pushes "Up next" off the
+bottom, and 650 is what a 13-inch laptop with a browser toolbar actually has.
+
+**The demo strip is a swipeable carousel on a phone** — each card 82% of the
+width so one and a bit show and you flick. There is no flicking on a laptop and
+there is room for the pair, so on desktop it stops scrolling and lays out side
+by side, wrapping, so a superset of four becomes 2x2 rather than four cards
+nobody can see.
+
+### Verified
+
+All eight block types, every phase kind (sets, work, superset, amrap, emom,
+rest, cardio-choice, log-weights): no horizontal overflow at 1440x900. Nothing
+scrolls at 1366x650. **The phone layout is byte-for-byte unchanged** — same
+carousel, same 170px cards, next one peeking.
+
+### The surround, and the frame
+
+Chris, same day: make the unused space either side read as branding, "and
+depending on how it looks, add a frame to the player so it seems the build was
+more intentional than just a repurpose of the app."
+
+**The field is deep, and that was decided rather than chosen.** The same
+melting-smiley artwork is already the watermark behind the Workouts card, and
+the note there records that it reads as a watermark "on a solid blue fill" and
+looked like "a grey smudge" at the same opacity over a pale tint. A light
+surround would have reproduced that smudge at ten times the size. It also
+suits the room: a laptop a few feet away, often with a window behind it, so a
+dark field throws less glare and the light panel is what the eye goes to.
+
+**Two marks, one per side, mostly off the edge.** First pass was 112vh at 38%
+off with 0.07 opacity, and you got two near-complete faces — eyes, smiles, the
+lot — competing with the real logo on the login card. Bigger (150vh), pushed
+further out (55%) and fainter (0.045) leaves a fragment, the drips and part of
+a smile, which is texture rather than a second logo. Inverted to white because
+the PNG has #172A3A baked in and would be invisible on this fill.
+
+**The frame is conditional, and that is the whole trick.** Rounded corners and
+a margin are what stop this reading as the phone build stretched to fit — but
+they cost vertical space, and vertical space is the one thing a laptop has
+none of. So the panel only lifts off the edges above 780px of height. Below
+that it stays full bleed and keeps every pixel for the workout.
+
+**Dark mode needed its own field.** The app goes to #1E2237 in dark, which is
+darker than a surround built from --deepblue and --ink — so the panel became
+the dark thing in a lighter room, which is backwards. Dark mode gets a deeper
+gradient taken down past the app, and the marks come back slightly since they
+have less to hide against.
+
+`body { overflow: hidden }` on desktop is safe: every screen scrolls inside
+itself, which was checked on Progress (1597px of content in a 752px screen,
+scrolls internally, body does not).
+
+## Keeping the screen on (2026-10-22)
+
+The app had **no wake lock at all**. On a phone that mattered less because a
+phone gets picked up; a laptop sitting untouched through a 90-second rest dims
+and then locks.
+
+Bracketed by `startHeartbeat`/`stopHeartbeat`, which already mark exactly the
+span where a workout is live — `start()` turns both on, `finish()` and `exit()`
+turn both off. No new lifecycle to keep in sync.
+
+**Every call is best-effort and silent.** The API is missing in some browsers,
+and where it exists the request *rejects* when the page is hidden or the
+battery is low. Neither is worth a dialog mid-set, and the workout runs fine
+without it.
+
+**The browser drops the lock whenever the tab is hidden and does not give it
+back.** Without re-taking it on `visibilitychange`, one tab switch during a
+workout silently ends it for good. Re-taking is keyed on `Player.heartbeatId`
+rather than on the player screen being visible: the heartbeat is the one flag
+that means a workout is actually running, so a member reading Progress between
+sets doesn't have the lock pulled out from under a live session.
+
+**Not verified end to end.** The built-in browser pane denies the permission
+outright — `NotAllowedError: Wake Lock permission request denied` — so what is
+proven is that the rejection is handled and the workout runs normally without
+it. That it actually holds the screen on needs a real laptop.
+
 ## Settled: programmes are hand-built on purpose — do not "fix" this
 
 I raised the absence of a "duplicate programme" feature on 2026-10-14 as a

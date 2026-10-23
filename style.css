@@ -4976,3 +4976,168 @@ h1, h2, h3 {
   font-weight: 800;
   color: var(--text-muted);
 }
+
+/* ================= DESKTOP: NO PHONE, FILL THE WINDOW (2026-10-22) =========
+   Members run workouts from a laptop propped in the room — bigger screen,
+   nothing to balance, phone stays free (Chris, 2026-10-22). Until now a
+   laptop got a 402px drawing of a phone, bezel and all, floating in the
+   middle of the window: about four inches of app on a fifteen inch screen.
+
+   SCOPE IS THE PLAYER PATH: log in, pick a workout, start it, run it. Nothing
+   else gets a desktop layout, and nothing else needs one — it just has to
+   stop looking like a toy.
+
+   WHY ONLY THIS WIDE. The app is designed at 402x860. A laptop viewport is
+   roughly 800-900 tall, so there is no room to grow vertically — the only
+   axis with any slack is width, and using it properly means a two-column
+   player, which is a real design job and not this. 640 is as wide as the
+   phone-shaped layout stretches before it starts to read badly: at 1400 the
+   exercise name and its rep count end up a foot apart at opposite edges, and
+   your eye has to travel the screen to pair them up.
+
+   So: same layout, about 60% bigger, filling the height. The bigger win needs
+   the two-column player. */
+@media (min-width: 441px) {
+  /* THE SURROUND (2026-10-22). Chris: make the unused space either side read
+     as branding rather than as a page that ran out.
+
+     It is deep, not pale, and that is decided rather than chosen: the same
+     melting-smiley artwork is already the watermark behind the Workouts card,
+     and the note there records that it reads as a watermark "on a solid blue
+     fill" and looked like "a grey smudge" at the same opacity over a pale
+     tint. A light surround would reproduce the smudge at ten times the size.
+
+     It also suits the room this is used in — a laptop propped a few feet away,
+     often with a window behind it. A dark field throws less glare and makes
+     the light panel the thing your eye goes to. */
+  body {
+    padding: 0;
+    align-items: center;
+    background: linear-gradient(160deg, var(--deepblue) 0%, var(--ink) 55%, #1b2033 100%);
+    overflow: hidden;
+  }
+
+  /* Two marks, one per side, mostly off the edge — the artwork is a portrait
+     silhouette and showing all of it twice would read as wallpaper rather than
+     as a brand mark. Inverted to white because the PNG has #172A3A baked in
+     and would otherwise be invisible on this fill. 0.07, which is well under
+     the 0.22 the card uses, because here it is behind nothing and has only to
+     be felt.
+
+     Tuned by looking at it: at 112vh/38% offset you saw two near-complete
+     faces, eyes and smiles and all, which competed with the real logo on the
+     login card and read as wallpaper. Bigger and pushed further out leaves a
+     fragment — the drips and part of a smile — which is a texture rather than
+     a second logo. */
+  body::before,
+  body::after {
+    content: "";
+    position: fixed;
+    top: 50%;
+    height: 150vh;
+    aspect-ratio: 2819 / 4096;
+    background: url('assets/melting-smiley-icon.png') center / contain no-repeat;
+    filter: invert(1);
+    opacity: 0.045;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::before { left: 0;  transform: translate(-55%, -50%); }
+  body::after  { right: 0; transform: translate(55%, -50%) scaleX(-1); }
+
+  .phone-frame {
+    position: relative;
+    z-index: 1;
+    width: min(640px, 100vw);
+    /* dvh, not vh: a desktop browser's toolbars don't move, but this is the
+       same frame a tablet in landscape gets, and there they do. */
+    height: 100dvh;
+    margin: 0 auto;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: 0 0 80px rgba(0, 0, 0, 0.45);
+  }
+  .app { border-radius: 0; }
+
+  /* In dark mode the app itself goes to #1E2237, which is DARKER than the
+     surround built from --deepblue and --ink. That inverts the whole point:
+     the panel is supposed to be the lit thing you look at, sitting in a
+     darker room. So dark mode gets its own, deeper field — still the same two
+     hues, just taken down past the app — and the marks come back a touch
+     since they have less to hide against. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) body {
+      background: linear-gradient(160deg, #141829 0%, #0F1120 55%, #0C0E18 100%);
+    }
+    :root:not([data-theme="light"]) body::before,
+    :root:not([data-theme="light"]) body::after {
+      opacity: 0.035;
+    }
+  }
+
+  /* THE FRAME, and why it is conditional. Rounded corners and a margin are
+     what stop this reading as the phone build stretched to fit — but they cost
+     vertical space, and vertical space is the one thing a laptop has none of
+     (the whole reason this is 640 wide and not 1100). So the panel only lifts
+     off the edges when there is height to spare. Below 780 it stays full
+     bleed and keeps every pixel for the workout. */
+  @media (min-height: 780px) {
+    .phone-frame {
+      height: calc(100dvh - 48px);
+      border-radius: 26px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+    }
+    .app { border-radius: 26px; }
+  }
+
+  /* Both video frames were a fixed height — 180px for the single demo above a
+     straight set, 170px for each card in a superset's pair. Right at 402 wide;
+     at 640 they become letterbox strips, and object-fit: cover then crops the
+     lift out of the middle of the frame. The clips are 1280x720, so height
+     follows width at that ratio instead, capped so a video can't eat the
+     exercise list on a short laptop window.
+
+     The superset pair sits two-up, so each card is half the width and gets
+     half the cap. */
+  /* The demo strip is a swipeable carousel on a phone: each card is 82% of
+     the width, so one and a bit show and you flick between them. There is no
+     flicking on a laptop and there is room for the pair, so the strip stops
+     scrolling and lays them out side by side instead. Cards share the width
+     and wrap, so a superset of four becomes 2x2 rather than four cards nobody
+     can see. */
+  .player-demo-strip {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    scroll-snap-type: none;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .demo-card {
+    flex: 1 1 calc(50% - 5px);
+    scroll-snap-align: none;
+  }
+
+  .player-video,
+  .demo-card-frame {
+    height: auto;
+    aspect-ratio: 16 / 9;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* The caps are on WIDTH, derived from the height we are willing to give up.
+     Capping height directly fights aspect-ratio: the frame stops at the cap,
+     keeps its full width, and is a letterbox again. Capping width lets the
+     frame shrink whole, so the ratio always holds and a short laptop window
+     gets a smaller video rather than a squashed one.
+
+     Two different caps because the two sit differently. The single demo above
+     a straight set has the full column to itself; the superset pair is two-up,
+     so each card is already half the width and needs a much tighter cap before
+     it starts pushing "Up next" off a 650px-tall window — which is what a
+     13-inch laptop with a browser toolbar actually has. */
+  .player-video { max-width: calc(32vh * 16 / 9); }
+  .demo-card-frame { max-width: calc(18vh * 16 / 9); }
+}

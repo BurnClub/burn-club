@@ -5043,6 +5043,50 @@ function paintClockUrgency(left) {
   clock.classList.toggle("urgent", left !== null && left <= 10);
 }
 
+// ---------------- Keeping the screen on (2026-10-22) ----------------
+// Members are starting to run workouts from a laptop propped in the room
+// (Chris, 2026-10-22), and a laptop nobody touches through a 90-second rest
+// dims and then locks. The phone had the same problem and it mattered less
+// only because a phone gets picked up.
+//
+// Bracketed by startHeartbeat/stopHeartbeat, which already mark exactly the
+// span where a workout is live: start() turns both on, finish() and exit()
+// turn both off.
+//
+// Every call is best-effort. The API is unsupported in some browsers, and
+// even where it exists the request REJECTS when the page isn't visible or the
+// battery is low — neither is an error worth showing a member mid-set, and
+// the workout runs fine without it.
+let screenWakeLock = null;
+
+async function requestWakeLock() {
+  if (!("wakeLock" in navigator) || screenWakeLock) return;
+  try {
+    screenWakeLock = await navigator.wakeLock.request("screen");
+    // The browser drops it whenever the tab is hidden, and does NOT give it
+    // back on return. Without this, switching tabs once during a workout
+    // silently ends the whole thing.
+    screenWakeLock.addEventListener("release", () => { screenWakeLock = null; });
+  } catch (e) {
+    screenWakeLock = null;
+  }
+}
+
+function releaseWakeLock() {
+  if (!screenWakeLock) return;
+  const held = screenWakeLock;
+  screenWakeLock = null;
+  try { held.release(); } catch (e) { /* already gone */ }
+}
+
+// Coming back to the tab mid-workout re-takes it. Keyed on the heartbeat
+// rather than on the screen being visible: that is the one flag that means
+// "a workout is actually running", so a member reading Progress between sets
+// doesn't get the lock taken out from under a live session.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && Player.heartbeatId) requestWakeLock();
+});
+
 const Player = {
   circuit: null,
   phases: [],
@@ -5145,11 +5189,13 @@ const Player = {
   startHeartbeat() {
     this.stopHeartbeat();
     this.heartbeatId = setInterval(() => this.persist(), IN_PROGRESS_HEARTBEAT_MS);
+    requestWakeLock();
   },
 
   stopHeartbeat() {
     if (this.heartbeatId) clearInterval(this.heartbeatId);
     this.heartbeatId = null;
+    releaseWakeLock();
   },
 
   // Rebuilds the player from a stored record. How the clock comes back is the
