@@ -3737,7 +3737,12 @@ function setPlayerExerciseHeading(text) {
 function fitPlayerHeading() {
   const el = document.getElementById("player-exercise-name");
   if (!el) return;
-  let size = PLAYER_NAME_MAX_PX;
+  // The fit shrinks to fit the WIDTH, and a phone on its side has width to
+  // spare — so "Set 1 of 4" stayed at the full 39px on a screen only 393px
+  // tall, eating a sixth of it (2026-10-23). Height is the dimension actually
+  // in short supply there, so the ceiling comes down with it. The resize
+  // listener below already re-runs this on rotation.
+  let size = window.innerHeight < 500 ? 26 : PLAYER_NAME_MAX_PX;
   el.style.fontSize = size + "px";
   // offsetParent is null while the player screen is hidden, and every
   // measurement then reads 0 — the loop would exit immediately and leave a

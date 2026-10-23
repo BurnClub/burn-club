@@ -1481,6 +1481,81 @@ have less to hide against.
 itself, which was checked on Progress (1597px of content in a 752px screen,
 scrolls internally, body does not).
 
+### A phone turned sideways (2026-10-23)
+
+**iPad was never the problem.** Measured on the live site: it re-centres and
+re-fits its height on rotation, nothing is cut off, the button and "Up next"
+stay visible in both orientations. It just does not USE the landscape width —
+640px column with 270px bands either side on a 10.9", 363px on a 12.9". Since
+the surround landed, that reads as deliberate rather than stranded.
+
+**iPhone landscape was broken, and had always been.** Every iPhone on its side
+is WIDER than 441px — 852 on a 15 Pro, 932 on a Pro Max, 667 on an SE — so on
+width alone they all took the desktop branch and got a 640px column in a window
+375-430px tall. Measured: the player overflowed by 177-222px, "Up next" fell
+below the fold, and the demo videos shrank to 120x68.
+
+It was no better before the desktop branch existed: the old fixed 402x860 frame
+in a 393px-tall window just scrolled the page and showed a slice of a phone.
+
+**The guard.** The phone layout now applies to narrow OR SHORT —
+`(max-width: 440px), (max-height: 499px)`. 500 is above every iPhone landscape
+height with room to spare (440 on the largest, and Apple keeps growing these)
+and well below every iPad landscape height (744 on a mini, the smallest).
+
+**The two conditions must stay mutually exclusive AND exhaustive.** Merely
+excluding short-and-wide from the desktop branch would drop it through to the
+base `.phone-frame` rule — the fixed 402x860 — which is the broken thing both
+branches exist to replace.
+
+Two things the guard exposed, both now fixed for that zone only:
+
+- The demo frames' fixed 170px height is right in a 402px column and a 3.9:1
+  letterbox at 852 wide (a card came out 666x170). Sized off viewport HEIGHT
+  there instead, which is the dimension actually short. The strip still scrolls
+  horizontally, because a sideways phone is still a phone.
+- `fitPlayerHeading()` shrinks to fit the WIDTH, and a phone on its side has
+  width to spare — so "Set 1 of 4" stayed at the full 39px on a 393px-tall
+  screen, eating a sixth of it. The ceiling drops to 26 below 500px tall. The
+  existing resize listener already re-runs the fit on rotation.
+
+It still scrolls at 393px tall — header, heading, two videos, the exercise
+list, the button and "Up next" are never going to fit — but the button is
+`position: sticky; bottom: 0`, so it follows you down and stays reachable.
+That is the bar this was built to: **rotation is unhelpful, not broken.**
+
+**The real answer is to lock the phone build to portrait** when the native app
+ships — one key in Info.plist, and what most fitness apps do. Nobody
+deliberately trains holding a phone sideways; this is accidental rotation.
+
+## Later: a landscape player (logged 2026-10-23)
+
+Chris, 2026-10-23: "eventually, it is worth making just the workout player able
+to go into landscape mode, if it can be done. Project for later, so log it
+away, but something to think about."
+
+Scope is **the player only** — the same instinct as the laptop: the player is
+the thing worth building for a different shape, and nothing else is.
+
+**This is the same job as the laptop's two-column player, not a second one.**
+An iPad in landscape is 1180x820. A laptop is 1280x800. They are very nearly
+the same viewport, and a phone on its side is the same SHAPE at a third of the
+size. One landscape layout — video and clock on one side, the exercise list and
+controls on the other — serves all three. That is a much better argument for
+doing it properly once than any of the three cases made alone.
+
+What would have to be decided when it is picked up:
+
+- **The phone version is not just a smaller iPad version.** At 393px tall there
+  is room for roughly one video and one row of controls. Something has to go,
+  and choosing what goes is the actual design work.
+- **If the phone build is locked to portrait** (above), a landscape player
+  means unlocking rotation for one screen and re-locking on exit. That is
+  normal on iOS — video players do it — but it is app-level behaviour, not CSS,
+  so it cannot be prototyped in the web build.
+- The web build can do landscape today with a media query, so the iPad and
+  laptop halves are reachable without waiting for the native app.
+
 ## Keeping the screen on (2026-10-22)
 
 The app had **no wake lock at all**. On a phone that mattered less because a

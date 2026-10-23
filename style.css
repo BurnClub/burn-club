@@ -3545,11 +3545,34 @@ h1, h2, h3 {
   flex-shrink: 0;
 }
 
-@media (max-width: 440px) {
+/* Narrow OR SHORT gets the phone layout: full bleed, no bezel, no surround.
+   The second half of that is the landscape-phone guard (2026-10-23).
+
+   Every iPhone in landscape is WIDER than 441px — 852 on a 15 Pro, 932 on a
+   Pro Max, 667 on an SE — so on width alone they all took the desktop branch
+   and got a 640px column in a window 375-430px tall. Measured: the player
+   overflowed by about 200px, "Up next" fell below the fold, and the demo
+   videos shrank to 120x68, which is too small to read a movement in.
+
+   It was no better before the desktop branch existed — the old fixed 402x860
+   frame in a 393px-tall window just scrolled the page and showed a slice of a
+   phone. iPhone landscape has simply never worked.
+
+   500px is the line: above every iPhone landscape height with room to spare
+   (440 on the largest, and Apple keeps growing these), and well below every
+   iPad landscape height (744 on a mini, the smallest). A desktop browser
+   window dragged below 500 tall also lands here, which is right — at that
+   size it has more in common with a phone than a laptop.
+
+   THE TWO CONDITIONS MUST STAY MUTUALLY EXCLUSIVE AND EXHAUSTIVE. Merely
+   excluding short-and-wide from the desktop branch would drop it through to
+   the base .phone-frame rule — the fixed 402x860 — which is the broken thing
+   both of these exist to replace. */
+@media (max-width: 440px), (max-height: 499px) {
   body { padding: 0; }
   .phone-frame {
-    width: 100vw;
-    height: 100vh;
+    width: 100dvw;
+    height: 100dvh;
     border-radius: 0;
     padding: 0;
   }
@@ -4997,7 +5020,34 @@ h1, h2, h3 {
 
    So: same layout, about 60% bigger, filling the height. The bigger win needs
    the two-column player. */
-@media (min-width: 441px) {
+/* A PHONE TURNED SIDEWAYS, specifically (2026-10-23) — wide enough that the
+   phone layout's fixed video heights stop making sense, short enough that it
+   is not a desktop.
+
+   The demo frames are a fixed 170px tall, which is correct in a 402px-wide
+   column and a 3.9:1 letterbox at 852 — a card came out 666x170, with
+   object-fit cropping the lift out of the middle. Same fault the desktop
+   branch fixes, reached from the other direction.
+
+   The strip still scrolls horizontally here, because that is phone behaviour
+   and a sideways phone is still a phone. The cards just stop being enormous:
+   sized off the viewport HEIGHT, which is the dimension actually in short
+   supply when a phone is on its side. */
+@media (min-width: 441px) and (max-height: 499px) {
+  .demo-card { flex: 0 0 calc(34vh * 16 / 9); }
+  .demo-card-frame,
+  .player-video {
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+  .player-video {
+    max-width: calc(44vh * 16 / 9);
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (min-width: 441px) and (min-height: 500px) {
   /* THE SURROUND (2026-10-22). Chris: make the unused space either side read
      as branding rather than as a page that ran out.
 
