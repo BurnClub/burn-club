@@ -1727,7 +1727,38 @@ it would be nice. Things that can follow launch belong in the sections below.
       library, every program and every workout. Member data stays protected by
       RLS; the content *is* the product. Burn Club is invite-only, so this
       should be off. Authentication -> Sign In / Providers -> Email.
-- [ ] **DMARC record — required, not optional.** The first real invite landed
+- [x] **DMARC record — done, confirmed in DNS 2026-10-24.**
+      `_dmarc.mail.kellyyager.com` returns
+      `v=DMARC1; p=none; rua=mailto:dmarc@kellyyager.com`. All three
+      mechanisms are live and correctly built on the sending subdomain:
+
+      | | where | |
+      |---|---|---|
+      | SPF | `send.mail.kellyyager.com` | `v=spf1 ip4:52.3.252.119 ip4:44.222.39.36 ip4:199.249.231.0/24 ~all` |
+      | DKIM | `resend._domainkey.mail.kellyyager.com` | key present |
+      | DMARC | `_dmarc.mail.kellyyager.com` | `p=none` with rua |
+
+      Return-Path is `send.mail.kellyyager.com` (its MX points at Resend's
+      `forge.rmta.net`), which shares the org domain with the From domain, so
+      **SPF aligns under relaxed alignment and DKIM `d=` matches exactly.**
+
+      **The one thing DNS cannot answer: what the From address actually is.**
+      This decides everything. From `@mail.kellyyager.com` and DMARC resolves
+      on the record above. From the ROOT `@kellyyager.com` and there is **no
+      `_dmarc.kellyyager.com`** — the lookup falls back to the org domain,
+      which is the same missing record, so Gmail sees no DMARC policy at all
+      and the bulk-sender requirement is missed. That is exactly the fault the
+      original note guessed at ("most likely the From address not aligning
+      with the DMARC domain"). Check it in Authentication -> Emails -> SMTP
+      Settings, or read the From line on a spam copy.
+
+      Worth adding regardless: a root `_dmarc.kellyyager.com` at `p=none`.
+      It cannot cause a rejection — `p=none` asks receivers to report and take
+      no action — and the subdomain keeps its own record, so Kelly's
+      Workspace mail is unaffected either way.
+
+      Original note below.
+- [ ] ~~**DMARC record — required, not optional.**~~ The first real invite landed
       in Gmail's spam folder on 2026-09-18 and this is why: SPF and DKIM both
       pass, but there is no DMARC record on either the root or the `mail.`
       subdomain, and **Google has required all three from volume senders since
@@ -1737,7 +1768,68 @@ it would be nice. Things that can follow launch belong in the sections below.
       `v=DMARC1; p=none; rua=mailto:dmarc@kellyyager.com`. Receivers check the
       subdomain first, so this satisfies Gmail while putting no policy on
       `kellyyager.com` itself and leaving Kelly's Workspace mail untouched.
-- [ ] **Rewrite the invite email template — now the main suspect.**
+- [x] **Invite deliverability — SOLVED 2026-10-25. The cause was the sender
+      address, not the copy.**
+
+      Both providers that previously put invites in spam now deliver to the
+      inbox: a Google-hosted domain on 2026-10-24 (still on the *default*
+      template, which is what gave the cause away) and Yahoo on 2026-10-25
+      with the rewrite in.
+
+      **What it actually was.** The sender was `kelly@kellyyager.com` — the
+      bare root. Two separate faults in one field:
+
+      1. Resend has only `mail.kellyyager.com` verified. The root has no
+         `resend._domainkey` and no bounce host, so Resend **refused the send
+         outright** — Supabase surfaced it as "Error sending invite email".
+      2. There is no `_dmarc.kellyyager.com`, and the org-domain fallback
+         resolves to that same missing record, so mail from the root carried
+         **no DMARC policy at all** — precisely the bulk-sender requirement
+         Gmail has enforced since 2024.
+
+      Moving it to `kelly@mail.kellyyager.com` fixed both at once: SPF via
+      `send.mail.kellyyager.com`, DKIM `d=` matching the From exactly, and
+      DMARC found on the subdomain.
+
+      **The rejection was luck.** Had Resend happened to accept root mail, it
+      would have sent fine and quietly failed DMARC, and the hunt would have
+      stayed on the copy for another week.
+
+      **So the earlier diagnosis in this file was wrong** — it named the
+      template as "now the main suspect" after DMARC went in. The template was
+      never the problem; the From address was. The original note's own advice
+      is what should have been followed first: read `Authentication-Results`
+      on a spam copy before rewriting anything, because that says which.
+
+      Still worth doing, both cheap:
+      - Read the five header lines (`From`, `Return-Path`, `spf=`, `dkim=`,
+        `dmarc=`) off a delivered copy. DNS implies they pass; the header
+        proves it.
+      - Test one consumer **gmail.com** address. Workspace-hosted Google and
+        Yahoo have both passed; consumer Gmail is the strictest and is the
+        one provider not yet directly confirmed.
+      - Add a root `_dmarc.kellyyager.com` at `p=none` anyway. It cannot cause
+        a rejection and it closes the hole for anything that ever sends as the
+        root.
+
+- [x] **Invite template rewritten and live 2026-10-25.** `supabase/invite-email.html` is ready to paste into
+      Authentication -> Emails -> Invite user. Written for the six testers
+      specifically rather than for members generally: it says who it is from,
+      why it arrived, what the link does, and asks for a reply — which is both
+      true and the single strongest "this is not bulk" signal there is.
+
+      **No images, deliberately.** A logo is one more fetch from a domain with
+      no sending history, and most clients block images by default, so the mail
+      has to read without it anyway.
+
+      **One requirement from the original note could NOT be met:** Supabase's
+      template field is HTML only and it does not generate a `text/plain`
+      alternative, so a multipart message is not achievable from the dashboard.
+      The mitigation is that the HTML is text-forward and reads correctly as
+      plain text if a client strips it. Don't record this as done.
+
+      Original note below.
+- [ ] ~~**Rewrite the invite email template — now the main suspect.**~~
       Tested 2026-09-19 after DMARC went in: invites to a Gmail address **and**
       a Yahoo address both still landed in spam. Authentication is no longer
       the problem — SPF, DKIM and a DMARC record are all in place — so what is
