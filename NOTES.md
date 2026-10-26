@@ -2061,11 +2061,40 @@ So a member writing "Do you get notified when I enter a note here?" — which is
 what the tester wrote — gets no answer, and nothing is on fire, because nothing
 is listening.
 
-Two ways out, and they are different products: surface it in admin beside the
-member (quiet, a coach looks when they look), or treat a coach note as a
-message and let it hit the inbox that already has unread counts and a reply
-box. **Until one is built, the section is promising something the app does not
-do** — which is worse than not having it.
+**Built 2026-10-26, the first way plus a bridge to the second.** Chris: "i want
+it to be seperate from messages, somewhere it can be logged and stay there...
+appear on the member page, but also the dashboard, at least until it is read",
+and reading it should offer a response that opens the thread with the note
+quoted.
+
+**A coach note is a SENT ARTEFACT, not a row in the notebook.** It had to be:
+`notebook_notes` is keyed `(member_id, kind, position)` with no ids, and the
+member app pushes it with `pushReplace()` — delete every row for the member,
+reinsert the lot. A `staff_read_at` column there would be destroyed every time
+the member edited any note, and positions shift when one is deleted, so "note
+2" is not a stable thing to point at or mark read.
+
+So writing one appends to `coach_notes`, which never rewrites. The member's
+notebook keeps their own copy as a living document; editing it later does not
+change what the coach received, which is the promise a sent message already
+makes. No delete policy for anyone — "logged and stays there" is the point.
+
+`staff_read_at` is shared across staff, like `messages.staff_read_at`: Kelly
+reading a note clears it from Chris's dashboard too.
+
+The send is queued locally and retried, and each note carries its own
+`client_id` with a unique constraint, so a retry after a timeout that actually
+succeeded cannot post it twice.
+
+**Responding quotes it into the DM thread.** One line, not a `> ` block:
+admin's composer is an `<input>`, not a textarea, so a multi-line quote came
+out as one run of text with the reply jammed on the end. Internal line breaks
+are collapsed for the same reason, and the cursor is left after the closing
+quote.
+
+The SQL backfills what members have already written, including the trial
+tester's note that prompted all this — marked unread, because nobody has
+actually seen it.
 
 ### An export is ONE browser, not the content library
 

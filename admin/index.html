@@ -23,7 +23,7 @@
 
      BUMP THIS STRING whenever an admin file changes. It only has to differ
      from last time; the date plus a letter is enough. -->
-<link rel="stylesheet" href="style.css?v=2026-10-26f" />
+<link rel="stylesheet" href="style.css?v=2026-10-26g" />
 </head>
 <body>
 
@@ -88,6 +88,17 @@
            people quickly is a big priority for me"). A number in a sidebar
            badge tells you there's something waiting; this tells you who,
            what they said, and gets you into the reply in one click. -->
+      <!-- Coach notes (2026-10-26). Separate from Unread Messages on purpose:
+           a note is logged and stays, a message is a conversation. Shown until
+           somebody reads it, then it lives on the member's profile. -->
+      <div class="panel unread-panel" id="dashboard-notes-panel" style="display:none;">
+        <div class="unread-panel-head">
+          <h2>Notes From Members</h2>
+          <span class="unread-panel-count" id="dashboard-notes-count"></span>
+        </div>
+        <div class="unread-list" id="dashboard-notes-list"></div>
+      </div>
+
       <div class="panel unread-panel" id="dashboard-unread-panel">
         <div class="unread-panel-head">
           <h2>Unread Messages</h2>
@@ -1031,6 +1042,13 @@
               <span class="modal-field-label">Health Profile <span class="modal-field-hint">(submitted by the member — view only)</span></span>
               <p class="modal-readonly-value" id="member-modal-health-profile"></p>
             </div>
+            <!-- Notes the member sent from their notebook's "For my coach"
+                 section (2026-10-26). They stay here once read — the whole
+                 point is a log rather than a feed. -->
+            <div class="modal-field">
+              <span class="modal-field-label">Notes From This Member <span class="modal-field-hint">(sent from their notebook)</span></span>
+              <div id="member-modal-coach-notes"></div>
+            </div>
           </div>
 
           <!-- Macro targets (2026-10-19). Coach-set and coach-owned: these do
@@ -1555,8 +1573,8 @@
 <!-- The same configured client the member app uses, one directory up: one
      place holds the project URL and the publishable key, and admin cannot
      drift onto a different project by accident. -->
-<script src="../supabase-client.js?v=2026-10-26f"></script>
-<script src="data.js?v=2026-10-26f"></script>
-<script src="app.js?v=2026-10-26f"></script>
+<script src="../supabase-client.js?v=2026-10-26g"></script>
+<script src="data.js?v=2026-10-26g"></script>
+<script src="app.js?v=2026-10-26g"></script>
 </body>
 </html>

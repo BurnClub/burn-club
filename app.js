@@ -652,6 +652,43 @@ function loadNotebookNotes() {
   return { coach: [], other: [] };
 }
 let NOTEBOOK_NOTES = { coach: [], other: [] };
+
+// Deliver a "For my coach" note. Fire-and-forget on purpose: the member has
+// already seen it land in their notebook, and a failed POST must not make it
+// look like the note was lost. Queued locally and retried if the send fails,
+// so a note written on the Tube still arrives.
+const PENDING_COACH_NOTES_KEY = "burnclub-pending-coach-notes";
+
+function loadPendingCoachNotes() {
+  try { return JSON.parse(localStorage.getItem(memberKey(PENDING_COACH_NOTES_KEY)) || "[]"); }
+  catch (e) { return []; }
+}
+
+function savePendingCoachNotes(list) {
+  localStorage.setItem(memberKey(PENDING_COACH_NOTES_KEY), JSON.stringify(list));
+}
+
+function sendCoachNote(body) {
+  const note = { clientId: `cn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, body };
+  const pending = loadPendingCoachNotes();
+  pending.push(note);
+  savePendingCoachNotes(pending);
+  flushCoachNotes();
+}
+
+// Each note carries its own client_id and the table is unique on it, so a
+// retry after a timeout that actually succeeded cannot post it twice.
+async function flushCoachNotes() {
+  if (typeof pushCoachNote !== "function") return;
+  const pending = loadPendingCoachNotes();
+  if (!pending.length) return;
+  const left = [];
+  for (const note of pending) {
+    const ok = await pushCoachNote(note.clientId, note.body);
+    if (!ok) left.push(note);
+  }
+  savePendingCoachNotes(left);
+}
 function saveNotebookNotes() {
   localStorage.setItem(memberKey(NOTEBOOK_NOTES_KEY), JSON.stringify(NOTEBOOK_NOTES));
   queueSync("notebookNotes");
@@ -898,8 +935,14 @@ function wireNotebookBody() {
                   label: kind === "coach" ? "Something to ask your coach" : "Note",
                   multiline: true }).then((text) => {
           if (!text || !text.trim()) return;
-          NOTEBOOK_NOTES[kind].push(text.trim());
+          const body = text.trim();
+          NOTEBOOK_NOTES[kind].push(body);
           saveNotebookNotes();
+          // A coach note is SENT, not just written (2026-10-26). The notebook
+          // keeps the member's own copy; this delivers it. Editing or deleting
+          // their copy afterwards does not rewrite what the coach received,
+          // which is the same promise a sent message makes.
+          if (kind === "coach") sendCoachNote(body);
           renderNotebook();
         });
       }

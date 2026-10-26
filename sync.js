@@ -906,6 +906,19 @@ async function fetchMyGroups() {
 // filters above: the messages policy lets staff read every thread, so a staff
 // account reading through the member app would otherwise pull other members'
 // DMs into its own inbox and unread count.
+// Append a coach note. Returns true when it is safely on the server, so the
+// caller knows whether to keep retrying. A duplicate client_id is treated as
+// success: it means a previous attempt got there and only the reply was lost.
+async function pushCoachNote(clientId, body) {
+  if (!SB || !AUTH_MEMBER) return false;
+  const { error } = await SB.from("coach_notes")
+    .insert({ member_id: AUTH_MEMBER.id, client_id: clientId, body });
+  if (!error) return true;
+  if (String(error.code) === "23505") return true; // unique violation — already there
+  recordSyncError("coach_notes", error.message);
+  return false;
+}
+
 async function fetchMessages(conversationIds) {
   if (!SB || !AUTH_MEMBER) return { ok: false, reason: "not signed in" };
   if (Array.isArray(conversationIds) && !conversationIds.length) {

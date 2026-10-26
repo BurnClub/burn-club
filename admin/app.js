@@ -924,6 +924,124 @@ function openUnreadConversation(conversationId) {
   openUnreadDirectMessage(conversationId);
 }
 
+// ---------------- Notes from members (2026-10-26) ----------------
+//
+// The notebook's "For my coach" section used to reach nobody — admin read that
+// table in no place at all, so a member asking a question there got silence.
+// Chris: "somewhere it can be logged and stay there... appear on the member
+// page, but also the dashboard, at least until it is read."
+//
+// Deliberately NOT the inbox. A message is a conversation and scrolls away; a
+// note is a record that stays on the member's profile once read. Replying is
+// the bridge between the two — it quotes the note into the thread, where a
+// conversation belongs.
+let COACH_NOTES = [];
+
+async function loadCoachNotes() {
+  if (!SB) return;
+  const { data, error } = await SB.from("coach_notes")
+    .select("*").order("created_at", { ascending: false }).limit(500);
+  if (error) { console.warn("[coach notes]", error.message); return; }
+  COACH_NOTES = data || [];
+  renderDashboardCoachNotes();
+}
+
+function coachNotesFor(memberId) {
+  return COACH_NOTES.filter((n) => n.member_id === memberId);
+}
+
+function unreadCoachNotes() {
+  return COACH_NOTES.filter((n) => !n.staff_read_at);
+}
+
+// Shared across staff, like the inbox: Kelly reading a note clears it from
+// Chris's dashboard too.
+async function markCoachNoteRead(id) {
+  const note = COACH_NOTES.find((n) => String(n.id) === String(id));
+  if (!note || note.staff_read_at) return;
+  const when = new Date().toISOString();
+  note.staff_read_at = when;             // optimistic: the panel updates at once
+  renderDashboardCoachNotes();
+  const { error } = await SB.from("coach_notes").update({ staff_read_at: when }).eq("id", note.id);
+  if (error) {
+    note.staff_read_at = null;
+    renderDashboardCoachNotes();
+    alert("Couldn't mark that note read: " + error.message);
+  }
+}
+
+function renderDashboardCoachNotes() {
+  const panel = document.getElementById("dashboard-notes-panel");
+  if (!panel) return;
+  const rows = unreadCoachNotes();
+  panel.style.display = rows.length ? "" : "none";
+  document.getElementById("dashboard-notes-count").textContent =
+    rows.length ? `${rows.length} note${rows.length === 1 ? "" : "s"}` : "";
+  document.getElementById("dashboard-notes-list").innerHTML = rows.map((n) => {
+    const m = memberById(n.member_id);
+    return `
+      <div class="unread-row" data-action="open-coach-note" data-note-id="${n.id}">
+        <div class="conversation-icon">${icon("members")}</div>
+        <div class="unread-row-text">
+          <p class="unread-row-name">${esc(m ? m.name : "Member")}</p>
+          <p class="unread-row-preview">${esc(n.body)}</p>
+        </div>
+        <div class="unread-row-meta">
+          <span class="conversation-time">${esc(adminMessageTime(n.created_at))}</span>
+          <span class="unread-row-reply">Respond \u2192</span>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+// On the member's own profile: every note they have ever sent, read or not.
+function renderMemberCoachNotes(memberId) {
+  const host = document.getElementById("member-modal-coach-notes");
+  if (!host) return;
+  const rows = coachNotesFor(memberId);
+  if (!rows.length) {
+    host.innerHTML = `<p class="modal-readonly-value">No notes yet.</p>`;
+    return;
+  }
+  host.innerHTML = rows.map((n) => `
+    <div class="coach-note ${n.staff_read_at ? "" : "is-unread"}">
+      <p class="coach-note-body">${esc(n.body)}</p>
+      <div class="coach-note-foot">
+        <span class="coach-note-date">${esc(adminMessageTime(n.created_at))}${n.staff_read_at ? "" : " \u00b7 New"}</span>
+        <button class="btn-ghost-lg small" data-action="open-coach-note" data-note-id="${n.id}">Respond</button>
+      </div>
+    </div>`).join("");
+}
+
+// Reading it IS responding to it: marks it read and drops the member into the
+// thread with the note quoted, so the reply has its question attached rather
+// than arriving as a bare line of text days later.
+async function respondToCoachNote(noteId) {
+  const note = COACH_NOTES.find((n) => String(n.id) === String(noteId));
+  if (!note) return;
+  await markCoachNoteRead(note.id);
+  const m = memberById(note.member_id);
+  if (m) renderMemberCoachNotes(m.id);
+  closeMemberModal();
+
+  showView("view-messages");
+  renderAdminConversationList();
+  openAdminThread("dm-" + note.member_id);
+  const input = document.getElementById("admin-thread-input");
+  // ONE LINE, because the composer is an <input> and not a textarea — a
+  // "> " quote block with newlines came out as a single run of text with the
+  // reply jammed onto the end of it. Internal line breaks in the note are
+  // collapsed to spaces for the same reason.
+  //
+  // The cursor is left after the closing quote with a space in front of it,
+  // so the coach types their answer and the member sees what it answers.
+  const quoted = note.body.replace(/\s+/g, " ").trim();
+  input.value = `Re: "${quoted}" `;
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+  renderDashboardCoachNotes();
+}
+
 function openUnreadDirectMessage(conversationId) {
   showView("view-messages");
   renderAdminConversationList();
@@ -6172,6 +6290,9 @@ document.addEventListener("click", (e) => {
       renderBuilderLibraryList();
     }
   }
+  if (action === "open-coach-note") {
+    respondToCoachNote(el.dataset.noteId);
+  }
   if (action === "inbox-filter") {
     inboxFilter = el.dataset.key;
     renderAdminConversationList();
@@ -6293,6 +6414,8 @@ async function loadRealMembers() {
     });
   });
   renderMemberTable();
+  // After MEMBERS, so a note shows against a name rather than a uuid.
+  loadCoachNotes();
 }
 
 async function loadServerMessages() {
@@ -8034,6 +8157,7 @@ function openEditMemberModal(memberId) {
   const m = MEMBERS.find((x) => x.id === memberId);
   if (!m) return;
   editingMemberId = memberId;
+  renderMemberCoachNotes(memberId);
   document.getElementById("member-modal-title").textContent = m.name;
   document.getElementById("member-modal-save-btn").textContent = "Save Changes";
   // The list keeps one display name; the columns behind it are separate, so
