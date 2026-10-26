@@ -1780,6 +1780,48 @@ alone deliberately rather than quietly changed alongside a requested fix.
 as `Name — cue` everywhere the exercise appears, including under the demo video
 and in Up next. Reps-with-words is for when the count itself needs the words.
 
+### A set is 45 seconds now, not 30 (2026-10-26)
+
+Chris: "we have found that is closer to what the average person takes,
+especially with all of the natural breaks we take." The old 30 counted the set
+and nothing around it — picking the weight up, finding position, the pause
+before starting.
+
+It is `SECONDS_PER_SET` in admin now rather than two loose 30s, and it only
+affects blocks with **no clock of their own**: supersets and straight sets. An
+interval reads its real work and rest; an AMRAP, EMOM, cardio choice or rest
+block IS a duration. None of those moved.
+
+**The ladder's 20 was deliberately left alone.** A ladder's steps get shorter as
+it climbs, so its per-step figure was never the same number as a straight set's
+and is not what Chris changed. Flagged rather than moved in sympathy.
+
+**Every migrated `meta` had to be re-derived.** Those strings are baked into
+data.js at migration time, so changing the constant in admin alone would have
+left the member app showing the old numbers forever while admin showed the new
+ones. All 15 trial circuits were rebuilt from the 2026-10-26 (4) export with
+the new rule.
+
+### What the change actually did
+
+The trim Chris did matters more than the constant. 30 MINUTE BURN TEST had a
+55-minute session in it; he cut blocks from three of its four workouts, and
+even at 45s per set the whole programme now reads **30 / 25 / 25 / 25** — a
+programme called 30 Minute Burn that is finally under thirty minutes.
+
+FIT & FUNCTIONAL TEST WEEK went the other way, as expected: 45 / 55 / 50 / 40 /
+50 / 25 across its six days.
+
+### Re-migrating is a block replacement, not a line edit
+
+Worth recording because the first attempt failed. Splitting the CIRCUITS array
+text on brace depth does not work — comments and strings carry braces and
+brackets, so the depth counter desynchronises and only 5 of 15 target entries
+were found. Both migrations had gone in as contiguous blocks under header
+comments, so the reliable move is to replace from the first header to the
+array's closing `];` wholesale. Keep future migrations in labelled contiguous
+blocks for the same reason.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

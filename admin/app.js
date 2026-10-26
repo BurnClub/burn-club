@@ -214,15 +214,29 @@ function weekGroupsForProgram(programId) {
 
 // Rough estimated duration for a block, in seconds — used for the auto-calculated
 // circuit length shown to admins while building (not a precise simulation).
+// How long one un-timed set of one exercise takes, in seconds. 45 since
+// 2026-10-26, from Chris: "we have found that is closer to what the average
+// person takes, especially with all of the natural breaks we take." It was 30,
+// which assumed the set and nothing around it — picking the weight up, finding
+// position, the pause before starting.
+//
+// Only blocks with no clock of their own use it. An interval reads its real
+// work and rest, and an AMRAP, EMOM, cardio choice or rest block IS a
+// duration, so none of them are affected.
+const SECONDS_PER_SET = 45;
+
 function estimateBlockSeconds(block) {
   switch (block.type) {
     case "interval":
       return block.rounds * block.exercises.length * (block.work + block.rest);
     case "superset":
-      return block.rounds * (block.exercises.length * 30 + block.rest);
+      return block.rounds * (block.exercises.length * SECONDS_PER_SET + block.rest);
     case "straight":
-      return block.sets * 30 + (block.sets - 1) * block.rest;
+      return block.sets * SECONDS_PER_SET + (block.sets - 1) * block.rest;
     case "ladder":
+      // Still 20: a ladder's steps get shorter as it climbs, so its per-step
+      // figure was never the same number as a straight set's and is not what
+      // Chris changed. Flagged rather than moved in sympathy.
       return block.scheme.length * 20 + (block.scheme.length - 1) * block.rest;
     case "cardio-choice":
     case "amrap":
