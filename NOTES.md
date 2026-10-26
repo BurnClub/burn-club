@@ -1680,6 +1680,44 @@ This does not remove the need for the content migration — two people editing
 the same programme still have no merge, and last import still wins. It removes
 the need to hand-carry a file through me.
 
+### Scheduled, and imported (2026-10-26)
+
+Chris imported Kelly's export into his own admin with the new Import File
+button, scheduled both weeks there, and exported again. Those schedules are now
+in `SCHEDULE_TEMPLATES` verbatim.
+
+| | Mon 26 | Tue 27 | Wed 28 | Thu 29 | Fri 30 | Sat 31 | Sun 1 |
+|---|---|---|---|---|---|---|---|
+| F&F TEST WEEK | SHOULDERS/ABS | HAMSTRINGS/GLUTES | CHEST/TRICEPS | BACK/BICPES | QUADS/GLUTES | CIRCUIT | rest |
+| 30 MIN BURN TEST | SHOULDERS/ABS | HAMSTRINGS/GLUTES | rest | CHEST/TRICEPS | QUADS/GLUTES | rest | rest |
+
+Day 1 is the member's own `start_date`, not a calendar date, so a tester set to
+start 2026-10-26 gets that Monday column. **Verified** by faking the clock to
+Monday: every slot resolved to a real workout, and Home read "Week 1 · Day 1 /
+0 of 6 Done This Week / Today SHOULDERS/ABS".
+
+A false alarm worth recording so nobody re-chases it: Home's text appeared to
+contain "You finished Fit & Functional" on day 1. The completion card is
+`display: none` there — `textContent` returns hidden elements too, so the
+scrape was reading stale invisible DOM left over from switching programme
+in-session. Check `offsetParent` or the element's own display, not textContent.
+
+### Archiving a programme does nothing to members
+
+Chris archived Burn Club rather than deleting it, to get the `block-*` test
+workouts out of the way: "i think that will be good enough."
+
+**It isn't, technically.** The member app has no concept of programme status —
+there is no `PROGRAMS` array in data.js and nothing reads `archived` anywhere
+on that side. Archiving is an admin-only filter. The 17 `burn-club` circuits in
+data.js, which are mostly the one-block demo workouts, would still show to any
+member on Burn Club, and they are dated to the current week.
+
+It does not matter for the trial, because every tester is on one of the two
+structured trial weeks and nobody is on Burn Club. It will matter the moment a
+real Burn Club member signs in — which today includes
+chris@worthitcandy.com.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

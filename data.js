@@ -2959,14 +2959,34 @@ const WEEK_NOTES = {
 // these workouts carry no `variant`, so workoutsForSlot() takes its direct
 // id-match fallback rather than appending -home/-gym the way Fit & Functional
 // does.
-function buildBlankWeek() {
-  return Array.from({ length: 7 }, (_, i) => ({ day: i + 1, type: "rest" }));
-}
-
 const SCHEDULE_TEMPLATES = {
   "fit-functional": buildFitFunctionalSchedule(),
-  "fit-functional-test-week-1792947605130": buildBlankWeek(),
-  "30-minute-burn-test-1792976073830": buildBlankWeek(),
+  // Scheduled by Chris in admin on 2026-10-26 and imported verbatim. Day 1 is
+  // the member's own start_date, NOT a calendar date — a tester starting
+  // Monday 26 Oct gets SHOULDERS/ABS that day.
+  //
+  // workoutId is the circuit id exactly: these carry no `variant`, so
+  // workoutsForSlot() takes its direct id-match fallback rather than appending
+  // -home/-gym the way Fit & Functional does.
+  "fit-functional-test-week-1792947605130": [
+    { day: 1, type: "workout", workoutId: "shoulders-abs-1792948000381" }, // SHOULDERS/ABS
+    { day: 2, type: "workout", workoutId: "hamstrings-glutes-1792972456231" }, // HAMSTRINGS/GLUTES
+    { day: 3, type: "workout", workoutId: "chest-triceps-1792972793728" }, // CHEST/TRICEPS
+    { day: 4, type: "workout", workoutId: "back-bicpes-1792974726372" }, // BACK/BICPES
+    { day: 5, type: "workout", workoutId: "quads-glutes-1792975325761" }, // QUADS/GLUTES
+    { day: 6, type: "workout", workoutId: "circuit-1792975829465" }, // CIRCUIT
+    { day: 7, type: "rest" },
+  ],
+  // Four workouts across seven days, with rest on 3, 6 and 7.
+  "30-minute-burn-test-1792976073830": [
+    { day: 1, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1792976097898-3" }, // SHOULDERS/ABS
+    { day: 2, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1792976097898-2" }, // HAMSTRINGS/GLUTES
+    { day: 3, type: "rest" },
+    { day: 4, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1792976097898-1" }, // CHEST/TRICEPS
+    { day: 5, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1792976097898-0" }, // QUADS/GLUTES
+    { day: 6, type: "rest" },
+    { day: 7, type: "rest" },
+  ],
 };
 
 // Buzz is scoped to the member's own program (2026-08-13) — it used to be one

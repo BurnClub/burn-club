@@ -8067,6 +8067,22 @@ async function saveMemberToServer(v) {
     member_since: v.memberSince || null,
     badge: v.badge || null,
   };
+  // Deactivating takes them off their programme — the database does it, via
+  // the trigger in 24-deactivate-clears-program.sql, whatever path the change
+  // arrives by. Said out loud here because the alternative is a coach setting
+  // a programme and a status in one save, watching the programme come back
+  // blank, and concluding the save failed (2026-10-26).
+  const goingInactive = (v.status || "active") !== "active";
+  if (goingInactive && patch.program_id) {
+    const prog = programById(patch.program_id);
+    if (!confirm(
+      `${v.name} is being set to ${v.status}, so they will be taken off ` +
+      `${prog ? prog.name : patch.program_id}.\n\n` +
+      "The programme and start date are remembered, so you can see what they were on " +
+      "when they come back — but reactivating does not put them back on it.\n\nSave anyway?"
+    )) return;
+  }
+
   const btn = document.getElementById("member-modal-save-btn");
   btn.disabled = true;
   btn.textContent = "Saving…";
