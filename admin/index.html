@@ -23,7 +23,7 @@
 
      BUMP THIS STRING whenever an admin file changes. It only has to differ
      from last time; the date plus a letter is enough. -->
-<link rel="stylesheet" href="style.css?v=2026-10-26b" />
+<link rel="stylesheet" href="style.css?v=2026-10-26c" />
 </head>
 <body>
 
@@ -978,14 +978,26 @@
         <div class="builder-body">
           <div class="field-group visible-group">
             <p class="field-group-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/></svg><span>Visible to Member</span></p>
-            <label class="modal-field">Name
-              <input type="text" id="member-modal-name" placeholder="e.g. Jordan P." />
+            <label class="modal-field">First Name
+              <input type="text" id="member-modal-first-name" placeholder="e.g. Jordan" />
+            </label>
+            <label class="modal-field">Last Name
+              <input type="text" id="member-modal-last-name" placeholder="e.g. Pearce" />
             </label>
             <label class="modal-field">Email
               <input type="text" id="member-modal-email" placeholder="e.g. jordan.p@example.com" />
             </label>
             <label class="modal-field">Program
               <select id="member-modal-program"></select>
+            </label>
+            <!-- Directly under Program since 2026-10-26, and no longer in the
+                 Staff Only group at the bottom of the form. It was separated
+                 from the thing that makes it required by the whole of Member
+                 Since, Badge, Habits, Health Profile and Macro Targets, so
+                 assigning a structured programme meant scrolling past all of
+                 it to set the one field that programme now needs. -->
+            <label class="modal-field" id="member-modal-startdate-wrap" style="display:none;">Program Start Date <span class="modal-field-hint">(required for structured programs — anchors their Day 1)</span>
+              <input type="date" id="member-modal-start-date" />
             </label>
             <!-- What the member bought, for programs authored in Home/Gym
                  variants. The member app has always honoured this; until now
@@ -1056,9 +1068,6 @@
 
           <div class="field-group staff-group">
             <p class="field-group-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Staff Only</span></p>
-            <label class="modal-field" id="member-modal-startdate-wrap" style="display:none;">Program Start Date <span class="modal-field-hint">(required for structured programs — anchors their Day 1)</span>
-              <input type="date" id="member-modal-start-date" />
-            </label>
             <div class="modal-field">
               <span class="modal-field-label">Status</span>
               <div class="tag-checkbox-row" id="member-modal-status"></div>
@@ -1540,8 +1549,8 @@
 <!-- The same configured client the member app uses, one directory up: one
      place holds the project URL and the publishable key, and admin cannot
      drift onto a different project by accident. -->
-<script src="../supabase-client.js?v=2026-10-26b"></script>
-<script src="data.js?v=2026-10-26b"></script>
-<script src="app.js?v=2026-10-26b"></script>
+<script src="../supabase-client.js?v=2026-10-26c"></script>
+<script src="data.js?v=2026-10-26c"></script>
+<script src="app.js?v=2026-10-26c"></script>
 </body>
 </html>

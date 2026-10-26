@@ -7830,8 +7830,33 @@ function renderMemberBulkBar() {
 function updateMemberStartDateField() {
   const program = programById(document.getElementById("member-modal-program").value);
   const isStructured = program && program.scheduleType === "structured";
+  const field = document.getElementById("member-modal-start-date");
   document.getElementById("member-modal-startdate-wrap").style.display = isStructured ? "" : "none";
-  document.getElementById("member-modal-start-date").required = isStructured;
+  field.required = isStructured;
+
+  // Fill it in rather than leaving it blank (2026-10-26, Chris). Assigning a
+  // structured programme and forgetting the date drops the member on the same
+  // dead-end screen as having no programme at all, and the field used to sit
+  // far enough down the form to be easy to miss.
+  //
+  // The NEXT MONDAY, or today if today is Monday. Day 1 of a schedule is the
+  // member's start date, and every week in this app begins on Monday — a
+  // Wednesday start puts their "Week 1" across two calendar weeks and makes
+  // the week-by-week view read wrongly ever after.
+  //
+  // Only ever fills a BLANK field. Someone editing an existing member has a
+  // start date that is already anchoring real completions, and recomputing it
+  // because the modal was opened would move their whole schedule.
+  if (isStructured && !field.value) field.value = nextMondayKey();
+}
+
+// Today if today is Monday, otherwise the Monday coming. Matches startOfWeek()
+// in data.js, which treats Monday as day 0.
+function nextMondayKey() {
+  const d = new Date();
+  const offset = (8 - (d.getDay() || 7)) % 7;  // Sun=7 -> 1, Mon=0, Tue=6 ...
+  d.setDate(d.getDate() + offset);
+  return dateKey(d);
 }
 
 // Whether a program is authored in variants is a property of its content, not
@@ -7895,7 +7920,8 @@ function openMemberModal() {
   editingMemberId = null;
   document.getElementById("member-modal-title").textContent = "Add Member";
   document.getElementById("member-modal-save-btn").textContent = "Save Member";
-  document.getElementById("member-modal-name").value = "";
+  document.getElementById("member-modal-first-name").value = "";
+  document.getElementById("member-modal-last-name").value = "";
   document.getElementById("member-modal-email").value = "";
   document.getElementById("member-modal-program").value = PROGRAMS[0] ? PROGRAMS[0].id : "";
   document.getElementById("member-modal-member-since").value = "";
@@ -7928,7 +7954,13 @@ function openEditMemberModal(memberId) {
   editingMemberId = memberId;
   document.getElementById("member-modal-title").textContent = m.name;
   document.getElementById("member-modal-save-btn").textContent = "Save Changes";
-  document.getElementById("member-modal-name").value = m.name;
+  // The list keeps one display name; the columns behind it are separate, so
+  // split on the LAST space — "Mary Anne Clarke" is a two-word first name far
+  // more often than it is a two-word surname in this membership.
+  const nameParts = String(m.name || "").trim();
+  const cut = nameParts.lastIndexOf(" ");
+  document.getElementById("member-modal-first-name").value = cut === -1 ? nameParts : nameParts.slice(0, cut);
+  document.getElementById("member-modal-last-name").value  = cut === -1 ? "" : nameParts.slice(cut + 1);
   document.getElementById("member-modal-email").value = m.email;
   ensureProgramOptionFor(m.program);
   populateMemberModalPrograms(m.program);
@@ -7957,11 +7989,14 @@ function closeMemberModal() {
 }
 
 function saveMember() {
-  const name = document.getElementById("member-modal-name").value.trim();
-  if (!name) {
-    alert("Enter a name for the member.");
+  const firstName = document.getElementById("member-modal-first-name").value.trim();
+  const lastName = document.getElementById("member-modal-last-name").value.trim();
+  if (!firstName) {
+    alert("Enter a first name for the member.");
     return;
   }
+  // Kept so everything downstream that wants one display string still gets it.
+  const name = [firstName, lastName].filter(Boolean).join(" ");
   const email = document.getElementById("member-modal-email").value.trim();
   const program = document.getElementById("member-modal-program").value;
   // A date input yields "" or "YYYY-MM-DD"; the empty string is not a date and

@@ -1718,6 +1718,35 @@ structured trial weeks and nobody is on Burn Club. It will matter the moment a
 real Burn Club member signs in — which today includes
 chris@worthitcandy.com.
 
+### The member modal: first/last names, and a start date that fills itself (2026-10-26)
+
+Two things Chris hit while setting up the six testers.
+
+**Name is two fields now.** It was one box, split on whitespace at save time.
+Editing an existing member splits on the LAST space rather than the first —
+"Mary Anne Clarke" is a two-word first name far more often than a two-word
+surname in this membership.
+
+**Program Start Date moved to sit directly under Program.** It was in the
+Staff Only group at the bottom, separated from the thing that makes it
+required by the whole of Member Since, Badge, Habits, Health Profile and Macro
+Targets. Assigning a structured programme meant scrolling past all of that to
+set the one field that programme now needs.
+
+**And it fills itself.** Picking a structured programme puts the next Monday in
+the box — or today, if today is Monday. Two reasons it is Monday and not
+today-whatever-day-it-is: day 1 of a schedule IS the start date, and every week
+in this app begins on Monday, so a Wednesday start spreads "Week 1" across two
+calendar weeks and makes the week-by-week view read wrongly from then on.
+
+**It only ever fills a BLANK field.** Someone editing an existing member has a
+start date already anchoring real completions; recomputing it because the modal
+was opened would silently move their whole schedule.
+
+Forgetting this field is not a cosmetic miss — a structured member without a
+start date lands on the same dead-end screen as one with no programme at all,
+which is why it is now hard to leave empty rather than merely closer to hand.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.
