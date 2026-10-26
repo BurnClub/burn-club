@@ -1892,6 +1892,41 @@ of them were about unread state — the badge count, the per-conversation dot,
 and the mark-read-on-open pass. In the same situation a coach's reply would
 never have counted as unread at all.
 
+### A comma in a selector cost the calendar every handler it had (2026-10-26)
+
+First tester feedback of the trial: on a structured programme, tapping a future
+day anywhere brought up "Log Cardio Activity", and tapping the scheduled
+workout did nothing.
+
+Both from one line:
+
+```js
+const calendarScopes = "#calendar-day-list, #calendar-today";
+document.querySelectorAll(`${calendarScopes} [data-open-circuit]`)
+```
+
+That expands to `"#calendar-day-list, #calendar-today [data-open-circuit]"`.
+**A comma separates a selector LIST**, so the attribute only qualifies the last
+entry. The first selector is a bare `#calendar-day-list` — the container.
+
+So each of the four bindings attached a listener to the day-list container
+itself, firing with `undefined` because the container carries none of those
+attributes. `openCardioLogModal(undefined)` opens the modal with no date, which
+is the tester's first symptom. And the workout buttons INSIDE that container
+never got a listener, which is the second.
+
+It also leaked: the container persists across renders while its children are
+replaced, so every re-render added four more listeners to it. One click was
+firing 41 pairs by the time it was traced.
+
+**The irony is that the comment above it bragged about covering both
+containers**, which was the right intent — the implementation just could not
+express it. They are bound by searching inside each container now, a shape
+that cannot make this mistake.
+
+Worth remembering when scoping a query to two roots: build the selector per
+root, or the attribute silently applies to one of them.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

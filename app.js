@@ -7769,19 +7769,40 @@ function renderCalendarTab() {
   // #calendar-day-list, so a selector scoped to that id alone would leave the
   // one day a member actually taps with no handlers on it — the whole point
   // of the change, silently dead.
-  const calendarScopes = "#calendar-day-list, #calendar-today";
-  document.querySelectorAll(`${calendarScopes} [data-open-circuit]`).forEach((btn) => {
-    btn.addEventListener("click", () => openCircuit(btn.dataset.openCircuit));
-  });
-  document.querySelectorAll(`${calendarScopes} [data-remove-scheduled]`).forEach((btn) => {
-    btn.addEventListener("click", () => removeScheduledItem(btn.dataset.removeScheduled));
-  });
-  document.querySelectorAll(`${calendarScopes} [data-complete-scheduled]`).forEach((btn) => {
-    btn.addEventListener("click", () => openCompleteScheduledPopup(btn.dataset.completeScheduled));
-  });
-  document.querySelectorAll(`${calendarScopes} [data-coach-cardio]`).forEach((btn) => {
-    btn.addEventListener("click", () => openCardioLogModal(btn.dataset.coachCardio));
-  });
+  // Bound by SEARCHING INSIDE each container, not with a selector string built
+  // from both (2026-10-26). The old version did this:
+  //
+  //     const scopes = "#calendar-day-list, #calendar-today";
+  //     document.querySelectorAll(`${scopes} [data-open-circuit]`)
+  //
+  // which expands to "#calendar-day-list, #calendar-today [data-open-circuit]".
+  // A comma separates a selector LIST, so the attribute only qualifies the
+  // last entry — the first selector was a bare `#calendar-day-list`, matching
+  // the CONTAINER.
+  //
+  // Two consequences, and a tester hit both. Every render attached four more
+  // listeners to that container, each firing with `undefined` because the
+  // container carries none of those attributes — so tapping anywhere in the
+  // day list opened the cardio log with no date, and the listeners piled up
+  // one set per render. Meanwhile the workout buttons INSIDE the list never
+  // got a listener at all, so tapping a workout did nothing.
+  //
+  // Scoping per container cannot express that mistake.
+  const calendarHosts = ["calendar-day-list", "calendar-today"]
+    .map((id) => document.getElementById(id))
+    .filter(Boolean);
+  const bindInCalendar = (selector, handler) => {
+    calendarHosts.forEach((host) => {
+      host.querySelectorAll(selector).forEach((el) => {
+        el.addEventListener("click", () => handler(el));
+      });
+    });
+  };
+
+  bindInCalendar("[data-open-circuit]", (el) => openCircuit(el.dataset.openCircuit));
+  bindInCalendar("[data-remove-scheduled]", (el) => removeScheduledItem(el.dataset.removeScheduled));
+  bindInCalendar("[data-complete-scheduled]", (el) => openCompleteScheduledPopup(el.dataset.completeScheduled));
+  bindInCalendar("[data-coach-cardio]", (el) => openCardioLogModal(el.dataset.coachCardio));
 }
 
 // ---------------- Entering the app ----------------
