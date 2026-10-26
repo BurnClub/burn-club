@@ -6329,11 +6329,11 @@ function conversationMessages(conversationId) {
 function conversationPreview(conv) {
   const msgs = conversationMessages(conv.id);
   const last = msgs[msgs.length - 1];
-  const prefix = last && last.senderId !== CURRENT_MEMBER.id && conv.type === "group" ? `${last.senderName.split(" ")[0]}: ` : last && last.senderId === CURRENT_MEMBER.id ? "You: " : "";
+  const prefix = last && !messageIsMine(last) && conv.type === "group" ? `${last.senderName.split(" ")[0]}: ` : last && messageIsMine(last) ? "You: " : "";
   return {
     lastText: last ? `${prefix}${last.text}` : "No messages yet.",
     lastTime: last ? last.time : "",
-    unread: msgs.some((m) => m.senderId !== CURRENT_MEMBER.id && !m.read),
+    unread: msgs.some((m) => !messageIsMine(m) && !m.read),
   };
 }
 
@@ -6374,15 +6374,38 @@ function renderConversationList() {
 }
 
 function updateUnreadBadges() {
-  const unreadCount = MESSAGES.filter((m) => m.senderId !== CURRENT_MEMBER.id && !m.read).length;
+  const unreadCount = MESSAGES.filter((m) => !messageIsMine(m) && !m.read).length;
   document.querySelectorAll("[data-role='msg-unread-badge']").forEach((badge) => {
     badge.textContent = unreadCount;
     badge.style.display = unreadCount > 0 ? "flex" : "none";
   });
 }
 
+// Did THIS member write this message? (2026-10-26)
+//
+// IN A DM, `isStaff` decides — there are exactly two participants, so "not
+// staff" IS "me". Five places used to compare senderId to CURRENT_MEMBER.id
+// instead, which answers the same question by proxy and has at least one way
+// to be wrong: a coach signed into admin as the same account they are
+// messaging has matching ids, so their own reply comes back as the member's.
+// Chris hit exactly that testing with one account on both ends — every bubble
+// in the thread rendered blue and right-aligned.
+//
+// It is not only cosmetic. The unread badge and the "mark read on open" pass
+// asked it too, so a staff reply in that state would never count as unread.
+//
+// IN A GROUP the id comparison stays: "not staff" there includes every other
+// member. Unknown conversation falls back to DM semantics, which is the safer
+// default — a staff message wrongly treated as the member's own goes unread
+// and unseen, while the reverse merely shows a dot.
+function messageIsMine(m) {
+  const conv = CONVERSATIONS.find((c) => c.id === m.conversationId);
+  if (conv && conv.type === "group") return m.senderId === CURRENT_MEMBER.id;
+  return !m.isStaff;
+}
+
 function renderMessageBubble(m, isGroup) {
-  const fromMe = m.senderId === CURRENT_MEMBER.id;
+  const fromMe = messageIsMine(m);
   return `
     <div class="msg-bubble-row ${fromMe ? "from-me" : ""}">
       <div class="msg-bubble">
@@ -6404,7 +6427,7 @@ function openThread(conversationId) {
   document.getElementById("thread-title").textContent = conv.name;
 
   conversationMessages(conversationId).forEach((m) => {
-    if (m.senderId !== CURRENT_MEMBER.id) m.read = true;
+    if (!messageIsMine(m)) m.read = true;
   });
   // Remembered across reloads, so what was read stays read (see
   // markThreadRead in sync.js).

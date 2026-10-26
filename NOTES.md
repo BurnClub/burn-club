@@ -1861,6 +1861,37 @@ POSITION in `MESSAGES` rather than a timestamp — the array is loaded in
 There is an **All / Unread** filter above the list too, with live counts, for
 when the inbox is long enough that "first" still is not far enough up.
 
+### "Is this message mine?" was asked by proxy, five times (2026-10-26)
+
+Chris: on the member side, sent and received messages were appearing on the
+same side in the same colour. His screenshot showed every bubble blue and
+right-aligned, including replies he had just sent from admin.
+
+The renderer was fine — fed a staff message and a member message with
+different ids it produced grey-left and blue-right correctly. The fault was
+the question being asked: `m.senderId === CURRENT_MEMBER.id`.
+
+**That is a proxy for "did I write this", and it breaks when a coach is signed
+into admin as the same account they are messaging.** The ids match, so the
+coach's own reply comes back styled as the member's. Chris was testing with one
+account on both ends, which is exactly that case.
+
+Worth knowing it would NOT have hit a real tester: Kelly's uuid differs from
+each member's. But the proxy is wrong on its own terms, so it was replaced
+rather than explained away.
+
+**`messageIsMine()` now answers it once.** In a DM, `isStaff` decides — there
+are two participants, so "not staff" IS "me". In a group the id comparison
+stays, because "not staff" there includes every other member. An unknown
+conversation falls back to DM semantics, the safer default: a staff message
+wrongly treated as the member's own goes unread and unseen, while the reverse
+merely shows a dot.
+
+**It was never only cosmetic.** Five places asked the same question, and three
+of them were about unread state — the badge count, the per-conversation dot,
+and the mark-read-on-open pass. In the same situation a coach's reply would
+never have counted as unread at all.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.
