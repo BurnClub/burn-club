@@ -23,7 +23,7 @@
 
      BUMP THIS STRING whenever an admin file changes. It only has to differ
      from last time; the date plus a letter is enough. -->
-<link rel="stylesheet" href="style.css?v=2026-10-26e" />
+<link rel="stylesheet" href="style.css?v=2026-10-26f" />
 </head>
 <body>
 
@@ -1394,7 +1394,13 @@
       </header>
 
       <div class="messages-layout">
-        <div class="admin-conversation-list" id="admin-conversation-list"></div>
+        <div class="admin-conversation-col">
+          <!-- Unread filter (2026-10-26, Chris). The list sorts unread-first
+               on its own; this is for when the inbox is long enough that
+               "first" still is not far enough up. -->
+          <div class="pill-filter-row" id="admin-inbox-filter"></div>
+          <div class="admin-conversation-list" id="admin-conversation-list"></div>
+        </div>
         <div class="admin-thread-pane" id="admin-thread-pane">
           <div class="admin-thread-empty" id="admin-thread-empty">Select a conversation to view messages.</div>
           <div class="admin-thread-active" id="admin-thread-active" style="display:none;">
@@ -1549,8 +1555,8 @@
 <!-- The same configured client the member app uses, one directory up: one
      place holds the project URL and the publishable key, and admin cannot
      drift onto a different project by accident. -->
-<script src="../supabase-client.js?v=2026-10-26e"></script>
-<script src="data.js?v=2026-10-26e"></script>
-<script src="app.js?v=2026-10-26e"></script>
+<script src="../supabase-client.js?v=2026-10-26f"></script>
+<script src="data.js?v=2026-10-26f"></script>
+<script src="app.js?v=2026-10-26f"></script>
 </body>
 </html>

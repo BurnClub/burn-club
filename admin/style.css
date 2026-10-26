@@ -1803,10 +1803,29 @@ h1, h2, h3 { font-family: 'Baloo 2', sans-serif; margin: 0; }
 
 /* ---------- MESSAGES ---------- */
 .messages-layout { display: flex; gap: 24px; align-items: flex-start; height: calc(100vh - 160px); }
-.admin-conversation-list {
+/* The list is now inside a column that also holds the unread filter
+   (2026-10-26), so the fixed width and the full height move up to the column
+   and the list takes what is left under the pills. */
+.admin-conversation-col {
   width: 320px;
   flex-shrink: 0;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+.admin-conversation-col .pill-filter-row { flex-shrink: 0; }
+.admin-conversation-empty {
+  margin: 8px 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--deepblue);
+}
+.admin-conversation-list {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;

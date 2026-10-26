@@ -1822,6 +1822,45 @@ comments, so the reliable move is to replace from the first header to the
 array's closing `];` wholesale. Keep future migrations in labelled contiguous
 blocks for the same reason.
 
+### The programme cards counted nothing (2026-10-26)
+
+Chris asked whether the member counts on the programme cards were stale because
+of the admin/server gap. **They were not stale — they were never connected.**
+`memberCount` is a value typed into admin/data.js once (Burn Club said 214) and
+nothing has ever updated it.
+
+The live number was already loaded: `loadRealMembers()` fills `MEMBERS` from
+the server with each member's `program_id`. The card simply read the wrong
+field. Admin even had the right pattern already — `membersOnProgram()` queries
+the server for the delete guard, with a comment saying "that field is admin's
+own local number".
+
+Counting needs no "active members only" rule, because deactivating nulls
+`program_id` via the trigger in 24-deactivate-clears-program.sql, so a
+deactivated member leaves the count on their own.
+
+**A dash, not 0, before the first load**, so "nobody is on this" and "we have
+not asked yet" do not look identical. Hiding that difference is what the
+invented 214 was doing.
+
+`activityPopulation()` still reads `memberCount` for its activity percentages.
+Left alone deliberately — changing two things that use the same field on the
+morning a trial starts is how you lose track of which one moved.
+
+### The inbox sorts unread to the top (2026-10-26)
+
+It rendered in whatever order `CONVERSATIONS` held, which is creation order. A
+member who messaged this morning could sit below one who last wrote in August,
+and the only cue was a dot you had to go looking for.
+
+Now: **unread first, then most recent.** Recency comes from the message's
+POSITION in `MESSAGES` rather than a timestamp — the array is loaded in
+`created_at` order and the only time on a record is a display string like
+"2:14 PM". A thread with no messages sorts last.
+
+There is an **All / Unread** filter above the list too, with live counts, for
+when the inbox is long enough that "first" still is not far enough up.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

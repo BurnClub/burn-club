@@ -1058,6 +1058,27 @@ let programStatusFilter = "active";
 // made. Archived programs are excluded unconditionally, including from "All",
 // because the Library is now the archive and showing them in both places is
 // the clutter archiving exists to prevent (2026-08-15).
+// Counted from the members actually loaded, not from p.memberCount
+// (2026-10-26, Chris: the cards "are not updated with the number of members
+// attached to them").
+//
+// `memberCount` is a seed value typed into admin/data.js once — Burn Club said
+// 214 — and nothing has ever updated it. It was never a stale count; it was
+// never connected to anything. The live number is already in MEMBERS, which
+// loadRealMembers() fills from the server with each member's program_id.
+//
+// This needs no "only count active" rule: deactivating nulls program_id via
+// the trigger in 24-deactivate-clears-program.sql, so someone deactivated
+// drops out of the count on their own.
+//
+// A dash rather than 0 before the first load, so "nobody is on this" and "we
+// have not asked yet" do not look the same — the made-up 214 existed to hide
+// exactly that gap.
+function memberCountFor(programId) {
+  if (adminMessagingLive() && !MEMBERS.length) return "—";
+  return MEMBERS.filter((m) => m.program === programId).length;
+}
+
 function renderPrograms() {
   persistAdminState();
   const visible = PROGRAMS.filter((p) => (p.status || "active") !== "archived")
@@ -1090,7 +1111,7 @@ function renderPrograms() {
         </div>
         <p class="desc">${p.description}</p>
         <div class="program-card-stats">
-          <div><p>${p.memberCount}</p><p>Members</p></div>
+          <div><p>${memberCountFor(p.id)}</p><p>Members</p></div>
           <div><p>${circuitCount}</p><p>Workouts</p></div>
           <div><p>${perWeek}</p><p>Per Week</p></div>
         </div>
@@ -6151,6 +6172,10 @@ document.addEventListener("click", (e) => {
       renderBuilderLibraryList();
     }
   }
+  if (action === "inbox-filter") {
+    inboxFilter = el.dataset.key;
+    renderAdminConversationList();
+  }
   if (action === "schedule-add") {
     openScheduleAdd(Number(el.dataset.day));
   }
@@ -6361,6 +6386,11 @@ function conversationPreview(conv) {
   const msgs = conversationMessages(conv.id);
   const last = msgs[msgs.length - 1];
   return {
+    // MESSAGES is loaded in created_at order, so a message's POSITION in it is
+    // its recency — there is no sortable timestamp on the record, `time` being
+    // a display string like "2:14 PM". -1 for a thread with no messages, which
+    // sorts it to the bottom where it belongs.
+    lastIndex: last ? MESSAGES.indexOf(last) : -1,
     lastText: last ? (last.isStaff ? `Staff: ${last.text}` : `${last.senderName.split(" ")[0]}: ${last.text}`) : "No messages yet.",
     lastTime: last ? last.time : "",
     unread: msgs.some((m) => !m.isStaff && !m.read),
@@ -6374,10 +6404,35 @@ let selectedConversationId = null;
 // all live on their group's page in Groups, where the roster and activity that
 // give them context are. CONVERSATIONS still holds every thread — the split is
 // about where each one is read, not what exists.
+let inboxFilter = "all"; // "all" | "unread"
+
+// Unread first, then most recent (2026-10-26, Chris). The list used to render
+// in whatever order CONVERSATIONS happened to hold, which is creation order —
+// so a member who messaged this morning could sit below one who last wrote in
+// August, and the only cue was a dot you had to go looking for.
 function renderAdminConversationList() {
   const preview = (conv) => conversationPreview(conv);
-  document.getElementById("admin-conversation-list").innerHTML = CONVERSATIONS.filter((c) => c.type === "dm").map((conv) => {
-    const p = preview(conv);
+  const dms = CONVERSATIONS.filter((c) => c.type === "dm")
+    .map((conv) => ({ conv, p: preview(conv) }))
+    .sort((a, b) => (b.p.unread - a.p.unread) || (b.p.lastIndex - a.p.lastIndex));
+
+  const unreadCount = dms.filter((d) => d.p.unread).length;
+  document.getElementById("admin-inbox-filter").innerHTML = [
+    { key: "all", label: `All (${dms.length})` },
+    { key: "unread", label: `Unread (${unreadCount})` },
+  ].map((o) => `
+    <button class="filter-pill ${o.key === inboxFilter ? "active" : ""}" data-action="inbox-filter" data-key="${o.key}">${o.label}</button>
+  `).join("");
+
+  const shown = inboxFilter === "unread" ? dms.filter((d) => d.p.unread) : dms;
+  if (!shown.length) {
+    document.getElementById("admin-conversation-list").innerHTML =
+      `<p class="admin-conversation-empty">${inboxFilter === "unread" ? "Nothing unread." : "No conversations yet."}</p>`;
+    updateAdminUnreadBadge();
+    return;
+  }
+
+  document.getElementById("admin-conversation-list").innerHTML = shown.map(({ conv, p }) => {
     return `
       <div class="admin-conversation-row ${conv.id === selectedConversationId ? "active" : ""}" data-action="open-admin-thread" data-conversation-id="${conv.id}">
         <div class="conversation-icon">${conv.type === "group" ? icon("community") : icon("chat")}</div>
