@@ -1639,6 +1639,30 @@ same or the circuits belong to nobody.
 All 10 build a phase queue (3-33 phases), **zero unresolved exercise
 references** out of 122, `data.js` parses, CIRCUITS 118 -> 128.
 
+### An export is ONE browser, not the content library
+
+Burn Club Test was missing from this export and I assumed it had been deleted.
+It had not — Chris built the Burn Club circuits on his machine and Kelly built
+these two on hers, so each export is a snapshot of **that browser's
+localStorage** and neither is complete.
+
+**This is a live hazard, not a curiosity.** Admin content has no shared
+backend, so:
+
+- **No single export is the whole library.** Migrating one wholesale — "replace
+  CIRCUITS with what is in the export" — would silently delete whatever lives
+  on the other machine. Every migration so far has been ADDITIVE, splicing in
+  only the new programme's circuits, and must stay that way until content moves
+  to the server.
+- **Deleting a programme only clears the server row and THAT browser's local
+  state.** Kelly deleting something on her machine leaves it intact on Chris's,
+  and the next export from his side brings it back.
+- Two people editing the same programme on different machines have no merge —
+  last export to be migrated wins.
+
+This is the sharpest argument yet for the content migration in "The next real
+piece of work", and worth re-reading before anyone migrates a future export.
+
 ### Content notes for Kelly, not bugs
 
 - **"BACK/BICPES"** is a typo in the workout title. Members see it.
