@@ -5191,3 +5191,54 @@ h1, h2, h3 {
   .player-video { max-width: calc(32vh * 16 / 9); }
   .demo-card-frame { max-width: calc(18vh * 16 / 9); }
 }
+
+/* ---------- MOVING A WORKOUT (2026-10-26) ----------
+   The row and its move handle sit side by side, so the workout itself keeps
+   the whole tap target it had — the handle is an addition, not a slice taken
+   out of the thing people actually press. */
+.calendar-item-wrap { display: flex; align-items: stretch; gap: 8px; }
+.calendar-item-wrap .calendar-item-btn { flex: 1 1 auto; min-width: 0; }
+.calendar-item-wrap + .calendar-item-wrap { margin-top: 8px; }
+.calendar-item-move {
+  flex: 0 0 auto;
+  width: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-white);
+  color: var(--accent-text);
+  font-size: 17px;
+  cursor: pointer;
+}
+.calendar-item-move:active { transform: scale(0.96); }
+
+/* Where it came from, on the day it landed. */
+.calendar-moved-tag {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-muted);
+}
+
+.move-day-list { display: flex; flex-direction: column; gap: 8px; max-height: 46vh; overflow-y: auto; }
+.move-day-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-white);
+  font: inherit;
+  font-weight: 700;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.move-day-btn:disabled { opacity: 0.55; cursor: default; }
+.move-day-btn.is-current { border-color: var(--blue); }
+.move-day-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); }

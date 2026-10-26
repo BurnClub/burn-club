@@ -1927,6 +1927,68 @@ that cannot make this mistake.
 Worth remembering when scoping a query to two roots: build the selector per
 root, or the attribute silently applies to one of them.
 
+### Members can move a workout to another day (2026-10-26)
+
+From the same tester feedback. Chris gave two reasons, and they are different
+shapes: a member who misses a day should not have to skip it, and "some people
+can't do Mondays, so they move their Monday workout to Sunday each week."
+
+**Only the first is built.** A one-off move is useful immediately. The standing
+"never Mondays" case is really *shift my whole schedule*, which is a different
+control — otherwise that member drags a workout every week for eight weeks.
+
+**No new table.** A move is a row in `scheduled_items`, the member's own store,
+with `kind = "moved-workout"` and the programme day in its free-form `payload`.
+That store already syncs, so a move follows the member between devices with no
+SQL to run.
+
+**Keyed on the programme DAY, not the original date.** The day is what the
+schedule template is written in; a date is derived from the member's start date
+and would go stale if that were ever corrected.
+
+Chris's rules:
+
+- **The destination doubles up.** Nothing is displaced or swapped. A day
+  already holds several items, and shuffling the rest of the week is a surprise
+  nobody asked for.
+- **Never onto a past day**, but a MISSED workout can come forward from one —
+  which is the main case. Backdating a workout you did not do is logging, not
+  scheduling.
+- **This week or next**, so a session cannot be pushed into December and
+  forgotten.
+- Choosing the day it started on removes the override rather than storing a
+  move to nowhere, which is how a member puts it back.
+
+The day it left says "Moved to Thu, Oct 29" rather than "Nothing scheduled",
+and the workout carries "Moved from Sun, Oct 25" where it lands.
+
+**One bug this introduced and caught:** `scheduledItemsOnDate()` returned
+everything in the store for a date, so a move rendered as the member's own
+cardio — a green card reading "undefined · Tap to complete". It filters to
+cardio explicitly now. Worth remembering when adding a third kind to that
+store.
+
+### Still to decide after the trial: should staff see a member's moves?
+
+Chris, 2026-10-26: "i don't necessarily think that admin needs to see it, but i
+do think it is worth it eventually to have a few into each members profile.
+Add this to a note for things to think about after the trial. This is a good
+one to talk about further."
+
+Nothing is surfaced in admin today. Worth thinking about before it is:
+
+- A coach seeing "moved Monday to Sunday, every week, for six weeks" learns
+  something real about that member — a programming signal, not an exception
+  report.
+- But a member who knows their rearranging is watched may stop rearranging,
+  which would cost more than the signal is worth. The feature exists to take
+  friction out of a missed day.
+- The data is already there and already syncs, so this is a question about what
+  to show and how it reads, not about plumbing.
+
+Related: the recurring-shift version ("I never train Mondays") is the other
+half of the same conversation.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

@@ -754,13 +754,17 @@ function scheduledItemsToRows(list) {
   return list.map((i) => ({
     member_id: AUTH_MEMBER.id, client_id: i.id, item_date: i.date,
     kind: i.type || "cardio",
-    payload: { activity: i.activity || null, completed: i.completed || false },
+    // `day` carries a moved workout's programme day (2026-10-26). The payload
+    // is free-form jsonb, which is why a move needed no new table.
+    payload: { activity: i.activity || null, completed: i.completed || false,
+               ...(i.day != null ? { day: i.day } : {}) },
   }));
 }
 function scheduledItemsFromRows(rows) {
   return rows.map((r) => ({
     id: r.client_id, type: r.kind, date: r.item_date,
     activity: (r.payload || {}).activity,
+    ...((r.payload || {}).day != null ? { day: (r.payload || {}).day } : {}),
     ...((r.payload || {}).completed ? { completed: true } : {}),
   }));
 }

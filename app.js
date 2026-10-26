@@ -7018,6 +7018,7 @@ function wireStaticControls() {
   });
   document.getElementById("calendar-week-next").addEventListener("click", () => shiftCalendarWeek(1));
   document.getElementById("calendar-week-back").addEventListener("click", resetCalendarWeek);
+  document.getElementById("move-workout-close-btn").addEventListener("click", closeMoveWorkoutPopup);
   document.getElementById("calendar-add-close-btn").addEventListener("click", closeCalendarAddPopup);
   document.getElementById("calendar-add-save-btn").addEventListener("click", saveScheduledCardio);
   document.querySelectorAll("#calendar-add-activity-picker .pill-filter").forEach((btn) => {
@@ -7360,8 +7361,15 @@ function saveScheduledItems(memberId, list) {
   queueSync("scheduledItems");
 }
 
+// The member's OWN items on a date — the cardio sessions they scheduled
+// themselves. Explicitly cardio rather than "everything on this date",
+// because the same store now also holds workout moves (2026-10-26), and those
+// are not items to draw: the move is already expressed by the workout
+// appearing on its new day. Rendered blindly they came out as a green card
+// reading "undefined — Cardio · Tap to complete".
 function scheduledItemsOnDate(dateStr) {
-  return loadScheduledItems(CURRENT_MEMBER.id).filter((i) => i.date === dateStr);
+  return loadScheduledItems(CURRENT_MEMBER.id)
+    .filter((i) => i.date === dateStr && i.type !== "moved-workout");
 }
 
 function addScheduledCardio(activity, dateStr) {
@@ -7529,6 +7537,122 @@ function scheduleItemsForProgramDay(template, programDay) {
   return template.filter((it) => it.day === programDay);
 }
 
+// ---------------- Moving a workout to another day (2026-10-26) ----------------
+//
+// Chris, from the first tester feedback of the trial: a member who misses a day
+// should not have to skip it, and "some people can't do Mondays, so they move
+// their Monday workout to Sunday each week."
+//
+// A move is stored as the member's own scheduled item with kind
+// "moved-workout", carrying the programme DAY it belongs to and the date it
+// now happens on. Reusing that store means no new table, no SQL to run, and it
+// syncs across a member's devices on the plumbing that already exists.
+//
+// Keyed on the programme day rather than the original date, because the day is
+// what the schedule template is written in — a date is derived from the
+// member's start date and would go stale if that were ever corrected.
+//
+// Rules Chris set:
+//   - The destination simply DOUBLES UP. Nothing is displaced or swapped;
+//     a day already holds several items, and shuffling the rest of the week
+//     is a surprise nobody asked for.
+//   - Never onto a past day. Moving a MISSED workout forward is the whole
+//     point, but backdating one you did not do is logging, not scheduling.
+//   - This week or next only, so a session cannot be pushed into December and
+//     forgotten.
+// The date a programme day falls on for THIS member, from their own start
+// date. There is a local closure of the same name inside the Home snapshot;
+// this is the shared one, so the calendar and the move picker agree.
+function dateForProgramDay(day) {
+  const d = parseDateKey(CURRENT_MEMBER.startDate);
+  d.setDate(d.getDate() + (day - 1));
+  return d;
+}
+
+function workoutMoves() {
+  return loadScheduledItems(CURRENT_MEMBER.id).filter((i) => i.type === "moved-workout");
+}
+
+function moveForProgramDay(day) {
+  return workoutMoves().find((m) => m.day === day) || null;
+}
+
+function workoutsMovedOnto(dateStr) {
+  return workoutMoves().filter((m) => m.date === dateStr);
+}
+
+// Today through the end of NEXT week. Monday-based, matching startOfWeek()
+// everywhere else — "next week" has to mean the same thing here as it does in
+// the week strip above it.
+function moveTargetDates() {
+  const today = new Date();
+  const weekStart = startOfWeek(today);
+  const end = new Date(weekStart);
+  end.setDate(end.getDate() + 13); // Sunday of next week
+  const out = [];
+  const d = new Date(today);
+  d.setHours(0, 0, 0, 0);
+  while (d <= end) {
+    out.push(dateKey(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+let movingWorkoutDay = null;
+
+function openMoveWorkoutPopup(day) {
+  movingWorkoutDay = Number(day);
+  const template = SCHEDULE_TEMPLATES[CURRENT_MEMBER.programId] || [];
+  const slot = scheduleItemsForProgramDay(template, movingWorkoutDay).find((it) => it.type === "workout");
+  const options = slot ? workoutsForSlot(slot.workoutId) : [];
+  const title = options.length ? options[0].title : "this workout";
+  const current = moveForProgramDay(movingWorkoutDay);
+  const original = dateKey(dateForProgramDay(movingWorkoutDay));
+  const on = current ? current.date : original;
+
+  document.getElementById("move-workout-sub").textContent =
+    `${title} — currently on ${formatWeekdayDate(parseDateKey(on))}. Pick a new day.`;
+
+  document.getElementById("move-workout-days").innerHTML = moveTargetDates().map((d) => {
+    const isNow = d === on;
+    const isHome = d === original;
+    return `
+      <button class="move-day-btn ${isNow ? "is-current" : ""}" data-move-to="${d}" ${isNow ? "disabled" : ""}>
+        <span>${esc(formatWeekdayDate(parseDateKey(d)))}</span>
+        ${isNow ? `<span class="move-day-tag">Currently here</span>`
+                : isHome ? `<span class="move-day-tag">Back to its own day</span>` : ""}
+      </button>`;
+  }).join("");
+
+  document.getElementById("move-workout-days").querySelectorAll("[data-move-to]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      moveWorkoutToDate(movingWorkoutDay, btn.dataset.moveTo);
+      closeMoveWorkoutPopup();
+      renderCalendarTab();
+    });
+  });
+  document.getElementById("move-workout-overlay").classList.add("visible");
+}
+
+function closeMoveWorkoutPopup() {
+  document.getElementById("move-workout-overlay").classList.remove("visible");
+  movingWorkoutDay = null;
+}
+
+function moveWorkoutToDate(day, dateStr) {
+  const list = loadScheduledItems(CURRENT_MEMBER.id).filter(
+    (i) => !(i.type === "moved-workout" && i.day === day)
+  );
+  // Choosing the day it was always on is how a member puts it back, so that
+  // case removes the override rather than storing a move to nowhere.
+  const original = dateKey(dateForProgramDay(day));
+  if (dateStr !== original) {
+    list.push({ id: `moved-${day}-${Date.now()}`, type: "moved-workout", day, date: dateStr });
+  }
+  saveScheduledItems(CURRENT_MEMBER.id, list);
+}
+
 // Done-ness for a coach's cardio item is "is there cardio logged on that day".
 // There is no per-item record to tick: the item belongs to the programme
 // template, which is the coach's, not the member's — unlike a session the
@@ -7639,7 +7763,20 @@ function renderCalendarDayRow(date, member, template, isPast, lastDay) {
     </div>`;
   }
   const programDay = daysBetween(member.startDate, dateKey(date)) + 1;
-  const items = scheduleItemsForProgramDay(template, programDay);
+  const dayKey = dateKey(date);
+
+  // A workout moved AWAY leaves its day; one moved ONTO this date joins it
+  // (2026-10-26). Only workouts move — a coach's cardio or reminder stays
+  // where it was put, because it is the coach's instruction about that day.
+  const movedAway = moveForProgramDay(programDay);
+  const items = scheduleItemsForProgramDay(template, programDay)
+    .filter((it) => !(it.type === "workout" && movedAway));
+  const movedIn = workoutsMovedOnto(dayKey).flatMap((m) =>
+    scheduleItemsForProgramDay(template, m.day)
+      .filter((it) => it.type === "workout")
+      .map((it) => ({ ...it, movedFromDay: m.day }))
+  );
+  items.push(...movedIn);
 
   let bodyHtml;
   if (!items.length) {
@@ -7651,7 +7788,10 @@ function renderCalendarDayRow(date, member, template, isPast, lastDay) {
     // A gap says so plainly rather than borrowing the rest-day wording,
     // because an explicit rest is a coach's instruction and a gap is an
     // omission — and saying which lets Chris spot his own while building.
-    const label = programDay < 1 ? "Not started yet"
+    // "Moved to Friday" beats "Nothing scheduled" — the member put it there
+    // and should be able to see where it went without hunting the week.
+    const label = movedAway ? `Moved to ${formatWeekdayDate(parseDateKey(movedAway.date))}`
+                : programDay < 1 ? "Not started yet"
                 : programDay > lastDay ? "Program complete"
                 : "Nothing scheduled";
     bodyHtml = `<span class="calendar-item-label calendar-item-muted">${label}</span>`;
@@ -7683,12 +7823,16 @@ function renderCalendarDayRow(date, member, template, isPast, lastDay) {
         .map((circuit) => {
           const isDone = !!completion;
           return `
-        <button class="calendar-item-btn ${isDone ? "done" : ""}" data-open-circuit="${circuit.id}">
-          <span class="calendar-item-label">${circuit.title}</span>
-          <span class="calendar-item-meta">${circuit.meta}</span>
-          ${showVariantLabels && !isDone ? `<span class="calendar-variant-tag">${variantLabel(circuit.variant)}</span>` : ""}
-          ${isDone ? `<span class="calendar-item-check">✓ Done</span>` : ""}
-        </button>
+        <div class="calendar-item-wrap">
+          <button class="calendar-item-btn ${isDone ? "done" : ""}" data-open-circuit="${circuit.id}">
+            <span class="calendar-item-label">${circuit.title}</span>
+            <span class="calendar-item-meta">${circuit.meta}</span>
+            ${item.movedFromDay ? `<span class="calendar-moved-tag">Moved from ${esc(formatWeekdayDate(dateForProgramDay(item.movedFromDay)))}</span>` : ""}
+            ${showVariantLabels && !isDone ? `<span class="calendar-variant-tag">${variantLabel(circuit.variant)}</span>` : ""}
+            ${isDone ? `<span class="calendar-item-check">✓ Done</span>` : ""}
+          </button>
+          ${isDone ? "" : `<button class="calendar-item-move" data-move-workout="${item.movedFromDay || programDay}" aria-label="Move ${esc(circuit.title)} to another day" title="Move to another day">\u21c4</button>`}
+        </div>
       `;
         })
         .join("");
@@ -7803,6 +7947,7 @@ function renderCalendarTab() {
   bindInCalendar("[data-remove-scheduled]", (el) => removeScheduledItem(el.dataset.removeScheduled));
   bindInCalendar("[data-complete-scheduled]", (el) => openCompleteScheduledPopup(el.dataset.completeScheduled));
   bindInCalendar("[data-coach-cardio]", (el) => openCardioLogModal(el.dataset.coachCardio));
+  bindInCalendar("[data-move-workout]", (el) => openMoveWorkoutPopup(el.dataset.moveWorkout));
 }
 
 // ---------------- Entering the app ----------------

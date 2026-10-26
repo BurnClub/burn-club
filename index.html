@@ -690,6 +690,19 @@
         </div>
       </div>
 
+      <!-- ---------- MOVE A WORKOUT TO ANOTHER DAY (2026-10-26) ---------- -->
+      <!-- A member who misses a day shouldn't have to skip it, and someone who
+           can never train Mondays shouldn't have to. Dates only: the
+           destination doubles up rather than displacing anything. -->
+      <div class="cardio-log-overlay" id="move-workout-overlay">
+        <div class="cardio-log-card">
+          <button class="player-exit" id="move-workout-close-btn">\u2715</button>
+          <h2 class="cardio-log-title">Move this workout</h2>
+          <p class="benchmark-log-sub" id="move-workout-sub"></p>
+          <div class="move-day-list" id="move-workout-days"></div>
+        </div>
+      </div>
+
       <!-- ---------- BENCHMARK: LOG A RESULT / RETEST (2026-10-21) ---------- -->
       <!-- Tapping a benchmark card does one of two things, decided by whether
            any workout in the member's program is tagged with it (Chris,
