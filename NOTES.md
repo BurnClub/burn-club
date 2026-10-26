@@ -1628,16 +1628,57 @@ filled-in schedule: all six F&F Test workouts resolved 1:1.**
 blocks in the live admin page, with colour rotating `LIVE_CARD_COLORS` the way
 publishing does.
 
-**And `programId` is absent on every circuit.** Structured circuits are linked
-to a programme only through their folder, whose id is `<programId>-week-N` —
-and the folder's own `programId` field is null too. The programme was recovered
-from the folder id prefix. Anything migrating a future export has to do the
-same or the circuits belong to nobody.
+**And `programId` is absent on every structured circuit** — 187 of 203 carry
+null. They are linked to a programme only through their folder.
+
+Correction to what I first wrote here: I said the folder's programme was null
+too and that I recovered it from the id prefix. **That was wrong — I queried
+the wrong key.** Admin's folders carry `program`, not `programId`, and it is
+populated correctly:
+
+```
+{"id": "fit-functional-test-week-1792947605130-week-1", "name": "Week 1",
+ "program": "fit-functional-test-week-1792947605130"}
+```
+
+The prefix happens to agree, so the migrated result is the same either way —
+but anything reading a future export should use `folder.program` rather than
+trusting the id's shape, which is a convention and not a guarantee.
 
 ### Verified
 
 All 10 build a phase queue (3-33 phases), **zero unresolved exercise
 references** out of 122, `data.js` parses, CIRCUITS 118 -> 128.
+
+### Admin can import now (2026-10-26)
+
+Admin could always export and never import, which is what stranded content on
+whichever machine built it. There is now an **Import File** button beside
+Export All on the Programs page.
+
+**Strictly additive.** It adds programmes, folders, workouts and exercises
+whose id this browser does not already have, and touches nothing it does. That
+is the whole design, not caution: a replacing import is precisely the operation
+that would wipe the other machine's work, which is the problem it exists to
+solve. An id already here is left alone even if the file's copy is newer — to
+take the file's version, delete yours first and import again.
+
+A schedule is only taken for a programme being **added**, for the same reason:
+overwriting the schedule of a programme already here would silently discard
+days somebody filled in.
+
+**It does not publish.** Importing means "I now have this content"; publishing
+means "members should see it". Keeping them separate stops an import quietly
+pushing someone else's half-built week at live members.
+
+Verified against Kelly's real 2026-10-26 export: +2 programmes, +2 folders,
++10 workouts, 0 exercises (all 688 already present), **193 existing workouts
+untouched**. Run a second time it reports "nothing to import" and changes no
+counts. `openScheduleView()` builds for an imported programme.
+
+This does not remove the need for the content migration — two people editing
+the same programme still have no merge, and last import still wins. It removes
+the need to hand-carry a file through me.
 
 ### An export is ONE browser, not the content library
 

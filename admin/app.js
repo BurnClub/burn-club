@@ -4785,6 +4785,96 @@ function exportAllPrograms() {
   URL.revokeObjectURL(url);
 }
 
+// ---------------- Import an export from another machine (2026-10-26) ----------------
+//
+// Admin has always been able to export and never to import, which is why
+// content built on one machine was stuck there. Chris built the Burn Club
+// circuits on his computer and Kelly built the trial weeks on hers, and
+// neither export is the whole library — see NOTES, "An export is ONE browser".
+//
+// STRICTLY ADDITIVE. It adds programmes, folders, workouts and exercises whose
+// id this browser does not already have, and touches nothing it does. That is
+// not timidity: a replacing import is exactly the operation that would wipe
+// the other machine's work, which is the problem this exists to solve. An id
+// that already exists here is left alone even if the file's copy is newer —
+// if you want the file's version, delete yours first and import again.
+//
+// A schedule is only taken for a programme being ADDED, for the same reason:
+// overwriting the schedule of a programme already here would silently discard
+// days somebody filled in.
+function handleProgramImportFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data;
+    try {
+      data = JSON.parse(String(reader.result));
+    } catch (e) {
+      alert("That file isn't valid JSON, so nothing was imported.");
+      return;
+    }
+    if (!data || typeof data !== "object" || (!Array.isArray(data.programs) && !Array.isArray(data.circuits))) {
+      alert("That doesn't look like a Burn Club export — it has no programs or workouts.\n\nUse the file produced by Export All.");
+      return;
+    }
+
+    const haveProgram  = new Set(PROGRAMS.map((x) => x.id));
+    const haveFolder   = new Set(FOLDERS.map((x) => x.id));
+    const haveCircuit  = new Set(CIRCUITS.map((x) => x.id));
+    const haveExercise = new Set(EXERCISE_LIBRARY.map((x) => x.id));
+
+    const newPrograms  = (data.programs  || []).filter((x) => x && x.id && !haveProgram.has(x.id));
+    const newFolders   = (data.folders   || []).filter((x) => x && x.id && !haveFolder.has(x.id));
+    const newCircuits  = (data.circuits  || []).filter((x) => x && x.id && !haveCircuit.has(x.id));
+    const newExercises = (data.exercises || []).filter((x) => x && x.id && !haveExercise.has(x.id));
+
+    const addingIds = new Set(newPrograms.map((p) => p.id));
+    const newSchedules = Object.entries(data.schedules || {}).filter(([pid]) => addingIds.has(pid));
+
+    if (!newPrograms.length && !newFolders.length && !newCircuits.length && !newExercises.length) {
+      alert("Nothing to import — every programme, workout and exercise in that file is already in this browser.");
+      return;
+    }
+
+    // Say what will happen before it happens, and name the programmes rather
+    // than only counting them: "2 programmes" is not enough to spot that you
+    // picked last week's file.
+    const lines = [];
+    if (newPrograms.length)  lines.push(`${newPrograms.length} programme(s): ${newPrograms.map((p) => p.name).join(", ")}`);
+    if (newFolders.length)   lines.push(`${newFolders.length} folder(s)`);
+    if (newCircuits.length)  lines.push(`${newCircuits.length} workout(s)`);
+    if (newExercises.length) lines.push(`${newExercises.length} exercise(s)`);
+    if (newSchedules.length) lines.push(`${newSchedules.length} schedule(s)`);
+    const skipped = (data.circuits || []).length - newCircuits.length;
+    const skipLine = skipped > 0
+      ? `\n\n${skipped} workout(s) in the file are already here and will be left exactly as they are.`
+      : "";
+    if (!confirm(`Add to this browser:\n\n${lines.join("\n")}${skipLine}\n\nNothing already here is changed or removed. Continue?`)) return;
+
+    // Spliced in place, never reassigned: PROGRAMS, FOLDERS and CIRCUITS are
+    // `const` in data.js, and assignment throws at runtime in code that parses
+    // perfectly. Same trap as the programme delete (NOTES, 2026-10-19).
+    PROGRAMS.push(...newPrograms);
+    FOLDERS.push(...newFolders);
+    CIRCUITS.push(...newCircuits);
+    if (newExercises.length) {
+      EXERCISE_LIBRARY.push(...newExercises);
+      saveExerciseLibrary();
+    }
+    newSchedules.forEach(([pid, slots]) => { SCHEDULE_TEMPLATES[pid] = slots; });
+
+    // Folders created elsewhere may predate the one-convention rename.
+    normaliseWeekFolderIds();
+    saveAdminCircuits();
+    // Deliberately NOT published to the member app. Importing is "I now have
+    // this content"; publishing is "members should see it". Keeping them
+    // separate means an import can't quietly push somebody else's half-built
+    // week at live members.
+    renderPrograms();
+    alert(`Imported.\n\n${lines.join("\n")}\n\nThey are on the Programs page now. Structured programmes arrive with whatever schedule the file held — check it before anyone starts.`);
+  };
+  reader.readAsText(file);
+}
+
 function downloadWorkoutTemplate() {
   const headers = ["Week","Day","Variant","Title","Focus","Difficulty","Description",
     "Block","Block Label","Block Type","Rounds","Work (sec)","Rest (sec)",
@@ -8767,6 +8857,15 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("exercise-modal-save-btn").addEventListener("click", saveExercise);
   document.getElementById("workout-template-btn").addEventListener("click", downloadWorkoutTemplate);
   document.getElementById("export-programs-btn").addEventListener("click", exportAllPrograms);
+  document.getElementById("import-programs-btn").addEventListener("click", () => {
+    document.getElementById("import-programs-input").click();
+  });
+  document.getElementById("import-programs-input").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    // Cleared so picking the same file twice in a row still fires `change`.
+    e.target.value = "";
+    if (file) handleProgramImportFile(file);
+  });
   document.getElementById("schedule-add-close-btn").addEventListener("click", closeScheduleAdd);
   document.getElementById("schedule-add-cancel-btn").addEventListener("click", closeScheduleAdd);
   document.getElementById("schedule-add-save-btn").addEventListener("click", confirmScheduleAdd);
