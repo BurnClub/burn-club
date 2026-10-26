@@ -6521,7 +6521,9 @@ async function loadAppSettingsFromServer() {
 async function loadMessagesFromServer() {
   if (!messagingIsLive() || typeof fetchMessages !== "function") return;
   if (typeof fetchMyGroups === "function") MY_GROUPS = await fetchMyGroups();
-  const res = await fetchMessages();
+  // Ask only for this member's own threads. memberConversations() is the same
+  // list the inbox renders, so nothing is fetched that could not be opened.
+  const res = await fetchMessages(memberConversations().map((c) => c.id));
   if (!res.ok) return;
   // Replace rather than merge: the server is the whole truth for a shared
   // thread, and merging would resurrect a seeded demo message beside it.

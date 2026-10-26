@@ -2015,6 +2015,58 @@ Nothing is surfaced in admin today. Worth thinking about before it is:
 Related: the recurring-shift version ("I never train Mondays") is the other
 half of the same conversation.
 
+### A tester's notebook showed up in Chris's app (2026-10-26)
+
+Reported from the trial: notes a tester wrote appeared in Chris's notebook on
+his own phone.
+
+**Not member-to-member.** RLS on these tables is correct — the "own rows"
+policy restricts an ordinary member to their own, and no tester can read
+another tester. The leak needed a STAFF account, because those tables also
+carry a **"staff read all"** policy, and Chris's phone account has the staff
+role so he can use admin.
+
+**The member app asked for everything and let RLS decide.** Every pull was
+`SB.from(table).select("*")` with no owner filter. For a member, RLS returned
+only their rows and the result looked correct. For staff it returned the whole
+club, and the member app rendered it as that member's own data.
+
+**The filter is not a second lock on the same door.** RLS answers "may this
+account see this row", and for staff the answer is legitimately yes. The filter
+answers a different question — "is this row THIS MEMBER'S" — which is the one
+the member app always meant to ask and never did. Relying on a permission
+check to do a scoping job works only while the two happen to agree.
+
+Every member read now filters explicitly: the flat stores (completions,
+check-ins, daily stats, habits, showcased PRs, benchmark results), the nested
+ones (notebook notes, habit checks, session notes), lifts, preferences,
+scheduled items, health profile, group memberships, and messages — which take
+the member's own conversation ids rather than whatever the policy allows.
+
+`group_members` was the quietest of them: unfiltered, a staff account appears
+in every group chat in the club.
+
+### The notebook's "For my coach" notes reach nobody (found 2026-10-26)
+
+Chris asked where the coach is notified of a notebook note. **Nowhere.**
+
+The member app splits the notebook into "For my coach" and "Anything else",
+and the code comment says the split exists because a coach note "has a
+destination". It syncs to `notebook_notes` with `kind = 'coach'`. Admin reads
+that table in no place at all — no view, no badge, no notification. Admin's
+member modal has a Notes field, but that is `member_private.coach_notes`, which
+is the COACH's private note ABOUT the member, travelling the other way.
+
+So a member writing "Do you get notified when I enter a note here?" — which is
+what the tester wrote — gets no answer, and nothing is on fire, because nothing
+is listening.
+
+Two ways out, and they are different products: surface it in admin beside the
+member (quiet, a coach looks when they look), or treat a coach note as a
+message and let it hit the inbox that already has unread counts and a reply
+box. **Until one is built, the section is promising something the app does not
+do** — which is worse than not having it.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

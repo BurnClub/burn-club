@@ -293,10 +293,23 @@ async function hydrateMemberData() {
   // the member's edit — leave it and let the queue retry.
   const stillDirty = loadDirty();
 
+  // EVERY member pull filters on member_id, and does not lean on RLS to do it
+  // (2026-10-26). RLS is correct — "own rows" restricts an ordinary member —
+  // but these tables ALSO carry a "staff read all" policy, so an account with
+  // the staff role reading through the member app got back every member's
+  // rows and rendered them as its own. A tester's notebook turned up in
+  // Chris's notebook on his phone, which is how this was found.
+  //
+  // The filter is not a second lock on the same door. RLS answers "may this
+  // account see this row", and the answer for staff is legitimately yes. This
+  // answers a different question — "is this row THIS MEMBER'S" — which is the
+  // one the member app always meant to ask.
   const pulls = Object.keys(stores).map(async (name) => {
     if (stillDirty.has(name)) { report[name] = "unsynced local edit — kept"; return; }
     const s = stores[name];
-    const { data, error } = await SB.from(s.table).select("*").order(s.order, { ascending: true });
+    const { data, error } = await SB.from(s.table).select("*")
+      .eq("member_id", AUTH_MEMBER.id)
+      .order(s.order, { ascending: true });
     if (error) { report[name] = "error: " + error.message; return; }
     if (!data || !data.length) {
       // For a merging store, an empty table means nothing has synced yet, so
@@ -324,7 +337,7 @@ async function hydrateMemberData() {
     }
     let mapped = s.fromRows(data);
     if (name === "completions") {
-      const { data: lifts } = await SB.from("lifts").select("*");
+      const { data: lifts } = await SB.from("lifts").select("*").eq("member_id", AUTH_MEMBER.id);
       if (lifts && lifts.length) {
         mapped = liftsOntoCompletions(mapped, lifts);
         report.lifts = `${lifts.length} rows`;
@@ -365,7 +378,7 @@ async function hydrateMemberData() {
     ["sessionNotes", "session_notes", SESSION_NOTES_KEY, sessionNotesFromRows],
   ].map(async ([name, table, key, from]) => {
     if (stillDirty.has(name)) { report[name] = "unsynced local edit — kept"; return; }
-    const { data, error } = await SB.from(table).select("*");
+    const { data, error } = await SB.from(table).select("*").eq("member_id", AUTH_MEMBER.id);
     if (error) { report[name] = "error: " + error.message; return; }
     if (!data || !data.length) {
       if (REPLACE_STORES.has(name)) {
@@ -384,7 +397,8 @@ async function hydrateMemberData() {
   // reason several of these exist at all: a reinstall used to replay the tour
   // and re-ask about check-ins because the flags were per-browser.
   const prefs = (async () => {
-    const { data, error } = await SB.from("member_preferences").select("*").maybeSingle();
+    const { data, error } = await SB.from("member_preferences").select("*")
+      .eq("member_id", AUTH_MEMBER.id).maybeSingle();
     if (error || !data) { report.preferences = error ? "error: " + error.message : "none"; return; }
     if (data.theme) localStorage.setItem(THEME_KEY, data.theme);
     // "1", not a timestamp: tourSeen() tests for exactly that string, so
@@ -403,7 +417,8 @@ async function hydrateMemberData() {
   })();
 
   const extras = (async () => {
-    const { data: sched, error: schedErr } = await SB.from("scheduled_items").select("*");
+    const { data: sched, error: schedErr } = await SB.from("scheduled_items").select("*")
+      .eq("member_id", AUTH_MEMBER.id);
     // Same rule as the other replacing stores: when this device has no
     // unsynced edit, the server's list is the truth — including when it is
     // empty, which is how a removed last session reaches every device.
@@ -412,7 +427,8 @@ async function hydrateMemberData() {
                            JSON.stringify(scheduledItemsFromRows(sched || [])));
       report.scheduledItems = `${(sched || []).length} rows`;
     }
-    const { data: hp } = await SB.from("health_profile").select("*").maybeSingle();
+    const { data: hp } = await SB.from("health_profile").select("*")
+      .eq("member_id", AUTH_MEMBER.id).maybeSingle();
     if (hp && hp.profile && Object.keys(hp.profile).length) {
       // Merge into the shared bridge object rather than replacing it, so a
       // profile belonging to another member in this browser survives.
@@ -873,7 +889,11 @@ function markThreadRead(conversationId) {
 // filter here that would paper over it.
 async function fetchMyGroups() {
   if (!SB || !AUTH_MEMBER) return [];
-  const mine = await SB.from("group_members").select("group_id");
+  // Scoped like every other member pull (2026-10-26): unfiltered, a staff
+  // account reads every member's group rows and the member app then shows it
+  // sitting in every group chat in the club.
+  const mine = await SB.from("group_members").select("group_id")
+    .eq("member_id", AUTH_MEMBER.id);
   if (mine.error || !mine.data || !mine.data.length) return [];
   const ids = mine.data.map((r) => r.group_id);
   const groups = await SB.from("member_groups").select("id,name").in("id", ids);
@@ -881,13 +901,22 @@ async function fetchMyGroups() {
   return groups.data || [];
 }
 
-async function fetchMessages() {
+// `conversationIds` is the member's OWN threads, passed in by the caller which
+// is the side that knows them (2026-10-26). Same reason as the member_id
+// filters above: the messages policy lets staff read every thread, so a staff
+// account reading through the member app would otherwise pull other members'
+// DMs into its own inbox and unread count.
+async function fetchMessages(conversationIds) {
   if (!SB || !AUTH_MEMBER) return { ok: false, reason: "not signed in" };
+  if (Array.isArray(conversationIds) && !conversationIds.length) {
+    return { ok: true, messages: [] };
+  }
   // Oldest first so a thread reads top to bottom with no sort on the client.
   // Capped: a year of a six-person group chat is not something to pull on
   // every app open, and nobody scrolls back past a few hundred.
-  const { data, error } = await SB.from("messages")
-    .select("*").order("created_at", { ascending: true }).limit(500);
+  let q = SB.from("messages").select("*");
+  if (Array.isArray(conversationIds)) q = q.in("conversation_id", conversationIds);
+  const { data, error } = await q.order("created_at", { ascending: true }).limit(500);
   if (error) { recordSyncError("messages", error.message); return { ok: false, reason: error.message }; }
   const reads = loadThreadReads();
   return { ok: true, messages: (data || []).map((r) => messageFromRow(r, reads[r.conversation_id])) };
