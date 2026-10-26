@@ -1841,6 +1841,1039 @@ const CIRCUITS = [
       },
     ],
   },
+
+  // ---- FIT & FUNCTIONAL TEST WEEK and 30 MINUTE BURN TEST (migrated 2026-10-26) ----
+  //
+  // Kelly's two trial programmes, from burn-club-programs-2026-10-26.json.
+  // Both are STRUCTURED, so they surface workouts from the member's own
+  // start_date plus a day offset via SCHEDULE_TEMPLATES below — NOT from a
+  // date on the circuit, which is why none of these carry availableFrom.
+  //
+  // `meta` and `color` are absent from the export because admin derives them
+  // at publish time, so both were produced by running admin's own
+  // estimateCircuitMinutes() and deriveWorkoutFocus() against these exact
+  // blocks in the live admin page. Colour rotates LIVE_CARD_COLORS the way
+  // publishing does. Do the same for any future export or the numbers stop
+  // matching what Kelly sees.
+  //
+  // `programId` is set here but is NOT in the export — the only link admin
+  // ships is the folder id prefix (`<programId>-week-1`), so it was recovered
+  // from that.
+  //
+  // MIGRATED WITHOUT A SCHEDULE, deliberately (Chris, 2026-10-26). Every day
+  // of both programmes is still a Rest Day in admin, so these workouts exist
+  // and are unreachable until Kelly assigns them to days and the schedule is
+  // re-imported. The content is here so that step is the only one left.
+  {
+      "id": "circuit-1792975829465",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "fit-functional-test-week-1792947605130-week-1",
+      "category": "structured",
+      "tag": "New",
+      "title": "CIRCUIT",
+      "meta": "25 min · Abs & Full Body",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+        {
+          "type": "amrap",
+          "label": "AMRAP",
+          "duration": 720,
+          "exercises": [
+            {
+              "name": "DB Walking Lunge",
+              "reps": 12
+            },
+            {
+              "name": "Contralateral DB/KB Staggered Stance RDL",
+              "reps": 12
+            },
+            {
+              "name": "Renegade Row",
+              "reps": 12
+            },
+            {
+              "name": "Lateral Bear Crawl",
+              "reps": 12
+            },
+            {
+              "name": "Bear Plank",
+              "reps": 12
+            }
+          ]
+        },
+        {
+          "type": "rest",
+          "label": "Rest",
+          "duration": 120
+        },
+        {
+          "type": "amrap",
+          "label": "AMRAP",
+          "duration": 720,
+          "exercises": [
+            {
+              "name": "Single Arm KB/DB Power Clean",
+              "reps": 10,
+              "cue": "left"
+            },
+            {
+              "name": "Single Arm KB/DB Overhead Walk",
+              "reps": 0,
+              "cue": "left"
+            },
+            {
+              "name": "Single Arm KB/DB Power Clean",
+              "reps": 10,
+              "cue": "right"
+            },
+            {
+              "name": "Single Arm KB/DB Overhead Walk",
+              "reps": 0,
+              "cue": "right"
+            },
+            {
+              "name": "Downward Dog to Single Leg Crunch",
+              "reps": 0
+            },
+            {
+              "name": "Downward Dog Push Ups",
+              "reps": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quads-glutes-1792975325761",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "fit-functional-test-week-1792947605130-week-1",
+      "category": "structured",
+      "tag": "New",
+      "title": "QUADS/GLUTES",
+      "meta": "35 min · Quads & Glutes",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 2,
+          "rest": 30,
+          "exercises": [
+            {
+              "name": "Air Squat",
+              "reps": 10
+            },
+            {
+              "name": "Worlds Greatest Stretch",
+              "reps": 0
+            },
+            {
+              "name": "90/90 Hip Switch",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 90,
+          "exercises": [
+            {
+              "name": "DB RDL to Top Loaded Squat",
+              "reps": 10
+            },
+            {
+              "name": "Dual DB Top Loaded Squat",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Box/Bench Step Ups",
+              "reps": 12
+            },
+            {
+              "name": "Jump Split Squat",
+              "reps": 12
+            }
+          ]
+        },
+        {
+          "type": "straight",
+          "label": "Bench/Box Pistol Squats",
+          "exercise": {
+            "name": "Bench/Box Pistol Squats",
+            "cue": "Modify by lowing down on one leg and standing up with both, using a higher box/bench"
+          },
+          "sets": 3,
+          "reps": 0,
+          "rest": 30
+        },
+        {
+          "type": "amrap",
+          "label": "AMRAP",
+          "duration": 720,
+          "exercises": [
+            {
+              "name": "Goblet Squat",
+              "reps": 10
+            },
+            {
+              "name": "Banded Duck Walk",
+              "reps": 0
+            },
+            {
+              "name": "Up and Overs",
+              "reps": 10
+            },
+            {
+              "name": "Side to Side Lemon Squeezers",
+              "reps": 10
+            },
+            {
+              "name": "Banded Glute Bridge w/ Abductions",
+              "reps": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "back-bicpes-1792974726372",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "fit-functional-test-week-1792947605130-week-1",
+      "category": "structured",
+      "tag": "New",
+      "title": "BACK/BICPES",
+      "meta": "45 min · Biceps & Full Body",
+      "color": "deepblue",
+      "desc": "No description yet.",
+      "blocks": [
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 3,
+          "rest": 30,
+          "exercises": [
+            {
+              "name": "Worlds Greatest Stretch",
+              "reps": 0
+            },
+            {
+              "name": "Band Pull Aparts",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Gorilla Row",
+              "reps": 0,
+              "cue": "KBs or DBs"
+            },
+            {
+              "name": "KB Swing",
+              "reps": 10,
+              "cue": "KB or DB"
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "3-Point Row",
+              "reps": 12
+            },
+            {
+              "name": "Alternating DB Curl",
+              "reps": 12
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Up Downs",
+              "scheme": [
+                10,
+                9,
+                8,
+                7
+              ]
+            },
+            {
+              "name": "Hammer Curl w/ Supination",
+              "reps": 10
+            },
+            {
+              "name": "DB Hammer Curl Static Hold",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "cardio-choice",
+          "label": "Cardio — Your Choice",
+          "duration": 900
+        }
+      ]
+    },
+    {
+      "id": "chest-triceps-1792972793728",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "fit-functional-test-week-1792947605130-week-1",
+      "category": "structured",
+      "tag": "New",
+      "title": "CHEST/TRICEPS",
+      "meta": "40 min · Chest & Triceps",
+      "color": "yellow",
+      "desc": "No description yet.",
+      "blocks": [
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 3,
+          "rest": 30,
+          "exercises": [
+            {
+              "name": "Band Pull Aparts",
+              "reps": 10
+            },
+            {
+              "name": "Scap Push Up",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Alternating Neutral DB Chest Press",
+              "reps": 0
+            },
+            {
+              "name": "DB Chest Fly w/ Supination",
+              "reps": 8
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Alternating Supinated DB Chest Press",
+              "reps": 12
+            },
+            {
+              "name": "Supinated DB Chest Press",
+              "reps": 6
+            },
+            {
+              "name": "Tricep Bench Dips",
+              "reps": 12
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 3,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Incline Bench Push Up",
+              "reps": 0,
+              "cue": "higher the incline the easier it'll be. Slow and controlled reps"
+            },
+            {
+              "name": "Supinated Tricep Kickback",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "emom",
+          "label": "EMOM",
+          "duration": 720,
+          "interval": 60,
+          "exercises": [
+            {
+              "name": "Burpee",
+              "reps": 8
+            },
+            {
+              "name": "Overhead DB Tricep Extension",
+              "reps": 12
+            },
+            {
+              "name": "Alternating Side Plank",
+              "reps": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hamstrings-glutes-1792972456231",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "fit-functional-test-week-1792947605130-week-1",
+      "category": "structured",
+      "tag": "New",
+      "title": "HAMSTRINGS/GLUTES",
+      "meta": "55 min · Glutes & Hamstrings",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 3,
+          "rest": 30,
+          "exercises": [
+            {
+              "name": "Staggered Stance Good Morning",
+              "reps": 0
+            },
+            {
+              "name": "90/90 Hip Switch",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Death March",
+              "reps": 0
+            },
+            {
+              "name": "Dual KB/DB Sumo Deadlift",
+              "reps": 12
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Glute Focused KB/DB Reverse Lunge",
+              "reps": 0
+            },
+            {
+              "name": "DB Hip Thrust",
+              "reps": 12
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Lateral Step Up w/ Slow Eccentric",
+              "reps": 0
+            },
+            {
+              "name": "KB Swing",
+              "reps": 12,
+              "cue": "KB or DB"
+            },
+            {
+              "name": "Seated Band Abduction",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 2,
+          "rest": 30,
+          "exercises": [
+            {
+              "name": "Side Lying Leg Raise",
+              "reps": 10,
+              "cue": "left"
+            },
+            {
+              "name": "Side Lying Bicycles",
+              "reps": 10,
+              "cue": "left"
+            },
+            {
+              "name": "Side Lying Reverse Bicycles",
+              "reps": 10,
+              "cue": "left"
+            },
+            {
+              "name": "Side Lying Leg Raise",
+              "reps": 10,
+              "cue": "right"
+            },
+            {
+              "name": "Side Lying Bicycles",
+              "reps": 10,
+              "cue": "right"
+            },
+            {
+              "name": "Side Lying Reverse Bicycles",
+              "reps": 10,
+              "cue": "right"
+            }
+          ]
+        },
+        {
+          "type": "cardio-choice",
+          "label": "Cardio — Your Choice",
+          "duration": 900
+        }
+      ]
+    },
+    {
+      "id": "shoulders-abs-1792948000381",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "fit-functional-test-week-1792947605130-week-1",
+      "category": "structured",
+      "tag": "New",
+      "title": "SHOULDERS/ABS",
+      "meta": "50 min · Abs & Shoulders",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 3,
+          "rest": 30,
+          "exercises": [
+            {
+              "name": "Around the World Raise",
+              "reps": 12
+            },
+            {
+              "name": "Walk Out Plank/Inchworm",
+              "reps": 12
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Single Arm Arnold Press",
+              "reps": 0
+            },
+            {
+              "name": "DB Upright Row",
+              "reps": 0
+            },
+            {
+              "name": "Reverse Crunch w/ Plate Pass",
+              "reps": 0,
+              "cue": "drop weight to modify or do dead bugs"
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "DB Thruster",
+              "reps": 10
+            },
+            {
+              "name": "Single Arm DB Rear Delt Fly",
+              "reps": 0
+            },
+            {
+              "name": "Bent Over High Row",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "emom",
+          "label": "EMOM",
+          "duration": 720,
+          "interval": 60,
+          "exercises": [
+            {
+              "name": "Devils Press",
+              "reps": 12
+            },
+            {
+              "name": "2-Way Lateral Raise",
+              "reps": 12
+            },
+            {
+              "name": "Alternating Single Leg Raise/Heel Taps",
+              "reps": 0
+            },
+            {
+              "name": "Straight Leg DB Crunch",
+              "reps": 20
+            }
+          ]
+        },
+        {
+          "type": "cardio-choice",
+          "label": "Cardio — Your Choice",
+          "duration": 900
+        }
+      ]
+    },
+    {
+      "id": "shoulders-abs-1792948000381-copy-1792976097898-3",
+      "programId": "30-minute-burn-test-1792976073830",
+      "folderId": "30-minute-burn-test-1792976073830-week-1",
+      "category": "structured",
+      "tag": "New",
+      "title": "SHOULDERS/ABS",
+      "meta": "30 min · Shoulders & Abs",
+      "color": "deepblue",
+      "desc": "No description yet.",
+      "blocks": [
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Single Arm Arnold Press",
+              "reps": 0
+            },
+            {
+              "name": "DB Upright Row",
+              "reps": 0
+            },
+            {
+              "name": "Reverse Crunch w/ Plate Pass",
+              "reps": 0,
+              "cue": "drop weight to modify or do dead bugs"
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "DB Thruster",
+              "reps": 10
+            },
+            {
+              "name": "Single Arm DB Rear Delt Fly",
+              "reps": 0
+            },
+            {
+              "name": "Bent Over High Row",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "emom",
+          "label": "EMOM",
+          "duration": 720,
+          "interval": 60,
+          "exercises": [
+            {
+              "name": "Devils Press",
+              "reps": 12
+            },
+            {
+              "name": "2-Way Lateral Raise",
+              "reps": 12
+            },
+            {
+              "name": "Alternating Single Leg Raise/Heel Taps",
+              "reps": 0
+            },
+            {
+              "name": "Straight Leg DB Crunch",
+              "reps": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hamstrings-glutes-1792972456231-copy-1792976097898-2",
+      "programId": "30-minute-burn-test-1792976073830",
+      "folderId": "30-minute-burn-test-1792976073830-week-1",
+      "category": "structured",
+      "tag": "New",
+      "title": "HAMSTRINGS/GLUTES",
+      "meta": "55 min · Glutes & Hamstrings",
+      "color": "yellow",
+      "desc": "No description yet.",
+      "blocks": [
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 3,
+          "rest": 30,
+          "exercises": [
+            {
+              "name": "Staggered Stance Good Morning",
+              "reps": 0
+            },
+            {
+              "name": "90/90 Hip Switch",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Death March",
+              "reps": 0
+            },
+            {
+              "name": "Dual KB/DB Sumo Deadlift",
+              "reps": 12
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Glute Focused KB/DB Reverse Lunge",
+              "reps": 0
+            },
+            {
+              "name": "DB Hip Thrust",
+              "reps": 12
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Lateral Step Up w/ Slow Eccentric",
+              "reps": 0
+            },
+            {
+              "name": "KB Swing",
+              "reps": 12,
+              "cue": "KB or DB"
+            },
+            {
+              "name": "Seated Band Abduction",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 2,
+          "rest": 30,
+          "exercises": [
+            {
+              "name": "Side Lying Leg Raise",
+              "reps": 10,
+              "cue": "left"
+            },
+            {
+              "name": "Side Lying Bicycles",
+              "reps": 10,
+              "cue": "left"
+            },
+            {
+              "name": "Side Lying Reverse Bicycles",
+              "reps": 10,
+              "cue": "left"
+            },
+            {
+              "name": "Side Lying Leg Raise",
+              "reps": 10,
+              "cue": "right"
+            },
+            {
+              "name": "Side Lying Bicycles",
+              "reps": 10,
+              "cue": "right"
+            },
+            {
+              "name": "Side Lying Reverse Bicycles",
+              "reps": 10,
+              "cue": "right"
+            }
+          ]
+        },
+        {
+          "type": "cardio-choice",
+          "label": "Cardio — Your Choice",
+          "duration": 900
+        }
+      ]
+    },
+    {
+      "id": "chest-triceps-1792972793728-copy-1792976097898-1",
+      "programId": "30-minute-burn-test-1792976073830",
+      "folderId": "30-minute-burn-test-1792976073830-week-1",
+      "category": "structured",
+      "tag": "New",
+      "title": "CHEST/TRICEPS",
+      "meta": "40 min · Chest & Triceps",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 3,
+          "rest": 30,
+          "exercises": [
+            {
+              "name": "Band Pull Aparts",
+              "reps": 10
+            },
+            {
+              "name": "Scap Push Up",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Alternating Neutral DB Chest Press",
+              "reps": 0
+            },
+            {
+              "name": "DB Chest Fly w/ Supination",
+              "reps": 8
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Alternating Supinated DB Chest Press",
+              "reps": 12
+            },
+            {
+              "name": "Supinated DB Chest Press",
+              "reps": 6
+            },
+            {
+              "name": "Tricep Bench Dips",
+              "reps": 12
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 3,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Incline Bench Push Up",
+              "reps": 0,
+              "cue": "higher the incline the easier it'll be. Slow and controlled reps"
+            },
+            {
+              "name": "Supinated Tricep Kickback",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "emom",
+          "label": "EMOM",
+          "duration": 720,
+          "interval": 60,
+          "exercises": [
+            {
+              "name": "Burpee",
+              "reps": 8
+            },
+            {
+              "name": "Overhead DB Tricep Extension",
+              "reps": 12
+            },
+            {
+              "name": "Alternating Side Plank",
+              "reps": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quads-glutes-1792975325761-copy-1792976097898-0",
+      "programId": "30-minute-burn-test-1792976073830",
+      "folderId": "30-minute-burn-test-1792976073830-week-1",
+      "category": "structured",
+      "tag": "New",
+      "title": "QUADS/GLUTES",
+      "meta": "35 min · Quads & Glutes",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 2,
+          "rest": 30,
+          "exercises": [
+            {
+              "name": "Air Squat",
+              "reps": 10
+            },
+            {
+              "name": "Worlds Greatest Stretch",
+              "reps": 0
+            },
+            {
+              "name": "90/90 Hip Switch",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 90,
+          "exercises": [
+            {
+              "name": "DB RDL to Top Loaded Squat",
+              "reps": 10
+            },
+            {
+              "name": "Dual DB Top Loaded Squat",
+              "reps": 0
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "label": "Superset",
+          "rounds": 4,
+          "rest": 60,
+          "exercises": [
+            {
+              "name": "Box/Bench Step Ups",
+              "reps": 12
+            },
+            {
+              "name": "Jump Split Squat",
+              "reps": 12
+            }
+          ]
+        },
+        {
+          "type": "straight",
+          "label": "Bench/Box Pistol Squats",
+          "exercise": {
+            "name": "Bench/Box Pistol Squats",
+            "cue": "Modify by lowing down on one leg and standing up with both, using a higher box/bench"
+          },
+          "sets": 3,
+          "reps": 0,
+          "rest": 30
+        },
+        {
+          "type": "amrap",
+          "label": "AMRAP",
+          "duration": 720,
+          "exercises": [
+            {
+              "name": "Goblet Squat",
+              "reps": 10
+            },
+            {
+              "name": "Banded Duck Walk",
+              "reps": 0
+            },
+            {
+              "name": "Up and Overs",
+              "reps": 10
+            },
+            {
+              "name": "Side to Side Lemon Squeezers",
+              "reps": 10
+            },
+            {
+              "name": "Banded Glute Bridge w/ Abductions",
+              "reps": 10
+            }
+          ]
+        }
+      ]
+    }
 ];
 
 // Workouts the admin app publishes get bridged in here via localStorage —
@@ -1914,8 +2947,26 @@ const WEEK_NOTES = {
   "fit-functional-week-2": "Week 2 is the one that usually bites — the volume steps up before your body has caught up with it. If something has to give, drop a set rather than a session.",
 };
 
+// Seven rest days each, which is EXACTLY what admin currently holds for both
+// trial programmes (migrated 2026-10-26). Admin creates every day as a Rest
+// Day and staff fill them in via Manage Schedule; that step has not been done,
+// so these are faithful rather than useful.
+//
+// NOTHING WILL APPEAR until Kelly assigns workouts to days and these arrays
+// are replaced. A member on either programme sees a rest day every day.
+//
+// When they are filled in, each slot's workoutId is the circuit id verbatim —
+// these workouts carry no `variant`, so workoutsForSlot() takes its direct
+// id-match fallback rather than appending -home/-gym the way Fit & Functional
+// does.
+function buildBlankWeek() {
+  return Array.from({ length: 7 }, (_, i) => ({ day: i + 1, type: "rest" }));
+}
+
 const SCHEDULE_TEMPLATES = {
   "fit-functional": buildFitFunctionalSchedule(),
+  "fit-functional-test-week-1792947605130": buildBlankWeek(),
+  "30-minute-burn-test-1792976073830": buildBlankWeek(),
 };
 
 // Buzz is scoped to the member's own program (2026-08-13) — it used to be one

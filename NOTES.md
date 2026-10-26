@@ -1583,6 +1583,74 @@ outright — `NotAllowedError: Wake Lock permission request denied` — so what 
 proven is that the rejection is handled and the workout runs normally without
 it. That it actually holds the screen on needs a real laptop.
 
+## The two trial weeks, migrated without schedules (2026-10-26)
+
+From `burn-club-programs-2026-10-26.json`: FIT & FUNCTIONAL TEST WEEK (6
+workouts) and 30 MINUTE BURN TEST (4). Both STRUCTURED, duration 1 week.
+
+### They have no schedule, and that is not a migration fault
+
+Both programmes have **seven rest days and zero workouts assigned**. The
+contrast in the same export makes it unambiguous: Fit & Functional has 48
+workout slots, 30 Minute Burn has 40, these two have none. Admin's own copy
+says why — "every day starts as a Rest Day until you assign workouts" — so the
+Schedule step was simply never done.
+
+**A member on either programme today sees a rest day every day.** The workouts
+exist and are unreachable.
+
+Chris asked for them to be migrated anyway (2026-10-26), which is the right
+call: the content lands now, and filling the schedule later is a small separate
+import rather than redoing the whole thing. `SCHEDULE_TEMPLATES` holds seven
+rest days for each, which is faithful to what admin actually contains.
+
+### Structured programmes do not resolve like Burn Club Test did
+
+Burn Club Test was **rolling** — workouts surface from a date on the circuit
+(`availableFrom`). These are **structured**: workouts surface from the member's
+own `start_date` plus a day offset, driven by the schedule. So:
+
+- None of these circuits carry `availableFrom`, and none should.
+- Every member needs a `start_date` as well as a `program_id`. A structured
+  member with no start date hits a dead-end screen.
+
+`workoutsForSlot()` first looks for circuits whose `slotId` matches, then falls
+back to a direct id match. Fit & Functional uses the first path — its slots
+hold a BASE id and the real circuits are `<base>-home` / `<base>-gym`. These
+trial workouts have no variant, so they take the fallback and their slot's
+`workoutId` is simply the circuit id verbatim. **Verified by simulating a
+filled-in schedule: all six F&F Test workouts resolved 1:1.**
+
+### The export is lossy in the same two ways as last time
+
+`meta` and `color` are absent — derived by running admin's own
+`estimateCircuitMinutes()` and `deriveWorkoutFocus()` against these exact
+blocks in the live admin page, with colour rotating `LIVE_CARD_COLORS` the way
+publishing does.
+
+**And `programId` is absent on every circuit.** Structured circuits are linked
+to a programme only through their folder, whose id is `<programId>-week-N` —
+and the folder's own `programId` field is null too. The programme was recovered
+from the folder id prefix. Anything migrating a future export has to do the
+same or the circuits belong to nobody.
+
+### Verified
+
+All 10 build a phase queue (3-33 phases), **zero unresolved exercise
+references** out of 122, `data.js` parses, CIRCUITS 118 -> 128.
+
+### Content notes for Kelly, not bugs
+
+- **"BACK/BICPES"** is a typo in the workout title. Members see it.
+- **30 MINUTE BURN TEST is copies of the F&F Test workouts** — the ids carry
+  `-copy-`. One was trimmed from 5 blocks to 3; the rest are unchanged, which
+  is why its HAMSTRINGS/GLUTES estimates at **55 minutes** in a programme
+  called 30 Minute Burn.
+- **Every description is "No description yet."** That string shows on the
+  workout detail screen.
+- 21 of the exercise references have no video yet, so those rows show the play
+  placeholder rather than a demo.
+
 ## Settled: programmes are hand-built on purpose — do not "fix" this
 
 I raised the absence of a "duplicate programme" feature on 2026-10-14 as a
