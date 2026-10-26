@@ -1747,6 +1747,39 @@ Forgetting this field is not a cosmetic miss — a structured member without a
 start date lands on the same dead-end screen as one with no programme at all,
 which is why it is now hard to leave empty rather than merely closer to hand.
 
+### The Reps field holds words now (2026-10-26)
+
+Chris writes "8 each leg" in Reps for single-limb work. The box saved it, and
+reopening the workout showed 0.
+
+`parseRepsField()` split on commas and did `Number(parts[0]) || 0`.
+`Number("8 each leg")` is NaN, and `NaN || 0` is **0**. The straight-sets Reps
+box was `type="number"` as well, so the text could not even be typed there.
+
+**The fault was not that it rejected text — it was that it did so silently.**
+Typed, saved without complaint, came back as zero. Nobody would have found it
+until a member saw "0 reps" mid-workout.
+
+The rule, Chris's: **a bare number gets the word added, anything else prints
+verbatim.** "8" reads "8 reps"; "8 each leg" reads "8 each leg", because
+appending the word gives "8 each leg reps". One helper, `repsLabel()`, used by
+every place the member app shows reps — superset rows, straight-set rows, AMRAP
+and EMOM rows, the player's reps pill, "Up next", and the block summary.
+
+**Nothing arithmetic depended on reps.** `estimateBlockSeconds()` counts a flat
+30 seconds per exercise and never reads it, so there was no duration to break.
+A numeric SCHEME (10,8,8,6) is a separate field and is untouched.
+
+It also makes rep ranges work as a side effect: "8-10" now reads "8-10" rather
+than collapsing to 8.
+
+**Still plural at one.** "1" reads "1 reps", which is what it did before — left
+alone deliberately rather than quietly changed alongside a requested fix.
+
+**Cue is still the better home for a qualifier that is not a count.** It renders
+as `Name — cue` everywhere the exercise appears, including under the demo video
+and in Up next. Reps-with-words is for when the count itself needs the words.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

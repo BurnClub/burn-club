@@ -3244,6 +3244,8 @@ function blockTopFields(block, i) {
   const v = block.values;
   const num = (label, field, value, min, cls) =>
     `<label class="inline-field ${cls || ""}">${label}<input type="number" min="${min}" value="${value}" data-block-index="${i}" data-field="${field}" /></label>`;
+  const repsField = (value) =>
+    `<label class="inline-field">Reps<input type="text" inputmode="numeric" value="${esc(String(value == null ? "" : value))}" data-block-index="${i}" data-field="reps" title="A number, a scheme like 10,8,8,6, or words: 8 each leg" /></label>`;
   const chooser = () => `
     <label class="modal-field inline-grow">Exercise
       <div class="chosen-exercise-lg ${v.exerciseName ? "" : "empty"}${isActiveSlot(i, null) ? " active-slot" : ""}"
@@ -3271,7 +3273,9 @@ function blockTopFields(block, i) {
     case "superset":
       return num("Rounds", "rounds", v.rounds, 1) + num("Rest (s)", "rest", v.rest, 0);
     case "straight":
-      return chooser() + cue() + num("Sets", "sets", v.sets, 1) + num("Reps", "reps", v.reps, 1) + num("Rest (s)", "rest", v.rest, 0);
+      // Reps is TEXT, not a number input (2026-10-26): "8 each leg" has to be
+      // typeable here as well as on a superset row, which already used text.
+      return chooser() + cue() + num("Sets", "sets", v.sets, 1) + repsField(v.reps) + num("Rest (s)", "rest", v.rest, 0);
     case "ladder":
       return chooser() + cue()
         + `<label class="inline-field wide">Rep scheme<input type="text" value="${v.scheme}" data-block-index="${i}" data-field="scheme" /></label>`
@@ -3639,9 +3643,18 @@ function parseRepsField(value) {
     const nums = parts.map(Number).filter((n) => Number.isFinite(n) && n > 0);
     if (nums.length > 1) return { scheme: nums };
   }
-  // The first number, not the whole string: typing "10," on the way to
-  // "10,8,8,6" would otherwise read as NaN and silently store 0 reps.
-  return { reps: Number(parts[0]) || 0 };
+  const only = parts[0] || "";
+  // A BARE NUMBER is stored as a number, as it always was. ANYTHING ELSE is
+  // kept as the text it was typed as (2026-10-26, Chris) — "8 each leg" is how
+  // a coach writes single-limb work, and this used to collapse it to 0 without
+  // saying so. The member app's repsLabel() decides how it reads: a number
+  // gets " reps" appended, a phrase is printed verbatim.
+  //
+  // Still "the first number, not the whole string" for the digits-and-comma
+  // case: typing "10," on the way to "10,8,8,6" must not read as NaN.
+  if (/^\d+$/.test(only)) return { reps: Number(only) };
+  if (only) return { reps: only };
+  return { reps: 0 };
 }
 
 // The inverse of parseRepsField: a stored scheme comes back into the one Reps
@@ -3686,7 +3699,7 @@ function builderBlocksToSchema() {
       case "superset":
         return { type: "superset", label: derivedBlockLabel(b), rounds: Number(v.rounds) || 1, rest: Number(v.rest) || 0, exercises: v.exercises.filter((e) => e.name.trim()).map(exerciseWithHold) };
       case "straight":
-        return { type: "straight", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "", ...(v.cue && v.cue.trim() ? { cue: v.cue.trim() } : {}) }, sets: Number(v.sets) || 1, reps: Number(v.reps) || 0, rest: Number(v.rest) || 0 };
+        return { type: "straight", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "", ...(v.cue && v.cue.trim() ? { cue: v.cue.trim() } : {}) }, sets: Number(v.sets) || 1, ...parseRepsField(v.reps), rest: Number(v.rest) || 0 };
       case "ladder":
         return { type: "ladder", label: derivedBlockLabel(b), exercise: { name: v.exerciseName || "", ...(v.cue && v.cue.trim() ? { cue: v.cue.trim() } : {}) }, scheme: String(v.scheme).split(",").map((n) => Number(n.trim())).filter((n) => !isNaN(n)), rest: Number(v.rest) || 0 };
       case "cardio-choice":

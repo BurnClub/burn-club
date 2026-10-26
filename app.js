@@ -3588,6 +3588,27 @@ function setPlayerExerciseTechnique(exerciseName) {
 // Reps under the exercise name. Kept in one place because the name's bottom
 // margin changes depending on whether reps are showing — set one without the
 // other and the spacing goes wrong.
+// Reps as the member reads it (2026-10-26, Chris).
+//
+// A BARE NUMBER gets the word added: "8" -> "8 reps". ANYTHING ELSE is already
+// a phrase and is printed verbatim: "8 each leg" stays "8 each leg", because
+// appending the word would produce "8 each leg reps".
+//
+// This exists because the Reps box used to be numbers-only and silently stored
+// 0 for anything else — Chris types "8 each leg" for single-limb work, saved
+// it, and it came back as zero with no warning. The honest fix is to let the
+// field hold what a coach actually writes rather than to teach the coach the
+// parser's rules.
+//
+// Nothing arithmetic depends on reps: the duration estimate counts a flat 30
+// seconds per exercise and never reads it. A numeric SCHEME (10,8,8,6) is a
+// separate field and is unaffected.
+function repsLabel(reps) {
+  if (reps == null || reps === "") return "";
+  const text = String(reps).trim();
+  return /^\d+$/.test(text) ? `${text} reps` : text;
+}
+
 function setPlayerExerciseReps(reps) {
   const el = document.getElementById("player-exercise-reps");
   const nameEl = document.getElementById("player-exercise-name");
@@ -3596,7 +3617,7 @@ function setPlayerExerciseReps(reps) {
     nameEl.classList.remove("has-reps");
     return;
   }
-  el.textContent = `${reps} reps`;
+  el.textContent = repsLabel(reps);
   el.style.display = "block";
   nameEl.classList.add("has-reps");
 }
@@ -3792,7 +3813,7 @@ function blockSummaryLine(block) {
     case "superset":
       return `${block.rounds} sets · rest ${block.rest}s between sets`;
     case "straight":
-      return `${block.sets} sets × ${block.reps} reps · rest ${block.rest}s`;
+      return `${block.sets} sets × ${repsLabel(block.reps)} · rest ${block.rest}s`;
     case "ladder":
       return `${block.scheme.join("-")} reps · rest ${block.rest}s`;
     case "amrap":
@@ -3819,7 +3840,7 @@ function blockExerciseNames(block) {
   // tells a member nothing about what they are being asked to do.
   const dropTag = (e) => (e.drop ? " — drop set" : "");
   if (block.exercise) return [exerciseDisplayName(block.exercise) + suffix(block.hold)];
-  if (block.exercises) return block.exercises.map((e) => exerciseDisplayName(e) + (e.reps ? ` (${e.reps} reps)` : "") + suffix(e.hold) + dropTag(e));
+  if (block.exercises) return block.exercises.map((e) => exerciseDisplayName(e) + (e.reps ? ` (${repsLabel(e.reps)})` : "") + suffix(e.hold) + dropTag(e));
   return [];
 }
 
@@ -4581,7 +4602,7 @@ function nextWorkingPhase(phases, index) {
 }
 
 function previewLinesFor(phase) {
-  const amount = (e) => (e.reps ? `${e.reps} reps` : e.hold ? holdLabel(e.hold) : "");
+  const amount = (e) => (e.reps ? repsLabel(e.reps) : e.hold ? holdLabel(e.hold) : "");
   const join = (name, a) => (a ? `${name} · ${a}` : name);
   const named = (e) => exerciseDisplayName(e);
 
@@ -4599,7 +4620,7 @@ function previewLinesFor(phase) {
     const detail = !reps.length
       ? `${phase.sets.length} sets`
       : same
-      ? `${phase.sets.length} × ${reps[0]} reps`
+      ? `${phase.sets.length} × ${repsLabel(reps[0])}`
       : `${reps.join("-")} reps`;
     return [join(name, detail)];
   }
@@ -5987,7 +6008,7 @@ const Player = {
               </div>
             </div>
             <div class="amrap-row-line2">
-              ${e.reps ? `<span class="amrap-reps">${e.reps} reps</span>` : ""}
+              ${e.reps ? `<span class="amrap-reps">${repsLabel(e.reps)}</span>` : ""}
               ${holdTagHtml(e.hold, !!e.reps)}
             </div>
           </div>
@@ -6063,7 +6084,7 @@ const Player = {
                 <label class="set-row weight-row">
                   <span class="set-row-num">${i + 1}</span>
                   <span class="set-row-main">
-                    ${row.reps ? `<span class="set-row-reps">${row.reps} reps</span>` : ""}
+                    ${row.reps ? `<span class="set-row-reps">${repsLabel(row.reps)}</span>` : ""}
                   </span>
                   <span class="set-row-leader"></span>
                   <input type="number" inputmode="numeric" class="weight-log-input"
@@ -6147,7 +6168,7 @@ const Player = {
           <button class="set-row" type="button" data-set-index="${i}" aria-pressed="false">
             <span class="set-row-num">${s.num}</span>
             <span class="set-row-main">
-              <span class="set-row-reps">${s.reps ? `${s.reps} reps` : holdLabel(s.hold)}</span>
+              <span class="set-row-reps">${s.reps ? repsLabel(s.reps) : holdLabel(s.hold)}</span>
               ${s.reps && s.hold ? `<span class="set-row-sub">${holdSubText(s.hold)}</span>` : ""}
             </span>
             <span class="set-row-leader"></span>
@@ -6193,7 +6214,7 @@ const Player = {
               <button class="amrap-play-btn" data-ex-name="${esc(e.name)}" title="Watch demo">▶</button>
             </div>
             <div class="amrap-row-line2">
-              ${e.reps ? `<span class="amrap-reps">${e.reps} reps</span>` : ""}
+              ${e.reps ? `<span class="amrap-reps">${repsLabel(e.reps)}</span>` : ""}
               ${tracks ? `<input type="number" class="superset-weight-input" inputmode="numeric"
                     data-ex-name="${esc(e.name)}"
                     value="${this.sessionWeights[e.name] || ""}"
