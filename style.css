@@ -1522,7 +1522,8 @@ h1, h2, h3 {
   padding: 3px 9px;
   border-radius: 999px;
 }
-.calendar-day-row .calendar-item-btn + .calendar-item-btn { margin-top: 8px; }
+/* Spacing lives on .calendar-day-items now (2026-10-26) — see the note in
+   renderCalendarDayRow for why adjacent-sibling margins stopped working. */
 
 /* Coach-scheduled cardio and reminders on a programme day (2026-10-10).
    Cardio keeps the blue program card, because the colour on this screen says
@@ -1572,9 +1573,8 @@ h1, h2, h3 {
   padding: 10px 12px;
   position: relative;
 }
-.calendar-day-row .calendar-item-scheduled { margin-top: 8px; }
-.calendar-day-row .calendar-item-btn + .calendar-item-scheduled,
-.calendar-day-row .calendar-item-muted + .calendar-item-scheduled { margin-top: 8px; }
+
+
 /* The card body is its own button (tap to complete the session), so the
    remove ✕ stays a separate sibling rather than an invalid nested button. */
 .calendar-scheduled-main {
@@ -5196,11 +5196,23 @@ h1, h2, h3 {
    The row and its move handle sit side by side, so the workout itself keeps
    the whole tap target it had — the handle is an addition, not a slice taken
    out of the thing people actually press. */
-.calendar-item-wrap { display: flex; align-items: stretch; gap: 8px; }
-.calendar-item-wrap .calendar-item-btn { flex: 1 1 auto; min-width: 0; }
-.calendar-item-wrap + .calendar-item-wrap { margin-top: 8px; }
+/* Every item on a day is the same width, workout or not: the day reserves a
+   gutter and the handle sits in it, rather than each workout giving up part
+   of its own width for one. Otherwise a coach's cardio card ran wider than
+   the workouts above it (2026-10-26). */
+.calendar-day-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 46px;
+}
+.calendar-item-wrap { position: relative; }
+.calendar-item-wrap .calendar-item-btn { width: 100%; }
 .calendar-item-move {
-  flex: 0 0 auto;
+  position: absolute;
+  right: -46px;
+  top: 0;
+  bottom: 0;
   width: 38px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);

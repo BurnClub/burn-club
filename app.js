@@ -7851,8 +7851,19 @@ function renderCalendarDayRow(date, member, template, isPast, lastDay) {
              session for last Tuesday is not a thing anyone means to do. -->
         ${isPast ? "" : `<button class="calendar-day-add" data-add-on="${esc(dateKey(date))}" aria-label="Add to ${esc(formatWeekdayDate(date))}" title="Add to this day">+</button>`}
       </div>
-      ${bodyHtml}
-      ${renderScheduledItems(dateKey(date))}
+      <!-- One items container with a gap, instead of a chain of adjacent-
+           sibling margins (2026-10-26). The old spacing was five rules of the
+           form "calendar-item-btn + calendar-item-scheduled" — no backticks
+           in here, they close the template literal this HTML lives in — and
+           adding the
+           move handle put each workout inside a wrapper — so the coach's
+           cardio no longer FOLLOWED a .calendar-item-btn and lost its gap.
+           A container that spaces its children cannot be broken by changing
+           what one of them is wrapped in. -->
+      <div class="calendar-day-items">
+        ${bodyHtml}
+        ${renderScheduledItems(dateKey(date))}
+      </div>
     </div>
   `;
 }

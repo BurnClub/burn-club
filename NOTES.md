@@ -1968,6 +1968,32 @@ cardio — a green card reading "undefined · Tap to complete". It filters to
 cardio explicitly now. Worth remembering when adding a third kind to that
 store.
 
+### Two things the move handle broke, and a trap worth remembering
+
+**Spacing.** Day-item gaps were a chain of adjacent-sibling margins —
+`.calendar-item-btn + .calendar-item-scheduled` and four more like it. Putting
+each workout in a wrapper meant the coach's cardio no longer FOLLOWED a
+`.calendar-item-btn`, so it lost its gap and sat flush against the workout
+above. Replaced with one `.calendar-day-items` container that spaces its own
+children, which cannot be broken by changing what one of them is wrapped in.
+
+**Width.** The handle took its width out of the workout's own row, so workouts
+stopped short while the cardio card ran full width. The day reserves a gutter
+now and the handle sits in it, so every card on a day shares a right edge
+whether it has a handle or not.
+
+**And a trap: `\u2715` written as an escape in an HTML file is literal text.**
+The move picker's close button showed the characters `\u2715` instead of ✕.
+The move handle beside each workout survived the same mistake because it lives
+in a JS template literal, where that IS an escape sequence — which is exactly
+why the error was easy to miss.
+
+**Related, same cause, worse symptom:** an HTML comment inside a template
+literal cannot contain backticks. A comment added while fixing the spacing
+quoted a CSS selector in backticks, which closed the literal and took the
+whole file down with `SyntaxError: Unexpected token '.'`. Nothing in the
+comment looked like code, which is the point.
+
 ### Still to decide after the trial: should staff see a member's moves?
 
 Chris, 2026-10-26: "i don't necessarily think that admin needs to see it, but i
