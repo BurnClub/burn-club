@@ -2096,6 +2096,45 @@ The SQL backfills what members have already written, including the trial
 tester's note that prompted all this — marked unread, because nobody has
 actually seen it.
 
+### A tester could not sign in, and the button did nothing at all (2026-10-27)
+
+Hannah, by email: "I type in my email and password and when I click login just
+nothing happens... No message, no loading icon, my email doesn't disappear,
+just nothing happens at all!" It worked on her computer, not her iPhone.
+
+**"No loading icon" was the diagnosis.** The handler sets the button to
+"Signing in…" as its first act, so if that never appeared, the submit handler
+was never ATTACHED — the sign-in request was never even attempted.
+
+Why it was not attached: `wireStaticControls()` ran before the login form was
+wired, and one line in it did
+`getElementById("move-workout-close-btn").addEventListener(...)` with no guard.
+That element arrived with the move-workout feature the evening before. Her
+phone had a stale `index.html` without it, the lookup returned null, the
+TypeError killed the rest of the function AND everything after the call —
+including login.
+
+**37 bindings in that one function were each one missing node away from doing
+this**, and the app gave no sign: no error on screen, nothing to act on, and
+the member can only conclude their password is wrong.
+
+Two changes:
+
+- **`on(id, type, handler)`** skips a missing element with a console warning
+  instead of throwing. All 37 converted.
+- **Sign-in is wired FIRST**, before routing and before every other control,
+  in its own `wireAuthControls()`. Everything else is now allowed to fail.
+  Signing in is not.
+
+Verified by reproducing it: with the newest overlays stripped from the DOM,
+`wireStaticControls()` no longer throws and a submit still drives the real
+handler — button to "Signing in…" and back, and a genuine error message.
+
+**The shape to remember:** the app is a single page whose shell and script
+ship separately and are cached separately. Any reference from one to the other
+can be missing, and the cost of not guarding it is not a broken feature — it is
+every feature wired after that line.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

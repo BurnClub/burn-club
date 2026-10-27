@@ -7020,6 +7020,29 @@ function init() {
 // calls init() again, so binding here would stack a duplicate handler per
 // profile switch — harmless for a popup open, but it made "Add to
 // Calendar" save the same session twice (2026-08-12).
+// Bind a listener by id, and DO NOT THROW when the element is not there
+// (2026-10-27).
+//
+// A tester could not sign in on her iPhone: "I type in my email and password
+// and when I click login just nothing happens... no message, no loading icon."
+// Nothing happened because the submit handler was never attached. One line in
+// wireStaticControls did `getElementById("move-workout-close-btn")
+// .addEventListener(...)`, that element was missing from the stale copy of
+// index.html her phone had cached, and the TypeError took out every binding
+// after it — including login, which is wired further down.
+//
+// 37 bindings in this function alone were one missing node away from doing
+// that, and the app gave no sign of it. A missing element is now a warning in
+// the console and nothing more.
+function on(id, type, handler, opts) {
+  const el = document.getElementById(id);
+  if (!el) {
+    console.warn("[wiring] no element for", id, "- skipping", type, "handler");
+    return;
+  }
+  el.addEventListener(type, handler, opts);
+}
+
 function wireStaticControls() {
   bindTour();
   // Delegated: the banner's buttons are re-rendered every minute, so handlers
@@ -7031,19 +7054,19 @@ function wireStaticControls() {
   // Straight into the staff thread rather than the inbox — the whole point of
   // the card is to start that conversation, and the inbox is one more step
   // between the member and it.
-  document.getElementById("program-complete-cta").addEventListener("click", () => {
+  on("program-complete-cta", "click", () => {
     openThread(`dm-${CURRENT_MEMBER.id}`);
   });
-  document.getElementById("edit-name-btn").addEventListener("click", openNameScreen);
-  document.getElementById("text-prompt-close").addEventListener("click", () => closeTextPrompt(null));
-  document.getElementById("text-prompt-save").addEventListener("click", submitTextPrompt);
-  document.getElementById("text-prompt-input").addEventListener("keydown", (e) => {
+  on("edit-name-btn", "click", openNameScreen);
+  on("text-prompt-close", "click", () => closeTextPrompt(null));
+  on("text-prompt-save", "click", submitTextPrompt);
+  on("text-prompt-input", "keydown", (e) => {
     if (e.key === "Enter") submitTextPrompt();
   });
-  document.getElementById("avatar-btn").addEventListener("click", () => {
+  on("avatar-btn", "click", () => {
     document.getElementById("avatar-input").click();
   });
-  document.getElementById("avatar-input").addEventListener("change", (e) => {
+  on("avatar-input", "change", (e) => {
     if (e.target.files && e.target.files[0]) uploadAvatar(e.target.files[0]);
   });
 
@@ -7061,11 +7084,11 @@ function wireStaticControls() {
       if (btn) openCalendarAddPopup(btn.dataset.addOn);
     });
   });
-  document.getElementById("calendar-week-next").addEventListener("click", () => shiftCalendarWeek(1));
-  document.getElementById("calendar-week-back").addEventListener("click", resetCalendarWeek);
-  document.getElementById("move-workout-close-btn").addEventListener("click", closeMoveWorkoutPopup);
-  document.getElementById("calendar-add-close-btn").addEventListener("click", closeCalendarAddPopup);
-  document.getElementById("calendar-add-save-btn").addEventListener("click", saveScheduledCardio);
+  on("calendar-week-next", "click", () => shiftCalendarWeek(1));
+  on("calendar-week-back", "click", resetCalendarWeek);
+  on("move-workout-close-btn", "click", closeMoveWorkoutPopup);
+  on("calendar-add-close-btn", "click", closeCalendarAddPopup);
+  on("calendar-add-save-btn", "click", saveScheduledCardio);
   document.querySelectorAll("#calendar-add-activity-picker .pill-filter").forEach((btn) => {
     btn.addEventListener("click", () => {
       schedSelectedActivity = btn.dataset.schedActivity;
@@ -7073,38 +7096,38 @@ function wireStaticControls() {
     });
   });
 
-  document.getElementById("complete-sched-close-btn").addEventListener("click", closeCompleteScheduledPopup);
-  document.getElementById("complete-sched-save-btn").addEventListener("click", confirmCompleteScheduled);
+  on("complete-sched-close-btn", "click", closeCompleteScheduledPopup);
+  on("complete-sched-save-btn", "click", confirmCompleteScheduled);
 
-  document.getElementById("open-notifications-btn").addEventListener("click", openNotificationsScreen);
-  document.getElementById("notifications-close-btn").addEventListener("click", closeNotificationsScreen);
-  document.getElementById("open-password-btn").addEventListener("click", openPasswordScreen);
-  document.getElementById("password-close-btn").addEventListener("click", closePasswordScreen);
-  document.getElementById("pw-save-btn").addEventListener("click", savePasswordForm);
-  document.getElementById("open-health-profile-btn").addEventListener("click", openHealthProfileScreen);
-  document.getElementById("health-profile-close-btn").addEventListener("click", closeHealthProfileScreen);
-  document.getElementById("health-profile-save-btn").addEventListener("click", saveHealthProfileForm);
-  document.getElementById("open-invite-btn").addEventListener("click", openInviteScreen);
-  document.getElementById("invite-close-btn").addEventListener("click", closeInviteScreen);
-  document.getElementById("invite-copy-btn").addEventListener("click", copyInviteLink);
-  document.getElementById("open-appearance-btn").addEventListener("click", openAppearanceSettings);
-  document.getElementById("appearance-close-btn").addEventListener("click", closeAppearanceSettings);
-  document.getElementById("notebook-close-btn").addEventListener("click", closeNotebook);
-  document.getElementById("notebook-scrim").addEventListener("click", closeNotebook);
-  document.getElementById("notebook-tabs").addEventListener("click", (e) => {
+  on("open-notifications-btn", "click", openNotificationsScreen);
+  on("notifications-close-btn", "click", closeNotificationsScreen);
+  on("open-password-btn", "click", openPasswordScreen);
+  on("password-close-btn", "click", closePasswordScreen);
+  on("pw-save-btn", "click", savePasswordForm);
+  on("open-health-profile-btn", "click", openHealthProfileScreen);
+  on("health-profile-close-btn", "click", closeHealthProfileScreen);
+  on("health-profile-save-btn", "click", saveHealthProfileForm);
+  on("open-invite-btn", "click", openInviteScreen);
+  on("invite-close-btn", "click", closeInviteScreen);
+  on("invite-copy-btn", "click", copyInviteLink);
+  on("open-appearance-btn", "click", openAppearanceSettings);
+  on("appearance-close-btn", "click", closeAppearanceSettings);
+  on("notebook-close-btn", "click", closeNotebook);
+  on("notebook-scrim", "click", closeNotebook);
+  on("notebook-tabs", "click", (e) => {
     const tab = e.target.closest("[data-notebook-tab]");
     if (!tab) return;
     notebookTab = tab.dataset.notebookTab;
     renderNotebook();
     document.getElementById("notebook-page").scrollTop = 0;
   });
-  document.getElementById("pr-picker-close-btn").addEventListener("click", closePRPicker);
-  document.getElementById("open-sound-settings-btn").addEventListener("click", openSoundSettings);
-  document.getElementById("sound-settings-close-btn").addEventListener("click", closeSoundSettings);
-  document.getElementById("open-checkin-settings-btn").addEventListener("click", openCheckinSettings);
-  document.getElementById("checkin-settings-close-btn").addEventListener("click", closeCheckinSettings);
-  document.getElementById("open-support-btn").addEventListener("click", openSupportScreen);
-  document.getElementById("support-close-btn").addEventListener("click", closeSupportScreen);
+  on("pr-picker-close-btn", "click", closePRPicker);
+  on("open-sound-settings-btn", "click", openSoundSettings);
+  on("sound-settings-close-btn", "click", closeSoundSettings);
+  on("open-checkin-settings-btn", "click", openCheckinSettings);
+  on("checkin-settings-close-btn", "click", closeCheckinSettings);
+  on("open-support-btn", "click", openSupportScreen);
+  on("support-close-btn", "click", closeSupportScreen);
 }
 
 // Prototype-level edit: prompt + in-memory update, no backend to save to yet
@@ -8211,6 +8234,16 @@ function endBoot() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // SIGN-IN IS WIRED FIRST, before routing and before any other control
+  // (2026-10-27). It used to be last, so anything that threw on the way —
+  // a missing element in wireStaticControls, a failed route — left a member
+  // looking at a working-looking login form whose button did nothing at all.
+  // That is the worst failure this app has: it looks like the member's
+  // password is wrong, and there is nothing they can do about it.
+  //
+  // Everything below is allowed to fail now. Signing in is not.
+  wireAuthControls();
+
   let routed = false;
   try {
     routed = await routeOnLoad();
@@ -8223,8 +8256,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   } finally {
     endBoot();
   }
-  wireStaticControls();
+  // Guarded as a whole as well as per-binding: a throw here must never reach
+  // the sign-in form, which is already wired above.
+  try {
+    wireStaticControls();
+  } catch (e) {
+    console.warn("[boot] wiring failed:", e);
+  }
 
+  wireRemainingControls();
+});
+
+function wireAuthControls() {
   document.getElementById("login-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = document.getElementById("login-submit");
@@ -8285,13 +8328,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     await enterAsAuthedMember();
   });
+}
 
-  document.getElementById("guest-btn").addEventListener("click", () => {
+// Everything that is not signing in. Separated so a fault in here cannot take
+// the sign-in form down with it (2026-10-27).
+function wireRemainingControls() {
+  on("guest-btn", "click", () => {
     showTab("tab-home");
     onEnterApp();
   });
 
-  document.getElementById("guest-ff-btn").addEventListener("click", () => {
+  on("guest-ff-btn", "click", () => {
     switchMemberProfile("jordan-p");
     onEnterApp();
   });
@@ -8445,4 +8492,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("login-password").value = "";
     showScreen("screen-login");
   });
-});
+}
