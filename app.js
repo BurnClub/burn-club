@@ -8288,7 +8288,7 @@ function wireAuthControls() {
       err.hidden = false;
       return;
     }
-    await enterAsAuthedMember();
+    await enterAfterAuth(err);
   });
 
   document.getElementById("forgot-btn").addEventListener("click", async () => {
@@ -8326,8 +8326,33 @@ function wireAuthControls() {
       err.hidden = false;
       return;
     }
-    await enterAsAuthedMember();
+    await enterAfterAuth(err);
   });
+}
+
+// The password was right and the member still did not get in. Until now that
+// was a silent dead end: enterAsAuthedMember() was awaited unguarded, after the
+// button had already been put back to "Log In", so a throw anywhere on the way
+// to Home left a member looking at an untouched login form with no error on it
+// — indistinguishable, from where they stand, from a wrong password.
+//
+// A tester spent two days on this (Hannah, 2026-10-28): "it changes to the
+// words signing in, however it doesn't leave the original sign in page and the
+// button switches back to just log in within about a second." There was nothing
+// she could tell us because the app told her nothing.
+//
+// So: say that sign-in worked, say what broke, and keep it short enough to read
+// back over email. The detail is for us; the first sentence is for them.
+async function enterAfterAuth(err) {
+  try {
+    await enterAsAuthedMember();
+  } catch (e) {
+    console.error("[auth] signed in but could not enter:", e);
+    const detail = (e && (e.message || e.name)) ? String(e.message || e.name) : "unknown error";
+    err.textContent = "You're signed in, but the app couldn't finish loading your "
+      + "account. Send your coach this message: " + detail;
+    err.hidden = false;
+  }
 }
 
 // Everything that is not signing in. Separated so a fault in here cannot take

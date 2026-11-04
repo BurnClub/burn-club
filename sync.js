@@ -439,7 +439,25 @@ async function hydrateMemberData() {
     }
   })();
 
-  await Promise.all([...pulls, ...nested, prefs, extras]);
+  // allSettled, not all: this function's contract is to RETURN {ok, report},
+  // and enterAsAuthedMember() is written to carry on when ok is false — a
+  // hydrate that could not finish is not a reason to refuse a member entry to
+  // their own app. Promise.all broke that promise two ways. One rejection
+  // abandoned every other pull mid-flight, and the rejection then escaped the
+  // function entirely, past a caller that only ever checks the return value.
+  //
+  // There is real throwing code in here: JSON.parse of localStorage above
+  // (corrupt or truncated storage throws, and a half-written quota-exceeded
+  // value is exactly the shape that does), and any fromRows() meeting a column
+  // it did not expect. Each is per-device, which is the kind of fault that
+  // reaches one member and nobody else (2026-10-28).
+  const settled = await Promise.allSettled([...pulls, ...nested, prefs, extras]);
+  settled.forEach((r, i) => {
+    if (r.status !== "rejected") return;
+    const why = (r.reason && (r.reason.message || r.reason.name)) || "threw";
+    console.warn("[sync] hydrate part " + i + " failed:", r.reason);
+    report["__threw" + i] = "error: " + why;
+  });
   SYNC_STATE.lastError = Object.values(report).find((v) => String(v).startsWith("error")) || null;
   return { ok: !SYNC_STATE.lastError, report };
 }

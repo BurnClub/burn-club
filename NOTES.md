@@ -2135,6 +2135,53 @@ ship separately and are cached separately. Any reference from one to the other
 can be missing, and the cost of not guarding it is not a broken feature — it is
 every feature wired after that line.
 
+### The same tester, the same button, a different silence (2026-10-28)
+
+The fix above worked and uncovered the next failure underneath it. Hannah again:
+"It does change to the words 'signing in', however it doesn't leave the original
+sign in page and the button switches back to just 'log in' within about a
+second."
+
+**This time the loading state DID appear**, which rules out everything the
+2026-10-27 fix addressed — the handler is attached and the request is being
+made. A button that returns to "Log In" with the page unchanged and nothing
+written on it has exactly one source:
+
+```js
+btn.disabled = false;
+btn.textContent = "Log In";
+if (res.error) { ...show it...; return; }
+await enterAsAuthedMember();   // unguarded, AFTER the button was reset
+```
+
+`signIn()` turns every failure it knows about into a message that gets
+displayed. A throw in `enterAsAuthedMember()` was displayed nowhere. So the
+password was almost certainly fine and she was getting in, then falling over on
+the way to Home — and the app presented that as an apparently rejected login.
+
+Two changes, and the second may be the actual cure:
+
+- **`enterAfterAuth(err)`** wraps the entry and writes the real message into the
+  login error box: "You're signed in, but the app couldn't finish loading your
+  account. Send your coach this message: …". A member standing in a gym cannot
+  open a console; the only diagnostic channel that exists is the screen in front
+  of them. A thrown non-`Error` falls back to "unknown error" rather than
+  showing them the word "undefined".
+- **`hydrateMemberData()` now uses `Promise.allSettled`.** Its contract is to
+  RETURN `{ok, report}`, and `enterAsAuthedMember()` is written to carry on when
+  `ok` is false — a hydrate that could not finish is not grounds for refusing a
+  member their own app. `Promise.all` broke that twice over: one rejection
+  abandoned every other pull mid-flight, and then escaped the function entirely,
+  past a caller that only reads the return value. There is real throwing code in
+  there — `JSON.parse` of localStorage, and any `fromRows()` meeting an
+  unexpected column — and every bit of it is per-device, which is why this
+  reached one tester and nobody else.
+
+**The pattern across both days:** a function whose declared contract is to
+report failure, but which can throw instead, called by someone who only checks
+the return value. Twice now that has landed on the login button, where the
+member's only possible reading is "my password is wrong".
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.
