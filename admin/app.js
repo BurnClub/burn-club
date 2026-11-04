@@ -937,6 +937,75 @@ function openUnreadConversation(conversationId) {
 // conversation belongs.
 let COACH_NOTES = [];
 
+// ---------------- Sign-in trouble (2026-11-03) ----------------
+// Chris, after the first trial: "I want to be better prepared for this
+// situation." This is the preparation. Everything else in admin reports on
+// members who are already inside; this is the only thing that can see the ones
+// who are not.
+let AUTH_EVENTS = [];
+
+// What counts as trouble. signin_fail is in here even though a mistyped
+// password is ordinary and expected — during a trial, five of them from the
+// same address in one evening is not ordinary, and that pattern is invisible
+// unless the ordinary ones are recorded too.
+const AUTH_TROUBLE = new Set([
+  "signin_fail", "profile_fail", "entry_threw", "return_entry_threw",
+  "session_lost", "blocked_no_program", "blocked_no_start_date",
+  "diagnostics_opened",
+]);
+
+const AUTH_EVENT_LABELS = {
+  signin_fail: "Sign-in refused",
+  profile_fail: "Signed in, no profile",
+  entry_threw: "Signed in, app failed to open",
+  return_entry_threw: "Returning visit failed to open",
+  session_lost: "Signed out unexpectedly",
+  blocked_no_program: "Stuck — no programme assigned",
+  blocked_no_start_date: "Stuck — no start date",
+  diagnostics_opened: "Tapped \u201cHaving trouble?\u201d",
+};
+
+async function loadAuthEvents() {
+  if (!SB) return;
+  const since = new Date(Date.now() - 14 * 86400000).toISOString();
+  const { data, error } = await SB.from("auth_events")
+    .select("*").gte("created_at", since)
+    .order("created_at", { ascending: false }).limit(400);
+  // A table that does not exist yet must not break the dashboard: admin and
+  // the migration do not deploy together, and admin is the half Chris opens.
+  if (error) { console.warn("[auth events]", error.message); return; }
+  AUTH_EVENTS = data || [];
+  renderDashboardAuthTrouble();
+}
+
+function renderDashboardAuthTrouble() {
+  const panel = document.getElementById("dashboard-auth-panel");
+  if (!panel) return;
+  const rows = AUTH_EVENTS.filter((e) => AUTH_TROUBLE.has(e.event)).slice(0, 12);
+  panel.style.display = rows.length ? "" : "none";
+  document.getElementById("dashboard-auth-count").textContent =
+    rows.length ? `${rows.length} in the last 14 days` : "";
+  document.getElementById("dashboard-auth-list").innerHTML = rows.map((e) => {
+    const m = e.member_id ? memberById(e.member_id) : null;
+    const who = m ? m.name : (e.email || "Unknown");
+    const what = AUTH_EVENT_LABELS[e.event] || e.event;
+    // The detail is the actual error text. It is the whole reason this exists:
+    // "Sign-in refused" is a shrug, and the message beside it is a diagnosis.
+    const detail = e.detail ? esc(e.detail) : "";
+    return `
+      <div class="unread-row"${e.user_agent ? ` title="${esc(e.user_agent)}"` : ""}>
+        <div class="conversation-icon">${icon("members")}</div>
+        <div class="unread-row-text">
+          <p class="unread-row-name">${esc(who)} \u00b7 ${esc(what)}</p>
+          <p class="unread-row-preview">${detail || esc(e.app_version || "")}</p>
+        </div>
+        <div class="unread-row-meta">
+          <span class="conversation-time">${esc(adminMessageTime(e.created_at))}</span>
+        </div>
+      </div>`;
+  }).join("");
+}
+
 async function loadCoachNotes() {
   if (!SB) return;
   const { data, error } = await SB.from("coach_notes")
@@ -6371,7 +6440,7 @@ function realMemberName(m) {
 async function loadRealMembers() {
   if (!adminMessagingLive()) return;
   const [rows, priv, acts, habits] = await Promise.all([
-    SB.from("members").select("id,email,first_name,last_name,program_id,start_date,access,role,member_since,badge").order("first_name"),
+    SB.from("members").select("id,email,first_name,last_name,program_id,start_date,access,role,member_since,badge,last_seen,last_seen_agent").order("first_name"),
     SB.from("member_private").select("member_id,coach_notes,status,point_adjustment"),
     SB.from("completions").select("member_id,performed_on"),
     SB.from("member_habits").select("member_id,label"),
@@ -6410,12 +6479,18 @@ async function loadRealMembers() {
       pointAdjustment: pv.point_adjustment || 0,
       habits: habitsBy[m.id] || [],
       lastActive: lastBy[m.id] || null,
+      // "Has this person ever reached the app", which no amount of workout
+      // data can answer. Written by the member app the moment Home renders.
+      lastSeen: m.last_seen || null,
+      lastSeenAgent: m.last_seen_agent || "",
       challengePoints: 0,
     });
   });
   renderMemberTable();
   // After MEMBERS, so a note shows against a name rather than a uuid.
   loadCoachNotes();
+  // Same reason: these rows carry a member_id and are worth a name.
+  loadAuthEvents();
 }
 
 async function loadServerMessages() {
@@ -7797,6 +7872,24 @@ function lastActiveLabel(iso) {
   return `<span class="last-active stale">${new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>`;
 }
 
+// Deliberately louder than lastActiveLabel's "Never". A member who has never
+// signed in is not a quiet member — they are a member who is stuck, and during
+// a trial that is the single thing worth seeing from across the room.
+function lastSeenLabel(iso, agent) {
+  if (!iso) return `<span class="last-active none">Never signed in</span>`;
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  const title = agent ? ` title="${esc(agent)}"` : "";
+  let text;
+  if (mins < 60) text = mins <= 1 ? "Just now" : mins + " min ago";
+  else if (mins < 60 * 24) text = Math.floor(mins / 60) + "h ago";
+  else {
+    const days = Math.floor(mins / (60 * 24));
+    text = days === 1 ? "Yesterday" : days + " days ago";
+  }
+  const stale = mins >= 60 * 24 * 3 ? " stale" : "";
+  return `<span class="last-active${stale}"${title}>${text}</span>`;
+}
+
 function renderMemberTable() {
   const programFilter = document.getElementById("member-program-filter").value;
   const filtered = MEMBERS.filter((m) => {
@@ -7826,10 +7919,11 @@ function renderMemberTable() {
         <td>${gaps.length
           ? `<span class="setup-pill needs">Needs ${esc(gaps.join(" and "))}</span>`
           : `<span class="setup-pill ready">Ready</span>`}</td>
+        <td>${lastSeenLabel(m.lastSeen, m.lastSeenAgent)}</td>
         <td>${lastActiveLabel(m.lastActive)}</td>
       </tr>
     `;
-  }).join("") || `<tr><td colspan="5" style="text-align:center;color:var(--deepblue);padding:24px;">No members yet. Invite someone from the Supabase dashboard and they appear here.</td></tr>`;
+  }).join("") || `<tr><td colspan="6" style="text-align:center;color:var(--deepblue);padding:24px;">No members yet. Invite someone from the Supabase dashboard and they appear here.</td></tr>`;
 
   document.getElementById("member-select-all").checked = filtered.length > 0 && filtered.every((m) => selectedMemberIds.has(m.id));
   renderMemberBulkBar();

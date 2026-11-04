@@ -4357,6 +4357,29 @@ h1, h2, h3 {
   text-align: center;
   line-height: 1.4;
 }
+/* The diagnostics panel. Deliberately plain, monospaced and selectable: its
+   whole job is to be screenshotted or copied into an email by someone who is
+   already frustrated, so legibility beats looking like the rest of the app.
+   pre-wrap because a user-agent string is long and must not need sideways
+   scrolling on a phone. */
+.login-diagnostics {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-muted, #666);
+  background: var(--surface-2, rgba(127, 127, 127, 0.08));
+  border: 1px solid var(--border, rgba(127, 127, 127, 0.25));
+  border-radius: 8px;
+  -webkit-user-select: text;
+  user-select: text;
+}
 .login-intro {
   margin: 0 0 4px;
   font-size: 14px;

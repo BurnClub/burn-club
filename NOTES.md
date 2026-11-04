@@ -2182,6 +2182,69 @@ report failure, but which can throw instead, called by someone who only checks
 the return value. Twice now that has landed on the login button, where the
 member's only possible reading is "my password is wrong".
 
+### Making a trial watchable (2026-11-03)
+
+The first tester trial went badly. Half the invitees never finished setting up,
+the ones who did could not get back in on day two or three, and Chris found out
+by email days later from the two who bothered to write.
+
+**The sign-in fix for that was written on 2026-10-28 and never pushed.** It sat
+uncommitted in the working tree for six days while the trial ran on the broken
+build. That is the first lesson and it is not a technical one: a fix that is not
+deployed is not a fix, and "I'll push it after the next thing" lost a week.
+
+**The second lesson is the one worth building against: the system could not
+report on itself.** No `last_seen`, no log of any sign-in attempt, nothing
+reading `SYNC_STATE.errors`. When four of six testers could not get in, admin
+showed six ordinary-looking rows. A member who cannot sign in never sends a
+message, never completes a workout, and never appears anywhere on the dashboard
+— so the only channel they have is email, days later, if they bother.
+
+Checked and ruled out in the Supabase dashboard: time-box sessions 0, inactivity
+timeout 0, single-session off, refresh-token reuse detection off, access token
+3600. **Nothing server-side was expiring anyone.** Worth recording, because that
+kills the obvious theory and it stays killed.
+
+Also ruled out: a missing Redirect URL. Password sign-in performs no redirect at
+all, so that setting could never produce the day-two symptom. It could have
+blocked invites and password resets, which may be part of why half never
+finished setup — the exact URL plus a `/**` wildcard is now allowed.
+
+**A second unguarded entry path, found while building this.** `enterAfterAuth()`
+fixed the press-the-button path on 2026-10-28, but `routeOnLoad()` had the same
+bare `await enterAsAuthedMember()` for a member arriving with an existing
+session — the day-two path. A throw there was caught by DOMContentLoaded, logged
+to a console nobody can open on a phone, and followed by `init()`, which leaves
+a signed-in member on a login form with no message. They then type a correct
+password and get bounced by the same throw waiting on the other side. Now
+`enterFromSession()`, the twin of `enterAfterAuth()`.
+
+What shipped:
+
+- **`members.last_seen` + `last_seen_agent`**, written at the first line that
+  only runs when a member is genuinely looking at Home. Admin gets a **Signed
+  in** column, which is deliberately NOT Last active — that one comes from
+  completions and only ever moves for someone already inside, so a locked-out
+  member and an idle one looked identical.
+- **`auth_events`**, every sign-in attempt and every way the app can fail after
+  one. Insert is open to `anon` on purpose: the event most worth having is a
+  failure, and there is no session at that moment. **No foreign key on
+  member_id** — twice now an FK from member data has silently rejected every
+  insert behind it, and a log that refuses to write looks like silence.
+- **`onAuthStateChange`**, which did not exist. A dead session was previously
+  discovered only by a failing query, and those surface nowhere. `SIGNING_OUT`
+  distinguishes a member who left from a session that died under them.
+- **"Having trouble?"** on the login screen: version, whether storage can hold a
+  session, whether there is one, whether the server answers. Its first version
+  probed `app_settings`, which anon cannot read — so it told every signed-out
+  member the server was broken. It now asks only whether the host answers at
+  all; a 401 is the server talking.
+
+**The shape to remember:** every one of these bugs was invisible rather than
+loud, and the app's answer to each was to show a member a login form with
+nothing written on it. Build the thing that can see, before running the trial
+that needs it.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

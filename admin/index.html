@@ -23,7 +23,7 @@
 
      BUMP THIS STRING whenever an admin file changes. It only has to differ
      from last time; the date plus a letter is enough. -->
-<link rel="stylesheet" href="style.css?v=2026-10-26g" />
+<link rel="stylesheet" href="style.css?v=2026-11-03a" />
 </head>
 <body>
 
@@ -91,6 +91,20 @@
       <!-- Coach notes (2026-10-26). Separate from Unread Messages on purpose:
            a note is logged and stays, a message is a conversation. Shown until
            somebody reads it, then it lives on the member's profile. -->
+      <!-- Sign-in trouble, above the message panels on purpose (2026-11-03).
+           During the first trial four of six testers could not get in and the
+           admin screen said nothing at all, because nothing was recorded. A
+           member who cannot sign in never sends a message, never completes a
+           workout and never appears anywhere else on this page — the only way
+           they can reach Chris is by email, days later, if they bother. -->
+      <div class="panel unread-panel" id="dashboard-auth-panel" style="display:none;">
+        <div class="unread-panel-head">
+          <h2>Sign-In Trouble</h2>
+          <span class="unread-panel-count" id="dashboard-auth-count"></span>
+        </div>
+        <div class="unread-list" id="dashboard-auth-list"></div>
+      </div>
+
       <div class="panel unread-panel" id="dashboard-notes-panel" style="display:none;">
         <div class="unread-panel-head">
           <h2>Notes From Members</h2>
@@ -972,6 +986,14 @@
                  reads identically for someone who never started and someone
                  who stopped. -->
             <th>Setup</th>
+            <!-- Signed in is NOT Last active, and the difference is the whole
+                 reason it exists (2026-11-03). Last active comes from
+                 completions, so it only ever moves for someone who is already
+                 in. A member who cannot get past the login screen looks
+                 identical to one who is in and skipping workouts. Through the
+                 whole first trial this column was blank for four people and
+                 nobody could see it, because it did not exist. -->
+            <th>Signed in</th>
             <th>Last active</th>
           </tr>
         </thead>
@@ -1573,8 +1595,8 @@
 <!-- The same configured client the member app uses, one directory up: one
      place holds the project URL and the publishable key, and admin cannot
      drift onto a different project by accident. -->
-<script src="../supabase-client.js?v=2026-10-26g"></script>
-<script src="data.js?v=2026-10-26g"></script>
-<script src="app.js?v=2026-10-26g"></script>
+<script src="../supabase-client.js?v=2026-11-03a"></script>
+<script src="data.js?v=2026-11-03a"></script>
+<script src="app.js?v=2026-11-03a"></script>
 </body>
 </html>

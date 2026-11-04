@@ -8040,6 +8040,7 @@ async function enterAsAuthedMember() {
   // to be first in data.js — which is what happened on the first three real
   // accounts, and looked correct purely because that profile is rolling.
   if (AUTH_MEMBER && !AUTH_MEMBER.program_id) {
+    logAuthEvent("blocked_no_program");
     showUnassignedScreen("no-program");
     return;
   }
@@ -8058,11 +8059,19 @@ async function enterAsAuthedMember() {
   // so the account is half set up rather than ready — and showing a calendar
   // built from a default would be wrong in a way nobody would notice.
   if (CURRENT_MEMBER.scheduleType === "structured" && !CURRENT_MEMBER.startDate) {
+    logAuthEvent("blocked_no_start_date");
     showUnassignedScreen("no-start-date");
     return;
   }
   init();
   showTab("tab-home");
+  // Here, and nowhere earlier: this is the first line that only runs when a
+  // member is genuinely looking at their own home screen. Everything above it
+  // can still turn back. A blank last_seen in admin therefore means exactly
+  // one thing — this member has never reached the app — which is the fact
+  // nobody had during the first trial.
+  touchLastSeen();
+  logAuthEvent("entered");
   // Not awaited: the inbox badge is worth having as soon as it arrives, and
   // nothing on Home should wait on a message fetch to render.
   loadMessagesFromServer();
@@ -8206,8 +8215,7 @@ async function routeOnLoad() {
     AUTH_MEMBER = cached.member;
     AUTH_PROGRAM = cached.program || null;
     OFFLINE_ENTRY = true;
-    await enterAsAuthedMember();
-    return true;
+    return await enterFromSession("offline_cache");
   }
 
   const res = await loadAuthMember(session.user);
@@ -8221,8 +8229,60 @@ async function routeOnLoad() {
     if (!isOfflineError(null)) await signOut();
     return false;
   }
-  await enterAsAuthedMember();
-  return true;
+  return await enterFromSession("returning");
+}
+
+// Entering on a session this browser already had — the day-two path, and the
+// one the first trial actually broke on.
+//
+// This used to be a bare `await enterAsAuthedMember()`. A throw here did not
+// reach the member at all: DOMContentLoaded caught it, logged to a console
+// nobody can open on a phone, and called init(), which leaves a signed-in
+// member sitting on a login form with no explanation. They then type a
+// password that is perfectly correct and get bounced, because the same throw
+// is waiting on the other path too.
+//
+// So this is the twin of enterAfterAuth(), for the half of the problem that
+// happens before anyone touches a button (2026-11-03).
+async function enterFromSession(how) {
+  try {
+    logAuthEvent("session_restored", how);
+    await enterAsAuthedMember();
+    return true;
+  } catch (e) {
+    console.error("[auth] session restored but could not enter:", e);
+    const detail = (e && (e.message || e.name)) ? String(e.message || e.name) : "unknown error";
+    logAuthEvent("return_entry_threw", how + ": " + detail);
+    const err = document.getElementById("login-error");
+    if (err) {
+      err.textContent = "You're signed in, but the app couldn't finish loading "
+        + "your account. Send your coach this message: " + detail;
+      err.hidden = false;
+    }
+    // false, so the caller shows the login screen rather than a blank one.
+    // Signing them out would be wrong: the session is fine, and anything they
+    // logged on this device has not synced yet.
+    return false;
+  }
+}
+
+// The session ended while they were using the app — expired, revoked, or
+// cleared out from under the page. Nothing reacted to this before, so the app
+// stayed on screen looking ordinary while every save was being refused.
+//
+// Deliberately does NOT sign out or clear anything. Whatever is on this device
+// is still the member's and still unsynced; the only thing missing is a live
+// token, and the only thing needed is for them to sign in again.
+function onSessionLost() {
+  const err = document.getElementById("login-error");
+  if (err) {
+    err.textContent = "You were signed out. Nothing you've logged is lost — "
+      + "sign in again and it'll upload.";
+    err.hidden = false;
+  }
+  const form = document.getElementById("login-form");
+  if (form) form.hidden = false;
+  showScreen("screen-login");
 }
 
 // The boot screen comes down once there is something real to show, whichever
@@ -8291,6 +8351,28 @@ function wireAuthControls() {
     await enterAfterAuth(err);
   });
 
+  // Wired in here with sign-in, not in wireStaticControls, deliberately: this
+  // is the button a member reaches for when the app is already misbehaving, so
+  // it has to survive whatever took the rest of the wiring down.
+  const trouble = document.getElementById("trouble-btn");
+  if (trouble) {
+    trouble.addEventListener("click", async () => {
+      const out = document.getElementById("login-diagnostics");
+      if (!out) return;
+      trouble.disabled = true;
+      trouble.textContent = "Checking…";
+      try {
+        out.textContent = await authDiagnostics();
+      } catch (e) {
+        out.textContent = "Couldn't run the check: " + (e.message || e);
+      }
+      out.hidden = false;
+      trouble.disabled = false;
+      trouble.textContent = "Having trouble?";
+      logAuthEvent("diagnostics_opened");
+    });
+  }
+
   document.getElementById("forgot-btn").addEventListener("click", async () => {
     const email = document.getElementById("login-email").value.trim();
     const err = document.getElementById("login-error");
@@ -8349,6 +8431,9 @@ async function enterAfterAuth(err) {
   } catch (e) {
     console.error("[auth] signed in but could not enter:", e);
     const detail = (e && (e.message || e.name)) ? String(e.message || e.name) : "unknown error";
+    // The failure that cost the first trial three days. It is now on screen
+    // for the member AND in a table Chris can read without asking anyone.
+    logAuthEvent("entry_threw", detail);
     err.textContent = "You're signed in, but the app couldn't finish loading your "
       + "account. Send your coach this message: " + detail;
     err.hidden = false;

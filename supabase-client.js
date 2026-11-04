@@ -135,17 +135,34 @@ function friendlyAuthError(error) {
 async function signIn(email, password) {
   if (!SB) return { error: "Can't reach the server. Check your connection." };
   const { data, error } = await SB.auth.signInWithPassword({ email: email.trim(), password });
-  if (error) return { error: friendlyAuthError(error) };
+  // Logged at every exit, because the interesting question after the first
+  // trial is not "did sign-in work" but "how far did they get". A wrong
+  // password and a password that was right but could not load a profile look
+  // identical from the login form and are nothing alike.
+  if (error) {
+    logAuthEvent("signin_fail", error.message, email.trim());
+    return { error: friendlyAuthError(error) };
+  }
   const loaded = await loadAuthMember(data.user);
-  if (loaded.error) return loaded;
+  if (loaded.error) {
+    logAuthEvent("profile_fail", loaded.error, email.trim());
+    return loaded;
+  }
+  logAuthEvent(loaded.offline ? "signin_ok_offline" : "signin_ok", null, email.trim());
   return { member: AUTH_MEMBER };
 }
 
 async function signOut() {
+  SIGNING_OUT = true;
+  logAuthEvent("signed_out", "member chose to sign out");
   clearAuthCache();
   AUTH_MEMBER = null;
   AUTH_PROGRAM = null;
-  if (SB) await SB.auth.signOut();
+  try {
+    if (SB) await SB.auth.signOut();
+  } finally {
+    SIGNING_OUT = false;
+  }
 }
 
 // The members row is the profile; the auth user is only an identity. RLS means
@@ -214,6 +231,142 @@ async function loadAuthMember(user) {
 function arrivedFromEmailLink() {
   const hash = window.location.hash || "";
   return /type=(invite|recovery|signup|magiclink)/.test(hash) || /access_token=/.test(hash);
+}
+
+// ---------------- Auth visibility (2026-11-03) ----------------
+// The first trial ran three days on a broken sign-in and produced no record of
+// it at all. Everything below exists so the next one is watchable: who got in,
+// who did not, and what the app said to them when it refused.
+
+// The running build, taken from the URL the service worker actually fetched
+// app.js with. sw.js stamps every shell request with `?v=<CACHE>`, so this is
+// the real version in this browser right now — not a constant that has to be
+// remembered and bumped in a second place, which is exactly the kind of thing
+// that goes stale and then lies to you in a bug report.
+function appVersion() {
+  try {
+    const hit = performance.getEntriesByType("resource")
+      .find((r) => /\/app\.js(\?|$)/.test(r.name));
+    return (hit && new URL(hit.name).searchParams.get("v")) || "unversioned";
+  } catch (e) {
+    return "unknown";
+  }
+}
+
+// Fire and forget, always. A log line is never worth delaying a sign-in for,
+// and it must never be the reason one fails — so nothing here is awaited by
+// its callers and nothing here can throw.
+function logAuthEvent(event, detail, email) {
+  if (!SB) return;
+  try {
+    const row = {
+      member_id: AUTH_MEMBER ? AUTH_MEMBER.id : null,
+      email: email || (AUTH_MEMBER && AUTH_MEMBER.email) || null,
+      event: String(event).slice(0, 40),
+      detail: detail == null ? null : String(detail).slice(0, 500),
+      user_agent: (navigator.userAgent || "").slice(0, 400),
+      app_version: appVersion(),
+    };
+    Promise.resolve(SB.from("auth_events").insert(row))
+      .then((r) => { if (r && r.error) console.warn("[auth-log]", r.error.message); })
+      .catch(() => {});
+  } catch (e) {
+    /* a log that breaks the app is worse than no log */
+  }
+}
+
+// Written every time a member actually reaches the app. A blank last_seen in
+// admin is a member who never got in — the single fact that was missing all
+// through the first trial.
+function touchLastSeen() {
+  if (!SB || !AUTH_MEMBER) return;
+  try {
+    Promise.resolve(
+      SB.from("members").update({
+        last_seen: new Date().toISOString(),
+        last_seen_agent: (navigator.userAgent || "").slice(0, 400),
+      }).eq("id", AUTH_MEMBER.id)
+    ).then((r) => { if (r && r.error) console.warn("[last-seen]", r.error.message); })
+     .catch(() => {});
+  } catch (e) {}
+}
+
+// Set while signOut() is running, so the listener below can tell a member who
+// chose to leave from a session that died under them. Without it, every
+// deliberate sign-out would announce itself as a fault.
+let SIGNING_OUT = false;
+
+// Nothing in this app reacted to a session ending until now. A revoked or
+// expired session was discovered only when some query failed, and those
+// failures surface nowhere — so the app carried on looking normal while
+// everything it tried to save was being refused.
+if (SB) {
+  SB.auth.onAuthStateChange((event, session) => {
+    if (event === "TOKEN_REFRESHED") {
+      // Worth knowing that refresh works on real devices over days, which is
+      // precisely the thing the first trial could not tell us.
+      logAuthEvent("token_refreshed");
+      return;
+    }
+    if (event !== "SIGNED_OUT" || SIGNING_OUT) return;
+    // Lost rather than left.
+    logAuthEvent("session_lost", "signed out without asking");
+    if (typeof onSessionLost === "function") {
+      try { onSessionLost(); } catch (e) { console.warn("[auth] onSessionLost:", e); }
+    }
+  });
+}
+
+// What this browser can tell us about itself, in words a member can read out
+// or screenshot. The first trial's diagnostics were "it doesn't work" and six
+// days of email; this is the thing they can send instead.
+async function authDiagnostics() {
+  const lines = [];
+  const add = (k, v) => lines.push(k + ": " + v);
+  add("App version", appVersion());
+
+  let storage = "no";
+  try {
+    localStorage.setItem("__bc_probe", "1");
+    storage = localStorage.getItem("__bc_probe") === "1" ? "yes" : "no";
+    localStorage.removeItem("__bc_probe");
+  } catch (e) {
+    storage = "BLOCKED (" + (e.name || "error") + ")";
+  }
+  // The one that would explain "it worked yesterday": no storage means no
+  // session can be kept, so every visit starts from the login form.
+  add("Can save a session", storage);
+
+  let session = "no";
+  try {
+    const s = await currentSession();
+    session = s ? "yes, as " + (s.user && s.user.email) : "no";
+  } catch (e) {
+    session = "could not check (" + (e.message || e) + ")";
+  }
+  add("Signed in now", session);
+
+  // Asks ONE question: can this device reach the server at all. Deliberately
+  // not a table read — the member tapping this button is signed out, so every
+  // table says "permission denied", and a diagnostic that reports a healthy
+  // server as broken is worse than none. Any HTTP answer, 401 included, is the
+  // server talking. Only a thrown fetch is a real network failure.
+  let server = "no";
+  try {
+    const t0 = Date.now();
+    const res = await fetch(SUPABASE_URL + "/auth/v1/health", {
+      headers: { apikey: SUPABASE_PUBLISHABLE_KEY },
+    });
+    server = "yes (HTTP " + res.status + ", " + (Date.now() - t0) + "ms)";
+  } catch (e) {
+    server = "NO — " + (e.message || e);
+  }
+  add("Server reachable", server);
+
+  add("Online", navigator.onLine ? "yes" : "no");
+  add("Browser", (navigator.userAgent || "").slice(0, 200));
+  add("Checked at", new Date().toLocaleString());
+  return lines.join("\n");
 }
 
 // Changing a password from inside the app, which is different from setting one
