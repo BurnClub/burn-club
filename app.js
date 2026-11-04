@@ -4877,6 +4877,194 @@ function setPlayerVideo(exerciseName) {
 // this exercise — set per-exercise via the "Track Weight Used" checkbox in
 // the Exercise Library (admin), matched here by name since blocks reference
 // exercises by name, not id (2026-08-07).
+// ---------------- What equipment the member has (2026-11-04) ----------------
+// Chris: "a place in the user profile that they can select the list of
+// equipment they have access to using the list we already have in admin."
+//
+// The list IS the admin one - EQUIPMENT_TAGS from data.js, the same vocabulary
+// every exercise is tagged with. That shared vocabulary is the whole point: it
+// is what lets "what I have" and "what this needs" be compared at all.
+//
+// EMPTY MEANS "HASN'T SAID", not "owns nothing". A member who has never opened
+// this should not have their substitute list quietly reordered around an
+// assumption they never made. Someone who genuinely trains with nothing picks
+// Bodyweight, which is a real tag.
+const MY_EQUIPMENT_KEY = "burnClubMyEquipment";
+
+function loadMyEquipment() {
+  try {
+    const raw = localStorage.getItem(memberKey(MY_EQUIPMENT_KEY));
+    const list = raw ? JSON.parse(raw) : [];
+    // Filtered against the live tag list, so a tag Kelly renames or removes in
+    // admin stops counting rather than silently matching nothing forever.
+    return Array.isArray(list) ? list.filter((t) => EQUIPMENT_TAGS.includes(t)) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveMyEquipment(list) {
+  localStorage.setItem(memberKey(MY_EQUIPMENT_KEY), JSON.stringify(list));
+  // queueSync marks dirty itself and no-ops in demo mode. preferences is a
+  // REPLACE store, so the dirty flag is what gives this device permission to
+  // overwrite the server's row at all.
+  queueSync("preferences");
+}
+
+function renderMyEquipment() {
+  const host = document.getElementById("my-equipment-picker");
+  if (!host) return;
+  const mine = new Set(loadMyEquipment());
+  host.innerHTML = EQUIPMENT_TAGS.map((tag) => `
+    <button class="pill-filter${mine.has(tag) ? " active" : ""}" type="button"
+            data-equipment="${esc(tag)}">${esc(tag)}</button>`).join("");
+  const note = document.getElementById("my-equipment-note");
+  if (note) {
+    note.textContent = mine.size
+      ? `${mine.size} selected \u00b7 used to rank exercise swaps`
+      : "Pick what you can get to. We'll put swaps you can actually do first.";
+  }
+}
+
+function toggleMyEquipment(tag) {
+  const mine = loadMyEquipment();
+  const at = mine.indexOf(tag);
+  if (at >= 0) mine.splice(at, 1);
+  else mine.push(tag);
+  saveMyEquipment(mine);
+  renderMyEquipment();
+}
+
+// The picker. Opened from the button under the exercise name, and from the
+// per-row controls on list screens.
+let swapPickerFor = null;
+
+function openSwapPicker(name) {
+  if (!name) return;
+  swapPickerFor = name;
+  const original = Player.originalNameFor(name);
+  document.getElementById("swap-picker-title").textContent = "Swap " + name;
+  const src = EXERCISE_LIBRARY.find((e) => e.name === original);
+  document.getElementById("swap-picker-sub").textContent = src && (src.bodyParts || []).length
+    ? "Same muscles: " + src.bodyParts.join(", ")
+    : "";
+  const search = document.getElementById("swap-picker-search");
+  if (search) search.value = "";
+  renderSwapPickerList("");
+  document.getElementById("swap-picker-overlay").classList.add("visible");
+}
+
+function closeSwapPicker() {
+  swapPickerFor = null;
+  document.getElementById("swap-picker-overlay").classList.remove("visible");
+}
+
+function renderSwapPickerList(query) {
+  const host = document.getElementById("swap-picker-list");
+  if (!host || !swapPickerFor) return;
+  const original = Player.originalNameFor(swapPickerFor);
+  const q = (query || "").trim().toLowerCase();
+  let rows = exerciseSubstitutes(original);
+  if (q) rows = rows.filter((e) => e.name.toLowerCase().includes(q));
+
+  // Putting the coach's own exercise at the top is how a swap is undone -
+  // there is no separate undo button to find, and nothing to explain.
+  const showOriginal = !q || original.toLowerCase().includes(q);
+  const undoRow = showOriginal ? `
+    <button class="swap-row is-original${swapPickerFor === original ? " is-current" : ""}"
+            type="button" data-swap-to="${esc(original)}">
+      <span class="swap-row-name">${esc(original)}</span>
+      <span class="swap-row-tags">${swapPickerFor === original ? "Doing this now" : "Back to your coach's pick"}</span>
+    </button>` : "";
+
+  host.innerHTML = undoRow + rows.map((e) => `
+    <button class="swap-row${e.name === swapPickerFor ? " is-current" : ""}"
+            type="button" data-swap-to="${esc(e.name)}">
+      <span class="swap-row-name">${esc(e.name)}</span>
+      <span class="swap-row-tags">${esc((e.bodyParts || []).join(", "))}${
+        (e.equipment || []).length ? " \u00b7 " + esc(e.equipment.join(", ")) : ""}</span>
+    </button>`).join("");
+
+  if (!host.innerHTML) {
+    host.innerHTML = `<p class="swap-picker-empty">Nothing matches "${esc(query)}".</p>`;
+  }
+}
+
+// ---------------- Substitute exercises (2026-11-04) ----------------
+// Chris: "if there is an exercise programmed that is not comfortable for the
+// member, they can click a button to find a substitute that would work better,
+// and replace it in the workout... it populates a list of all exercises that
+// match the main muscle group listed."
+//
+// Nothing to maintain and no new data: all 688 library entries already carry
+// bodyParts, modality and equipment. This reads those.
+//
+// A SWAP LASTS FOR THIS SESSION ONLY (Chris's call). The workout belongs to
+// the coach; next time it comes round it says what they wrote. That also means
+// there is nothing to sync, nothing to undo later and nothing for a coach to
+// police - the whole feature lives and dies inside one Player run.
+function exerciseSubstitutes(name) {
+  const src = EXERCISE_LIBRARY.find((e) => e.name === name);
+  if (!src) return [];
+  const parts = new Set(src.bodyParts || []);
+  if (!parts.size) return [];
+  const equip = new Set(src.equipment || []);
+  // Empty = hasn't said. Then canDo is true for everything and this signal
+  // drops out of the sort entirely rather than ranking on a guess.
+  const mine = new Set(loadMyEquipment());
+
+  return EXERCISE_LIBRARY
+    .filter((e) => e.name !== name
+      // Same KIND of movement. Without this a Stretch comes back as a
+      // substitute for a Strength lift because they share a muscle, which is
+      // the one suggestion guaranteed to be wrong.
+      && e.modality === src.modality
+      && (e.bodyParts || []).some((b) => parts.has(b)))
+    .map((e) => {
+      const theirs = e.bodyParts || [];
+      const shared = theirs.filter((b) => parts.has(b)).length;
+      // Muscles this one hits that the original did NOT. A glute bridge is
+      // Glutes; a Jump Split Squat is Quads AND Glutes, and offering it first
+      // for a glute bridge is how this ranked before extras were counted.
+      const extra = theirs.length - shared;
+      const sameKit = (e.equipment || []).filter((q) => equip.has(q)).length;
+      // Equipment lists read as ALTERNATIVES, not requirements - Bulgarian
+      // Split Squats are ["DB","KB"], meaning either will do. So one match is
+      // enough to call it doable.
+      const canDo = !mine.size || (e.equipment || []).some((q) => mine.has(q));
+      return { ex: e, shared, extra, sameKit, canDo };
+    })
+    .sort((a, b) =>
+      // What they can actually get to, first and above everything: the best
+      // match in the world is useless if the kit is not in the room.
+      (b.canDo - a.canDo)
+      // Then most of the same muscles, and fewest unrelated ones.
+      || b.shared - a.shared
+      || a.extra - b.extra
+      || b.sameKit - a.sameKit
+      // Name last so the order never jitters between renders.
+      || a.ex.name.localeCompare(b.ex.name))
+    .map((r) => r.ex);
+}
+
+// Returns a COPY of the circuit with substituted names applied, leaving the
+// one in CIRCUITS untouched. Done here, at the source, rather than at each of
+// the half-dozen places that render an exercise name: everything downstream -
+// the demo video, the technique text, the weight field, the completion that
+// gets logged - then reads the substitute without knowing a swap happened.
+// Patching the render sites instead would mean a member seeing one exercise
+// and logging another the first time one was missed.
+function applyExerciseSwaps(circuit, swaps) {
+  if (!swaps || !Object.keys(swaps).length) return circuit;
+  const sub = (n) => (n && swaps[n]) || n;
+  const copy = JSON.parse(JSON.stringify(circuit));
+  (copy.blocks || []).forEach((b) => {
+    if (b.exercise && b.exercise.name) b.exercise.name = sub(b.exercise.name);
+    (b.exercises || []).forEach((e) => { if (e.name) e.name = sub(e.name); });
+  });
+  return copy;
+}
+
 function exerciseTracksWeight(name) {
   const ex = EXERCISE_LIBRARY.find((e) => e.name === name);
   return ex ? !!ex.trackWeight : false;
@@ -5185,6 +5373,10 @@ const Player = {
   restIsLastSet: false,
 
   start(circuit) {
+    // The coach's workout, kept aside untouched. this.circuit is whatever the
+    // member is actually doing, which is the same object until they swap.
+    this.sourceCircuit = circuit;
+    this.swaps = {};
     this.circuit = circuit;
     this.phases = buildPhaseQueue(circuit);
     this.index = 0;
@@ -5206,6 +5398,51 @@ const Player = {
     showScreen("screen-player");
     this.renderPhase();
     this.startHeartbeat();
+  },
+
+  // Shows or hides the swap button, and remembers which exercise it means.
+  updateSwapButton(name) {
+    const btn = document.getElementById("player-swap-btn");
+    if (!btn) return;
+    // Only offered for something the library actually knows, because the list
+    // is built from its tags. A one-off movement a coach typed by hand has
+    // nothing to match against, and an empty picker is worse than no button.
+    const known = name && EXERCISE_LIBRARY.some((e) => e.name === name);
+    this.swapTarget = known ? name : null;
+    btn.style.display = known ? "block" : "none";
+    if (known) {
+      // Says so when this screen is already showing a substitute, so a member
+      // is never confused about why the name differs from the coach's plan.
+      const swapped = Object.values(this.swaps || {}).includes(name);
+      btn.textContent = swapped ? "\u21c4 Swapped \u00b7 change or undo" : "\u21c4 Swap this exercise";
+    }
+  },
+
+  // Applies a substitution to the WHOLE workout, not just this screen. If a
+  // member cannot do an exercise in block one they cannot do it in block three
+  // either, and swapping it twice would be a worse answer than swapping once.
+  swapExercise(fromName, toName) {
+    if (!fromName) return;
+    const original = this.originalNameFor(fromName);
+    if (toName && toName !== original) this.swaps[original] = toName;
+    else delete this.swaps[original];           // chose the original = undo
+
+    this.circuit = applyExerciseSwaps(this.sourceCircuit, this.swaps);
+    // Names do not change the SHAPE of the queue - same blocks, sets, rounds
+    // and types - so the member keeps their place rather than being thrown
+    // back to the start of the workout.
+    const at = this.index;
+    this.phases = buildPhaseQueue(this.circuit);
+    this.index = Math.min(at, this.phases.length - 1);
+    this.persist();
+    this.renderPhase();
+  },
+
+  // A member can swap a substitute for a different substitute. The map is
+  // always keyed on what the COACH wrote, so chains cannot build up.
+  originalNameFor(name) {
+    const hit = Object.keys(this.swaps || {}).find((k) => this.swaps[k] === name);
+    return hit || name;
   },
 
   stop() {
@@ -5252,6 +5489,9 @@ const Player = {
       cardioChoice: this.cardioChoice,
       cardioMinutes: this.cardioMinutes,
       notesShownFor: [...this.notesShownFor],
+      // Session-only, but a resume IS the same session - coming back from a
+      // phone call to the exercise you swapped away from would be its own bug.
+      swaps: this.swaps,
     }));
   },
 
@@ -5276,8 +5516,10 @@ const Player = {
   //   everything else — the phase they were on, from the top, full clock.
   // Anything that was already waiting on Start (or paused) stays that way.
   resume(circuit, rec) {
-    this.circuit = circuit;
-    this.phases = buildPhaseQueue(circuit);
+    this.sourceCircuit = circuit;
+    this.swaps = rec.swaps || {};
+    this.circuit = applyExerciseSwaps(circuit, this.swaps);
+    this.phases = buildPhaseQueue(this.circuit);
     this.index = Math.min(rec.index, this.phases.length - 1);
     // Was a single `amrapRounds` number until 2026-10-21. It was reset in
     // start() and nowhere else, so a workout with two AMRAP blocks carried the
@@ -5823,6 +6065,9 @@ const Player = {
       document.getElementById("player-total-clock").textContent = `${formatClock(this.remaining)} total remaining`;
       const ex = phase.exercises[minute % phase.exercises.length];
       setPlayerExerciseHeading(exerciseDisplayName(ex));
+      // Follows the minute: on an EMOM the exercise on screen changes under
+      // the member, and a swap button has to mean the one they can see.
+      this.updateSwapButton(ex.name);
       setPlayerVideo(ex.name);
       document.getElementById("player-sub-pill").textContent =
         `Minute ${Math.min(minute + 1, totalMinutes)} of ${totalMinutes}`;
@@ -5872,6 +6117,10 @@ const Player = {
   renderPhase() {
     const phase = this.currentPhase();
     this.paused = false;
+    // Off by default, on only where a single named exercise is the subject of
+    // the screen. Screens built from a LIST - supersets, AMRAP - get a swap
+    // control on each row instead, because "this exercise" is ambiguous there.
+    this.updateSwapButton(null);
 
     // The workout's name, not the block's (2026-10-02, Chris). The block is
     // already named right below this on most screens, and since tapping here
@@ -5955,6 +6204,7 @@ const Player = {
       document.getElementById("player-video").style.display = phase.kind === "work" ? "flex" : "none";
       setPlayerVideo(phase.kind === "work" ? phase.exerciseName : null);
       setPlayerExerciseTechnique(phase.kind === "work" ? phase.exerciseName : null);
+      this.updateSwapButton(phase.kind === "work" ? phase.exerciseName : null);
       this.remaining = phase.duration;
       this.updateClock();
       // A REST never waits for Start (2026-10-19). isNewBlockStart() is true
@@ -6049,6 +6299,7 @@ const Player = {
                 <span class="amrap-ex-name">${esc(rowLabelFor(e, oneMovement))}</span>
                 ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
               </div>
+              <button class="amrap-swap-btn" data-swap-row="${esc(e.name)}" title="Swap this exercise">⇄</button>
             </div>
             <div class="amrap-row-line2">
               ${e.reps ? `<span class="amrap-reps">${repsLabel(e.reps)}</span>` : ""}
@@ -6060,6 +6311,11 @@ const Player = {
         .join("");
       supersetListEl.querySelectorAll(".amrap-play-btn").forEach((btn) => {
         btn.addEventListener("click", () => openExerciseVideo(btn.dataset.exName));
+      });
+      supersetListEl.querySelectorAll(".amrap-swap-btn").forEach((btn) => {
+        const name = btn.dataset.swapRow;
+        if (!EXERCISE_LIBRARY.some((x) => x.name === name)) { btn.style.display = "none"; return; }
+        btn.addEventListener("click", () => openSwapPicker(name));
       });
       // Held on the player, not the DOM, so it survives the re-render between
       // rounds and carries into the completion record.
@@ -6174,6 +6430,7 @@ const Player = {
 
     if (phase.kind === "sets") {
       setPlayerExerciseHeading(exerciseDisplayName({ name: phase.exerciseName, cue: phase.exerciseCue }));
+      this.updateSwapButton(phase.exerciseName);
       // The count moved into the card, so the pill carries the block label —
       // which is what the superset screen already shows in this spot.
       document.getElementById("player-sub-pill").textContent = phase.blockLabel || "";
@@ -6254,6 +6511,7 @@ const Player = {
                 <span class="amrap-ex-name">${esc(exerciseDisplayName(e))}</span>
                 ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
               </div>
+              <button class="amrap-swap-btn" data-swap-row="${esc(e.name)}" title="Swap this exercise">⇄</button>
               <button class="amrap-play-btn" data-ex-name="${esc(e.name)}" title="Watch demo">▶</button>
             </div>
             <div class="amrap-row-line2">
@@ -6271,6 +6529,13 @@ const Player = {
         .join("");
       document.querySelectorAll(".amrap-play-btn").forEach((btn) => {
         btn.addEventListener("click", () => openExerciseVideo(btn.dataset.exName));
+      });
+      // Per row, because "this exercise" means nothing on a screen listing
+      // four of them. Only offered for movements the library knows.
+      document.querySelectorAll(".amrap-swap-btn").forEach((btn) => {
+        const name = btn.dataset.swapRow;
+        if (!EXERCISE_LIBRARY.some((x) => x.name === name)) { btn.style.display = "none"; return; }
+        btn.addEventListener("click", () => openSwapPicker(name));
       });
       document.querySelectorAll("#player-amrap-list .superset-weight-input").forEach((input) => {
         input.addEventListener("input", () => this.noteWeight(input.dataset.exName, input.value));
@@ -6985,6 +7250,7 @@ function init() {
   DAILY_STATS = loadDailyStats();
   renderTodayStats();
   renderWearableSection();
+  renderMyEquipment();
 
   SHOWCASED_PRS = loadShowcasedPRs();
   NOTEBOOK_NOTES = loadNotebookNotes();
@@ -8496,6 +8762,29 @@ function wireRemainingControls() {
     Player.beginPhaseTimer();
   });
   document.getElementById("player-back-btn").addEventListener("click", () => Player.back());
+  // ---- my equipment (2026-11-04) ----
+  // Delegated: the pills are rebuilt on every toggle.
+  on("my-equipment-picker", "click", (e) => {
+    const pill = e.target.closest("[data-equipment]");
+    if (pill) toggleMyEquipment(pill.dataset.equipment);
+  });
+
+  // ---- substitute exercises (2026-11-04) ----
+  on("player-swap-btn", "click", () => openSwapPicker(Player.swapTarget));
+  on("swap-picker-close-btn", "click", closeSwapPicker);
+  on("swap-picker-search", "input", (e) => renderSwapPickerList(e.target.value));
+  // Delegated: the rows are rebuilt on every keystroke of the search box.
+  on("swap-picker-list", "click", (e) => {
+    const row = e.target.closest("[data-swap-to]");
+    if (!row) return;
+    Player.swapExercise(swapPickerFor, row.dataset.swapTo);
+    closeSwapPicker();
+  });
+  on("swap-picker-overlay", "click", (e) => {
+    // Tapping the dimmed area closes, same as every other popup here.
+    if (e.target.id === "swap-picker-overlay") closeSwapPicker();
+  });
+
   document.getElementById("exercise-video-close-btn").addEventListener("click", closeExerciseVideo);
   document.getElementById("player-block-label").addEventListener("click", openWorkoutOverview);
   document.getElementById("overview-close-btn").addEventListener("click", closeWorkoutOverview);

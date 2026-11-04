@@ -2294,6 +2294,59 @@ in data.js is fixed here so a fresh install does not ship it again. One answer
 has to serve both programme types, so it now names both rather than guessing
 which one is reading it.
 
+### Substitute exercises, and the equipment list that ranks them (2026-11-04)
+
+Chris: "if there is an exercise programmed that is not comfortable for the
+member, they can click a button to find a substitute that would work better."
+And, the same day: "a place in the user profile that they can select the list
+of equipment they have access to using the list we already have in admin."
+
+**No new content and no new vocabulary.** All 688 library entries already carry
+`bodyParts`, `modality` and `equipment`, and the member's equipment list is the
+same `EQUIPMENT_TAGS` the library is tagged with in admin. That shared
+vocabulary is the whole feature — it is what makes "what I have" and "what this
+needs" comparable at all.
+
+**A swap lasts for the session only** (Chris's call). Nothing to sync, nothing
+to undo later, nothing for a coach to police.
+
+**Done by cloning the circuit, not by patching the render sites.**
+`applyExerciseSwaps()` returns a copy with names replaced and `Player.circuit`
+points at it; `CIRCUITS` is never touched. Every render, the demo video, the
+technique text, the weight field and the logged completion then read the
+substitute without knowing a swap happened. Patching the half-dozen places that
+resolve a name would have meant a member seeing one exercise and logging
+another the first time one was missed — which is this project's recurring bug
+shape, not a hypothetical.
+
+Names do not change the SHAPE of the phase queue, so the queue is rebuilt and
+the member keeps their place rather than being thrown back to the start.
+
+**The ranking needed two corrections, both found by looking at real output:**
+
+- Modality first, or a Stretch comes back as a substitute for a Strength lift
+  because they share a muscle.
+- **Count the muscles it ADDS, not just the ones it shares.** Without that, a
+  glute bridge (Glutes) offered "Jump Split Squat" (Quads, Glutes) as its top
+  suggestion: one shared muscle either way, tie broken alphabetically. Scoring
+  the extras down puts Narrow / Single Leg / Wide Glute Bridge at the top,
+  which is what a person would have said.
+
+**Equipment lists read as ALTERNATIVES, not requirements.** Bulgarian Split
+Squats are `["DB","KB"]`, meaning either will do — so one match is enough to
+call something doable. Verified: a member with Bodyweight and Bands selected
+turns an all-dumbbell list into an all-bodyweight one.
+
+**An empty equipment list means "hasn't said", not "owns nothing."** A member
+who has never opened the section gets no reordering based on an assumption they
+never made. Someone who genuinely trains with nothing picks Bodyweight, which
+is a real tag.
+
+`pushPreferences()` also stopped using bare `JSON.parse` on localStorage while
+this was going in — the same throw-from-corrupt-storage that took
+`hydrateMemberData()` down the day before, in a function where it would have
+cost a whole sync.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

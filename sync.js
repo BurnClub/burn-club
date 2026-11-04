@@ -413,6 +413,13 @@ async function hydrateMemberData() {
     if (data.wearable && Object.keys(data.wearable).length) {
       localStorage.setItem(memberKey(WEARABLE_STORAGE_KEY), JSON.stringify(data.wearable));
     }
+    // Written even when empty, unlike the two above: an empty list is a real
+    // answer here. A member who clears every box on one phone must see it
+    // cleared on the other, and skipping the write would restore the old list
+    // from local storage on the next load.
+    if (Array.isArray(data.equipment)) {
+      localStorage.setItem(memberKey(MY_EQUIPMENT_KEY), JSON.stringify(data.equipment));
+    }
     report.preferences = "loaded";
   })();
 
@@ -764,6 +771,20 @@ async function pushReplace(table, rows) {
   return true;
 }
 
+// Corrupt or truncated localStorage throws, and these used to be bare
+// JSON.parse calls - the same fault that took hydrateMemberData() down on
+// 2026-11-03. A preferences push is not worth losing a sync over; a stored
+// value that cannot be read is treated as one that was never set.
+function storedJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (e) {
+    console.warn("[sync] unreadable localStorage:", key, e);
+    return fallback;
+  }
+}
+
 async function pushPreferences() {
   const row = {
     member_id: AUTH_MEMBER.id,
@@ -771,8 +792,9 @@ async function pushPreferences() {
     tour_seen: !!localStorage.getItem(memberKey(TOUR_SEEN_KEY)),
     checkin_enabled: localStorage.getItem(memberKey(CHECKIN_ENABLED_KEY)) !== "0",
     checkin_dismissed_on: localStorage.getItem(memberKey(CHECKIN_DISMISS_KEY)) || null,
-    notification_prefs: JSON.parse(localStorage.getItem(NOTIF_PREFS_KEY) || "{}"),
-    wearable: JSON.parse(localStorage.getItem(memberKey(WEARABLE_STORAGE_KEY)) || "{}"),
+    notification_prefs: storedJSON(NOTIF_PREFS_KEY, {}),
+    wearable: storedJSON(memberKey(WEARABLE_STORAGE_KEY), {}),
+    equipment: storedJSON(memberKey(MY_EQUIPMENT_KEY), []),
   };
   const { error } = await SB.from("member_preferences").upsert(row, { onConflict: "member_id" });
   if (error) { recordSyncError("member_preferences", error.message); return false; }

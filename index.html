@@ -464,6 +464,13 @@
         </div>
 
         <p class="player-exercise-name" id="player-exercise-name">Exercise</p>
+        <!-- Swap an exercise you can't do today for one that works the same
+             muscles (2026-11-04, Chris). Hidden on phases with no single named
+             exercise - rest, cardio, a superset screen - where the per-row
+             buttons in the list below do the same job. -->
+        <button class="player-swap-btn" id="player-swap-btn" type="button" style="display:none;">
+          ⇄ Swap this exercise
+        </button>
         <!-- The rep target, directly under the name (2026-08-23, Chris). It
              used to ride along in the sub-pill above the video — "Minute 3 of
              10 · 8 reps" — where it was both tiny and nowhere near the
@@ -1024,6 +1031,17 @@
           <div class="wearable-section" id="wearable-section"></div>
         </div>
 
+        <!-- What the member can actually get to (2026-11-04, Chris). The tag
+             list is the admin one from data.js, which is what makes it
+             comparable with how every exercise is tagged - that shared
+             vocabulary is the feature. Used to rank exercise swaps; nothing
+             is hidden on account of it. -->
+        <div id="profile-equipment-section">
+          <h2 class="section-title">My Equipment</h2>
+          <p class="wearable-coming-soon" id="my-equipment-note"></p>
+          <div class="pill-filter-row" id="my-equipment-picker"></div>
+        </div>
+
         <div class="home-section-card card-habits" id="profile-habits-section">
           <div class="section-head"><span class="section-icon section-icon-habits" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l2 2 4-4"/><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4"/></svg></span><h2 class="home-section-title has-icon">Manage your daily habits</h2></div>
           <div id="habit-manager"></div>
@@ -1081,6 +1099,25 @@
            in Chris's browser and not in the pane, which is the worst version
            of that bug: it would have worked for some testers and not others
            with no pattern anyone could report. -->
+      <!-- ---------- SUBSTITUTE EXERCISE PICKER (2026-11-04) ---------- -->
+      <!-- Built from the library's own tags - same modality, overlapping
+           bodyParts - so there is nothing to maintain here. A swap lasts for
+           THIS SESSION only: the workout is untouched and next week it comes
+           back as the coach wrote it. -->
+      <div class="cardio-log-overlay" id="swap-picker-overlay">
+        <div class="cardio-log-card swap-picker-card">
+          <button class="player-exit" id="swap-picker-close-btn">✕</button>
+          <h2 class="cardio-log-title" id="swap-picker-title">Swap exercise</h2>
+          <p class="swap-picker-sub" id="swap-picker-sub"></p>
+          <!-- 186 candidates came back for Bulgarian Split Squats. Sorted
+               best-first is not enough on a phone mid-workout. -->
+          <input class="swap-picker-search" id="swap-picker-search" type="search"
+                 placeholder="Search exercises" autocomplete="off" />
+          <div class="swap-picker-list" id="swap-picker-list"></div>
+          <p class="swap-picker-note">Just for today. Your coach's workout isn't changed.</p>
+        </div>
+      </div>
+
       <div class="cardio-log-overlay" id="text-prompt-overlay">
         <div class="cardio-log-card">
           <button class="player-exit" id="text-prompt-close">✕</button>

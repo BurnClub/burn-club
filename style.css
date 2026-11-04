@@ -2422,6 +2422,102 @@ h1, h2, h3 {
    sit above everywhere. */
 #text-prompt-overlay { z-index: 80; }
 
+/* ---------- Substitute exercises (2026-11-04) ---------- */
+/* Above the player, like every other popup it can be opened from. */
+#swap-picker-overlay { z-index: 80; }
+.swap-picker-card { max-width: 420px; width: 100%; }
+.swap-picker-sub {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.swap-picker-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--deepblue);
+  background: var(--bg);
+  border: 1.5px solid var(--border, rgba(47, 63, 130, 0.22));
+  border-radius: 10px;
+}
+/* Capped and scrolled rather than growing: the list runs to a couple of
+   hundred rows for a common movement, and the card must not outgrow the
+   phone it is on. */
+.swap-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 46vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.swap-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  font-family: inherit;
+  text-align: left;
+  background: var(--surface-2, rgba(127, 127, 127, 0.06));
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.swap-row-name { font-size: 14px; font-weight: 700; color: var(--deepblue); }
+.swap-row-tags { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+.swap-row:active { transform: scale(0.99); }
+/* The coach's own exercise, pinned to the top: this is the undo. */
+.swap-row.is-original { border-color: var(--blue); }
+.swap-row.is-current { background: var(--blue); }
+.swap-row.is-current .swap-row-name,
+.swap-row.is-current .swap-row-tags { color: #fff; }
+.swap-picker-empty {
+  margin: 12px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.swap-picker-note {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.player-swap-btn {
+  display: block;
+  margin: 6px auto 0;
+  padding: 7px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--deepblue);
+  background: var(--surface-2, rgba(127, 127, 127, 0.1));
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+/* Sits beside the demo button on list rows, same size and weight so neither
+   one shouts. */
+.amrap-swap-btn {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--deepblue);
+  background: var(--surface-2, rgba(127, 127, 127, 0.1));
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
 /* The activity pickers in the cardio log and the calendar's add-activity
    sheet. updateCardioActivityPicker() has always toggled .active on these,
    but .pill-filter had NO CSS AT ALL — so they rendered as default browser
