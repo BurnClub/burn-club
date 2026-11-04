@@ -174,6 +174,31 @@
           <div class="circuit-list" id="home-circuit-list"></div>
         </div>
 
+        <!-- ---------- SAVED & EXTRAS (2026-11-04, Chris) ---------- -->
+        <!-- Two asks that turned out to want the same container: workouts a
+             member saved for themselves, and the stretch/mobility content a
+             structured programme should be able to offer outside the
+             schedule.
+             On HOME rather than Calendar because a structured member has no
+             Workouts tab at all - the Stretch & Core Library already exists,
+             but it lives on the Workouts tab, so half the members could never
+             reach it. Calendar is strictly about dates; this is the opposite
+             of dated.
+             Hidden entirely when there is nothing in it, so a member who has
+             never saved anything is not looking at an empty shelf. -->
+        <div class="home-section-card card-green" id="home-saved-section" hidden>
+          <div class="section-head">
+            <span class="section-icon section-icon-habits" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21l8.8-8.3a5 5 0 0 0 0-7.1z"/></svg></span>
+            <h2 class="home-section-title has-icon" id="home-saved-title">Saved &amp; Extras</h2>
+          </div>
+          <p class="home-saved-sub" id="home-saved-sub" hidden></p>
+          <div class="circuit-list" id="home-saved-list"></div>
+          <div id="home-extras-group" hidden>
+            <h3 class="home-saved-subhead" id="home-extras-heading">Anytime</h3>
+            <div class="circuit-list" id="home-extras-list"></div>
+          </div>
+        </div>
+
         <!-- Stats: no card, one full-width row, evenly split (2026-08-09
              layout pass) — was paired narrow-column next to Habits. -->
         <div class="today-stats-row home-stats-plain" id="today-stats-row"></div>
@@ -422,6 +447,14 @@
         <header class="detail-header">
           <button class="back-btn" data-back="tab-home">←</button>
           <span class="detail-tag" id="detail-tag">Circuit</span>
+          <!-- Saving is done HERE rather than on the cards in a list: a heart
+               on every card turns a list of workouts into a list of controls,
+               and a member deciding to keep something has usually just opened
+               it to look. -->
+          <button class="detail-save-btn" id="detail-save-btn" type="button" aria-pressed="false">
+            <span class="detail-save-icon" aria-hidden="true">♡</span>
+            <span class="detail-save-text">Save</span>
+          </button>
         </header>
         <div class="detail-hero" id="detail-hero">
           <h1 id="detail-title">Circuit Name</h1>

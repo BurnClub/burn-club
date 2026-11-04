@@ -106,6 +106,19 @@ function syncStores() {
       // every habit he had ever set, restored over and over.
       replace: true,
     },
+    savedWorkouts: {
+      key: SAVED_WORKOUTS_KEY, table: "saved_workouts",
+      // The title travels with the id, so a saved workout stays readable if
+      // the content it points at is renamed or retired - same reason
+      // showcasedPRs carries an exercise_name.
+      toRows: (list) => list.map((w) => ({
+        member_id: me(), workout_id: w.id, title: w.title || null,
+      })),
+      onConflict: "member_id,workout_id",
+      fromRows: (rows) => rows.map((r) => ({ id: r.workout_id, title: r.title || "" })),
+      order: "saved_at",
+      replace: true,   // unsaving is a delete, not an update
+    },
     showcasedPRs: {
       key: SHOWCASED_PRS_KEY, table: "showcased_prs",
       toRows: (list) => list.map((name) => ({
@@ -513,7 +526,7 @@ async function reconcileLocalUp() {
 // myHabits joined on 2026-10-19 — see the note on its store above. Being in
 // here is what stops a replacing push firing from a device that did not edit
 // the list, which would wipe newer habits with this device's stale copy.
-const REPLACE_STORES = new Set(["showcasedPRs", "notebookNotes", "scheduledItems", "preferences", "myHabits"]);
+const REPLACE_STORES = new Set(["showcasedPRs", "notebookNotes", "scheduledItems", "preferences", "myHabits", "savedWorkouts"]);
 function dirtyKey() { return `burnclub-sync-dirty-${AUTH_MEMBER ? AUTH_MEMBER.id : "demo"}`; }
 function loadDirty() {
   try { return new Set(JSON.parse(localStorage.getItem(dirtyKey()) || "[]")); }

@@ -2422,6 +2422,55 @@ h1, h2, h3 {
    sit above everywhere. */
 #text-prompt-overlay { z-index: 80; }
 
+/* ---------- Saved workouts (2026-11-04) ---------- */
+/* Pushed to the right of the detail header, opposite the back arrow. */
+.detail-save-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--deepblue);
+  background: var(--bg);
+  border: 1.5px solid var(--border, rgba(47, 63, 130, 0.22));
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.detail-save-btn .detail-save-icon { font-size: 14px; line-height: 1; }
+.detail-save-btn.is-saved {
+  color: #fff;
+  background: var(--blue);
+  border-color: var(--blue);
+}
+.detail-save-btn:active { transform: scale(0.97); }
+
+.home-saved-sub,
+.home-saved-subhead {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.home-saved-subhead { margin-top: 14px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+/* A saved workout whose content has gone. Said plainly rather than dropped -
+   a row disappearing on its own is the kind of thing a member reports as
+   "the app lost my workout". */
+.circuit-card.is-missing {
+  display: block;
+  padding: 14px;
+  text-align: left;
+  background: var(--surface-2, rgba(127, 127, 127, 0.08));
+  border: 1.5px dashed var(--border, rgba(47, 63, 130, 0.22));
+  cursor: default;
+}
+.circuit-missing-title { margin: 0; font-size: 13px; font-weight: 800; color: var(--text-muted); }
+.circuit-missing-note { margin: 2px 0 0; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+
 /* ---------- Substitute exercises (2026-11-04) ---------- */
 /* Above the player, like every other popup it can be opened from. */
 #swap-picker-overlay { z-index: 80; }

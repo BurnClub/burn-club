@@ -347,6 +347,11 @@ function personalBestFor(name) {
 // member has since done 235. The choice is which lifts they care about, not
 // which single result to frame.
 const SHOWCASED_PRS_KEY = "burnclub-showcased-prs";
+// Workouts a member kept for themselves (2026-11-04). Stored as {id, title}
+// rather than bare ids: the title is what lets a saved workout stay readable
+// if the content it points at is renamed or retired, the same reason
+// showcasedPRs carries an exercise name.
+const SAVED_WORKOUTS_KEY = "burnclub-saved-workouts";
 
 // A real member starts with an empty Progress section and fills it as they go.
 // The demo seeds two so the card isn't blank on first look — same
@@ -3978,6 +3983,7 @@ function openCircuit(id) {
   document.getElementById("detail-meta").textContent = c.meta;
   document.getElementById("detail-desc").textContent = c.desc;
   document.getElementById("block-summary-list").innerHTML = c.blocks.map(renderBlockSummaryCard).join("");
+  renderDetailSaveButton(id);
   showScreen("screen-detail");
 }
 
@@ -4877,6 +4883,95 @@ function setPlayerVideo(exerciseName) {
 // this exercise — set per-exercise via the "Track Weight Used" checkbox in
 // the Exercise Library (admin), matched here by name since blocks reference
 // exercises by name, not id (2026-08-07).
+// ---------------- Saved workouts (2026-11-04) ----------------
+// Chris: "mark a workout as a favorite which allows them to access it from
+// their account whenever they want to do a workout."
+function loadSavedWorkouts() {
+  try {
+    const raw = localStorage.getItem(memberKey(SAVED_WORKOUTS_KEY));
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list.filter((w) => w && w.id) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function isWorkoutSaved(id) {
+  return loadSavedWorkouts().some((w) => w.id === id);
+}
+
+function toggleSavedWorkout(id) {
+  const c = CIRCUITS.find((x) => x.id === id);
+  if (!c) return;
+  const list = loadSavedWorkouts();
+  const at = list.findIndex((w) => w.id === id);
+  if (at >= 0) list.splice(at, 1);
+  else list.push({ id: c.id, title: c.title });
+  localStorage.setItem(memberKey(SAVED_WORKOUTS_KEY), JSON.stringify(list));
+  queueSync("savedWorkouts");
+  renderDetailSaveButton(id);
+  renderSavedAndExtras();
+}
+
+function renderDetailSaveButton(id) {
+  const btn = document.getElementById("detail-save-btn");
+  if (!btn) return;
+  const saved = isWorkoutSaved(id);
+  btn.classList.toggle("is-saved", saved);
+  btn.setAttribute("aria-pressed", saved ? "true" : "false");
+  // Filled heart when kept, outline when not. The word changes too, because a
+  // heart on its own is ambiguous about which state it is reporting.
+  btn.querySelector(".detail-save-icon").textContent = saved ? "\u2665" : "\u2661";
+  btn.querySelector(".detail-save-text").textContent = saved ? "Saved" : "Save";
+}
+
+// Home's shelf of things that are not on a schedule: what the member saved,
+// and - for structured members only - their programme's evergreen content.
+//
+// Rolling members already reach that content on the Workouts tab, so adding a
+// second copy here would be two lists of the same cards on one screen. The
+// structured half of the club could not reach it at all, which is the gap
+// Chris asked about.
+function renderSavedAndExtras() {
+  const section = document.getElementById("home-saved-section");
+  if (!section) return;
+
+  const saved = loadSavedWorkouts();
+  const savedCards = saved.map((w) => {
+    const c = CIRCUITS.find((x) => x.id === w.id);
+    // A workout that has gone - retired, or belonging to a programme the
+    // member has moved off - is SAID to be gone rather than vanishing. The
+    // title is why the row can still name it.
+    return c ? renderCircuitCard(c) : `
+      <div class="circuit-card is-missing">
+        <p class="circuit-missing-title">${esc(w.title || "Saved workout")}</p>
+        <p class="circuit-missing-note">Not available on your programme right now.</p>
+      </div>`;
+  }).join("");
+
+  const isStructured = CURRENT_MEMBER.scheduleType === "structured";
+  const extras = isStructured
+    ? CIRCUITS.filter((c) => c.programId === CURRENT_MEMBER.programId
+        && STRETCH_CORE_CATEGORIES.includes(c.category)
+        // Something already saved is shown once, under Saved.
+        && !saved.some((w) => w.id === c.id))
+    : [];
+
+  document.getElementById("home-saved-list").innerHTML = savedCards;
+  const group = document.getElementById("home-extras-group");
+  group.hidden = !extras.length;
+  if (extras.length) {
+    document.getElementById("home-extras-list").innerHTML = extras.map(renderCircuitCard).join("");
+  }
+
+  const sub = document.getElementById("home-saved-sub");
+  sub.hidden = !!saved.length;
+  if (!saved.length) {
+    sub.textContent = "Open any workout and tap Save to keep it here.";
+  }
+  section.hidden = !saved.length && !extras.length;
+}
+
 // ---------------- What equipment the member has (2026-11-04) ----------------
 // Chris: "a place in the user profile that they can select the list of
 // equipment they have access to using the list we already have in admin."
@@ -7200,6 +7295,10 @@ function renderCircuitLists() {
   document.getElementById("home-circuit-list").innerHTML = weeklyCircuits.map(renderCircuitCard).join("");
   document.getElementById("circuits-list-full").innerHTML = weeklyCircuits.map(renderCircuitCard).join("");
   document.getElementById("circuits-list-extras").innerHTML = extraCircuits.map(renderCircuitCard).join("");
+  // After the lists above, because it reuses renderCircuitCard and reads the
+  // same CIRCUITS - and because a saved workout can be one of the cards
+  // already rendered, so this has to run on the same pass.
+  renderSavedAndExtras();
   document.getElementById("last-week-list").innerHTML = lastWeekCircuits.map(renderCompactCircuitRow).join("");
 
   document.querySelectorAll("[data-open-circuit]").forEach((btn) => {
@@ -8762,6 +8861,11 @@ function wireRemainingControls() {
     Player.beginPhaseTimer();
   });
   document.getElementById("player-back-btn").addEventListener("click", () => Player.back());
+  // ---- saved workouts (2026-11-04) ----
+  on("detail-save-btn", "click", () => {
+    if (openCircuitId) toggleSavedWorkout(openCircuitId);
+  });
+
   // ---- my equipment (2026-11-04) ----
   // Delegated: the pills are rebuilt on every toggle.
   on("my-equipment-picker", "click", (e) => {

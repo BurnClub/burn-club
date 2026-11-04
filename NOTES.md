@@ -2347,6 +2347,56 @@ this was going in — the same throw-from-corrupt-storage that took
 `hydrateMemberData()` down the day before, in a function where it would have
 cost a whole sync.
 
+### Saved workouts, and the shelf that also holds "anytime" content (2026-11-04)
+
+Chris asked for two things that turned out to want the same container: saving a
+workout as a favourite (#4), and giving structured programmes a stretching and
+mobility folder available any time (#5). Both need the same missing thing — **a
+place a structured member can browse workouts that are not on their schedule**.
+
+It went on HOME, not Calendar. Calendar is strictly about dates and this is the
+opposite of dated; and a structured member has no Workouts tab at all, which is
+the whole reason the gap exists.
+
+**The mechanism for #5 already existed and was simply unreachable.**
+`STRETCH_CORE_CATEGORIES = ["stretch", "core-burn"]` already marks a circuit as
+evergreen — always available, never expiring — and those already render as the
+"Stretch & Core Library". That section lives on the Workouts tab, so **half the
+members could never see it**. No new content model was needed on the member
+side; it needed somewhere else to be shown.
+
+Rolling members deliberately do NOT get a second copy on Home: they already
+reach that content on the Workouts tab, and two lists of identical cards on one
+screen is not a feature.
+
+**Saved workouts store {id, title}, not bare ids.** The title is what lets a
+saved workout still be named when the content it points at is retired or
+belongs to a programme the member has left — it renders as "Not available on
+your programme right now" instead of silently disappearing, which is the kind
+of thing a member reports as "the app lost my workout". Same reasoning as
+`showcased_prs` carrying an exercise name.
+
+`saved_workouts.workout_id` has **NO FOREIGN KEY**, and that is now the third
+time this decision has had to be made on purpose. `completions.workout_id ->
+workouts` rejected every completion for six testers for two days because the
+trial content only ever existed in data.js. Circuit ids are bundled content,
+not server rows.
+
+**#5 IS HALF BUILT AND WILL SHOW NOTHING UNTIL ADMIN CHANGES.** The shelf
+renders anytime content correctly — verified against the two existing evergreen
+circuits — but admin cannot currently author any for a structured programme:
+
+- `setBuilderCategoryField()` locks the category to `"structured"` for a
+  structured programme (admin/app.js), so it can never become stretch/core-burn.
+- `setBuilderAvailability(!!builderProgramId, ...)` hides the availability block
+  entirely unless the programme is rolling, so "always available" cannot even be
+  ticked.
+
+Fixing it is not a one-liner: `handleBuilderSave()` rejects a save with neither
+availability radio chosen, so simply revealing the block would break editing of
+every existing structured workout. It needs a third option meaning "published by
+the schedule" — its own change, on a surface Kelly authors with daily.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.
