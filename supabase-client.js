@@ -238,20 +238,57 @@ function arrivedFromEmailLink() {
 // it at all. Everything below exists so the next one is watchable: who got in,
 // who did not, and what the app said to them when it refused.
 
-// The running build, taken from the URL the service worker actually fetched
-// app.js with. sw.js stamps every shell request with `?v=<CACHE>`, so this is
-// the real version in this browser right now — not a constant that has to be
-// remembered and bumped in a second place, which is exactly the kind of thing
-// that goes stale and then lies to you in a bug report.
-function appVersion() {
-  try {
-    const hit = performance.getEntriesByType("resource")
-      .find((r) => /\/app\.js(\?|$)/.test(r.name));
-    return (hit && new URL(hit.name).searchParams.get("v")) || "unversioned";
-  } catch (e) {
-    return "unknown";
-  }
+// Which build this browser is ACTUALLY running, asked of the service worker
+// that is actually controlling the page.
+//
+// The first version of this inferred it from app.js's resource-timing entry,
+// expecting to find the `?v=<CACHE>` stamp sw.js adds. That stamp is never
+// visible to the page: a service worker's rewritten URL stays inside the
+// worker, and the page's timing entry keeps the URL the page asked for. Every
+// event logged "unversioned" (2026-11-04).
+//
+// Resolved once at load into a variable the logger can read synchronously,
+// because logAuthEvent() must never await anything — it is called on paths
+// where a delay would be worse than a missing field.
+let APP_VERSION = "pending";
+
+function askWorkerVersion() {
+  return new Promise((resolve) => {
+    try {
+      const sw = navigator.serviceWorker;
+      // Genuinely useful rather than a failure: an uncontrolled page is one
+      // that has just taken a new worker, or has none, and either explains a
+      // member seeing something nobody else can reproduce.
+      if (!sw || !sw.controller) return resolve("no-sw");
+      const ch = new MessageChannel();
+      const done = setTimeout(() => resolve("sw-silent"), 1500);
+      ch.port1.onmessage = (e) => {
+        clearTimeout(done);
+        resolve((e.data && e.data.version) || "unknown");
+      };
+      sw.controller.postMessage({ type: "version" }, [ch.port2]);
+    } catch (e) {
+      resolve("unknown");
+    }
+  });
 }
+
+function appVersion() {
+  return APP_VERSION;
+}
+
+// Fire at load and again once a worker takes control, so a first visit stops
+// saying "no-sw" the moment that stops being true.
+(function trackAppVersion() {
+  askWorkerVersion().then((v) => { APP_VERSION = v; });
+  try {
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        askWorkerVersion().then((v) => { APP_VERSION = v; });
+      });
+    }
+  } catch (e) {}
+})();
 
 // Fire and forget, always. A log line is never worth delaying a sign-in for,
 // and it must never be the reason one fails — so nothing here is awaited by

@@ -2245,6 +2245,24 @@ loud, and the app's answer to each was to show a member a login form with
 nothing written on it. Build the thing that can see, before running the trial
 that needs it.
 
+**Addendum, same evening.** The logging's first real row showed
+`app_version: unversioned`, from Chris's iPhone, within a minute of going live.
+`appVersion()` had been reading the `?v=<CACHE>` stamp off app.js's
+resource-timing entry — and that stamp is never visible to the page. When a
+service worker answers a request, the page's timing entry keeps the URL THE
+PAGE ASKED FOR; the rewritten URL exists only inside the worker. It would have
+said "unversioned" on every device forever.
+
+Now the page asks the worker outright, over a MessageChannel, and gets the
+CACHE of the worker **actually controlling the page** — which on a device that
+has not picked up a deploy is a different answer from the one in the source,
+and that difference is the most useful line in any bug report. `no-sw` and
+`sw-silent` are real answers too: an uncontrolled page explains a member seeing
+something nobody else can reproduce.
+
+Worth noting what caught it. Not a test — the instrumentation caught itself,
+on a real device, on its first use.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

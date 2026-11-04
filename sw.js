@@ -17,7 +17,7 @@
 // it is how a deploy actually reaches a member. Bump it on any deploy that
 // changes app.js, sync.js, data.js, style.css or index.html — not just on
 // changes to this file.
-const CACHE = "burnclub-v50";
+const CACHE = "burnclub-v51";
 
 // The shell: enough to open the app and run a workout from local data.
 // Deliberately not the demo videos — they are ~1MB each and the browser's own
@@ -49,6 +49,23 @@ self.addEventListener("activate", (event) => {
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
+});
+
+// The page cannot work out which build it is running on its own, and tried to
+// (2026-11-04). It read the version off app.js's resource-timing entry, on the
+// assumption that the ?v=<CACHE> stamp below would be visible there. It is not:
+// when a service worker answers a request, the page's timing entry keeps the
+// URL THE PAGE ASKED FOR, and the rewritten one is only ever seen in here. So
+// every logged event said "unversioned" — found on Chris's iPhone within a
+// minute of the logging going live, which is the first thing it was useful for.
+//
+// Asking outright is both correct and better: this reports the CACHE of the
+// worker ACTUALLY CONTROLLING the page, which on a device that has not picked
+// up a deploy yet is a different answer from the one in the source — and that
+// difference is the single most useful fact in a bug report.
+self.addEventListener("message", (event) => {
+  if (!event.data || event.data.type !== "version") return;
+  if (event.ports && event.ports[0]) event.ports[0].postMessage({ version: CACHE });
 });
 
 self.addEventListener("fetch", (event) => {
