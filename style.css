@@ -2407,6 +2407,60 @@ h1, h2, h3 {
   padding: 20px;
 }
 .cardio-log-overlay.visible { display: flex; }
+
+/* The text-entry popup is the one overlay that gets opened FROM ON TOP of
+   another one — "+ Add" and "Edit" inside the Notebook both call askText()
+   without closing it first. It borrows .cardio-log-overlay's shell, and
+   inherited its z-index of 25 with it, which put it UNDER the Notebook's 55.
+   A tester: "when I click add for the notes, the pop-up dialogue appears
+   behind the notes, so I need to close the notes in order to access the
+   dialogue box" (2026-11-04).
+
+   80 rather than 56: this is a blocking text input, and while it is open it
+   should be above everything — the Notebook (55), the overview sheet (70) and
+   the toast (60) included. Anything that can be opened from anywhere has to
+   sit above everywhere. */
+#text-prompt-overlay { z-index: 80; }
+
+/* The activity pickers in the cardio log and the calendar's add-activity
+   sheet. updateCardioActivityPicker() has always toggled .active on these,
+   but .pill-filter had NO CSS AT ALL — so they rendered as default browser
+   buttons and the selected one looked identical to the rest. A tester: the
+   buttons "don't change color, or outline or anything besides changing the
+   distance/flight climbed field" (2026-11-04).
+
+   The field changing underneath was the only feedback there was. */
+.pill-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.pill-filter {
+  /* 0 1 auto, not 1 1 auto: with grow on, a pill that wraps to a line of its
+     own stretches the full width and reads as a banner rather than one choice
+     among four. "Stair Stepper" did exactly that. */
+  flex: 0 1 auto;
+  min-width: 72px;
+  padding: 9px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--deepblue);
+  background: var(--bg);
+  border: 1.5px solid var(--border, rgba(47, 63, 130, 0.22));
+  border-radius: 999px;
+  cursor: pointer;
+  /* Only the colours move. Transitioning the border WIDTH would shift the
+     row's layout by half a pixel on every tap. */
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.pill-filter:active { transform: scale(0.97); }
+.pill-filter.active {
+  color: #fff;
+  background: var(--blue);
+  border-color: var(--blue);
+}
 .cardio-log-card {
   background: var(--bg);
   border-radius: var(--radius-lg);

@@ -2263,6 +2263,37 @@ something nobody else can reproduce.
 Worth noting what caught it. Not a test — the instrumentation caught itself,
 on a real device, on its first use.
 
+### Three from the trial feedback (2026-11-04)
+
+All three were reported as separate complaints and all three were one-line
+causes. Worth recording because none of them was in the logic — the code did
+the right thing in every case and the styling undid it.
+
+**Cardio activity buttons gave no feedback.** A tester: they "don't change
+color, or outline or anything besides changing the distance/flight climbed
+field." `updateCardioActivityPicker()` has always toggled `.active` on these.
+`.pill-filter` and `.pill-filter-row` **had no CSS at all** — not a wrong rule,
+no rule — so they rendered as default browser buttons and the selected one
+looked exactly like the other three. The field label changing underneath was
+the only feedback there was. Also affects the calendar's add-activity picker,
+which uses the same class.
+
+**The note dialog opened behind the notebook.** `#text-prompt-overlay` borrows
+`.cardio-log-overlay`'s shell and inherited its `z-index: 25` with it; the
+notebook is 55. "+ Add" and "Edit session note" both call `askText()` WITHOUT
+closing the notebook first — the notebook's other actions call `closeNotebook()`
+and so never showed it. Now 80: a blocking text input that can be opened from
+anywhere has to sit above everywhere.
+
+**The Help answer was wrong twice for a structured member.** It said "Head to
+Workouts — you can start any circuit any day, or build your own from the
+Exercise Library." Their tab is Calendar, not Workouts, and building your own
+is not a feature that exists. The FAQ is coach-editable and syncs through
+`app_settings`, so the live copy is Chris's to fix in admin; the bundled default
+in data.js is fixed here so a fresh install does not ship it again. One answer
+has to serve both programme types, so it now names both rather than guessing
+which one is reading it.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

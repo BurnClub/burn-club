@@ -967,7 +967,12 @@ const APP_SETTINGS_DEFAULTS = {
   support: {
     email: "support@burnclub.com",
     faqs: [
-      { q: "How do I change my workout schedule?", a: "Head to Workouts — you can start any circuit any day, or build your own from the Exercise Library." },
+      // Said "Head to Workouts... or build your own from the Exercise Library",
+      // which was wrong twice for a structured member: their tab is Calendar,
+      // not Workouts, and building your own is not a feature that exists
+      // (a tester, 2026-11-04). One answer has to serve both programme types,
+      // so it names both rather than guessing which one is reading it.
+      { q: "How do I change my workout schedule?", a: "On a structured program, your workouts are laid out for you in Calendar — tap one and choose Move to shift it to another day. On Burn Club, open Workouts and start any circuit, any day. For anything bigger, message your coach." },
       { q: "Can I pause my membership?", a: "Yes — message your coach and they'll take care of it for you." },
       { q: "How do I connect a wearable?", a: "Go to Profile → Connected Devices and tap Connect next to your device." },
     ],
