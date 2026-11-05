@@ -3802,21 +3802,22 @@ h1, h2, h3 {
    wanted a tap the member is under load with no free hand — see the note above
    holdTagHtml in app.js. A pill rather than a sentence so it reads as part of
    the prescription on the row, not as prose to parse mid-set. */
+/* Text, not a pill (2026-11-05, Chris): "The '30 Sec' being in a pill looks
+   too much like a button to press."
+   He is right, and the giveaway is what sits beside it. A hold is the same
+   KIND of thing as the rep count on the same row - a number describing the
+   set - and the reps have never been a pill. A filled, rounded, padded shape
+   is the app's vocabulary for something you tap, and spending it on a label
+   invites exactly one wrong conclusion in the middle of a workout.
+   The fill is what has to go; the weight stays, so it still reads as an
+   instruction rather than drifting into the body text. */
 .hold-tag {
   font-family: var(--font-heading);
-  font-weight: 800;
+  font-weight: 700;
   font-size: 12px;
   color: var(--text);
-  background: var(--periwinkle);
-  border-radius: 999px;
-  padding: 4px 11px;
   white-space: nowrap;
   flex-shrink: 0;
-}
-/* The set card is itself periwinkle, so the pill flips to the white fill the
-   numbering circles and the tick already use. */
-.set-row .hold-tag {
-  background: var(--pill-surface);
 }
 
 /* Marks the second row of a compound set as the drop (2026-08-23). Without it
@@ -3857,11 +3858,10 @@ h1, h2, h3 {
    it would have vanished entirely. White keeps it, and matches the circles
    and pills sitting on the same card. */
 .player-amrap-list .amrap-row:not(:last-child)::after { background: var(--card-white); }
-/* Both the superset and the AMRAP list sit on a periwinkle card, so the hold
-   pill takes the same white fill as the one on the straight-sets row. */
-.player-amrap-list .hold-tag {
-  background: var(--pill-surface);
-}
+/* The white fill went with the pill (2026-11-05). It was here because the
+   superset and AMRAP lists sit on a periwinkle card and a periwinkle pill
+   would have disappeared into it - which stops being a problem once it is
+   text rather than a pill. */
 /* Periwinkle borders are invisible against the card, so the white fill has to
    define these on its own. */
 .player-amrap-list .superset-weight-input { border-color: #FFFFFF; }
@@ -3938,8 +3938,14 @@ h1, h2, h3 {
   color: var(--text);
   text-align: center;
 }
-/* Pressable, so it can't be mistaken for the flat DROP tag beside it. */
-.hold-tag { box-shadow: 0 1px 3px rgba(23, 36, 63, 0.18); }
+/* The shadow is gone too, and this rule is why Chris's complaint was fair
+   rather than a matter of taste: it was added to make the hold tag look
+   PRESSABLE, so it could be told apart from the flat DROP tag beside it.
+   It worked - which is the problem. It was distinguished from its neighbour
+   by borrowing the one signal that means "tap me", and a member mid-set reads
+   that signal before they read the word.
+   The two are still easy to tell apart without it: DROP is 9px uppercase in a
+   bordered outline, the hold is 12px heading-weight text. */
 
 /* ---------- PROGRAM COMPLETE (2026-08-23) ----------
    Shown instead of the week snapshot once a structured member is past their

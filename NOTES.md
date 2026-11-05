@@ -2524,6 +2524,36 @@ same control and the same argument, and leaving the two screens inconsistent
 would have been a worse answer than the bug. It also leaves the demo button
 alone on the right, which is where a play button belongs.
 
+### The hold tag was made to look pressable on purpose (2026-11-05)
+
+Chris: "The '30 Sec' being in a pill looks too much like a button to press, so
+lets take out the pill and just leave it as text."
+
+Removing the fill was not enough — two other rules were holding it up, and the
+second one is why the complaint was fair rather than a matter of taste:
+
+```css
+.player-amrap-list .hold-tag { background: var(--pill-surface); }
+/* Pressable, so it can't be mistaken for the flat DROP tag beside it. */
+.hold-tag { box-shadow: 0 1px 3px rgba(23, 36, 63, 0.18); }
+```
+
+That shadow was added deliberately to make the tag look **pressable**, so it
+could be told apart from the flat DROP tag next to it. It worked, which is the
+problem: it distinguished a label from its neighbour by borrowing the one
+signal that means "tap me", and a member mid-set reads that signal before they
+read the word.
+
+The real tell is what sits beside it. A hold is the same KIND of thing as the
+rep count on the same row — a number describing the set — and the reps have
+never been a pill. Now both are plain text and read as one pair.
+
+DROP and the hold are still easy to tell apart: DROP is 9px uppercase in a
+bordered outline, the hold is 12px heading-weight text.
+
+Worth noting the straight-sets card was never affected — it builds its own
+"last rep: hold 20s" line and has always rendered it as text.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.
