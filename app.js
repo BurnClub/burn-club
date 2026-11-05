@@ -5523,6 +5523,24 @@ const Player = {
     this.startHeartbeat();
   },
 
+  // What the member is resting FOR, taken from the queue rather than from the
+  // phase's own `upNext` (2026-11-05). upNext is a display STRING - sometimes
+  // an exercise name, sometimes a whole block's label - so it can say what is
+  // coming but cannot be looked up in the library.
+  //
+  // Walking the queue instead answers it for every kind of rest: between
+  // stations, between rounds, and a standalone rest block a coach programmed.
+  // Phases with nothing to show - another rest, the weight log, a cardio
+  // choice - carry neither field, so they are skipped without naming them.
+  upcomingExercises() {
+    for (let i = this.index + 1; i < this.phases.length; i++) {
+      const p = this.phases[i];
+      if (Array.isArray(p.exercises) && p.exercises.length) return p.exercises;
+      if (p.exerciseName) return [{ name: p.exerciseName, cue: p.exerciseCue }];
+    }
+    return [];
+  },
+
   // Shows or hides the swap button, and remembers which exercise it means.
   updateSwapButton(name) {
     const btn = document.getElementById("player-swap-btn");
@@ -6328,6 +6346,14 @@ const Player = {
       setPlayerVideo(phase.kind === "work" ? phase.exerciseName : null);
       setPlayerExerciseTechnique(phase.kind === "work" ? phase.exerciseName : null);
       this.updateSwapButton(phase.kind === "work" ? phase.exerciseName : null);
+      // Rest is the one moment in a workout with nothing to look at and time
+      // to look at it, and the next thing is exactly what a member wants to
+      // see. A superset coming up shows all of its movements, which is the
+      // case the single video above could never have covered.
+      if (phase.kind === "rest") {
+        const upcoming = this.upcomingExercises();
+        if (upcoming.length) renderDemoStrip(upcoming);
+      }
       this.remaining = phase.duration;
       this.updateClock();
       // A REST never waits for Start (2026-10-19). isNewBlockStart() is true

@@ -2554,6 +2554,41 @@ bordered outline, the hold is 12px heading-weight text.
 Worth noting the straight-sets card was never affected — it builds its own
 "last rep: hold 20s" line and has always rendered it as text.
 
+### Previewing what's next, during rest (2026-11-05)
+
+A tester suggestion Chris liked: show the next exercise's demo while the member
+is resting. Rest is the one moment in a workout with nothing to look at and
+time to look at it, and what is coming is exactly what they want to know.
+
+**Built on the queue, not on `upNext`.** Every rest phase already carries an
+`upNext`, but it is a display STRING — sometimes an exercise name, sometimes a
+whole block's label ("Finisher") — so it can say what is coming and cannot be
+looked up in the library. `upcomingExercises()` walks forward through the
+phase queue instead and returns the first phase that actually has exercises.
+Phases with nothing to show — another rest, the weight log, a cardio choice —
+carry neither `exercises` nor `exerciseName`, so they are skipped without
+having to be named.
+
+That difference is not theoretical. On a standalone rest block the label said
+"Finisher" while the preview correctly resolved both of the superset's
+movements.
+
+`renderDemoStrip()` already existed for superset screens and does the whole
+job: a swipeable row of cards, only the visible one playing, muted and
+`preload="none"`. Which also means a superset coming up previews ALL of its
+movements — the plural case the single video above the clock could never have
+covered.
+
+Verified against all three rest shapes: between stations (interval block),
+between rounds, and a standalone rest block. Also that leaving a rest clears
+the strip and stops playback — `renderPhase()` already resets it at the top,
+so nothing keeps streaming behind a screen it cannot be seen from.
+
+**Not done:** the between-sets rest OVERLAY on straight sets. "Up next" there
+is the same exercise the member has just been doing, so a preview would show
+them what they are already looking at. The exception is the LAST set, where
+the next thing IS different — worth revisiting if anyone asks.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.
