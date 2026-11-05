@@ -6421,8 +6421,13 @@ const Player = {
               <div class="amrap-row-left">
                 <span class="amrap-ex-name">${esc(rowLabelFor(e, oneMovement))}</span>
                 ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
+                <!-- Against the NAME, not at the end of the line (2026-11-05,
+                     Chris). line1 is justify-content: space-between, so this
+                     sat hard right — directly above the reps on line2, which
+                     made it read as something that would change the reps. It
+                     swaps the exercise, so it belongs to the exercise. -->
+                <button class="amrap-swap-btn" data-swap-row="${esc(e.name)}" title="Swap this exercise">⇄</button>
               </div>
-              <button class="amrap-swap-btn" data-swap-row="${esc(e.name)}" title="Swap this exercise">⇄</button>
             </div>
             <div class="amrap-row-line2">
               ${e.reps ? `<span class="amrap-reps">${repsLabel(e.reps)}</span>` : ""}
@@ -6633,8 +6638,11 @@ const Player = {
               <div class="amrap-row-left">
                 <span class="amrap-ex-name">${esc(exerciseDisplayName(e))}</span>
                 ${e.drop ? `<span class="row-seg-tag">drop</span>` : ""}
+                <!-- Beside the name here too, so the control means the same
+                     thing on every screen. It leaves the demo button alone on
+                     the right, which is where a play button belongs. -->
+                <button class="amrap-swap-btn" data-swap-row="${esc(e.name)}" title="Swap this exercise">⇄</button>
               </div>
-              <button class="amrap-swap-btn" data-swap-row="${esc(e.name)}" title="Swap this exercise">⇄</button>
               <button class="amrap-play-btn" data-ex-name="${esc(e.name)}" title="Watch demo">▶</button>
             </div>
             <div class="amrap-row-line2">

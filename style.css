@@ -2552,13 +2552,17 @@ h1, h2, h3 {
   border-radius: 999px;
   cursor: pointer;
 }
-/* Sits beside the demo button on list rows, same size and weight so neither
-   one shouts. */
+/* Sits against the exercise NAME, not at the end of the row (2026-11-05).
+   line1 is justify-content: space-between, so on a superset card this was
+   pushed hard right and landed directly above the reps on line2 - close
+   enough to read as a control for the reps rather than for the exercise.
+   Smaller than the demo button on purpose: attached to the name, not
+   competing with it. */
 .amrap-swap-btn {
   flex: 0 0 auto;
-  width: 30px;
-  height: 30px;
-  font-size: 14px;
+  width: 26px;
+  height: 26px;
+  font-size: 13px;
   line-height: 1;
   color: var(--deepblue);
   background: var(--surface-2, rgba(127, 127, 127, 0.1));

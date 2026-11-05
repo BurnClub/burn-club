@@ -2505,6 +2505,25 @@ and the next hydrate pulls the server's clean copy over the local duplicates.
 Tested against both real failures, plus the case a careless fix would break:
 two different members sharing a date must both survive.
 
+### The swap button was attached to the wrong thing (2026-11-05)
+
+Chris: the inline swap control on a superset "sits next to the reps, and has
+the chance to confuse people on what is being switched."
+
+He was right, and the cause was one CSS rule. `.amrap-row-line1` is
+`justify-content: space-between`, so a button placed at the end of that line is
+pushed hard right — which on a superset card puts it directly beside the reps
+pill, and directly above the reps on any row that wraps. A control that swaps
+the EXERCISE was sitting with the numbers.
+
+Moved inside `.amrap-row-left`, immediately after the name, and shrunk from
+30px to 26px so it reads as attached to the name rather than competing with it.
+
+Moved on the AMRAP rows too, though only supersets were reported: it is the
+same control and the same argument, and leaving the two screens inconsistent
+would have been a worse answer than the bug. It also leaves the demo button
+alone on the right, which is where a play button belongs.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.
