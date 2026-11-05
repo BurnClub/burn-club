@@ -731,7 +731,7 @@ async function pushStore(name) {
   if (!SB || !AUTH_MEMBER) return true;
   try {
     if (name === "habitChecks") return await pushRows("habit_checks", habitChecksToRows(HABIT_CHECKS), "member_id,habit_id,checked_on");
-    if (name === "notebookNotes") return await pushReplace("notebook_notes", notebookNotesToRows(NOTEBOOK_NOTES));
+    if (name === "notebookNotes") return await pushReplace("notebook_notes", notebookNotesToRows(NOTEBOOK_NOTES), "member_id,kind,position");
     if (name === "sessionNotes") return await pushRows("session_notes", sessionNotesToRows(SESSION_NOTES), "member_id,completion_client_id");
     if (name === "preferences") return await pushPreferences();
     if (name === "healthProfile") return await pushHealthProfile();
@@ -742,7 +742,9 @@ async function pushStore(name) {
     const local = JSON.parse(localStorage.getItem(memberKey(s.key)) || "null");
     if (!local) return true;
     const rows = s.toRows(local);
-    const ok = s.replace ? await pushReplace(s.table, rows) : await pushRows(s.table, rows, s.onConflict);
+    const ok = s.replace
+      ? await pushReplace(s.table, rows, s.onConflict)
+      : await pushRows(s.table, rows, s.onConflict);
     // Weights go with the completions they belong to, and only if the
     // completions themselves landed — a lift whose completion never arrived
     // would be an orphan nothing could show.
@@ -839,7 +841,40 @@ function liftsOntoCompletions(completions, liftRows) {
   return completions;
 }
 
+// Two rows in ONE statement that collide with each other are rejected by
+// Postgres outright — "ON CONFLICT DO UPDATE command cannot affect row a
+// second time" on an upsert, "duplicate key value violates unique constraint"
+// on an insert. Not the row being rejected: the WHOLE STATEMENT. So one
+// duplicated record locally means nothing in that store ever reaches the
+// server again (2026-11-05).
+//
+// And it cannot recover on its own, which is the part that cost 33 days.
+// hydrateMemberData() deliberately skips pulling a store with an unsynced
+// local edit, so that a pull cannot destroy work that never went up. A store
+// stuck like this is permanently dirty — so the pull that would have replaced
+// the duplicates with the server's clean copy is exactly the thing that is
+// switched off. Push fails, store stays dirty, pull stays disabled, forever.
+// Chris's phone sat there for 33 days holding 26 check-ins, warning him daily,
+// with no way to say why.
+//
+// The last occurrence wins: these arrays are written in order, so the later
+// one is the member's more recent answer for that key.
+function dedupeRows(rows, onConflict) {
+  if (!onConflict || rows.length < 2) return rows;
+  const cols = onConflict.split(",").map((c) => c.trim()).filter(Boolean);
+  if (!cols.length) return rows;
+  const byKey = new Map();
+  rows.forEach((r) => byKey.set(cols.map((c) => String(r[c])).join("\u0000"), r));
+  if (byKey.size !== rows.length) {
+    // Worth saying out loud. The push now succeeds either way, but a store
+    // that keeps needing this has a writer somewhere making duplicates.
+    console.warn(`[sync] ${rows.length - byKey.size} duplicate row(s) collapsed on ${onConflict}`);
+  }
+  return [...byKey.values()];
+}
+
 async function pushRows(table, rows, onConflict) {
+  rows = dedupeRows(rows, onConflict);
   if (!rows.length) return true;
   const { error } = await SB.from(table).upsert(rows, { onConflict });
   if (error) { recordSyncError(table, error.message); return false; }
@@ -850,7 +885,10 @@ async function pushRows(table, rows, onConflict) {
 // For stores where removal is meaningful — unpinning a PR, deleting a note.
 // An upsert alone would leave the removed rows behind, so the member's list
 // and the server's would quietly diverge.
-async function pushReplace(table, rows) {
+async function pushReplace(table, rows, key) {
+  // Same trap as the upsert path: the delete clears what the SERVER holds, so
+  // a collision here is always between two rows in the batch being inserted.
+  rows = dedupeRows(rows, key);
   const { error: delError } = await SB.from(table).delete().eq("member_id", AUTH_MEMBER.id);
   if (delError) { recordSyncError(table, "clear: " + delError.message); return false; }
   if (!rows.length) return true;
@@ -935,7 +973,7 @@ async function pushScheduledItems() {
   const list = raw ? JSON.parse(raw) : [];
   // Replace rather than upsert: removing a scheduled session is the common
   // edit, and an upsert would leave it on the calendar of every other device.
-  return await pushReplace("scheduled_items", scheduledItemsToRows(list));
+  return await pushReplace("scheduled_items", scheduledItemsToRows(list), "member_id,client_id");
 }
 
 // ---------------- Messaging (2026-10-12) ----------------

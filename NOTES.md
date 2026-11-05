@@ -2468,9 +2468,42 @@ Three changes:
   and the build. "completions is stuck" does not say whether that is one
   session or three months of them.
 
-Still open at time of writing: what is actually failing on Chris's phone. The
-Mac is clean, so it is device-specific, and the point of the above is that the
-phone can now be asked.
+**And the phone answered, within the hour:**
+
+```
+Waiting to upload: checkins, scheduledItems
+Backup stuck since: 10/3/2026, 10:50:13 PM
+  checkins holds: 26 record(s)
+Error on checkins: ON CONFLICT DO UPDATE command cannot affect row a second time
+Error on scheduled_items: duplicate key value violates unique constraint "scheduled_items_pkey"
+```
+
+**Two rows in ONE statement that collide with each other are rejected by
+Postgres outright — and it rejects the WHOLE STATEMENT, not the offending
+row.** So a single duplicated record locally means nothing in that store ever
+reaches the server again. One duplicate check-in stranded all 26.
+
+**The part that made it permanent is the safety feature.**
+`hydrateMemberData()` deliberately skips pulling a store with an unsynced local
+edit, so a pull can never destroy work that has not gone up. A store stuck this
+way is permanently dirty — so the pull that would have replaced the duplicates
+with the server's clean copy is precisely the thing that is switched off. Push
+fails, store stays dirty, pull stays disabled, repeat for 33 days. Each half is
+correct on its own; together they deadlock.
+
+`saveCheckin()` is not the culprit and never was — it has always edited the
+existing entry for a date rather than stacking a second one. Where the original
+duplicate came from is unknown and no longer interesting: the bug worth fixing
+is that one could never clear.
+
+Fixed in `dedupeRows()`, applied in both `pushRows()` and `pushReplace()` and
+keyed on the conflict key each store already declares. Last occurrence wins —
+these arrays are written in order, so the later row is the member's more recent
+answer. It is self-healing: the push now succeeds, the store stops being dirty,
+and the next hydrate pulls the server's clean copy over the local duplicates.
+
+Tested against both real failures, plus the case a careless fix would break:
+two different members sharing a date must both survive.
 
 ### An export is ONE browser, not the content library
 
