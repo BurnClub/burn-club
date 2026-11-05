@@ -479,6 +479,12 @@ async function hydrateMemberData() {
     report["__threw" + i] = "error: " + why;
   });
   SYNC_STATE.lastError = Object.values(report).find((v) => String(v).startsWith("error")) || null;
+  // Stop a "not backing up" clock that nothing is keeping true any more
+  // (2026-11-05). The guard inside warnIfStale() cannot do this on its own:
+  // warnIfStale() is reached ONLY from the failure branch of drainSyncQueue,
+  // so a device whose problem was fixed long ago never runs the check that
+  // would clear it. Here it runs on every sign-in, failure or not.
+  if (!loadDirty().size && !SYNC_STATE.queue.size) clearUnsynced();
   return { ok: !SYNC_STATE.lastError, report };
 }
 
@@ -509,6 +515,17 @@ async function reconcileLocalUp() {
   const failed = Object.keys(results).filter((n) => !results[n]);
   failed.forEach((n) => SYNC_STATE.queue.add(n));
   if (failed.length) drainSyncQueue();
+  // Stop the "not backing up" clock when this path is what rescued the work
+  // (2026-11-05). clearUnsynced() used to be called from ONE place: the
+  // success branch of drainSyncQueue(). But reconcileLocalUp() is the other
+  // half of the retry story - it is what pushes a stranded store on the next
+  // sign-in, and it cleared the dirty flags without ever stopping the clock.
+  //
+  // So a push that failed once, succeeded on the next launch, and has been
+  // fine ever since still warned the member every session, with the number
+  // climbing forever. Chris saw "33 days" on a phone whose data was already
+  // on the server.
+  else clearUnsynced();
   return failed.length ? `failed: ${failed.join(", ")}` : "ok";
 }
 
@@ -558,10 +575,69 @@ function clearUnsynced() {
   staleWarnedThisSession = false;
 }
 
+// What this DEVICE knows about its own backup, in words a member can read off
+// a phone and send on (2026-11-05).
+//
+// Chris's phone warned that his workouts had not backed up for 33 days while
+// his Mac reported a completely clean syncStatus(). Both were true: the dirty
+// set and the stale clock live in localStorage, so a store stuck on one device
+// is invisible from every other one - and the only place it could be read was
+// a console, which is the one tool a phone does not have.
+function syncDiagnosticsText() {
+  const lines = [];
+  const add = (k, v) => lines.push(k + ": " + v);
+  try {
+    add("Signed in as", AUTH_MEMBER ? AUTH_MEMBER.email : "not signed in");
+    add("Online", (typeof navigator !== "undefined" && navigator.onLine === false) ? "no" : "yes");
+
+    const dirty = [...loadDirty()];
+    add("Waiting to upload", dirty.length ? dirty.join(", ") : "nothing");
+    add("Queued right now", [...SYNC_STATE.queue].join(", ") || "nothing");
+    add("Failed attempts", SYNC_STATE.failures || 0);
+
+    const since = Number(localStorage.getItem(staleKey()) || 0);
+    add("Backup stuck since", since ? new Date(since).toLocaleString() : "not stuck");
+
+    // How much is actually at risk. "completions is stuck" says nothing about
+    // whether that is one session or three months of them.
+    const stores = (typeof syncStores === "function" && AUTH_MEMBER) ? syncStores() : {};
+    dirty.forEach((name) => {
+      const def = stores[name];
+      if (!def) return;
+      try {
+        const raw = localStorage.getItem(memberKey(def.key));
+        const list = raw ? JSON.parse(raw) : [];
+        add("  " + name + " holds", Array.isArray(list) ? list.length + " record(s)" : "1 record");
+      } catch (e) {
+        add("  " + name + " holds", "unreadable (" + (e.name || "error") + ")");
+      }
+    });
+
+    const errs = Object.keys(SYNC_STATE.errors || {});
+    if (errs.length) errs.forEach((t) => add("Error on " + t, SYNC_STATE.errors[t].message));
+    else add("Errors this session", "none recorded yet");
+
+    add("App version", typeof appVersion === "function" ? appVersion() : "unknown");
+    add("Checked at", new Date().toLocaleString());
+  } catch (e) {
+    lines.push("Could not read sync state: " + (e.message || e));
+  }
+  return lines.join("\n");
+}
+
 function warnIfStale() {
   if (staleWarnedThisSession) return;
   const since = Number(localStorage.getItem(staleKey()) || 0);
   if (!since || Date.now() - since < STALE_WARN_AFTER_MS) return;
+  // Self-correcting, so this can never again shout about work that is not
+  // actually stranded. The clock is a record of when a failure STARTED; what
+  // makes it still true is whether anything is dirty or queued right now. A
+  // marker left behind by a fixed problem is a warning that trains the member
+  // to ignore the one that matters.
+  if (!loadDirty().size && !SYNC_STATE.queue.size) {
+    clearUnsynced();
+    return;
+  }
   staleWarnedThisSession = true;
   if (typeof showToast === "function") {
     const days = Math.max(1, Math.round((Date.now() - since) / (24 * 60 * 60 * 1000)));

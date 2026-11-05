@@ -2432,6 +2432,46 @@ Three things that made it safe rather than a one-liner:
 programme's folder with "always available" ticked, exports, and they are
 migrated across like any other content change.
 
+### "Your workouts haven't backed up for 33 days" (2026-11-05)
+
+Chris's phone was warning him daily. His Mac, signed in as the same member,
+returned a completely clean `syncStatus()` — nothing queued, zero failures, no
+errors. Both were telling the truth.
+
+**The dirty set and the stale clock are per-device**, in localStorage. A store
+stuck on one phone is invisible from every other device the member owns, and
+the only way to read it was a browser console — which is the one tool the
+device with the problem does not have. That is the whole bug, and it is the
+same shape as everything else this autumn: the app knew, and had no way to say
+so to the person holding it.
+
+**I got the first explanation wrong and had to correct it mid-answer.** I
+assumed a leftover marker, because `clearUnsynced()` is called from exactly one
+place — the success branch of `drainSyncQueue()`. Then: `warnIfStale()` is only
+ever reached from the FAILURE branch, so the toast appearing means a push is
+actively failing right now, not that an old flag was left behind.
+
+Three changes:
+
+- **`reconcileLocalUp()` now stops the clock when it succeeds.** It is the
+  other half of the retry story — the thing that pushes a stranded store on the
+  next sign-in — and it cleared the dirty flags without ever clearing the stale
+  marker. A push that failed once, succeeded on the next launch and has been
+  fine since would still have warned forever, with the number climbing.
+- **A clean sign-in clears a clock nothing is keeping true.** The guard inside
+  `warnIfStale()` cannot do this alone, for the reason above: it never runs on
+  a device whose problem is already fixed. `hydrateMemberData()` runs either
+  way.
+- **Profile → Backup & Sync.** One line for the ordinary case ("Everything on
+  this device has been backed up"), and the full report behind a tap: what is
+  waiting, HOW MANY RECORDS it holds, the actual error text, when it got stuck,
+  and the build. "completions is stuck" does not say whether that is one
+  session or three months of them.
+
+Still open at time of writing: what is actually failing on Chris's phone. The
+Mac is clean, so it is device-specific, and the point of the above is that the
+phone can now be asked.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

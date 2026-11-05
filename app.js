@@ -4883,6 +4883,34 @@ function setPlayerVideo(exerciseName) {
 // this exercise — set per-exercise via the "Track Weight Used" checkbox in
 // the Exercise Library (admin), matched here by name since blocks reference
 // exercises by name, not id (2026-08-07).
+// ---------------- Backup status, on the device (2026-11-05) ----------------
+// A one-line answer for the ordinary case and the full report behind a tap.
+// Most members never need the detail; the member whose phone is stuck needs
+// all of it, and cannot get at it any other way.
+function renderSyncStatusSection() {
+  const summary = document.getElementById("profile-sync-summary");
+  if (!summary || typeof loadDirty !== "function") return;
+  let waiting = 0;
+  let stuckSince = 0;
+  try {
+    waiting = loadDirty().size;
+    stuckSince = Number(localStorage.getItem(staleKey()) || 0);
+  } catch (e) {
+    summary.textContent = "Couldn't read this device's backup status.";
+    return;
+  }
+  if (!AUTH_MEMBER) {
+    summary.textContent = "Not signed in, so nothing is backing up.";
+  } else if (!waiting) {
+    summary.textContent = "Everything on this device has been backed up.";
+  } else {
+    const days = stuckSince ? Math.max(1, Math.round((Date.now() - stuckSince) / 86400000)) : 0;
+    summary.textContent = days
+      ? `${waiting} thing${waiting === 1 ? "" : "s"} still to back up, stuck for ${days} day${days === 1 ? "" : "s"}. It's safe on this phone — send your coach the details below.`
+      : `${waiting} thing${waiting === 1 ? "" : "s"} waiting to back up.`;
+  }
+}
+
 // ---------------- Saved workouts (2026-11-04) ----------------
 // Chris: "mark a workout as a favorite which allows them to access it from
 // their account whenever they want to do a workout."
@@ -7350,6 +7378,7 @@ function init() {
   renderTodayStats();
   renderWearableSection();
   renderMyEquipment();
+  renderSyncStatusSection();
 
   SHOWCASED_PRS = loadShowcasedPRs();
   NOTEBOOK_NOTES = loadNotebookNotes();
@@ -8861,6 +8890,19 @@ function wireRemainingControls() {
     Player.beginPhaseTimer();
   });
   document.getElementById("player-back-btn").addEventListener("click", () => Player.back());
+  // ---- backup status (2026-11-05) ----
+  on("profile-sync-details-btn", "click", () => {
+    const pre = document.getElementById("profile-sync-details");
+    const btn = document.getElementById("profile-sync-details-btn");
+    if (!pre) return;
+    if (!pre.hidden) { pre.hidden = true; btn.textContent = "Show details"; return; }
+    pre.textContent = typeof syncDiagnosticsText === "function"
+      ? syncDiagnosticsText()
+      : "Sync isn't running on this device.";
+    pre.hidden = false;
+    btn.textContent = "Hide details";
+  });
+
   // ---- saved workouts (2026-11-04) ----
   on("detail-save-btn", "click", () => {
     if (openCircuitId) toggleSavedWorkout(openCircuitId);
