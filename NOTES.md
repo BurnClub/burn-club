@@ -2263,6 +2263,23 @@ something nobody else can reproduce.
 Worth noting what caught it. Not a test — the instrumentation caught itself,
 on a real device, on its first use.
 
+### 48 orphaned dev servers, and a verification that lied (2026-11-05)
+
+Admin appeared to load with no JavaScript: `index.html` served 200 while
+`app.js`, `data.js` and `style.css` all 404'd from the same directory, which
+Python could read perfectly well.
+
+The server I had just started was never listening. `python3 -m http.server`
+had failed with `OSError: [Errno 48] Address already in use` — into a nohup log
+nobody reads — and the port was held by an orphan from an earlier session,
+rooted somewhere that happened to contain an `admin/index.html` and nothing
+else. **48 of these had accumulated across sessions**, several of them mine.
+
+The lesson is the session's own lesson again, one layer down: it is not enough
+to check that a page serves the new code, because the thing serving it may not
+be the thing you started. A backgrounded server that fails to bind looks
+exactly like one that worked.
+
 ### Three from the trial feedback (2026-11-04)
 
 All three were reported as separate complaints and all three were one-line
@@ -2382,20 +2399,38 @@ workouts` rejected every completion for six testers for two days because the
 trial content only ever existed in data.js. Circuit ids are bundled content,
 not server rows.
 
-**#5 IS HALF BUILT AND WILL SHOW NOTHING UNTIL ADMIN CHANGES.** The shelf
-renders anytime content correctly — verified against the two existing evergreen
-circuits — but admin cannot currently author any for a structured programme:
+**The admin half, done the next day (2026-11-05).** A structured programme
+could hold nothing but scheduled workouts: `setBuilderAvailability()` hid the
+availability block unless the programme was rolling, and
+`setBuilderCategoryField()` locked the category to `"structured"`. So there was
+no way to author the content the shelf was built to show.
 
-- `setBuilderCategoryField()` locks the category to `"structured"` for a
-  structured programme (admin/app.js), so it can never become stretch/core-burn.
-- `setBuilderAvailability(!!builderProgramId, ...)` hides the availability block
-  entirely unless the programme is rolling, so "always available" cannot even be
-  ticked.
+A structured programme now gets a two-way choice — **On the schedule** or
+**Stretch & Core, always available**. The dated option stays hidden there,
+because a date means nothing on a programme published by its week plan.
 
-Fixing it is not a one-liner: `handleBuilderSave()` rejects a save with neither
-availability radio chosen, so simply revealing the block would break editing of
-every existing structured workout. It needs a third option meaning "published by
-the schedule" — its own change, on a surface Kelly authors with daily.
+Three things that made it safe rather than a one-liner:
+
+- **"On the schedule" is PRESELECTED**, which is the opposite of the rolling
+  rule. On a rolling programme an unanswered availability question means
+  "invisible", so a default could publish something nobody meant to publish.
+  Here every structured workout that already exists IS on the schedule and was
+  made before the field existed — leaving it blank would have rejected the save
+  of every one of them on the next edit. That was the regression worth slowing
+  down for, and it is tested.
+- **`derivedCircuitCategory()` checks `always` BEFORE the structured lock.**
+  The lock used to win, which is precisely what made anytime content
+  impossible.
+- **`programId` is now resolved from the folder on save.** Admin reads it
+  through `circuitProgramId()` either way, so this looked redundant — but the
+  MEMBER app has no folders at all, only the exported circuit. An anytime
+  workout whose programme lived only on its folder would have reached members
+  belonging to no programme and shown up for nobody. Verified end to end: the
+  saved circuit comes out `category: "stretch"`, `programId: "fit-functional"`.
+
+**Still needs content.** Kelly creates the workouts in the structured
+programme's folder with "always available" ticked, exports, and they are
+migrated across like any other content change.
 
 ### An export is ONE browser, not the content library
 

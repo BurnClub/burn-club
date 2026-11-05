@@ -2986,11 +2986,26 @@ let builderProgramId = null;
 // Shows the availability block and preselects nothing for a new workout;
 // `preset` is the existing availability when editing, or a suggested date
 // when creating inside a week group.
-function setBuilderAvailability(show, preset = {}) {
+// `structured` switches which choices are on offer. A structured programme
+// publishes by its week plan, so a date means nothing there — but "always
+// available" means exactly what it does anywhere else, and that is the whole
+// point of showing this block to a structured programme at all (2026-11-05).
+//
+// Before this, the block was hidden for structured programmes and the category
+// was locked to "structured", so a structured programme could hold NOTHING but
+// scheduled workouts. Chris's ask was a stretching folder that "would sit in
+// their calendar section, or perhaps home, and just be available to do
+// whenever they want" — there was no way to author one.
+function setBuilderAvailability(show, preset = {}, structured = false) {
   document.getElementById("builder-availability").style.display = show ? "" : "none";
+  const schedRadio = document.getElementById("builder-availability-scheduled");
   const datedRadio = document.getElementById("builder-availability-dated");
   const alwaysRadio = document.getElementById("builder-availability-always");
   const dateInput = document.getElementById("builder-available-from");
+  document.getElementById("builder-availability-scheduled-row").style.display = structured ? "" : "none";
+  // A date is meaningless on a structured programme: the week plan decides.
+  document.getElementById("builder-availability-dated-row").style.display = structured ? "none" : "";
+  schedRadio.checked = false;
   datedRadio.checked = false;
   alwaysRadio.checked = false;
   dateInput.value = "";
@@ -2999,6 +3014,14 @@ function setBuilderAvailability(show, preset = {}) {
 
   if (preset.always) {
     alwaysRadio.checked = true;
+  } else if (structured) {
+    // PRESELECTED, unlike the rolling case. On a rolling programme an
+    // unanswered question means "invisible", so a default could publish
+    // something nobody meant to publish. Here it is the opposite: every
+    // structured workout that already exists is on the schedule, and this
+    // field did not exist when they were made. Leaving it blank would reject
+    // the save of every one of them on the next edit.
+    schedRadio.checked = true;
   } else if (preset.availableFrom) {
     datedRadio.checked = true;
     dateInput.value = preset.availableFrom;
@@ -3015,6 +3038,10 @@ function updateBuilderAvailabilityNote() {
   const note = document.getElementById("builder-availability-note");
   if (document.getElementById("builder-availability-always").checked) {
     note.textContent = "Members will always see this workout.";
+    return;
+  }
+  if (document.getElementById("builder-availability-scheduled").checked) {
+    note.textContent = "Appears on the day the program's week plan puts it on.";
     return;
   }
   const value = document.getElementById("builder-available-from").value;
@@ -3049,6 +3076,13 @@ function setBuilderCategoryField(structured, value) {
 }
 
 function derivedCircuitCategory(availability) {
+  // "Always available" means NOT on a schedule, and that is true whatever kind
+  // of programme it belongs to. Checked BEFORE the structured lock: the lock
+  // used to win, which is what made anytime content impossible to create for
+  // a structured programme (2026-11-05).
+  if (availability.always) {
+    return builderPreviousCategory === "core-burn" ? "core-burn" : "stretch";
+  }
   if (builderCategoryLocked) return builderCategoryLocked;
   if (!availability.always) return "circuit";
   // stretch vs core-burn is a split the member app never acts on — both sit in
@@ -3067,7 +3101,11 @@ function openBuilder(folderId) {
   builderProgramId = null;
   const folder = folderById(folderId);
   const program = programById(folder ? folder.program : null);
-  setBuilderAvailability(false);
+  const structuredFolder = !!program && program.scheduleType === "structured";
+  // Shown for a structured programme now, so a workout can be made that is
+  // NOT on the schedule. Still hidden for the working folder and anything
+  // without a programme, where there is nothing to choose between.
+  setBuilderAvailability(structuredFolder, {}, structuredFolder);
   document.getElementById("builder-folder-label").textContent =
     `Adding to: ${folder ? folder.name : "—"}${program ? " · " + program.name : ""}`;
   document.getElementById("builder-title").value = "";
@@ -3273,10 +3311,15 @@ function openEditBuilder(circuitId) {
     : `Editing in: ${folder ? folder.name : "—"}${program ? " · " + program.name : ""}`;
   // Rolling workouts carry availability; structured ones are published by
   // the schedule template, so the field would be meaningless there.
-  setBuilderAvailability(!!builderProgramId, {
+  // isStructuredCircuit() reads the folder's programme, not the circuit's
+  // category — so an ANYTIME workout inside a structured programme still
+  // counts as structured here, which is what keeps its two options on offer
+  // when it is edited again.
+  const structuredCircuit = isStructuredCircuit(circuit);
+  setBuilderAvailability(!!builderProgramId || structuredCircuit, {
     always: circuit.always,
     availableFrom: circuit.availableFrom,
-  });
+  }, structuredCircuit);
   document.getElementById("builder-title").value = circuit.title;
   document.getElementById("builder-tag").value = circuit.tag;
   setBuilderCategoryField(isStructuredCircuit(circuit), circuit.category);
@@ -4169,8 +4212,21 @@ function saveCircuit() {
   // either publish something nobody meant to publish, or hide something
   // nobody meant to hide.
   let availability = {};
-  if (builderProgramId) {
-    const alwaysChecked = document.getElementById("builder-availability-always").checked;
+  const builderFolder = folderById(builderFolderId);
+  const builderFolderProgram = programById(builderFolder ? builderFolder.program : null);
+  const structuredBuild = !!builderFolderProgram && builderFolderProgram.scheduleType === "structured";
+  const alwaysChecked = document.getElementById("builder-availability-always").checked;
+
+  if (structuredBuild) {
+    const schedChecked = document.getElementById("builder-availability-scheduled").checked;
+    if (!alwaysChecked && !schedChecked) {
+      alert("Choose whether this workout is on the schedule, or always available.");
+      return;
+    }
+    // Scheduled is the absence of an availability rule, which is exactly what
+    // every structured workout made before today already looks like.
+    availability = alwaysChecked ? { always: true } : {};
+  } else if (builderProgramId) {
     const datedChecked = document.getElementById("builder-availability-dated").checked;
     const fromDate = document.getElementById("builder-available-from").value;
     if (!alwaysChecked && !datedChecked) {
@@ -4189,7 +4245,12 @@ function saveCircuit() {
     slotId: builderSlotId,
     variant: builderVariantKey,
     folderId: builderFolderId,
-    programId: builderProgramId,
+    // Resolved from the folder when the builder has no programme of its own.
+    // Admin reads it through circuitProgramId() either way, but the MEMBER app
+    // has no folders at all — it only ever sees the exported circuit — so an
+    // anytime workout whose programme lived only on its folder would reach
+    // members belonging to no programme, and show up for nobody.
+    programId: builderProgramId || (builderFolderProgram ? builderFolderProgram.id : null),
     ...availability,
     category: derivedCircuitCategory(availability),
     tag: document.getElementById("builder-tag").value.trim() || "New",

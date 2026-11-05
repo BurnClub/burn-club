@@ -23,7 +23,7 @@
 
      BUMP THIS STRING whenever an admin file changes. It only has to differ
      from last time; the date plus a letter is enough. -->
-<link rel="stylesheet" href="style.css?v=2026-11-03a" />
+<link rel="stylesheet" href="style.css?v=2026-11-05a" />
 </head>
 <body>
 
@@ -730,14 +730,24 @@
                  someone didn't notice the field. -->
             <div class="builder-availability" id="builder-availability" style="display:none;">
               <div class="builder-availability-rows">
-                <label class="builder-availability-row">
+                <!-- Structured programmes only (2026-11-05). Their workouts
+                     are published by the week plan, not by a date - but until
+                     now that was ASSUMED rather than chosen, which meant a
+                     structured programme could not hold anything else. It is
+                     a real option now so that "always available" can be the
+                     other one. -->
+                <label class="builder-availability-row" id="builder-availability-scheduled-row" style="display:none;">
+                  <input type="radio" name="builder-availability-mode" value="scheduled" id="builder-availability-scheduled" />
+                  <span>On the schedule <em>&mdash; placed by the program&rsquo;s week plan</em></span>
+                </label>
+                <label class="builder-availability-row" id="builder-availability-dated-row">
                   <input type="radio" name="builder-availability-mode" value="dated" id="builder-availability-dated" />
                   <span>Available from</span>
                   <input type="date" id="builder-available-from" />
                 </label>
-                <label class="builder-availability-row">
+                <label class="builder-availability-row" id="builder-availability-always-row">
                   <input type="radio" name="builder-availability-mode" value="always" id="builder-availability-always" />
-                  <span>Stretch &amp; Core <em>— always available</em></span>
+                  <span>Stretch &amp; Core <em>&mdash; always available</em></span>
                 </label>
               </div>
               <p class="builder-availability-note" id="builder-availability-note"></p>
@@ -1595,8 +1605,8 @@
 <!-- The same configured client the member app uses, one directory up: one
      place holds the project URL and the publishable key, and admin cannot
      drift onto a different project by accident. -->
-<script src="../supabase-client.js?v=2026-11-03a"></script>
-<script src="data.js?v=2026-11-03a"></script>
-<script src="app.js?v=2026-11-03a"></script>
+<script src="../supabase-client.js?v=2026-11-05a"></script>
+<script src="data.js?v=2026-11-05a"></script>
+<script src="app.js?v=2026-11-05a"></script>
 </body>
 </html>
