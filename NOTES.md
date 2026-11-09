@@ -2624,6 +2624,26 @@ by hand back in September will show up in that list.
 Generated from data.js rather than retyped, dollar-quoted so the three
 apostrophes in exercise names need no escaping.
 
+**The orphan list came back with 13 rows**, all of them the misspellings fixed
+in data.js on 2026-09-24 and never cleaned up server-side: "Peck Deck Fly" for
+Pec, "DD Reverse Crunch" for DB, "eg Extension" for Leg, "Secon" for Second,
+"Wall Leaning Posts March" for Psoas, "Sumo DB DB", "RDLto" and "RDL ro". Every
+one has a correctly-spelled twin already in use.
+
+Checked before proposing anything: `lifts`, `showcased_prs` and
+`block_exercises` all return ZERO references for all thirteen. That check
+mattered — the `lifts` foreign key was dropped in 26-unblock-completions.sql,
+so member weight history can point at an id nothing protects, and deleting
+blind could have orphaned it silently.
+
+`31-retire-renamed-exercises.sql` re-checks those three tables inside the
+DELETE rather than trusting a query run minutes earlier; a member could sync a
+lift in between. An id that has picked up a reference is left alone, and the
+count at the end says so by coming back above 688.
+
+It is tidying, not a fix, and the note says so: nothing reads these rows, and
+admin builds its exercise list from admin/data.js rather than from the server.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.
