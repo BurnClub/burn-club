@@ -2589,6 +2589,41 @@ is the same exercise the member has just been doing, so a preview would show
 them what they are already looking at. The exception is the LAST set, where
 the next thing IS different — worth revisiting if anyone asks.
 
+### Technique for every exercise (2026-11-09)
+
+Kelly reviewed the drafted technique cards and Chris approved the lot. 661
+exercises that had no technique text now have one; the library is 688 entries
+and the other 27 were already written by hand.
+
+**The import only ever filled blanks, and that was checked before it ran.**
+Of the 661 CSV rows, 661 landed on an entry whose technique was empty and 0
+overwrote existing text — verified by comparing the file against the library
+first, rather than running it and hoping. The 27 hand-written cards are
+untouched.
+
+**Both copies of the library had to be updated.** `data.js` and
+`admin/data.js` each hold their own EXERCISE_LIBRARY, 688 entries apiece. They
+are NOT byte-identical and never were — the member copy carries a three-line
+comment about feel cues that admin does not — so "diff the files" is the wrong
+check here. Comparing parsed entries is the right one: same id set, zero
+technique differences, zero blanks left.
+
+**The drafts CSV is a 16-row subset of the main one** and disagrees with it on
+exactly one exercise, `db-thruster`. The all-file is the later export, so it
+wins; nothing was merged by hand.
+
+**The server migration upserts, it does not reload by delete.** Deleting and
+reinserting is the obvious way to resync a content table and the one thing not
+to do here: it would briefly empty a table other rows point at, and this
+project has already lost two days to a content FK silently rejecting member
+data. Nothing is removed. A server row whose id is no longer in data.js is
+REPORTED at the end of the migration instead of deleted — which also answers
+the long-standing "reload the exercises table" note, since the ten ids fixed
+by hand back in September will show up in that list.
+
+Generated from data.js rather than retyped, dollar-quoted so the three
+apostrophes in exercise names need no escaping.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.
