@@ -2823,10 +2823,19 @@ fixed code, 12 rows in and the same 12 back out.
 
 `tests/sync/per-set-weights.test.js` now runs that sequence as a test.
 
-**Not fixed: the rows already damaged.** A phantom row is identifiable — a
-blank `set_label` beside siblings that have one — and can be removed. An
-overwritten set 1 cannot be recovered: the original number is gone from the
-server and from every phone that flattened it.
+**The damage already done, and what happened to it.** Two kinds. The phantoms
+were removable and were removed (`33-remove-phantom-sets.sql`, run 2026-11-17
+once v63 was live and confirmed — in that order, because a phone still on v62
+would have recreated them two opens later). Afterwards the verify query
+returned zero `STILL PHANTOM` and ten rows of `overwritten set 1`, every one
+with its next set at 2. The rule separated them cleanly on real data: phantoms
+at 3 or beyond, overwritten at exactly 2, nothing in between.
+
+**The overwritten set 1s stay and cannot be recovered.** The original number is
+gone from the server and from every phone that flattened it. Their labels are
+left blank on purpose — that blank is now the only mark that the row is
+damaged, and writing "Set 1" back would make a wrong number look deliberate.
+It affects real training data for Abby, Hannah, Jordan and Chris.
 
 ### An export is ONE browser, not the content library
 
