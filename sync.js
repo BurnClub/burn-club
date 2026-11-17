@@ -399,12 +399,23 @@ async function hydrateMemberData() {
       // exists to stop exactly that, and a partial failure would defeat it.
       const local = JSON.parse(localStorage.getItem(memberKey(s.key)) || "[]");
       const localWeights = {};
-      local.forEach((c) => { if (c.weights && Object.keys(c.weights).length) localWeights[c.id] = c.weights; });
+      const localSetWeights = {};
+      local.forEach((c) => {
+        if (c.weights && Object.keys(c.weights).length) localWeights[c.id] = c.weights;
+        // The per-set detail needs the same protection as the totals above
+        // (2026-11-17). It was not kept, so a completion whose lifts push had
+        // failed lost its sets on the next pull - the one copy that still had
+        // them being the device we were about to overwrite.
+        if (c.setWeights && Object.keys(c.setWeights).length) localSetWeights[c.id] = c.setWeights;
+      });
       let kept = 0;
       mapped.forEach((c) => {
         if ((!c.weights || !Object.keys(c.weights).length) && localWeights[c.id]) {
           c.weights = localWeights[c.id];
           kept++;
+        }
+        if ((!c.setWeights || !Object.keys(c.setWeights).length) && localSetWeights[c.id]) {
+          c.setWeights = localSetWeights[c.id];
         }
       });
       // Completions that exist only locally — never pushed — survive too,
@@ -876,14 +887,50 @@ function currentNameForLift(row) {
   return row.exercise_name;
 }
 
+// Rebuilds BOTH halves of a completion's weights from the server's rows
+// (2026-11-17, tester T-5). This used to keep one number per exercise, last
+// row wins, and throw the per-set detail away. Two app opens after any
+// workout, that flattened copy went back up as "set 1, no label" - which for
+// the first exercise overwrote the real set 1 and for every other exercise
+// added a phantom extra set. Every multi-set lift on the live database had
+// already been damaged this way, silently, with no error anywhere.
+//
+// Three things this has to get right:
+//
+// ORDER. liftsToRows() renumbers sets from the ORDER of the keys it is given,
+// so the keys are rebuilt in ascending set_number. Push the result straight
+// back and it reproduces the same rows rather than a different numbering.
+//
+// THE KEY. Its shape is "blockIndex|Exercise Name|Set 2" and the block index
+// is not on the server. set_number takes that slot instead: liftsToRows()
+// reads only the name and the label, and set_number is unique within a
+// completion, so the same exercise appearing in two blocks under the same
+// label cannot collide the way a shared placeholder would.
+//
+// THE TOP NUMBER. `weights` has always been documented as the heaviest per
+// exercise - personal bests read it - and taking whichever row arrived last
+// is what told a member they had just beaten 24 when they had lifted 26.
 function liftsOntoCompletions(completions, liftRows) {
   const byCompletion = {};
-  liftRows.forEach((r) => {
+  const ordered = liftRows.slice()
+    .sort((a, b) => (Number(a.set_number) || 0) - (Number(b.set_number) || 0));
+  ordered.forEach((r) => {
     if (!r.completion_client_id) return;
-    (byCompletion[r.completion_client_id] = byCompletion[r.completion_client_id] || {})[currentNameForLift(r)] = Number(r.weight);
+    const name = currentNameForLift(r);
+    const weight = Number(r.weight);
+    if (!name || !Number.isFinite(weight)) return;
+    const c = byCompletion[r.completion_client_id]
+      || (byCompletion[r.completion_client_id] = { weights: {}, setWeights: {} });
+    const seen = Number(c.weights[name]);
+    if (!Number.isFinite(seen) || weight > seen) c.weights[name] = weight;
+    const n = r.set_number == null ? 0 : r.set_number;
+    c.setWeights[`${n}|${name}|${r.set_label || ""}`] = weight;
   });
   completions.forEach((c) => {
-    if (byCompletion[c.id]) c.weights = byCompletion[c.id];
+    const got = byCompletion[c.id];
+    if (!got) return;
+    c.weights = got.weights;
+    if (Object.keys(got.setWeights).length) c.setWeights = got.setWeights;
   });
   return completions;
 }

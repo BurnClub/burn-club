@@ -1321,6 +1321,30 @@ function recordWeights(weights) {
 
 let LAST_WEIGHTS = {};
 
+// The heaviest the member actually lifted for each exercise (2026-11-17,
+// tester T-5). `weights` has always been DOCUMENTED as the top number per
+// exercise - personal bests, the notebook and every older completion read it
+// that way - but nothing ever computed it. noteWeight() records whatever is
+// in the box, so a member who worked up 21, 22, 23, 26 and backed off to 24
+// on the last set had 24 stored as their best, and was told they had beaten
+// 24 next time when the number to beat was 26.
+//
+// Left where it is rather than changed in noteWeight(): sessionWeights is
+// also what fills the box back in on a re-render, so making IT the maximum
+// would stop a member correcting a number downwards.
+function topWeightsFrom(weights, setWeights) {
+  const top = Object.assign({}, weights || {});
+  Object.keys(setWeights || {}).forEach((key) => {
+    // "setNumber|Exercise Name|Set 2" - the middle part is the exercise.
+    const name = key.split("|")[1];
+    const w = Number(setWeights[key]);
+    if (!name || !Number.isFinite(w)) return;
+    const cur = Number(top[name]);
+    if (!Number.isFinite(cur) || w > cur) top[name] = w;
+  });
+  return top;
+}
+
 function logCompletion(circuit, weights, setWeights) {
   // No circuit means there's nothing to write, and writing a completion with
   // a null workoutId would put a junk row in the member's history that every
@@ -1329,6 +1353,7 @@ function logCompletion(circuit, weights, setWeights) {
   // take the screen down with it (2026-09-16).
   if (!circuit || !circuit.id) return null;
   const minutes = parseInt(circuit.meta, 10) || 20;
+  const topWeights = topWeightsFrom(weights, setWeights);
   const entry = {
     id: `local-${Date.now()}`,
     workoutId: circuit.id,
@@ -1343,7 +1368,7 @@ function logCompletion(circuit, weights, setWeights) {
     avgHeartRate: estimateHeartRate(),
     rpe: 5,
     // What they lifted, per exercise. Empty for bodyweight-only sessions.
-    weights: weights && Object.keys(weights).length ? { ...weights } : null,
+    weights: Object.keys(topWeights).length ? { ...topWeights } : null,
     // And per set, from the end-of-block screens (2026-10-02). `weights` keeps
     // the top number per exercise because personal bests, the notebook and
     // every completion written before today read it; this is the detail
@@ -1352,7 +1377,8 @@ function logCompletion(circuit, weights, setWeights) {
   };
   COMPLETIONS.push(entry);
   saveCompletions();
-  recordWeights(weights);
+  // The personal-best history gets the heaviest too, for the same reason.
+  recordWeights(topWeights);
   return entry;
 }
 

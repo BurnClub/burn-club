@@ -55,7 +55,16 @@ async function settle() { for (var i = 0; i < 50; i++) { await null; if (!SYNC_S
   // this produced a second row, and the member's history silently forked.
   onDevice("phone");
   var again = JSON.parse(localStorage.getItem(memberKey(COMPLETIONS_STORAGE_KEY)));
+  // BOTH halves, because that is the only way the app ever writes them
+  // (2026-11-17). logCompletion() sets weights and setWeights together and
+  // nothing edits a completion afterwards; the pull replaces both at once.
+  // Setting only `weights` here used to work because a pull threw the per-set
+  // detail away, so there was never a setWeights to be stale - which was
+  // tester finding T-5. Now that the detail survives, liftsToRows() rightly
+  // prefers it, and a test that changed one without the other was asserting
+  // on a state the app cannot produce.
   again[0].weights = { "Barbell Bench Press (Flat)": 145 };
+  again[0].setWeights = { "1|Barbell Bench Press (Flat)|Set 1": 145 };
   localStorage.setItem(memberKey(COMPLETIONS_STORAGE_KEY), JSON.stringify(again));
   markDirty("completions");
   await hydrateMemberData(); await settle();

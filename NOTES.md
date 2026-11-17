@@ -2770,6 +2770,64 @@ rather than members. Lower risk, and a blanket sweep would break the handful
 that emit intentional markup such as `<em>(missing)</em>`. Worth doing
 deliberately, not with a regex.
 
+### Per-set weights were destroying themselves on every second app open (2026-11-17, tester T-5)
+
+The worst data bug this project has had, and it had already damaged every
+multi-set lift on the live database.
+
+A member logs six sets. The server gets all six, correctly. Open the app once:
+the pull collapses the phone's copy to one number per exercise, last row wins,
+and throws the per-set detail away. Open it again: that single number goes back
+up as "set 1, no label". For the FIRST exercise that replaces the real set 1.
+For every other exercise it adds a phantom extra set, because set numbers count
+up across the whole completion rather than per exercise — so the second
+exercise's sets are numbered 7 to 12 and a write to "set 1" collides with
+nothing. Two app opens, any device, no error anywhere.
+
+Three faults, three fixes:
+
+**The pull threw the detail away.** `liftsOntoCompletions()` now rebuilds
+`setWeights` as well as `weights`. Three things it has to get right: it sorts
+by `set_number` first, because `liftsToRows()` renumbers from key ORDER and
+rebuilding in the server's own order is what makes the round trip reproduce the
+same rows; it puts `set_number` in the key's first slot, where the block index
+used to go, because the block index is not on the server and a shared
+placeholder would collide for the same exercise appearing twice under the same
+label; and it takes the MAX rather than the last row.
+
+**The top weight was the last number typed.** `weights` has always been
+documented as the heaviest per exercise — personal bests read it — but nothing
+computed it. A member who worked up 21, 22, 23, 26 and backed off to 24 had 24
+stored as their best and was told they had beaten 24 when the number was 26.
+`topWeightsFrom()` derives it at `logCompletion()`. Deliberately NOT fixed in
+`noteWeight()`: `sessionWeights` is also what refills the box on a re-render,
+so making it the maximum would stop a member correcting a number downwards.
+
+**The local copy was protected, the per-set copy was not.** The hydrate merge
+kept `weights` when the server had none, so a failed lifts push could not be
+overwritten — `setWeights` had no such guard and was lost in exactly that case.
+
+**A test failed, and the test was right to.** `exercise-rename` sets a
+completion's `weights` and asserts the new number wins. With the detail now
+surviving a pull, `liftsToRows()` rightly prefers it, and the test's stale
+`setWeights` won instead. Checked before touching it: NOTHING in the app
+mutates an existing completion's weights — `logCompletion()` writes both
+together and the pull replaces both at once — so the test was asserting on a
+state the app cannot produce. It now writes both, as the app does.
+
+Verified by running the tester's real numbers through the actual functions:
+on the code as it was, 12 rows went up and 2 destructive rows came back
+(`Kettlebell Swings#1:24:NULL` over the real 21, and a phantom
+`Barbell Deadlift#1:104:NULL`) — matching the live database row for row. On the
+fixed code, 12 rows in and the same 12 back out.
+
+`tests/sync/per-set-weights.test.js` now runs that sequence as a test.
+
+**Not fixed: the rows already damaged.** A phantom row is identifiable — a
+blank `set_label` beside siblings that have one — and can be removed. An
+overwritten set 1 cannot be recovered: the original number is gone from the
+server and from every phone that flattened it.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.
