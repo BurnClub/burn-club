@@ -2690,6 +2690,41 @@ count at the end says so by coming back above 688.
 It is tidying, not a fix, and the note says so: nothing reads these rows, and
 admin builds its exercise list from admin/data.js rather than from the server.
 
+### Two ways to lose work that was already done (2026-11-17, tester T-6, T-7)
+
+**T-7 — the session note had no handler at all.** The only call to
+`saveSessionNoteFromForm()` lived inside the RPE slider's `change` handler. So
+typing "left knee cranky" and tapping View Progress lost it, while nudging the
+slider afterwards kept it: same screen, same typing, outcome decided by an
+unrelated control. Now the textarea saves on `change` (blur), on a 600ms
+debounce while typing, and again on either way off the screen — a tap that
+lands on a button can be handled before the field blurs. Safe at any point,
+because the field and `currentCompletionEntry` are reset when the finish
+screen is BUILT, not when it is left.
+
+**T-6 — "still on phase one" is not "has not started".** `exit()` kept a
+session only when `this.index > 0`. A straight-sets block is a SINGLE phase
+however many sets it holds, and every Fit & Functional workout opens with one
+— so three of four sets of the first exercise, several minutes of real work,
+was index 0 and went in the bin on one tap of the X with no toast and no
+question. Reloading at that same point kept it, so the two ways of leaving
+disagreed.
+
+It now asks what the member recorded — a ticked set, a typed weight, a counted
+AMRAP round, logged cardio minutes — rather than where the phase queue got to.
+Time on the clock deliberately does not count: a workout left open in a pocket
+is exactly the nag the original rule was protecting against, and that rule was
+right about that much.
+
+Verified all three ways round: three sets at index 0 is kept with its ticks, a
+weight typed with no ticks is kept, and a workout opened and closed untouched
+is still discarded.
+
+**Still open from T-6:** past the two-hour window, anything with less than one
+whole block finished is dropped (`app.js:4087`, `4148`), which means a
+single-block workout can never be offered as a partial at all. That is a
+product decision rather than a bug, and it is Chris's to make.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

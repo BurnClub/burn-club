@@ -5912,7 +5912,27 @@ const Player = {
     //
     // Nothing to resume to on the very first phase, so that case still clears
     // rather than nagging them about a workout they didn't start.
-    const worthKeeping = this.index > 0;
+    //
+    // "Still on phase one" is NOT the same as "has not started" (2026-11-17,
+    // tester T-6). A straight-sets block is a single phase however many sets
+    // it holds, and every Fit & Functional workout opens with one — so three
+    // of four sets of the first exercise, several minutes of real work, was
+    // index 0 and went in the bin on one tap of the X, with no toast and no
+    // question. Reloading at that exact point kept the session, so the two
+    // ways of leaving disagreed with each other.
+    //
+    // So ask what the member actually did, not where the queue got to. Each
+    // of these is something they recorded by hand; none of them can be true
+    // of someone who opened the workout and changed their mind, which is the
+    // case the original rule was protecting. Time on the clock deliberately
+    // does NOT count: a workout left open in a pocket is the nag.
+    const didSomething =
+      (this.setsChecked || []).some(Boolean)
+      || Object.keys(this.sessionWeights || {}).length > 0
+      || Object.keys(this.setWeights || {}).length > 0
+      || Object.values(this.amrapRoundsByBlock || {}).some((n) => Number(n) > 0)
+      || Number(this.cardioMinutes || 0) > 0;
+    const worthKeeping = this.index > 0 || didSomething;
     // Persisted before stop(): stop() settles the clock and drops the
     // deadline, and an AMRAP's clock is supposed to keep running while you're
     // away — same as backgrounding.
@@ -9125,6 +9145,34 @@ function wireRemainingControls() {
   document.getElementById("player-skip-btn").addEventListener("click", () => Player.requestSkip());
   document.getElementById("skip-confirm-cancel-btn").addEventListener("click", () => Player.closeSkipConfirm());
   document.getElementById("skip-confirm-yes-btn").addEventListener("click", () => Player.confirmSkip());
+
+  // ---- the session note saves itself (2026-11-17, tester T-7) ----
+  // The textarea had no handler at all. The ONLY call to
+  // saveSessionNoteFromForm() was inside the RPE slider's change handler, so a
+  // member who typed "left knee cranky" and tapped View Progress lost it — and
+  // a member who happened to nudge the slider afterwards kept it. Same screen,
+  // same typing, different outcome depending on an unrelated control.
+  const noteInput = document.getElementById("session-note-input");
+  if (noteInput) {
+    // change fires on blur when the value differs, which covers the ordinary
+    // "type, then tap something" path.
+    noteInput.addEventListener("change", saveSessionNoteFromForm);
+    // The backstop, for a member who never blurs the field: a hardware back
+    // button, an app switch, a phone locking mid-sentence. Debounced so this
+    // is not a localStorage write and a sync queue nudge per keystroke.
+    let noteTimer = null;
+    noteInput.addEventListener("input", () => {
+      clearTimeout(noteTimer);
+      noteTimer = setTimeout(saveSessionNoteFromForm, 600);
+    });
+  }
+  // And on the way out, because a tap that lands on a button can be handled
+  // before the textarea blurs. Safe at any point: the field and
+  // currentCompletionEntry are only reset when the finish screen is BUILT,
+  // not when it is left, so this cannot read a cleared box.
+  document.querySelectorAll("#screen-workout [data-back]").forEach((btn) => {
+    btn.addEventListener("click", saveSessionNoteFromForm);
+  });
 
   const rpeSlider = document.getElementById("rpe-slider");
   rpeSlider.addEventListener("input", () => {
