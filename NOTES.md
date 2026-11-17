@@ -1,5 +1,51 @@
 # Burn Club — open notes
 
+## Tester agent, and the first fixes from it (2026-11-17)
+
+Chris asked for a tester that uses the app badly and reads the code like a
+developer. It lives outside this repo, in the parent folder's
+`.claude/agents/burn-club-tester.md`, and writes to `TESTER-FINDINGS.md` here.
+**That file is deliberately untracked: this repo is published, and it lists
+open weaknesses.** Findings are numbered T-1 onward. The first run (2026-11-11)
+was on demo profiles only — nobody was signed in — and found 14.
+
+**Fixed and committed, NOT pushed yet (cache v61):**
+
+- **T-8, sync tests.** `mock-supabase.js` lacked `SAVED_WORKOUTS_KEY`, so 7 of
+  10 tests crashed before checking anything from 2026-11-04. All ten run again.
+  The lesson is the 2026-11-03 one again: the thing that watches was itself
+  unwatched. `run.sh` printing "NO CHECKS RAN" is a failure, not a quirk.
+- **T-1, returning member on a bad connection.** Was 34 seconds of logo and
+  then a blank login form, or the logo forever if requests stalled. Three
+  changes: every Supabase request now has a 12s limit (`timedFetch`, 60s for
+  Storage); each step of entry waits 6s when the phone already holds a saved
+  profile; and the saved-profile fallback keys off the stored session instead
+  of `navigator.onLine === false`, which only ever meant airplane mode.
+- **T-2, the login button.** It went back to "Log In" while the account was
+  still loading — Hannah's 2026-10-28 report, for the slow case rather than the
+  throwing one. It now reads "Loading your account…" and stays disabled.
+- A pull the app stopped waiting for is **abandoned**, and can no longer write
+  to the device (`HYDRATE_GEN` in sync.js). Without that, a late pull could
+  replace a store the member had edited after getting in.
+
+**How these were checked, and what that does not cover.** A scratch copy of
+index.html, outside the repo, with every backend request failed or stalled and
+a made-up session. Six cases, all as expected: in on Home in about 6s in the
+three saved-profile cases, a worded message when there is no saved profile, and
+the button labelled and locked for the two password cases (known device in
+about 7s, new device at the 30s cap). **None of it has run against a real
+account or a real phone.** The first open on each device after this ships
+still waits for one full pull, because the "has pulled before" flag is new.
+
+**New `auth_events` values to look for:** `session_restored` with detail
+`cache_session_slow`, `cache_server_unreachable` or `cache_profile_slow`;
+`return_unreachable_no_cache`; and `entered` with detail `on local copy`. If
+T-1 is what locked testers out on day two, these are what will show it.
+
+**Still open from the run:** T-3 to T-7 and T-9 to T-14, in the findings file.
+
+---
+
 ## Start the next session here (2026-10-02)
 
 **Workout flow — supersets, straight sets and static holds all done.**

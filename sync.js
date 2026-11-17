@@ -273,10 +273,44 @@ async function epochStillCurrent() {
 // Nothing is written locally unless the server actually returned rows. A
 // member who has never synced keeps their seeded local data rather than
 // having it blanked by an empty table.
+//
+// ABANDONING (2026-11-17, tester T-1/T-2). Nothing in here had a time limit, so
+// a connection that stalled held a member on the logo or the login form for as
+// long as it liked. The caller now stops waiting after a few seconds on a
+// device that already holds the member's data, and lets them in on that copy.
+// The requests it walked away from still come back later, and a pull landing
+// then would replace a store the member may have edited in the meantime —
+// after `stillDirty` was read, so nothing would protect the edit. So every
+// write below checks live() first: an abandoned hydrate may finish its
+// uploads, but it never writes to this device again.
+let HYDRATE_GEN = 0;
+const HYDRATED_KEY = "burnclub-hydrated";
+
+function abandonHydrate() { HYDRATE_GEN++; }
+
+// Has this device ever finished a full pull for this member? If not, there is
+// nothing to let them in on, and waiting is the only honest option.
+function deviceHasHydrated() {
+  try { return localStorage.getItem(memberKey(HYDRATED_KEY)) === "1"; }
+  catch (e) { return false; }
+}
+
+// For an entry that skipped hydrate altogether: anything a previous page load
+// left unsynced still needs its retry, and hydrate was the only thing giving
+// it one across a reload.
+function resumeDirtySync() {
+  const dirty = loadDirty();
+  if (!dirty.size) return;
+  dirty.forEach((n) => SYNC_STATE.queue.add(n));
+  drainSyncQueue();
+}
+
 async function hydrateMemberData() {
   if (!SB || !AUTH_MEMBER) return { ok: false, reason: "not signed in" };
   const stores = syncStores();
   const report = {};
+  const gen = ++HYDRATE_GEN;
+  const live = () => gen === HYDRATE_GEN;
 
   // Push before pulling, always. Hydrate replaces a local store wholesale when
   // the server returns rows, so anything local that never synced would be
@@ -300,6 +334,7 @@ async function hydrateMemberData() {
     const reconciled = await reconcileLocalUp();
     report.__pushedFirst = reconciled;
   }
+  if (!live()) return { ok: false, reason: "abandoned", report };
 
   // A store still dirty after reconcile is one whose push failed. Its local
   // copy is newer than anything the server has, so pulling over it would lose
@@ -323,6 +358,7 @@ async function hydrateMemberData() {
     const { data, error } = await SB.from(s.table).select("*")
       .eq("member_id", AUTH_MEMBER.id)
       .order(s.order, { ascending: true });
+    if (!live()) { report[name] = "abandoned"; return; }
     if (error) { report[name] = "error: " + error.message; return; }
     if (!data || !data.length) {
       // For a merging store, an empty table means nothing has synced yet, so
@@ -351,6 +387,7 @@ async function hydrateMemberData() {
     let mapped = s.fromRows(data);
     if (name === "completions") {
       const { data: lifts } = await SB.from("lifts").select("*").eq("member_id", AUTH_MEMBER.id);
+      if (!live()) { report[name] = "abandoned"; return; }
       if (lifts && lifts.length) {
         mapped = liftsOntoCompletions(mapped, lifts);
         report.lifts = `${lifts.length} rows`;
@@ -392,6 +429,7 @@ async function hydrateMemberData() {
   ].map(async ([name, table, key, from]) => {
     if (stillDirty.has(name)) { report[name] = "unsynced local edit — kept"; return; }
     const { data, error } = await SB.from(table).select("*").eq("member_id", AUTH_MEMBER.id);
+    if (!live()) { report[name] = "abandoned"; return; }
     if (error) { report[name] = "error: " + error.message; return; }
     if (!data || !data.length) {
       if (REPLACE_STORES.has(name)) {
@@ -412,6 +450,7 @@ async function hydrateMemberData() {
   const prefs = (async () => {
     const { data, error } = await SB.from("member_preferences").select("*")
       .eq("member_id", AUTH_MEMBER.id).maybeSingle();
+    if (!live()) { report.preferences = "abandoned"; return; }
     if (error || !data) { report.preferences = error ? "error: " + error.message : "none"; return; }
     if (data.theme) localStorage.setItem(THEME_KEY, data.theme);
     // "1", not a timestamp: tourSeen() tests for exactly that string, so
@@ -439,6 +478,7 @@ async function hydrateMemberData() {
   const extras = (async () => {
     const { data: sched, error: schedErr } = await SB.from("scheduled_items").select("*")
       .eq("member_id", AUTH_MEMBER.id);
+    if (!live()) return;
     // Same rule as the other replacing stores: when this device has no
     // unsynced edit, the server's list is the truth — including when it is
     // empty, which is how a removed last session reaches every device.
@@ -449,6 +489,7 @@ async function hydrateMemberData() {
     }
     const { data: hp } = await SB.from("health_profile").select("*")
       .eq("member_id", AUTH_MEMBER.id).maybeSingle();
+    if (!live()) return;
     if (hp && hp.profile && Object.keys(hp.profile).length) {
       // Merge into the shared bridge object rather than replacing it, so a
       // profile belonging to another member in this browser survives.
@@ -478,6 +519,7 @@ async function hydrateMemberData() {
     console.warn("[sync] hydrate part " + i + " failed:", r.reason);
     report["__threw" + i] = "error: " + why;
   });
+  if (!live()) return { ok: false, reason: "abandoned", report };
   SYNC_STATE.lastError = Object.values(report).find((v) => String(v).startsWith("error")) || null;
   // Stop a "not backing up" clock that nothing is keeping true any more
   // (2026-11-05). The guard inside warnIfStale() cannot do this on its own:
@@ -485,6 +527,11 @@ async function hydrateMemberData() {
   // so a device whose problem was fixed long ago never runs the check that
   // would clear it. Here it runs on every sign-in, failure or not.
   if (!loadDirty().size && !SYNC_STATE.queue.size) clearUnsynced();
+  // Only a pull with no errors counts: this flag is what later lets the app
+  // open on the local copy without waiting, so it must mean the copy is whole.
+  if (!SYNC_STATE.lastError) {
+    try { localStorage.setItem(memberKey(HYDRATED_KEY), "1"); } catch (e) {}
+  }
   return { ok: !SYNC_STATE.lastError, report };
 }
 

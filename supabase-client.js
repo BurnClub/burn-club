@@ -14,8 +14,53 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_hCeLK3T8z-vl_PYMYlPj7Q_EkzjMoLI
 // gym's captive wifi, an offline start — `supabase` is undefined and every
 // call below would throw somewhere unhelpful. Failing here means the app can
 // say so instead of half-rendering.
+//
+// Every request gets a time limit (2026-11-17, tester T-1/T-2). The browser's
+// own fetch has none, so on a connection that accepts a request and never
+// answers — gym wifi behind a sign-in page, one bar of signal — a call simply
+// never returned, and everything written to cope with a FAILED request never
+// ran. This turns "no answer" into the failure the rest of the app already
+// handles. It throws a TypeError worded like a real network failure on
+// purpose: that is what isOfflineError() and supabase-js both recognise.
+// Uploads to Storage get longer, because a photo on a slow link is slow
+// without being stuck.
+const REQUEST_TIMEOUT_MS = 12000;
+const UPLOAD_TIMEOUT_MS = 60000;
+
+function timedFetch(input, init) {
+  const url = typeof input === "string" ? input : ((input && input.url) || "");
+  const ms = url.indexOf("/storage/v1/") !== -1 ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS;
+  const ctl = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; ctl.abort(); }, ms);
+  const outer = init && init.signal;
+  if (outer) {
+    if (outer.aborted) ctl.abort();
+    else outer.addEventListener("abort", () => ctl.abort(), { once: true });
+  }
+  return fetch(input, Object.assign({}, init, { signal: ctl.signal }))
+    .catch((e) => {
+      if (timedOut) throw new TypeError("Failed to fetch (no answer after " + (ms / 1000) + "s)");
+      throw e;
+    })
+    .finally(() => clearTimeout(timer));
+}
+
+// Resolves with `fallback` if the promise has not settled in time. The promise
+// itself is not cancelled, only no longer waited for.
+function within(promise, ms, fallback) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => resolve(fallback), ms);
+    Promise.resolve(promise).then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e) => { clearTimeout(t); reject(e); }
+    );
+  });
+}
+
 const SB = (typeof supabase !== "undefined" && supabase.createClient)
   ? supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      global: { fetch: timedFetch },
       auth: {
         // Keeps the member signed in across reloads and app launches, which
         // for a gym app matters: nobody wants to type a password between sets.
@@ -108,6 +153,23 @@ function isOfflineError(error) {
 
 let AUTH_MEMBER = null;
 let AUTH_PROGRAM = null;
+
+// Who this device is signed in as, read straight from where supabase-js keeps
+// the session, without asking the network anything (2026-11-17, tester T-1).
+//
+// currentSession() cannot answer this on a bad connection: a token older than
+// an hour has to be refreshed first, and when that cannot reach the server it
+// reports "no session" — the same answer as for someone who never signed in.
+// The stored copy tells the two apart. It is only removed when the server
+// REFUSES the session or the member signs out; a refresh that merely could not
+// get through leaves it in place.
+function storedSessionUserId() {
+  try {
+    const ref = new URL(SUPABASE_URL).hostname.split(".")[0];
+    const s = JSON.parse(localStorage.getItem("sb-" + ref + "-auth-token") || "null");
+    return (s && s.user && s.user.id) || null;
+  } catch (e) { return null; }
+}
 
 function authedMemberId() {
   return AUTH_MEMBER ? AUTH_MEMBER.id : null;

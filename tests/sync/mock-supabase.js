@@ -84,7 +84,12 @@ var COMPLETIONS_STORAGE_KEY="c", CHECKIN_STORAGE_KEY="ck", DAILY_STATS_STORAGE_K
     HABIT_CHECKS_STORAGE_KEY="hc", NOTEBOOK_NOTES_KEY="nb", SESSION_NOTES_KEY="sn",
     THEME_KEY="theme", TOUR_SEEN_KEY="tour", CHECKIN_ENABLED_KEY="cke", CHECKIN_DISMISS_KEY="ckd",
     NOTIF_PREFS_KEY="np", WEARABLE_STORAGE_KEY="w", LIVE_HEALTH_PROFILES_KEY="hp",
-    SCHEDULED_ITEMS_STORAGE_PREFIX="sched-";
+    SCHEDULED_ITEMS_STORAGE_PREFIX="sched-",
+    // Every key sync.js names has to exist here too. SAVED_WORKOUTS_KEY was
+    // added to sync.js on 2026-11-04 and not to this file, and seven of the
+    // ten tests crashed on hydrate's first line for two weeks without anyone
+    // noticing (tester finding T-8, 2026-11-11).
+    SAVED_WORKOUTS_KEY="sw", MY_EQUIPMENT_KEY="eq";
 var HABIT_CHECKS = {}, NOTEBOOK_NOTES = { coach: [], other: [] }, SESSION_NOTES = {};
 function loadHealthProfiles() { return {}; }
 var TOASTS = [];

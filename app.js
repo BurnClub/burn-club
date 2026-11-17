@@ -8476,11 +8476,14 @@ async function enterAsAuthedMember() {
   // Before init(), deliberately: every loadX() reads localStorage
   // synchronously, so the server's copy has to be in place first. A fresh
   // browser's empty localStorage is not an opinion about the member's history.
+  let onLocalCopy = false;
+  const hadData = typeof deviceHasHydrated === "function" && deviceHasHydrated();
   if (typeof hydrateMemberData === "function") {
-    const h = await hydrateMemberData();
+    const h = await hydrateForEntry();
     if (!h.ok && h.reason !== "not signed in") {
-      console.warn("[sync] hydrate incomplete:", h.report);
+      console.warn("[sync] hydrate incomplete:", h.reason || "", h.report);
     }
+    onLocalCopy = h.reason === "slow" || h.reason === "entered from saved profile";
   }
   // A structured program is a day-by-day sequence projected from each member's
   // own start date. Without one there is no way to say which day they are on,
@@ -8499,7 +8502,14 @@ async function enterAsAuthedMember() {
   // one thing — this member has never reached the app — which is the fact
   // nobody had during the first trial.
   touchLastSeen();
-  logAuthEvent("entered");
+  logAuthEvent("entered", onLocalCopy ? "on local copy" : null);
+  // Said once, quietly: they are in and nothing is wrong with their account,
+  // but what they see may be a little behind and they should know why.
+  if (onLocalCopy && navigator.onLine !== false && typeof showToast === "function") {
+    showToast(hadData || OFFLINE_ENTRY
+      ? "Weak signal, so this is what's saved on your phone. It'll catch up when the connection does."
+      : "Weak signal, so your history hasn't loaded yet. Reopen the app when the connection is better.");
+  }
   // Not awaited: the inbox badge is worth having as soon as it arrives, and
   // nothing on Home should wait on a message fetch to render.
   loadMessagesFromServer();
@@ -8508,6 +8518,35 @@ async function enterAsAuthedMember() {
   // for the network to confirm the wording.
   loadAppSettingsFromServer();
   onEnterApp();
+}
+
+// Pulling the member's data, without letting a bad connection hold the door
+// shut (2026-11-17, tester T-1/T-2). Three cases:
+//
+//   - Entered from the saved profile, so no session was confirmed. Do not
+//     pull at all; just make sure anything unsynced gets its retry.
+//   - This device has completed a pull before. Wait ENTRY_WAIT_MS, then open
+//     on the local copy. The pull is abandoned, not left running: see
+//     abandonHydrate() in sync.js for why a late one must never write.
+//   - A device that has never held this member's data. There is nothing much
+//     to open without it, so it gets FIRST_LOAD_WAIT_MS and the login button
+//     says what is happening. Past that it lets them in anyway, as hydrate has
+//     always done when its pulls fail: the "has pulled" flag stays unset, so
+//     the next open tries the whole thing again. (Measured 2026-11-17: without
+//     this limit supabase-js retries each stalled read four times, and the
+//     wait ran past two minutes.)
+async function hydrateForEntry() {
+  if (OFFLINE_ENTRY) {
+    if (typeof resumeDirtySync === "function") resumeDirtySync();
+    return { ok: false, reason: "entered from saved profile" };
+  }
+  const wait = (typeof deviceHasHydrated === "function" && deviceHasHydrated())
+    ? ENTRY_WAIT_MS : FIRST_LOAD_WAIT_MS;
+  const h = await within(hydrateMemberData(), wait, null);
+  if (h) return h;
+  abandonHydrate();
+  if (typeof resumeDirtySync === "function") resumeDirtySync();
+  return { ok: false, reason: "slow" };
 }
 
 // Deliberately a dead end rather than a degraded app. There is nothing a
@@ -8615,6 +8654,9 @@ function applyDemoEntryVisibility() {
   demo.hidden = supabaseReady() && !demoEntriesRequested();
 }
 
+const ENTRY_WAIT_MS = 6000;
+const FIRST_LOAD_WAIT_MS = 30000;
+
 async function routeOnLoad() {
   applyDemoEntryVisibility();
   if (!supabaseReady()) return false;          // demo mode; login screen stands
@@ -8625,28 +8667,69 @@ async function routeOnLoad() {
     document.getElementById("set-password-form").hidden = false;
     return true;
   }
+  // Each step on the way in waits this long and no longer when the phone
+  // already holds what is needed to open (2026-11-17, tester T-1). Before, a
+  // returning member on a connection that was "online" but not getting through
+  // watched the logo for 34 seconds and was then handed an empty login form —
+  // or, if requests stalled rather than failed, watched the logo forever.
   let session = null;
+  let sessionSlow = false;
   try {
-    session = await currentSession();
+    const r = await within(currentSession().then((s) => ({ s })), ENTRY_WAIT_MS, { slow: true });
+    session = r.s || null;
+    sessionSlow = !!r.slow;
   } catch (e) {
     session = null;                 // reading the session can itself need the network
   }
 
   if (!session) {
     // No session usually means "not signed in", and the login screen is right.
-    // Offline it can also mean the token refresh couldn't reach the server — in
-    // which case this member IS signed in, on a phone that holds their whole
+    // It can also mean the token refresh couldn't reach the server — in which
+    // case this member IS signed in, on a phone that holds their whole
     // program, and showing them a login form they cannot complete is the one
     // answer that helps nobody.
-    const cached = navigator.onLine === false ? loadCachedAuthMember() : null;
-    if (!cached) return false;
+    //
+    // This used to be tested with navigator.onLine === false, which on a phone
+    // means airplane mode and almost nothing else. The stored session is the
+    // better witness: it is still there exactly when the member is signed in
+    // and the server simply could not be asked.
+    const uid = storedSessionUserId();
+    const cached = uid ? loadCachedAuthMember(uid)
+      : (navigator.onLine === false ? loadCachedAuthMember() : null);
+    if (!cached) {
+      // Signed in, unreachable, and nothing saved to open: the login form is
+      // all there is to show, but it must not be a silent one.
+      if (uid) {
+        const err = document.getElementById("login-error");
+        if (err) {
+          err.textContent = "Couldn't reach the server to open your account. "
+            + "Check your connection, then close and reopen the app.";
+          err.hidden = false;
+        }
+        logAuthEvent("return_unreachable_no_cache", sessionSlow ? "session check slow" : "no session returned");
+      }
+      return false;
+    }
     AUTH_MEMBER = cached.member;
     AUTH_PROGRAM = cached.program || null;
     OFFLINE_ENTRY = true;
-    return await enterFromSession("offline_cache");
+    return await enterFromSession(
+      navigator.onLine === false ? "offline_cache"
+        : (sessionSlow ? "cache_session_slow" : "cache_server_unreachable"));
   }
 
-  const res = await loadAuthMember(session.user);
+  // Same limit on the profile lookup, when there is a saved profile to fall
+  // back on. Without one there is nothing to open, so it gets the full wait.
+  const savedProfile = loadCachedAuthMember(session.user.id);
+  let res = savedProfile
+    ? await within(loadAuthMember(session.user), ENTRY_WAIT_MS, null)
+    : await loadAuthMember(session.user);
+  if (!res) {
+    AUTH_MEMBER = savedProfile.member;
+    AUTH_PROGRAM = savedProfile.program || null;
+    OFFLINE_ENTRY = true;
+    return await enterFromSession("cache_profile_slow");
+  }
   if (res.error) {
     const err = document.getElementById("login-error");
     err.textContent = res.error;
@@ -8769,14 +8852,27 @@ function wireAuthControls() {
       document.getElementById("login-email").value,
       document.getElementById("login-password").value
     );
-    btn.disabled = false;
-    btn.textContent = "Log In";
     if (res.error) {
+      btn.disabled = false;
+      btn.textContent = "Log In";
       err.textContent = res.error;
       err.hidden = false;
       return;
     }
-    await enterAfterAuth(err);
+    // The button used to go back to "Log In" HERE, with the account still
+    // loading behind it. On a slow connection that is a login form that has
+    // quietly reset itself after a correct password — exactly what a wrong
+    // one looks like, and what Hannah described on 2026-10-28. The fix that
+    // day covered loading that threw; this covers loading that is merely slow.
+    // It also stays disabled, so a second tap cannot start a second sign-in on
+    // top of the first (2026-11-17, tester T-2).
+    btn.textContent = "Loading your account…";
+    try {
+      await enterAfterAuth(err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Log In";
+    }
   });
 
   // Wired in here with sign-in, not in wireStaticControls, deliberately: this
