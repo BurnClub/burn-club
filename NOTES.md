@@ -2725,6 +2725,51 @@ whole block finished is dropped (`app.js:4087`, `4148`), which means a
 single-block workout can never be offered as a partial at all. That is a
 product decision rather than a bug, and it is Chris's to make.
 
+### A member could run code in the coach's admin (2026-11-17, tester T-19)
+
+The worst thing found so far, and it had been live.
+
+Admin put message text, a sender's name and members' names straight into
+`innerHTML`. A member can change their own name (`app.js:7735`) and can send a
+message whose `sender_name` and body the database does not constrain. So a
+member could write markup, and the next time Chris or Kelly opened admin it
+ran **in their browser, with their staff login** — which reads and writes every
+member's row. That is an escalation from "one member" to "all members".
+
+**The member app escaped the same strings correctly all along.** Admin was
+written as a prototype against browser storage and never caught up; the role
+notes the tester works from still described it that way, which is itself out
+of date — admin reads the real `messages`, `members`, `member_private`,
+`auth_events` and `coach_notes` tables now.
+
+Nine output sites now go through `esc()`: the members table (name and email),
+the group member list, the dashboard unread list (sender and preview), the
+inbox preview, the message bubble (sender, body and time) and the bulk-message
+confirmation.
+
+**Escape at OUTPUT, not where a string is composed.** `lastText` is built from
+a member's first name and their message and then rendered; escaping both the
+parts and the whole would have shown members `&lt;` instead of the character.
+One rule, checkable: if it goes into a template literal that becomes
+innerHTML, it is wrapped.
+
+Verified the way the tester confirmed the hole: ran admin's own
+`renderAdminMessageBubble` on a hostile message, put the result in a real
+element ATTACHED to the document so an `onerror` could actually fire. Zero
+elements created, nothing executed, and the member's text shows literally.
+
+A first attempt at the test reported "STILL VULNERABLE" and was wrong — the
+regex matched `onerror=` inside the ESCAPED text, where it is inert. Worth
+remembering: a security test that greps the output string can fail in the
+direction that looks alarming as easily as the direction that looks safe. Only
+the DOM knows whether an element exists.
+
+**Not done:** around a hundred other interpolations in admin render content
+names — programmes, folders, exercises, labels — which Chris and Kelly control
+rather than members. Lower risk, and a blanket sweep would break the handful
+that emit intentional markup such as `<em>(missing)</em>`. Worth doing
+deliberately, not with a regex.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.

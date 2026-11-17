@@ -41,6 +41,20 @@ const ICON_PATHS = {
 // other shape these two apps share. The member side got this last night after
 // a double quote in an exercise name silently broke weight tracking; the admin
 // has the identical exposure and this is the start of closing it.
+// EVERY piece of member-written text rendered by admin goes through this
+// (2026-11-17, tester T-19). It did not, and that was a way for a member to
+// run code inside the coach's browser: admin runs with a STAFF login, which
+// can read and write every member's rows, so a name or a message containing
+// markup was an escalation from "one member" to "all members".
+//
+// The member app escaped the same strings correctly all along; admin was
+// written as a prototype and never caught up. The two things a member can put
+// in front of a coach are their own name (app.js:7735) and the text and
+// sender_name of a message - none of which the database constrains.
+//
+// Escape at the point of OUTPUT, not where a string is composed, so nothing
+// is escaped twice and there is one rule to check: if it goes into a template
+// literal that becomes innerHTML, it is wrapped.
 function esc(value) {
   return String(value == null ? "" : value)
     .replace(/&/g, "&amp;")
@@ -637,7 +651,7 @@ function renderGroupRoster() {
     const last = latestActivityFor(m.id);
     return `
       <tr data-action="edit-member" data-member-id="${m.id}" style="cursor:pointer;">
-        <td><strong>${m.name}</strong><br /><span class="library-sub">${m.email}</span></td>
+        <td><strong>${esc(m.name)}</strong><br /><span class="library-sub">${esc(m.email)}</span></td>
         <td><span class="status-pill ${m.status === "active" ? "active" : "draft"}">${m.status}</span></td>
         <td>${m.streak} day${m.streak === 1 ? "" : "s"}</td>
         <td>${last
@@ -697,7 +711,7 @@ function renderGroupMemberPicker() {
     return `
       <label class="group-member-option">
         <input type="checkbox" data-action="group-pick-member" data-member-id="${m.id}" ${groupModalPicked.has(m.id) ? "checked" : ""} />
-        <span class="group-member-name">${m.name}</span>
+        <span class="group-member-name">${esc(m.name)}</span>
         <span class="group-member-program">${program ? program.name : "—"}</span>
       </label>
     `;
@@ -896,10 +910,10 @@ function renderDashboardUnread() {
       <div class="unread-row-text">
         <p class="unread-row-name">
           ${conversationDisplayName(r.conv)}
-          ${r.conv.type === "group" ? `<span class="unread-row-sender">${r.senderName}</span>` : ""}
+          ${r.conv.type === "group" ? `<span class="unread-row-sender">${esc(r.senderName)}</span>` : ""}
           ${r.count > 1 ? `<span class="unread-row-count">${r.count}</span>` : ""}
         </p>
-        <p class="unread-row-preview">${r.text}</p>
+        <p class="unread-row-preview">${esc(r.text)}</p>
       </div>
       <div class="unread-row-meta">
         <span class="conversation-time">${r.time}</span>
@@ -6697,7 +6711,7 @@ function renderAdminConversationList() {
         <div class="conversation-icon">${conv.type === "group" ? icon("community") : icon("chat")}</div>
         <div class="conversation-text">
           <p class="conversation-name">${conversationDisplayName(conv)}</p>
-          <p class="conversation-preview">${p.lastText}</p>
+          <p class="conversation-preview">${esc(p.lastText)}</p>
         </div>
         <div class="conversation-meta">
           <span class="conversation-time">${p.lastTime}</span>
@@ -6733,9 +6747,9 @@ function renderAdminMessageBubble(m, isGroup) {
   return `
     <div class="msg-bubble-row ${m.isStaff ? "from-me" : ""}">
       <div class="msg-bubble">
-        ${isGroup && !m.isStaff ? `<p class="msg-sender">${m.senderName}</p>` : ""}
-        <p>${m.text}</p>
-        <span class="msg-time">${m.time}</span>
+        ${isGroup && !m.isStaff ? `<p class="msg-sender">${esc(m.senderName)}</p>` : ""}
+        <p>${esc(m.text)}</p>
+        <span class="msg-time">${esc(m.time)}</span>
       </div>
     </div>
   `;
@@ -8860,7 +8874,7 @@ function renderChallengeStandings() {
   document.getElementById("challenge-standings-body").innerHTML = standings.map((s, i) => `
     <tr>
       <td>#${i + 1}</td>
-      <td><strong>${s.member.name}</strong></td>
+      <td><strong>${esc(s.member.name)}</strong></td>
       <td>${s.total} pts</td>
       <td><span class="status-pill ${s.total >= challenge.thresholdPoints ? "qualified" : "in-progress"}">${s.total >= challenge.thresholdPoints ? "Qualified" : "In Progress"}</span></td>
       <td>
