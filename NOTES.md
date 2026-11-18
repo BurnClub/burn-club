@@ -2837,6 +2837,49 @@ left blank on purpose — that blank is now the only mark that the row is
 damaged, and writing "Set 1" back would make a wrong number look deliberate.
 It affects real training data for Abby, Hannah, Jordan and Chris.
 
+### One missing element could still silence every button after it (2026-11-18, tester T-4)
+
+The 2026-10-27 fix introduced `on()` and converted `wireStaticControls()`.
+It did not convert `wireRemainingControls()`, which had 38 bare
+`getElementById(...).addEventListener(...)` lines and no try/catch around its
+call — so the original bug was still live, one function along.
+
+**Triggered rather than reasoned about.** Removing a single element
+(`player-pause-btn`) and re-running the wiring as boot does: TypeError, wiring
+stopped at 41 elements, and **Mark Set Complete, skip rest and Log Out were
+never wired**. The member starts a workout and then cannot advance a set or
+log out, on a page that looks completely normal.
+
+**The finding's list of five buttons is not quite the rule.** Which controls
+die depends on which element is missing — it is everything wired *after* it in
+source order. Start Workout survived the test above only because it sits
+earlier in the function than the element removed.
+
+Two more places had the same shape, both found while fixing this:
+
+- **`wireAuthControls()`** — 3 bare bindings, and it runs FIRST inside the
+  `DOMContentLoaded` handler, so a throw there means `routeOnLoad()` and
+  `endBoot()` never run and the member watches the boot logo forever. If
+  `forgot-btn` were the missing element, the `set-password-form` binding dies:
+  that is the invite-email flow. Converted. Left UNWRAPPED by Chris's call
+  (2026-11-18) — `on()` removes the realistic cause, and wrapping it would
+  trade "no boot at all" for "a login form whose button does nothing", which
+  the code's own comments call the worst failure this app has.
+- **`bindTour()`** — 4 bare bindings, and it is the first call inside
+  `wireStaticControls()`. A missing tour element threw there, the try/catch
+  caught it, and every other binding in that function was skipped. The
+  2026-10-27 fix was being defeated from the inside.
+
+41 bindings converted, plus `wireRemainingControls()` now wrapped like its
+sibling. Verified on the fixed file the same way: with an element removed, no
+throw, all 60 bindings attached, all four named controls live, and the console
+says `[wiring] no element for <id> - skipping`.
+
+**Still bare, deliberately out of scope**: `renderChallengeCard()`,
+`renderSoundSettings()`, `renderCheckinSettings()`, `showUnassignedScreen()`.
+These bind as they draw rather than at boot, so a missing element takes out
+that one feature rather than the rest of the app.
+
 ### The personal-best banner congratulated the wrong number (2026-11-18, tester T-24)
 
 Left over from the T-5 fix. `logCompletion()` derives the true top weight per

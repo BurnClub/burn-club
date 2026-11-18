@@ -4387,14 +4387,18 @@ function endTour(afterAction) {
 }
 
 function bindTour() {
-  document.getElementById("tour-next-btn").addEventListener("click", advanceTour);
-  document.getElementById("tour-skip-btn").addEventListener("click", () => endTour());
-  document.getElementById("tour-action-btn").addEventListener("click", () => {
+  // Through on() like everything else (2026-11-18, tester T-4): bindTour is
+  // the FIRST call inside wireStaticControls, so a missing tour element threw
+  // there and the try/catch around it then skipped every other binding in
+  // that function — defeating the 2026-10-27 fix from the inside.
+  on("tour-next-btn", "click", advanceTour);
+  on("tour-skip-btn", "click", () => endTour());
+  on("tour-action-btn", "click", () => {
     const slide = tourDeck[tourIndex];
     endTour(true);
     if (slide && slide.action) slide.action();
   });
-  document.getElementById("support-tour-btn").addEventListener("click", () => {
+  on("support-tour-btn", "click", () => {
     closeSupportScreen();
     startTour(true);
   });
@@ -8917,11 +8921,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.warn("[boot] wiring failed:", e);
   }
 
-  wireRemainingControls();
+  // Guarded like wireStaticControls above (2026-11-18, tester T-4). Every
+  // binding inside now goes through on(), so a missing element can no longer
+  // throw — this catches anything else, because a throw here used to silence
+  // every control wired after it with no sign to the member at all.
+  try {
+    wireRemainingControls();
+  } catch (e) {
+    console.warn("[boot] remaining wiring failed:", e);
+  }
 });
 
 function wireAuthControls() {
-  document.getElementById("login-form").addEventListener("submit", async (e) => {
+  on("login-form", "submit", async (e) => {
     e.preventDefault();
     const btn = document.getElementById("login-submit");
     const err = document.getElementById("login-error");
@@ -8979,7 +8991,7 @@ function wireAuthControls() {
     });
   }
 
-  document.getElementById("forgot-btn").addEventListener("click", async () => {
+  on("forgot-btn", "click", async () => {
     const email = document.getElementById("login-email").value.trim();
     const err = document.getElementById("login-error");
     if (!email) {
@@ -8993,7 +9005,7 @@ function wireAuthControls() {
     err.hidden = false;
   });
 
-  document.getElementById("set-password-form").addEventListener("submit", async (e) => {
+  on("set-password-form", "submit", async (e) => {
     e.preventDefault();
     const btn = document.getElementById("set-password-submit");
     const err = document.getElementById("set-password-error");
@@ -9080,28 +9092,28 @@ function wireRemainingControls() {
   document.querySelectorAll("[data-action='open-notebook']").forEach((btn) => {
     btn.addEventListener("click", () => openNotebook("today"));
   });
-  document.getElementById("thread-back-btn").addEventListener("click", openMessagesInbox);
-  document.getElementById("thread-composer").addEventListener("submit", (e) => {
+  on("thread-back-btn", "click", openMessagesInbox);
+  on("thread-composer", "submit", (e) => {
     e.preventDefault();
     const input = document.getElementById("thread-input");
     sendThreadMessage(input.value);
     input.value = "";
   });
 
-  document.getElementById("start-circuit-btn").addEventListener("click", () => {
+  on("start-circuit-btn", "click", () => {
     const c = CIRCUITS.find((x) => x.id === openCircuitId);
     if (c) Player.start(c);
   });
 
-  document.getElementById("player-exit-btn").addEventListener("click", () => Player.exit());
-  document.getElementById("player-start-btn").addEventListener("click", () => {
+  on("player-exit-btn", "click", () => Player.exit());
+  on("player-start-btn", "click", () => {
     // iOS keeps an AudioContext suspended until a user gesture. Starting a
     // workout is that gesture, and it is the last moment before any cue is
     // due — unlock it here or the first beep of the session never sounds.
     ensureAudio();
     Player.beginPhaseTimer();
   });
-  document.getElementById("player-back-btn").addEventListener("click", () => Player.back());
+  on("player-back-btn", "click", () => Player.back());
   // ---- backup status (2026-11-05) ----
   on("profile-sync-details-btn", "click", () => {
     const pre = document.getElementById("profile-sync-details");
@@ -9143,29 +9155,29 @@ function wireRemainingControls() {
     if (e.target.id === "swap-picker-overlay") closeSwapPicker();
   });
 
-  document.getElementById("exercise-video-close-btn").addEventListener("click", closeExerciseVideo);
-  document.getElementById("player-block-label").addEventListener("click", openWorkoutOverview);
-  document.getElementById("overview-close-btn").addEventListener("click", closeWorkoutOverview);
+  on("exercise-video-close-btn", "click", closeExerciseVideo);
+  on("player-block-label", "click", openWorkoutOverview);
+  on("overview-close-btn", "click", closeWorkoutOverview);
   // Tapping the dimmed area closes it too: it is a glance, not a screen to be
   // navigated out of.
-  document.getElementById("overview-overlay").addEventListener("click", (e) => {
+  on("overview-overlay", "click", (e) => {
     if (e.target.id === "overview-overlay") closeWorkoutOverview();
   });
   // Same contract as the per-row play buttons: opens over the running clock,
   // closes independently, never pauses anything.
-  document.getElementById("player-video").addEventListener("click", () => {
+  on("player-video", "click", () => {
     const name = document.getElementById("player-video").dataset.exName;
     if (name) openExerciseVideo(name);
   });
-  document.getElementById("block-notes-got-it-btn").addEventListener("click", closeBlockNotes);
+  on("block-notes-got-it-btn", "click", closeBlockNotes);
 
-  document.getElementById("checkin-close-btn").addEventListener("click", closeCheckinModal);
-  document.getElementById("checkin-save-btn").addEventListener("click", saveCheckinForm);
-  document.getElementById("checkin-skip-btn").addEventListener("click", () => {
+  on("checkin-close-btn", "click", closeCheckinModal);
+  on("checkin-save-btn", "click", saveCheckinForm);
+  on("checkin-skip-btn", "click", () => {
     if (!todaysCheckin()) dismissCheckinPrompt();
     closeCheckinModal();
   });
-  document.getElementById("complete-checkin-nudge").addEventListener("click", openCheckinModal);
+  on("complete-checkin-nudge", "click", openCheckinModal);
   ["mental", "physical", "sleepHours"].forEach((k) => {
     const slider = document.getElementById(`checkin-${k}`);
     if (!slider) return;
@@ -9177,36 +9189,36 @@ function wireRemainingControls() {
     });
   });
   // Delegated: the quality buttons are re-rendered whenever the modal opens.
-  document.getElementById("checkin-quality-row").addEventListener("click", (e) => {
+  on("checkin-quality-row", "click", (e) => {
     const btn = e.target.closest("[data-quality]");
     if (!btn) return;
     // Tapping the selected one clears it — not answering stays possible.
     checkinQuality = checkinQuality === btn.dataset.quality ? null : btn.dataset.quality;
     renderCheckinQuality();
   });
-  document.getElementById("cardio-log-btn").addEventListener("click", openCardioLogModal);
-  document.getElementById("cardio-log-close-btn").addEventListener("click", closeCardioLogModal);
-  document.getElementById("cardio-log-save-btn").addEventListener("click", saveCardioLogForm);
-  document.getElementById("cardio-sync-btn").addEventListener("click", syncCardioFromWearable);
+  on("cardio-log-btn", "click", openCardioLogModal);
+  on("cardio-log-close-btn", "click", closeCardioLogModal);
+  on("cardio-log-save-btn", "click", saveCardioLogForm);
+  on("cardio-sync-btn", "click", syncCardioFromWearable);
   // Delegated: the buttons are rebuilt from settings each time the modal
   // opens, so listeners bound to them directly would be lost.
-  document.getElementById("cardio-activity-picker").addEventListener("click", (e) => {
+  on("cardio-activity-picker", "click", (e) => {
     const btn = e.target.closest(".pill-filter");
     if (!btn) return;
     cardioSelectedActivity = btn.dataset.activity;
     updateCardioActivityPicker();
   });
-  document.getElementById("player-pause-btn").addEventListener("click", () => Player.togglePause());
-  document.getElementById("player-technique-speak").addEventListener("click", (e) => {
+  on("player-pause-btn", "click", () => Player.togglePause());
+  on("player-technique-speak", "click", (e) => {
     speakText(document.getElementById("player-technique-body").textContent, e.currentTarget);
   });
-  document.getElementById("player-technique-toggle").addEventListener("click", () => {
+  on("player-technique-toggle", "click", () => {
     document.getElementById("player-technique-toggle").classList.toggle("expanded");
     document.getElementById("player-technique-body").classList.toggle("expanded");
   });
-  document.getElementById("player-skip-btn").addEventListener("click", () => Player.requestSkip());
-  document.getElementById("skip-confirm-cancel-btn").addEventListener("click", () => Player.closeSkipConfirm());
-  document.getElementById("skip-confirm-yes-btn").addEventListener("click", () => Player.confirmSkip());
+  on("player-skip-btn", "click", () => Player.requestSkip());
+  on("skip-confirm-cancel-btn", "click", () => Player.closeSkipConfirm());
+  on("skip-confirm-yes-btn", "click", () => Player.confirmSkip());
 
   // ---- the session note saves itself (2026-11-17, tester T-7) ----
   // The textarea had no handler at all. The ONLY call to
@@ -9246,27 +9258,27 @@ function wireRemainingControls() {
     saveSessionNoteFromForm();
     saveCompletions();
   });
-  document.getElementById("benchmark-score-save-btn").addEventListener("click", saveBenchmarkScore);
-  document.getElementById("player-complete-set-btn").addEventListener("click", () => Player.advance());
-  document.getElementById("rest-overlay-skip-btn").addEventListener("click", () => {
+  on("benchmark-score-save-btn", "click", saveBenchmarkScore);
+  on("player-complete-set-btn", "click", () => Player.advance());
+  on("rest-overlay-skip-btn", "click", () => {
     const wasLastSet = Player.restIsLastSet;
     Player.dismissRestOverlay();
     if (wasLastSet) Player.advance();
   });
-  document.getElementById("round-plus-btn").addEventListener("click", () => {
+  on("round-plus-btn", "click", () => {
     Player.bumpRounds(1);
     Player.persist();
   });
-  document.getElementById("benchmark-log-close-btn").addEventListener("click", closeBenchmarkLog);
-  document.getElementById("benchmark-log-save-btn").addEventListener("click", saveBenchmarkLog);
-  document.getElementById("benchmark-retest-cancel-btn").addEventListener("click", closeBenchmarkLog);
-  document.getElementById("benchmark-retest-go-btn").addEventListener("click", startBenchmarkRetest);
-  document.getElementById("round-minus-btn").addEventListener("click", () => {
+  on("benchmark-log-close-btn", "click", closeBenchmarkLog);
+  on("benchmark-log-save-btn", "click", saveBenchmarkLog);
+  on("benchmark-retest-cancel-btn", "click", closeBenchmarkLog);
+  on("benchmark-retest-go-btn", "click", startBenchmarkRetest);
+  on("round-minus-btn", "click", () => {
     Player.bumpRounds(-1);
     Player.persist();
   });
 
-  document.getElementById("logout-btn").addEventListener("click", async () => {
+  on("logout-btn", "click", async () => {
     Player.stop();
     // Ends the Supabase session, not just the screen. Without this, Log Out
     // hides the app while the session stays in storage and the next visit
