@@ -2871,6 +2871,25 @@ stale device — which is how I know it tests the real thing and not my idea of
 it. `per-set-weights.test.js` passed throughout; it only ever tested a clean
 12-row workout.
 
+**And then the fix was itself incomplete, which the live data showed within
+the hour.** Numbering per exercise made `push(pull(x))` land on `x` only for
+workouts already numbered that way. Every workout logged before 2026-11-17 is
+numbered the OLD way — sets counting up across all the exercises in a
+completion, so Abby's "KB Swing" is three rows whose highest number is 13 — and
+on v64 those were renumbered to 1..n with the originals left behind: 6, 12, 16,
+19, 20 rows over five opens. The same bug in different clothes. (It grew on v63
+too, 6 → 22, so v64 did not cause this one; it just did not fix it, while I
+reported T-23 as closed.)
+
+**The real fix is to PRESERVE the numbers, not impose them.** `liftsToRows()`
+now reads the number out of the key's first segment and keeps it. The thing
+that makes this safe is what distinguishes the two kinds of key: a key the pull
+wrote carries the server's set number, which is distinct within an exercise; a
+key the player wrote carries the block index, which is the SAME for every set
+of that exercise. So: keep the numbers when they are distinct within the
+exercise, assign 1..k when they are not. Legacy rows come back byte for byte,
+freshly logged sets get 1..k, and both are fixed points.
+
 **The lesson for the next data fix**: a round trip needs a fixed-point test, not
 an end-to-end one. "Log a workout, reload, it's still right" cannot fail on
 data the new code wrote. "Open it five times and the server does not change"

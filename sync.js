@@ -842,34 +842,55 @@ function liftsToRows(completions) {
     // is what the member saw, so it is what gets stored rather than an index
     // they would have to decode.
     if (c.setWeights && Object.keys(c.setWeights).length) {
-      // Numbered PER EXERCISE, not per completion (2026-11-17, tester T-23).
-      // The unique key is (member, completion, exercise_id, set_number), so a
-      // number only has to be unique within one exercise - and numbering per
-      // completion made this function change its answer depending on the ORDER
-      // it was handed, which is how a pulled-then-pushed workout grew rows
-      // without limit. Per exercise, push(pull(x)) lands on x: the pull hands
-      // back one key per server row in ascending set_number, so each exercise's
-      // own run of keys is 1, 2, 3... in the same order it already had.
-      const nByExercise = {};
-      const before = rows.length;
+      // PRESERVE the set numbers, do not impose them (2026-11-17, tester T-23
+      // and the legacy shape found straight after it).
+      //
+      // The pull rebuilds these keys as "<set_number>|Name|Label", so segment 0
+      // is the server's own number. Writing a fresh 1, 2, 3... over it meant
+      // this function answered differently depending on the ORDER it was
+      // handed, and any workout not already numbered the new way had its rows
+      // copied onto new slots on every open, with the old ones left behind:
+      // 6 rows to 12 to 16 to 19 to 20 over five opens, without limit.
+      //
+      // A key written by the PLAYER has the block index in that slot instead,
+      // which is the same for every set of an exercise, so it cannot be used.
+      // That is exactly what tells the two apart: server numbers are distinct
+      // within an exercise, block indexes repeat. Keep them when they are
+      // distinct, number 1..k when they are not. Both cases are then a fixed
+      // point - push(pull(x)) lands on x - which is the property that matters.
+      const entries = [];
       Object.keys(c.setWeights).forEach((key) => {
         const weight = Number(c.setWeights[key]);
         if (!Number.isFinite(weight) || weight <= 0) return;
         const parts = key.split("|");
         const name = parts[1];
         if (!name) return;
-        rows.push({
-          member_id: AUTH_MEMBER.id, completion_client_id: c.id,
-          exercise_id: exerciseIdForName(name),
-          exercise_name: name, weight, performed_on: c.date,
-          set_number: (nByExercise[name] = (nByExercise[name] || 0) + 1),
-          set_label: parts[2] || null,
+        const given = Number(parts[0]);
+        entries.push({
+          name, weight, label: parts[2] || null,
+          given: Number.isInteger(given) && given > 0 ? given : null,
         });
       });
-      // Only this completion's rows count — `rows` is the accumulator for all
-      // of them, so testing it directly would skip every later completion once
-      // any one had per-set weights.
-      if (rows.length > before) return;
+      if (entries.length) {
+        const byName = {};
+        entries.forEach((e) => { (byName[e.name] = byName[e.name] || []).push(e); });
+        Object.keys(byName).forEach((name) => {
+          const list = byName[name];
+          const nums = list.map((e) => e.given);
+          const keep = nums.every((n) => n !== null)
+            && new Set(nums).size === nums.length;
+          list.forEach((e, i) => { e.setNumber = keep ? e.given : i + 1; });
+        });
+        entries.forEach((e) => {
+          rows.push({
+            member_id: AUTH_MEMBER.id, completion_client_id: c.id,
+            exercise_id: exerciseIdForName(e.name),
+            exercise_name: e.name, weight: e.weight, performed_on: c.date,
+            set_number: e.setNumber, set_label: e.label,
+          });
+        });
+        return;
+      }
     }
     if (!c.weights) return;
     Object.keys(c.weights).forEach((name) => {

@@ -106,4 +106,44 @@ async function opens(device, times) {
     return ns.every(function (n, i) { return n === i + 1; });
   });
   check(tidy, "every exercise is numbered 1..n with no gaps and no repeats");
+
+  // ---- Case 3: the numbering every existing workout actually has ---------
+  // Before 2026-11-17 a completion's sets counted up across ALL its
+  // exercises, so the second exercise's three sets are 11, 12, 13 rather than
+  // 1, 2, 3. That is the shape of the live database: Abby's "KB Swing" is
+  // three rows whose highest set number is 13. The first version of the T-23
+  // fix renumbered these to 1..n per exercise and left the originals behind -
+  // 6, 12, 16, 19, 20 rows over five opens - which is the same bug wearing a
+  // different hat, and would have hit Abby, Hannah and Chris on their next
+  // open. Push must PRESERVE numbers it is given, not impose its own.
+  SERVER.lifts = []; SERVER.completions = [];
+  // Both devices start empty, or the previous case's completion rides along
+  // in localStorage and gets pushed back, which is 12 rows of noise.
+  ["phone", "pc"].forEach(function (d) {
+    onDevice(d);
+    localStorage.setItem(memberKey(COMPLETIONS_STORAGE_KEY), "[]");
+  });
+  tbl("completions").push({
+    member_id: CURRENT_MEMBER.id, client_id: "c-legacy", workout_id: "w1",
+    title: "Gym", category: "circuit", performed_on: "2026-11-01",
+    minutes: 40, effort: 5,
+  });
+  [["Glute Focused KB/DB Reverse Lunge", [5, 6, 7], [31, 32, 33]],
+   ["KB Swing", [11, 12, 13], [24, 25, 26]]].forEach(function (ex) {
+    ex[1].forEach(function (n, i) {
+      tbl("lifts").push({
+        member_id: CURRENT_MEMBER.id, completion_client_id: "c-legacy",
+        exercise_id: ex[0].toLowerCase().replace(/[^a-z0-9]/g, "-"),
+        exercise_name: ex[0], weight: ex[2][i], performed_on: "2026-11-01",
+        set_number: n, set_label: "Set " + (i + 1),
+      });
+    });
+  });
+  var legacyAtStart = lifts();
+  counts = await opens("phone", 5);
+  print("legacy numbering, 5 opens  " + counts.join(", ") + " rows");
+  check(counts.every(function (n) { return n === 6; }),
+        "a legacy-numbered workout does not grow, and is not renumbered");
+  check(lifts().join("|") === legacyAtStart.join("|"),
+        "its rows come through the round trip byte for byte");
 })();
