@@ -2837,6 +2837,44 @@ left blank on purpose — that blank is now the only mark that the row is
 damaged, and writing "Set 1" back would make a wrong number look deliberate.
 It affects real training data for Abby, Hannah, Jordan and Chris.
 
+### A weight the screen showed was not a weight the app saved (2026-11-18, tester T-18)
+
+From a member's second session with an exercise onward, "Log your weights"
+opens with last time's number already in every box. A member who lifted the
+same again — the common case — reads the right numbers, taps Save and
+continue, and **nothing is recorded for that exercise**: no row in `lifts`,
+nothing in the notebook, no personal best, and "last time" still shows the
+older number. The boxes look exactly like ones they typed.
+
+The pre-fill went in as a real `value`, not grey placeholder text, but
+`setWeights` was only ever written from an `input` event, so an untouched box
+existed only in the DOM. Save and continue never read it.
+
+**The rule is now: what the box shows is what gets saved.** The pre-filled
+values are seeded into `setWeights` when the screen renders, rather than read
+out of the DOM on the way out, so a member who walks away mid-screen keeps
+them too — the same promise the typing handler already made. Clearing a box
+now also clears `sessionWeights` for that exercise once none of its boxes hold
+a value: before seeding there was nothing to undo for an untouched exercise,
+and without this a member who deliberately blanked one would still have it
+logged.
+
+**I was wrong about the cause before looking.** I had guessed it was the
+`setWeights` key shape — the pull writes `<set_number>|Name|Label` and the
+player writes `<blockIndex>|Name|Label` — and told Chris that T-18 and T-24
+were probably the same root cause. They are not; the key the box carries is
+the key the handler writes. Worth remembering as the third wrong-early call
+this week.
+
+**Verified on the deployed build, both directions**, by driving the real
+`Player.renderPhase()` with a made-up phase (nothing written to storage or the
+server). Before: three boxes reading 34, `setWeights` and `sessionWeights`
+both empty. With the seeding loop: five boxes across two exercises in
+different blocks, every key present and correct. It also confirmed the two
+fixes compose — seeded keys carry a block index in segment 0, so T-23's
+"preserve only when distinct within the exercise" rightly falls back to 1..k
+rather than treating a block index as a set number.
+
 ### The same takeover was open in the STAFF app, and admin's was only half shut (2026-11-18, tester T-19)
 
 Finishing T-19 turned up two things the tester had not looked at.

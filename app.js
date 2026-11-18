@@ -6598,6 +6598,26 @@ const Player = {
       // Written as they type: a member who walks away mid-screen still has
       // what they entered, and the next row's pre-fill follows the last one.
       const inputs = [...logEl.querySelectorAll(".weight-log-input")];
+
+      // What the box SHOWS is what gets saved (2026-11-18, tester T-18).
+      //
+      // The pre-fill is written as a real value, not grey hint text, so a
+      // member repeating last week's weight - the common case - reads the
+      // right numbers, taps Save and continue, and nothing is recorded for
+      // that exercise at all: no row in `lifts`, nothing in the notebook, no
+      // personal best, and "last time" still shows the older number. The
+      // boxes are indistinguishable from ones they typed. Seeding here rather
+      // than reading the DOM on the way out means a member who walks away
+      // mid-screen keeps it too, which is the same promise the input handler
+      // below already makes.
+      inputs.forEach((input) => {
+        if (this.setWeights[input.dataset.key] != null) return;
+        const val = Number(input.value);
+        if (!Number.isFinite(val) || val <= 0) return;
+        this.setWeights[input.dataset.key] = val;
+        this.noteWeight(input.dataset.exName, val);
+      });
+
       inputs.forEach((input) => {
         input.addEventListener("input", () => {
           const val = Number(input.value);
@@ -6619,6 +6639,15 @@ const Player = {
             });
           } else {
             delete this.setWeights[input.dataset.key];
+            // Blanking the last box of an exercise means "I did not lift
+            // this". Before the pre-fill was seeded above, nothing had been
+            // recorded for an untouched exercise, so there was nothing to
+            // undo; now there is, and sessionWeights would otherwise keep it.
+            const exName = input.dataset.exName;
+            const stillSet = inputs.some((other) =>
+              other.dataset.exName === exName
+              && this.setWeights[other.dataset.key] != null);
+            if (!stillSet) this.noteWeight(exName, "");
           }
         });
       });
