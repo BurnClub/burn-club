@@ -50,17 +50,33 @@ function conversationPreview(conv) {
   };
 }
 
+// Everything a member can type reaches this app too, and it had no escaping
+// at all (2026-11-18). Admin was fixed for tester T-19; the staff phone app
+// renders the same message text, sender names and member names into innerHTML
+// from the same tables, so the same takeover worked here.
+//
+// Escape at the point of OUTPUT, not where a string is composed: one rule,
+// no double-escaping, and nothing to remember per call site.
+function esc(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function renderConversationRow(conv) {
   const preview = conversationPreview(conv);
   return `
     <div class="conversation-row" data-open-thread="${conv.id}">
       <div class="conversation-icon">${conv.type === "group" ? "👥" : "💬"}</div>
       <div class="conversation-text">
-        <p class="conversation-name">${conversationDisplayName(conv)}</p>
-        <p class="conversation-preview">${preview.lastText}</p>
+        <p class="conversation-name">${esc(conversationDisplayName(conv))}</p>
+        <p class="conversation-preview">${esc(preview.lastText)}</p>
       </div>
       <div class="conversation-meta">
-        <span class="conversation-time">${preview.lastTime}</span>
+        <span class="conversation-time">${esc(preview.lastTime)}</span>
         ${preview.unread ? `<span class="conversation-unread-dot"></span>` : ""}
       </div>
     </div>
@@ -87,9 +103,9 @@ function renderMessageBubble(m, isGroup) {
   return `
     <div class="msg-bubble-row ${m.isStaff ? "from-me" : ""}">
       <div class="msg-bubble">
-        ${isGroup && !m.isStaff ? `<p class="msg-sender">${m.senderName}</p>` : ""}
-        <p>${m.text}</p>
-        <span class="msg-time">${m.time}</span>
+        ${isGroup && !m.isStaff ? `<p class="msg-sender">${esc(m.senderName)}</p>` : ""}
+        <p>${esc(m.text)}</p>
+        <span class="msg-time">${esc(m.time)}</span>
       </div>
     </div>
   `;
@@ -308,8 +324,8 @@ function goLive() {
     list.innerHTML += `
       <div class="msg-bubble-row">
         <div class="msg-bubble">
-          <p class="msg-sender">${msg.name}</p>
-          <p>${msg.text}</p>
+          <p class="msg-sender">${esc(msg.name)}</p>
+          <p>${esc(msg.text)}</p>
         </div>
       </div>
     `;

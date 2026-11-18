@@ -2837,6 +2837,50 @@ left blank on purpose — that blank is now the only mark that the row is
 damaged, and writing "Set 1" back would make a wrong number look deliberate.
 It affects real training data for Abby, Hannah, Jordan and Chris.
 
+### The same takeover was open in the STAFF app, and admin's was only half shut (2026-11-18, tester T-19)
+
+Finishing T-19 turned up two things the tester had not looked at.
+
+**A member's own NAME, in two admin places.** The first fix escaped message
+text and sender names at nine sites, but a direct-message thread is *labelled*
+with the member's name, and that label went in raw on the dashboard's unread
+list — the first screen staff see — and in the inbox conversation list. Members
+edit their own name on the Profile tab, so: set the name to markup, send any
+message, and it runs when Kelly opens admin. Same escalation as before,
+arriving by a different field.
+
+**`staff/app.js` had no `esc()` at all.** It renders the same message text,
+sender names and member names from the same tables, straight into `innerHTML`:
+six sites. Admin was fixed on 2026-11-17 and the staff phone app was never
+looked at, so the original attack still worked there in full. It has its own
+`esc()` now and every site is wrapped. **If a hole is found in one of the three
+apps, check the other two before closing it** — they share the data, not the
+code.
+
+**Verified in a real DOM, against the files over HTTP, both directions.** The
+payload was an image tag with an error handler, rendered into a div attached to
+the document, so a handler that fires really fires. Fixed: 0 elements created,
+0 handlers run, the markup visible as text. Then the same test with the two
+`esc()` calls stripped back out of the served source: 1 image created and the
+handler ran. That second half is the part I skipped last time, when a regex
+over escaped output told me the code was still vulnerable and I nearly
+"re-fixed" something that was already correct.
+
+### A group's unread count never actually cleared (2026-11-18, Chris)
+
+Opening a group's chat marked its messages read **in memory only**:
+`renderGroupChat()` set `m.read = true` on the mapped copies and updated the
+badge, but never called `markThreadReadForStaff()`. The direct-message path
+does call it, which is exactly why DMs cleared and groups did not — the count
+came back on the next load and never cleared on another staff machine at all.
+It now persists, and re-renders the group list, because the tree count and the
+card's unread dot both read `groupSectionMeta()` at render time and otherwise
+hold the stale number until something else redraws them.
+
+**Staff got cache stamps too.** `staff/index.html` had none, so after a
+security fix its assets could sit in a browser cache for GitHub Pages'
+`max-age=600`. It now stamps the same way admin does.
+
 ### The fix for T-5 then multiplied the rows it was meant to protect (2026-11-17, tester T-23)
 
 Caught by the tester on the retest of my own fix, four hours after it went
@@ -3901,18 +3945,6 @@ syncs them.
   gets asked again. Worth doing in one pass rather than one flag at a time.
 
 ## Agreed, not yet built
-
-- **Admin: a group's unread count does not clear after reading it** (Chris,
-  2026-11-17). Diagnosed, not yet fixed. Opening a group's chat marks its
-  messages read **in memory only** (`admin/app.js:675`): it sets `m.read = true`
-  and updates the badge, but never calls `markThreadReadForStaff()`, which is
-  the call that persists it. The direct-message path does make that call
-  (`admin/app.js:6773`), which is why DMs clear and groups don't. So the count
-  comes back on the next load, and on any other staff device immediately. Fix
-  is to make the group path do what the DM path does; check at the same time
-  that the group tree and card counts re-render after it, since they read
-  `groupSectionMeta()` and may hold the old number until something else
-  redraws. Same file as the T-19 name escaping, so worth doing together.
 
 - **Member management on the STAFF PHONE APP** (Chris, 2026-10-12: "i want to
   see it on the phone staff site as well so we can make these changes when we

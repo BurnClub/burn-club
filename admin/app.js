@@ -672,8 +672,18 @@ function renderGroupChat() {
 
   // Opening the group counts as reading its chat, same as opening the thread
   // in Messages does — otherwise the unread badge never clears from here.
+  //
+  // Marking the mapped copies is not enough (Chris, 2026-11-17): it lasts
+  // until the next load and never reaches another staff member's machine at
+  // all. openAdminThread() persists it, and that is the whole difference
+  // between DMs clearing and groups not.
   msgs.forEach((m) => { if (!m.isStaff) m.read = true; });
+  markThreadReadForStaff(convId);
   updateAdminUnreadBadge();
+  // The tree count and the card's unread dot both read groupSectionMeta() at
+  // render time, so they hold the old number until something redraws them.
+  // renderGroupList() redraws the tree too, and neither comes back here.
+  renderGroupList();
 
   const list = document.getElementById("group-chat-messages");
   list.innerHTML = msgs.map((m) => renderAdminMessageBubble(m, true)).join("")
@@ -909,14 +919,14 @@ function renderDashboardUnread() {
       <div class="conversation-icon">${r.conv.type === "group" ? icon("community") : icon("chat")}</div>
       <div class="unread-row-text">
         <p class="unread-row-name">
-          ${conversationDisplayName(r.conv)}
+          ${esc(conversationDisplayName(r.conv))}
           ${r.conv.type === "group" ? `<span class="unread-row-sender">${esc(r.senderName)}</span>` : ""}
           ${r.count > 1 ? `<span class="unread-row-count">${r.count}</span>` : ""}
         </p>
         <p class="unread-row-preview">${esc(r.text)}</p>
       </div>
       <div class="unread-row-meta">
-        <span class="conversation-time">${r.time}</span>
+        <span class="conversation-time">${esc(r.time)}</span>
         <span class="unread-row-reply">Reply →</span>
       </div>
     </div>
@@ -6710,11 +6720,11 @@ function renderAdminConversationList() {
       <div class="admin-conversation-row ${conv.id === selectedConversationId ? "active" : ""}" data-action="open-admin-thread" data-conversation-id="${conv.id}">
         <div class="conversation-icon">${conv.type === "group" ? icon("community") : icon("chat")}</div>
         <div class="conversation-text">
-          <p class="conversation-name">${conversationDisplayName(conv)}</p>
+          <p class="conversation-name">${esc(conversationDisplayName(conv))}</p>
           <p class="conversation-preview">${esc(p.lastText)}</p>
         </div>
         <div class="conversation-meta">
-          <span class="conversation-time">${p.lastTime}</span>
+          <span class="conversation-time">${esc(p.lastTime)}</span>
           ${p.unread ? `<span class="conversation-unread-dot"></span>` : ""}
         </div>
       </div>
