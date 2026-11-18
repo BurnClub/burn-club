@@ -2837,6 +2837,53 @@ left blank on purpose — that blank is now the only mark that the row is
 damaged, and writing "Set 1" back would make a wrong number look deliberate.
 It affects real training data for Abby, Hannah, Jordan and Chris.
 
+### The fix for T-5 then multiplied the rows it was meant to protect (2026-11-17, tester T-23)
+
+Caught by the tester on the retest of my own fix, four hours after it went
+live. Worth sitting with: the fix was verified — a fresh workout's six sets
+survived four reloads, the harness passed, the live rows matched. All of that
+was true. It was verified on data the fix had produced, which is the one shape
+it could not get wrong.
+
+`liftsOntoCompletions()` rebuilds `setWeights` from the server's rows, keyed by
+the server's set number. `liftsToRows()` then renumbered them 1, 2, 3... from
+the ORDER of the keys and threw the server's numbers away. That is a no-op only
+when the numbers are already exactly 1..n with no repeats. Anything else — an
+old workout stored one-number-per-exercise, or a phantom row left by T-5 — got
+renumbered onto its neighbours' slots on every open. Nothing was ever deleted,
+so the next pull read the bigger set back and did it again. Jordan's two
+workouts went 26 → 31 → 46 → 59 → 76 → 113 rows over a handful of reloads,
+accelerating, and the member app showed nothing wrong the whole time, because
+it only displays one top number per exercise and that number stayed right.
+
+**The fix: number sets per exercise, not per completion.** The unique key is
+`(member_id, completion_client_id, exercise_id, set_number)` — it has always
+included the exercise — so a number only ever had to be unique within one
+exercise. The per-completion counter was never required by the database. Per
+exercise, each exercise's run of keys comes back 1, 2, 3... in the order it
+already had, so `push(pull(x))` lands on `x`.
+
+The property that was missing, and that `tests/sync/set-number-growth.test.js`
+now asserts over five cycles: **opening the app twice must leave the server
+exactly as it was.** On the pre-fix code that test reproduces the tester's own
+numbers — 3, 5, 7, 9, 11 for an old-style workout and 13, 16, 22, 32 for a
+stale device — which is how I know it tests the real thing and not my idea of
+it. `per-set-weights.test.js` passed throughout; it only ever tested a clean
+12-row workout.
+
+**The lesson for the next data fix**: a round trip needs a fixed-point test, not
+an end-to-end one. "Log a workout, reload, it's still right" cannot fail on
+data the new code wrote. "Open it five times and the server does not change"
+can.
+
+**Two things this does NOT fix.** A device still holding a pre-v63 flattened
+copy pushes it before it pulls, so its first open on v64 still lands that one
+number on set 1 of each exercise and blanks that label — bounded, once per
+exercise, and the same residual T-5 damage already recorded. And the old
+per-completion verify query is now wrong: under per-exercise numbering a
+healthy 2-exercise, 6-set workout is 12 rows with a highest number of 6. Group
+by exercise, as `supabase/34-undo-t23-growth.sql` does.
+
 ### An export is ONE browser, not the content library
 
 Burn Club Test was missing from this export and I assumed it had been deleted.
@@ -3835,6 +3882,18 @@ syncs them.
   gets asked again. Worth doing in one pass rather than one flag at a time.
 
 ## Agreed, not yet built
+
+- **Admin: a group's unread count does not clear after reading it** (Chris,
+  2026-11-17). Diagnosed, not yet fixed. Opening a group's chat marks its
+  messages read **in memory only** (`admin/app.js:675`): it sets `m.read = true`
+  and updates the badge, but never calls `markThreadReadForStaff()`, which is
+  the call that persists it. The direct-message path does make that call
+  (`admin/app.js:6773`), which is why DMs clear and groups don't. So the count
+  comes back on the next load, and on any other staff device immediately. Fix
+  is to make the group path do what the DM path does; check at the same time
+  that the group tree and card counts re-render after it, since they read
+  `groupSectionMeta()` and may hold the old number until something else
+  redraws. Same file as the T-19 name escaping, so worth doing together.
 
 - **Member management on the STAFF PHONE APP** (Chris, 2026-10-12: "i want to
   see it on the phone staff site as well so we can make these changes when we

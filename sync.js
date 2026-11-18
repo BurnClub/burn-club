@@ -842,7 +842,15 @@ function liftsToRows(completions) {
     // is what the member saw, so it is what gets stored rather than an index
     // they would have to decode.
     if (c.setWeights && Object.keys(c.setWeights).length) {
-      let n = 0;
+      // Numbered PER EXERCISE, not per completion (2026-11-17, tester T-23).
+      // The unique key is (member, completion, exercise_id, set_number), so a
+      // number only has to be unique within one exercise - and numbering per
+      // completion made this function change its answer depending on the ORDER
+      // it was handed, which is how a pulled-then-pushed workout grew rows
+      // without limit. Per exercise, push(pull(x)) lands on x: the pull hands
+      // back one key per server row in ascending set_number, so each exercise's
+      // own run of keys is 1, 2, 3... in the same order it already had.
+      const nByExercise = {};
       const before = rows.length;
       Object.keys(c.setWeights).forEach((key) => {
         const weight = Number(c.setWeights[key]);
@@ -854,7 +862,8 @@ function liftsToRows(completions) {
           member_id: AUTH_MEMBER.id, completion_client_id: c.id,
           exercise_id: exerciseIdForName(name),
           exercise_name: name, weight, performed_on: c.date,
-          set_number: ++n, set_label: parts[2] || null,
+          set_number: (nByExercise[name] = (nByExercise[name] || 0) + 1),
+          set_label: parts[2] || null,
         });
       });
       // Only this completion's rows count — `rows` is the accumulator for all
@@ -897,9 +906,13 @@ function currentNameForLift(row) {
 //
 // Three things this has to get right:
 //
-// ORDER. liftsToRows() renumbers sets from the ORDER of the keys it is given,
-// so the keys are rebuilt in ascending set_number. Push the result straight
-// back and it reproduces the same rows rather than a different numbering.
+// ORDER. liftsToRows() numbers each exercise's sets from the ORDER of the keys
+// it is given, so the keys are rebuilt in ascending set_number. Push the result
+// straight back and it reproduces the same rows rather than a different
+// numbering. Getting this wrong is not cosmetic: it was T-23, where every open
+// renumbered an old workout's rows onto their neighbours' slots, kept the
+// originals, and read the bigger set back on the next pull - 26 rows to 113 in
+// a handful of reloads, accelerating, with nothing visible in the app.
 //
 // THE KEY. Its shape is "blockIndex|Exercise Name|Set 2" and the block index
 // is not on the server. set_number takes that slot instead: liftsToRows()
