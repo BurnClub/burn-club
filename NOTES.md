@@ -2837,6 +2837,30 @@ left blank on purpose — that blank is now the only mark that the row is
 damaged, and writing "Set 1" back would make a wrong number look deliberate.
 It affects real training data for Abby, Hannah, Jordan and Chris.
 
+### The personal-best banner congratulated the wrong number (2026-11-18, tester T-24)
+
+Left over from the T-5 fix. `logCompletion()` derives the true top weight per
+exercise, so the STORED best has been right since v63 and "beat X" quotes the
+real previous best - but `finish()` calls `newPersonalBests(this.sessionWeights)`
+one line earlier, and `sessionWeights` holds whatever number was entered last.
+
+A member who works up to 56 and backs off to 54 on the last set was
+congratulated on 54. Worse, when the last set typed was at or below the old
+best while an earlier set beat it, there was **no banner and no "Add to
+Progress" offer at all** - though Progress showed the new best, so the app
+disagreed with itself.
+
+`newPersonalBests()` now receives `topWeightsFrom(sessionWeights, setWeights)`,
+the same derivation `logCompletion()` uses one line below, so the number
+celebrated and the number stored come from one place. The call still happens
+BEFORE `logCompletion()`, which matters: "previous best" must not include the
+session being written.
+
+Verified on the deployed build against the tester's real numbers, with
+`personalBestFor()` stubbed to a known 36: 51, 52, 53, 56, 55, 54 gave
+"54 lbs, beat 36" before and "56 lbs, beat 36" after; a set of 30, 40, 35
+against an old best of 36 gave no banner before and "40 lbs" after.
+
 ### A weight the screen showed was not a weight the app saved (2026-11-18, tester T-18)
 
 From a member's second session with an exercise onward, "Log your weights"

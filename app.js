@@ -5892,7 +5892,14 @@ const Player = {
     clearInProgress();
     // Before logCompletion, deliberately: once this session is written its own
     // weights are part of the history and nothing can look like a PR.
-    const prs = newPersonalBests(this.sessionWeights);
+    // The HEAVIEST set, not the last one typed (2026-11-18, tester T-24).
+    // sessionWeights holds whatever number was entered last for an exercise,
+    // so a member who worked up to 56 and backed off to 54 was congratulated
+    // on 54 - and if that last set was at or below the old best, there was no
+    // banner and no "Add to Progress" offer at all, though Progress showed the
+    // new best. logCompletion() derives the same top weight one line below;
+    // both now read from one place.
+    const prs = newPersonalBests(topWeightsFrom(this.sessionWeights, this.setWeights));
     const entry = logCompletion(this.circuit, this.sessionWeights, this.setWeights);
     renderPRBanner(prs);
     // A previous session's note must not be sitting in the box.
