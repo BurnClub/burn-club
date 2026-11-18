@@ -8743,9 +8743,56 @@ function applyDemoEntryVisibility() {
 const ENTRY_WAIT_MS = 6000;
 const FIRST_LOAD_WAIT_MS = 30000;
 
+// A dead invite, magic or reset link (2026-11-18, tester T-3). Checked BEFORE
+// arrivedFromEmailLink(), because a link that failed carries an error where the
+// token would have been and so matches neither of that function's tests.
+function showEmailLinkError(info) {
+  const err = document.getElementById("login-error");
+  const spent = /expired|invalid|otp/i.test(info.code + " " + info.description);
+  // The account already exists at this point — Chris creates it before the
+  // invite goes out — so "Forgot your password?" really does send them a
+  // working link. That makes it the one thing on this screen they can act on,
+  // which is why it is named rather than just left sitting there.
+  const msg = spent
+    ? "That link has expired or was already opened. Some email apps and company "
+      + "security scanners open links automatically, which uses them up. Tap "
+      + "“Forgot your password?” below to send yourself a fresh one, or "
+      + "ask your coach for a new invite."
+    : "That link didn’t work" + (info.description ? ": " + info.description : "")
+      + ". Tap “Forgot your password?” below to send yourself a fresh one, "
+      + "or ask your coach for a new invite.";
+  if (err) {
+    err.textContent = msg;
+    err.hidden = false;
+  }
+  // The login form and "Forgot your password?" are what they need, so leave
+  // them where they are and make sure the set-a-password form is not covering
+  // them — a half-finished link can leave that showing.
+  const setPw = document.getElementById("set-password-form");
+  if (setPw) setPw.hidden = true;
+  const form = document.getElementById("login-form");
+  if (form) form.hidden = false;
+  const forgot = document.getElementById("forgot-btn");
+  if (forgot) forgot.hidden = false;
+  // Drop the error out of the address so a reload is an ordinary login screen
+  // rather than this message again, and so it is not carried into a bookmark.
+  try {
+    window.history.replaceState(null, "", window.location.pathname + window.location.search.replace(/[?&]error[^&]*/g, "").replace(/^&/, "?"));
+  } catch (e) { /* replaceState is not available everywhere; the message still shows */ }
+}
+
 async function routeOnLoad() {
   applyDemoEntryVisibility();
   if (!supabaseReady()) return false;          // demo mode; login screen stands
+  const linkError = emailLinkError();
+  if (linkError) {
+    showEmailLinkError(linkError);
+    // Logged so the next trial can tell "never opened the invite" apart from
+    // "opened it and the app turned them away", which the last one could not.
+    logAuthEvent("email_link_dead", linkError.code
+      + (linkError.description ? " — " + linkError.description : ""));
+    return true;                               // stay on the login screen
+  }
   if (arrivedFromEmailLink()) {
     document.getElementById("login-form").hidden = true;
     document.getElementById("forgot-btn").hidden = true;

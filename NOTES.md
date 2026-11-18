@@ -2837,6 +2837,44 @@ left blank on purpose — that blank is now the only mark that the row is
 damaged, and writing "Set 1" back would make a wrong number look deliberate.
 It affects real training data for Abby, Hannah, Jordan and Chris.
 
+### A dead invite link said nothing, to the member or to us (2026-11-18, tester T-3)
+
+A tester taps an invite, magic or reset link that has expired — or that their
+mail app or a corporate link scanner already opened once, which spends a
+single-use link before a human ever sees it. They landed on the ordinary login
+form with an empty error box. They have no password of their own yet, so there
+was nothing on that screen they could do, and admin saw nothing either: no
+message, no request, no `auth_events` row. Three of six invited testers never
+finished setup and we have no idea whether this is why.
+
+`arrivedFromEmailLink()` tests for `type=` or `access_token=`. A link that
+FAILED carries an error where the token would have been, so it matched neither
+and fell through to the ordinary login path.
+
+`emailLinkError()` now reads it — the hash for the implicit flow and the query
+string for PKCE, because Supabase uses both — and `routeOnLoad()` checks it
+BEFORE `arrivedFromEmailLink()`. The member gets told what happened, the
+address is cleaned so a reload is an ordinary login screen, and
+`logAuthEvent("email_link_dead", ...)` records it.
+
+**Why the message names "Forgot your password?"**: the account already exists
+at this point (Chris creates it before the invite goes out), so a reset link
+really does reach them. It is the one thing on that screen they can act on, so
+it is named rather than left sitting there. **This makes T-12 load-bearing** —
+that button currently claims a link is on its way whatever actually happened.
+Fix T-12 before the next trial, not after.
+
+**The logging is the other half.** The last trial could not tell "never opened
+the invite" apart from "opened it and the app turned them away". Now it can.
+
+Verified on the local server against both forms Supabase sends:
+`#error=access_denied&error_code=otp_expired&...` gave the expired message;
+`?error=server_error&error_description=Database+error+saving+new+user` gave the
+generic one quoting the server's own words. Both: login form and "Forgot your
+password?" visible, set-a-password form hidden, address cleaned, and a row in
+`auth_events` — `otp_expired — Email link is invalid or has expired` and
+`server_error — Database error saving new user`.
+
 ### One missing element could still silence every button after it (2026-11-18, tester T-4)
 
 The 2026-10-27 fix introduced `on()` and converted `wireStaticControls()`.

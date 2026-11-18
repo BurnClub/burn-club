@@ -295,6 +295,31 @@ function arrivedFromEmailLink() {
   return /type=(invite|recovery|signup|magiclink)/.test(hash) || /access_token=/.test(hash);
 }
 
+// A DEAD link comes back carrying an error instead of a token (2026-11-18,
+// tester T-3). Nothing in the app read it, so a member whose invite had
+// expired — or whose mail app or a corporate link scanner had already opened
+// it once, which spends a single-use link without a human ever seeing it —
+// landed on the ordinary login form with an empty error box. They have no
+// password of their own yet, so there is nothing on that screen they can do,
+// and admin saw nothing either: no request, no auth_events row. Half the
+// invited testers never finished setup.
+//
+// Supabase returns it in the hash for the implicit flow and in the query
+// string for PKCE, so both are read.
+function emailLinkError() {
+  const read = (raw) => new URLSearchParams(String(raw || "").replace(/^[#?]/, ""));
+  for (const source of [window.location.hash, window.location.search]) {
+    const p = read(source);
+    const code = p.get("error_code") || p.get("error");
+    if (!code) continue;
+    return {
+      code: String(code).slice(0, 60),
+      description: String(p.get("error_description") || "").slice(0, 300),
+    };
+  }
+  return null;
+}
+
 // ---------------- Auth visibility (2026-11-03) ----------------
 // The first trial ran three days on a broken sign-in and produced no record of
 // it at all. Everything below exists so the next one is watchable: who got in,
