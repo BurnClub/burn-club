@@ -2875,6 +2875,60 @@ password?" visible, set-a-password form hidden, address cleaned, and a row in
 `auth_events` — `otp_expired — Email link is invalid or has expired` and
 `server_error — Database error saving new user`.
 
+### "A reset link is on its way" was said whatever had happened (2026-11-18, tester T-12)
+
+`sendPasswordReset()` returned an error for one case only — a rate limit — and
+`null` for everything else, which the handler then reported as success. So a
+member with no signal, a mistyped address, or a mail server that was down was
+told a link was coming and then waited for an email that was never sent. This
+was the button T-3 had just started sending people to, which is what moved it
+up the list.
+
+**Two different things were being hidden and only one of them on purpose.**
+Hiding WHICH ADDRESSES ARE MEMBERS is deliberate: answer that and the login
+form becomes a membership check for anyone who finds it. Hiding "you are
+offline" was a side effect of how that was implemented, and it is the one a
+member actually needs told. Every case `resetError()` now reports describes the
+REQUEST and none of them describes the ACCOUNT, so the secret is kept:
+
+| what happened | what they see |
+| --- | --- |
+| tapped again inside the limit (429) | wait a minute, then try again |
+| no connection / dropped request | check your connection and try again |
+| address refused (422) | check it for typos |
+| our mail server failed (5xx) | our end, not yours — or ask your coach |
+| anything unrecognised | couldn't send it — try again or ask your coach |
+| sent | if that address is a member, a link is on its way |
+
+Offline and a malformed address are both caught before the request goes out, so
+neither costs a round trip. The old code also had no `try`, so a request that
+threw rather than returned took the whole handler down and the member saw
+nothing at all.
+
+**The button now disables itself while it works** and says "Sending…". It gave
+no sign anything was happening, so an impatient member tapped it repeatedly —
+and four taps is the quickest way to the rate limit that then locks them out
+for a minute, on the one screen where they are already stuck. Four rapid taps
+now produce exactly one request.
+
+**The success message is no longer red.** It shares an element with the errors,
+and being told a link is on its way in error type reads as a failure
+(`.login-error--ok`).
+
+Logged either way — `reset_sent`, `reset_failed`, `reset_rejected` — so the
+next trial can tell "never asked for a reset" from "asked, and the email never
+arrived". That is the same gap T-3 closed from the other side.
+
+`tests/sync/password-reset-errors.test.js` lifts `resetError()` out of the real
+`supabase-client.js` rather than copying it, so the test cannot keep passing
+after the shipped version changes. Its last check is the one that matters: no
+message may say whether the address belongs to a member.
+
+Verified in the browser at phone width with `resetPasswordForEmail` stubbed, so
+no real email was ever sent: all seven outcomes worded correctly, offline and
+the mistyped address making zero network calls, the four-tap test making one,
+and the success message rendering in ink rather than red.
+
 ### One missing element could still silence every button after it (2026-11-18, tester T-4)
 
 The 2026-10-27 fix introduced `on()` and converted `wireStaticControls()`.

@@ -4566,6 +4566,12 @@ h1, h2, h3 {
   text-align: center;
   line-height: 1.4;
 }
+/* Same element, good news. "A reset link is on its way" in red error type
+   reads as a failure, which is half of what made T-12 confusing. */
+.login-error--ok {
+  color: var(--ink);
+  font-weight: 500;
+}
 /* The diagnostics panel. Deliberately plain, monospaced and selectable: its
    whole job is to be screenshotted or copied into an email by someone who is
    already frustrated, so legibility beats looking like the rest of the app.

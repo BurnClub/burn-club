@@ -9039,17 +9039,40 @@ function wireAuthControls() {
   }
 
   on("forgot-btn", "click", async () => {
-    const email = document.getElementById("login-email").value.trim();
+    const btn = document.getElementById("forgot-btn");
+    const emailEl = document.getElementById("login-email");
+    const email = emailEl ? emailEl.value.trim() : "";
     const err = document.getElementById("login-error");
-    if (!email) {
-      err.textContent = "Type your email above first, then tap this.";
+    // The same element carries both outcomes, so it has to stop being red
+    // when the news is good — being told a link is on its way in error type
+    // reads as a failure (tester T-12).
+    const show = (msg, ok) => {
+      if (!err) return;
+      err.textContent = msg;
+      err.classList.toggle("login-error--ok", !!ok);
       err.hidden = false;
+    };
+    if (!email) {
+      show("Type your email above first, then tap this.", false);
       return;
     }
-    const res = await sendPasswordReset(email);
-    err.textContent = res.error
-      || "If that address is a Burn Club account, a reset link is on its way.";
-    err.hidden = false;
+    // Disabled while it works. The old button gave no sign anything was
+    // happening, so an impatient member tapped it repeatedly — and four taps
+    // is the quickest way to the rate limit that then locks them out for a
+    // minute, on the one screen where they are already stuck (tester T-12).
+    if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
+    let res;
+    try {
+      res = await sendPasswordReset(email);
+    } catch (e) {
+      res = { error: "Couldn't send the reset email. Try again, or ask your coach for a new invite." };
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "Forgot your password?"; }
+    }
+    show(res.error
+      || "If that address is a Burn Club account, a reset link is on its way. "
+        + "Check your junk folder if it hasn't arrived in a few minutes.",
+      !res.error);
   });
 
   on("set-password-form", "submit", async (e) => {

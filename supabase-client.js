@@ -528,15 +528,78 @@ async function setPassword(password) {
   return await loadAuthMember(data.user);
 }
 
+// Why the reset error handling is this long (2026-11-18, tester T-12):
+// the old version returned success for everything except a rate limit, so a
+// member with no signal, or a mistyped address, was told "a reset link is on
+// its way" and then waited for an email that was never sent. Two different
+// things were being hidden and only one of them on purpose. Hiding WHETHER AN
+// ADDRESS IS A MEMBER is deliberate — answering that turns the form into a
+// membership check for anyone who finds it. Hiding "you are offline" was an
+// accident, and the one a member actually needs told.
+//
+// Every case below is about the REQUEST, never about the account, so none of
+// them leak membership. Supabase's resetPasswordForEmail answers success for
+// an address that is not a member, which is what makes this separation
+// possible. If that ever changes, an unknown-user error would land in the
+// catch-all at the bottom and show "couldn't send", which differs from the
+// success wording — so that is the line to revisit if Supabase changes.
+function resetError(error) {
+  const msg = String((error && error.message) || "");
+  const status = Number(error && error.status) || 0;
+  const name = String((error && error.name) || "");
+  // Supabase sends "For security purposes, you can only request this after
+  // N seconds" for a second tap, which is a rate limit wearing a long coat.
+  if (status === 429 || /rate limit|too many|for security purposes/i.test(msg)) {
+    return "Too many attempts. Wait a minute, then try again.";
+  }
+  if (name === "AuthRetryableFetchError" || /fetch|network|failed to fetch/i.test(msg)) {
+    return "Couldn't reach the server. Check your connection and try again.";
+  }
+  if (status === 422 || status === 400 || /invalid|validation|unable to validate/i.test(msg)) {
+    return "That address was refused. Check it for typos and try again.";
+  }
+  // SMTP failures are ours, not theirs, and a member retrying will not fix it.
+  if (status >= 500 || /sending|smtp|mail|unexpected_failure/i.test(msg)) {
+    return "The email couldn't be sent — that's our end, not yours. Try again in a few minutes, or ask your coach for a new invite.";
+  }
+  return "Couldn't send the reset email. Try again, or ask your coach for a new invite.";
+}
+
 async function sendPasswordReset(email) {
   if (!SB) return { error: "Can't reach the server. Check your connection." };
-  const { error } = await SB.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: window.location.origin + window.location.pathname,
-  });
-  // Deliberately the same answer whether or not the address exists: telling a
-  // stranger which emails are members turns the form into a membership check.
-  return { error: error && /rate limit|too many/i.test(error.message)
-    ? "Too many attempts. Wait a minute and try again." : null };
+  const address = String(email || "").trim();
+  // Caught here rather than at the server, because the server's rejection is
+  // exactly what used to be reported as success.
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(address)) {
+    logAuthEvent("reset_rejected", "address doesn't look like an email", address);
+    return { error: "That doesn't look like an email address. Check it and try again." };
+  }
+  // No round trip needed to know this one, and it is the commonest cause.
+  if (navigator.onLine === false) {
+    logAuthEvent("reset_failed", "offline", address);
+    return { error: "You're offline. Connect to the internet and try again." };
+  }
+  let error = null;
+  try {
+    const res = await SB.auth.resetPasswordForEmail(address, {
+      redirectTo: window.location.origin + window.location.pathname,
+    });
+    error = res && res.error;
+  } catch (e) {
+    // A dropped request throws instead of returning, and the old code had no
+    // catch, so it took the whole handler down and the member saw nothing.
+    logAuthEvent("reset_failed", "threw: " + ((e && e.message) || e), address);
+    return { error: "Couldn't reach the server. Check your connection and try again." };
+  }
+  if (error) {
+    logAuthEvent("reset_failed", (error.status || "?") + " " + String(error.message || "").slice(0, 200), address);
+    return { error: resetError(error) };
+  }
+  // Logged so the next trial can tell "never asked for a reset" from "asked,
+  // and the email never arrived" — the distinction the first trial could not
+  // make for the three testers who never finished setting up.
+  logAuthEvent("reset_sent", null, address);
+  return { error: null };
 }
 
 // ---------------- App settings, from the server (2026-10-17) ----------------
