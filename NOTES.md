@@ -2875,6 +2875,80 @@ password?" visible, set-a-password form hidden, address cleaned, and a row in
 `auth_events` — `otp_expired — Email link is invalid or has expired` and
 `server_error — Database error saving new user`.
 
+### A server hiccup could sign a member out, or hand them somebody else's program (2026-11-19, tester T-13)
+
+Three bugs on the entry path, all the same mistake: a failure to ASK the server
+was treated as an answer FROM it.
+
+**1. Signed out for a hiccup.** On a returning visit, a failed profile lookup
+ran `if (!isOfflineError(null)) await signOut();`. The comment above that line
+was right — "only an account problem signs anyone out" — and the line did not
+do it. Passing `null` throws the error away, so `isOfflineError` falls through
+to `navigator.onLine`, which on a phone means airplane mode and almost nothing
+else. A 500, a database timeout, or a captive wifi portal all signed the member
+out of an app their phone could have opened perfectly well, and handed them a
+login form carrying `friendlyDbError()`'s wording — "Something went wrong
+saving that. It's saved on this device and will sync when it can." — which is
+written for a failed save and means nothing on a login screen.
+
+Signing out is the worst available answer here: they cannot sign back in until
+the server is reachable, and everything they have logged since is on a phone
+that now shows a login form. The slow path three lines up already fell back to
+the saved profile; only the error path didn't.
+
+`entryDecision()` now makes the call, lifted out of `routeOnLoad()` so a test
+can pin it: `enter-from-cache` when the server could not be asked and this
+device holds a copy, `stay` when there is no copy (say so, keep the session),
+`sign-out` only when the server says the account or session is no good — and
+that last one ignores the cache deliberately, because work logged against a
+dead session could never sync.
+
+**2. A failed program lookup erased the saved program.** The query read `data`
+and ignored `error` entirely, so "the server said no" was indistinguishable
+from "this member has no program". `AUTH_PROGRAM` stayed null, and then
+`cacheAuthMember(data, AUTH_PROGRAM)` wrote that null over the saved copy —
+the one thing standing between the member and a blank app the next time the
+signal was bad. The `catch` fallback only ever covered a THROWN error, and
+supabase-js returns rather than throws for most server-side failures.
+
+Now the error is read: failed → keep whatever this device already had; genuinely
+deleted → clear it, which is correct and is the case the old code was
+accidentally right about.
+
+**3. The demo profile filled the gap.** With `AUTH_PROGRAM` null and a real
+`program_id`, `applyAuthMemberToProfile()` took `scheduleType` from whichever
+demo profile is first in `data.js` — the exact failure that hit the first three
+real accounts, which `showUnassignedScreen` was built to prevent. It only ever
+guarded the "no program at all" case. A third reason, `program-unavailable`,
+now covers "assigned, but we could not load it and have nothing saved", with a
+**Try again** button, because reloading is genuinely the fix.
+
+**Also in the family: Change Password.** The current-password check is a real
+sign-in, so it counts against the auth rate limit — two mistypes and a retry
+trips it, and the member was then told the password they had just typed
+CORRECTLY did not match. Any failure said that: no signal, rate limit, server
+error. `passwordCheckError()` now separates "your password is wrong" from "I
+couldn't check your password".
+
+`tests/sync/entry-failure.test.js` lifts `entryDecision()`, `isAccountProblem()`
+and `passwordCheckError()` out of the real source. Its load-bearing checks are
+"NOTHING except an account problem signs a member out" and "nothing that is
+merely a failed check accuses the member of typing it wrong". Reverting
+`entryDecision()` to the old behaviour fails 5 of them.
+
+Verified in the browser with `SB.from` stubbed and the real `loadAuthMember`,
+`loadCachedAuthMember` and `cacheAuthMember`: a failed lookup keeps both the
+program and the saved copy; a deleted program clears both; a hiccup with a
+saved profile opens the app and never calls `signOut`; a refused session signs
+out even with a saved profile. Old code on the identical fixture: program lost,
+saved copy wiped, member signed out.
+
+**Worth watching after this ships.** The `program-unavailable` screen is a new
+way to be stopped at the door. Anyone it blocks was previously getting a
+demo-shaped app, so it is the better answer — but it is on the entry path, and
+`blocked_program_unavailable` in `auth_events` is the thing to check if anyone
+reports being unable to get in.
+
 ### "A reset link is on its way" was said whatever had happened (2026-11-18, tester T-12)
 
 `sendPasswordReset()` returned an error for one case only — a rate limit — and

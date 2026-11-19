@@ -144,6 +144,49 @@ function clearAuthCache() {
 
 // Telling "the network is down" apart from "this account has a problem" is the
 // whole point: the first must never sign anyone out, the second must.
+// What to do when opening a returning member's account failed (2026-11-19,
+// tester T-13). Lifted out of routeOnLoad() because it is the decision with
+// the worst failure mode in the app: signing someone out on a bad connection
+// strands them, since they cannot sign back in until the server is reachable
+// again, and everything they have logged since is sitting on a phone that now
+// shows a login form.
+//
+//   "enter"            nothing went wrong
+//   "enter-from-cache" the server could not be asked, but this device holds a
+//                      copy of the member — open it
+//   "stay"             no copy to open, so say so, but keep the session
+//   "sign-out"         the server says this account or session is no good; a
+//                      cached copy must NOT be used, because work logged
+//                      against a dead session could never sync
+function entryDecision(res, hasSavedProfile) {
+  if (!res || !res.error) return "enter";
+  if (res.kind === "account") return "sign-out";
+  return hasSavedProfile ? "enter-from-cache" : "stay";
+}
+
+// Which failures mean "your account is no good" rather than "I could not ask".
+function isAccountProblem(error) {
+  if (!error) return false;
+  return error.code === "PGRST301" || error.status === 401 || error.status === 403;
+}
+
+// Why the current-password check needs more than one answer (2026-11-19,
+// tester T-13): it is a real sign-in, so it counts against the auth rate
+// limit. Two mistypes and a retry can trip it — and the member was then told
+// the password they had just typed CORRECTLY did not match.
+function passwordCheckError(error) {
+  const msg = String((error && error.message) || "");
+  const status = Number(error && error.status) || 0;
+  if (/invalid login credentials/i.test(msg)) return "That current password doesn't match.";
+  if (status === 429 || /rate limit|too many|for security purposes/i.test(msg)) {
+    return "Too many attempts. Wait a minute, then try again.";
+  }
+  if (isOfflineError(error)) {
+    return "Couldn't reach the server to check your password. Try again when you have a connection.";
+  }
+  return "Couldn't check your current password just now. Try again in a moment.";
+}
+
 function isOfflineError(error) {
   if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
   if (!error) return false;
@@ -250,32 +293,68 @@ async function loadAuthMember(user) {
         OFFLINE_ENTRY = true;
         return { member: cached.member, offline: true };
       }
-      return { error: "Can't reach the server, and this device has nothing saved to open yet." };
+      // kind, so the caller logs something readable and, more importantly,
+      // does not mistake this for an account problem and sign them out.
+      return { kind: "offline", error: "Can't reach the server, and this device has nothing saved to open yet." };
     }
-    return { error: friendlyDbError(error) };
+    // An ACCOUNT problem and a SERVER problem need opposite answers, and the
+    // caller cannot tell them apart from a string (2026-11-19, tester T-13).
+    // It used to get friendlyDbError()'s wording, which is written for a
+    // failed save — a member who could not be opened was told their work was
+    // "saved on this device and will sync when it can", on the login screen,
+    // after being signed out.
+    const account = isAccountProblem(error);
+    return {
+      kind: account ? "account" : "server",
+      error: account
+        ? "Your session has expired — sign in again."
+        : "Couldn't load your account just now. Check your connection, then close and reopen the app.",
+    };
   }
   if (!data) {
     // An auth user with no profile row. The trigger should make this
     // impossible; saying so plainly beats rendering an app with no member.
-    return { error: "Your account isn't finished setting up. Tell your coach." };
+    return { kind: "account", error: "Your account isn't finished setting up. Tell your coach." };
   }
   AUTH_MEMBER = data;
 
   // The member's program comes with them. scheduleType decides whether the app
   // shows Workouts or Calendar, so taking it from the seeded demo profile
   // would put a real member in the wrong shape of app entirely.
+  // The program lookup used to read `data` and ignore `error` entirely, so a
+  // server that answered "no" was indistinguishable from a member with no
+  // program: AUTH_PROGRAM stayed null, the demo profile's schedule filled the
+  // gap, and — the part that actually lost something — the line below then
+  // wrote that null over the saved copy, which is the only thing standing
+  // between this member and a blank app the next time the signal is bad
+  // (2026-11-19, tester T-13).
+  let programFailed = false;
   if (data.program_id) {
+    let prog = null, progError = null;
     try {
-      const { data: prog } = await SB.from("programs").select("*").eq("id", data.program_id).maybeSingle();
-      if (prog) AUTH_PROGRAM = prog;
+      const r = await SB.from("programs").select("*").eq("id", data.program_id).maybeSingle();
+      prog = r && r.data;
+      progError = r && r.error;
     } catch (e) {
+      progError = e;              // supabase-js throws rather than returns on some network faults
+    }
+    if (prog) {
+      AUTH_PROGRAM = prog;
+    } else if (progError) {
+      // Failed, not absent. Keep whatever this device already had.
       const cached = loadCachedAuthMember(user.id);
-      if (cached && cached.program) AUTH_PROGRAM = cached.program;
+      AUTH_PROGRAM = (cached && cached.program) || null;
+      programFailed = !AUTH_PROGRAM;
+      console.warn("[auth] program lookup failed:", progError.message || progError);
+    } else {
+      // Succeeded and the row is genuinely gone — a coach deleted it. Caching
+      // null here is correct; it is the failure case above that must not.
+      AUTH_PROGRAM = null;
     }
   }
   OFFLINE_ENTRY = false;
   cacheAuthMember(data, AUTH_PROGRAM);
-  return { member: data };
+  return { member: data, programUnavailable: programFailed };
 }
 
 // An invite or reset link returns with tokens in the URL fragment. The client
@@ -510,8 +589,20 @@ async function changePassword(currentPassword, newPassword) {
 
   // Signing in again rather than comparing anything locally: the server is the
   // only thing that knows the password, and a check this side would be theatre.
-  const check = await SB.auth.signInWithPassword({ email: user.email, password: currentPassword });
-  if (check.error) return { error: "That current password doesn't match." };
+  let check;
+  try {
+    check = await SB.auth.signInWithPassword({ email: user.email, password: currentPassword });
+  } catch (e) {
+    return { error: "Couldn't reach the server to check your password. Try again when you have a connection." };
+  }
+  if (check.error) {
+    // "Your password is wrong" and "I couldn't check your password" are
+    // different things, and the second was wearing the first one's clothes
+    // (2026-11-19, tester T-13). The rate limit is the one that bit: this is a
+    // real sign-in, so two mistyped attempts and a retry can trip it, and the
+    // member is then told the password they just typed correctly is wrong.
+    return { error: passwordCheckError(check.error) };
+  }
 
   const { error } = await SB.auth.updateUser({ password: newPassword });
   if (error) return { error: friendlyAuthError(error) };

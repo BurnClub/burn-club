@@ -8558,6 +8558,16 @@ async function enterAsAuthedMember() {
     showUnassignedScreen("no-program");
     return;
   }
+  // Assigned to a program, but we have no copy of it — the lookup failed and
+  // this device had nothing saved. applyAuthMemberToProfile() would quietly
+  // take scheduleType from whichever demo profile is first in data.js, which
+  // is the same mistake as above wearing a disguise: the member gets a
+  // plausible, wrong app rather than being told (2026-11-19, tester T-13).
+  if (AUTH_MEMBER && AUTH_MEMBER.program_id && !AUTH_PROGRAM) {
+    logAuthEvent("blocked_program_unavailable");
+    showUnassignedScreen("program-unavailable");
+    return;
+  }
   applyAuthMemberToProfile();
   // Before init(), deliberately: every loadX() reads localStorage
   // synchronously, so the server's copy has to be in place first. A fresh
@@ -8659,17 +8669,30 @@ function showUnassignedScreen(reason) {
     ? `Your program is set, but it doesn't have a start date yet — that's what
        decides which week you begin on. Your coach can set it; nothing else for
        you to do.`
+    : reason === "program-unavailable"
+    ? `We couldn't load your program just now, and this device doesn't have a
+       copy saved yet. You're signed in and nothing is wrong with your account.
+       Close the app and open it again when you have a better connection — if
+       it keeps saying this, tell your coach.`
     : `Your coach hasn't put you on a program yet. As soon as they do, your
        workouts show up here — nothing else for you to do.`;
   box.innerHTML = `
     <h2>You're signed in, ${esc(name)}</h2>
     <p>${body}</p>
+    ${reason === "program-unavailable"
+      ? `<button class="btn-primary" id="unassigned-retry">Try again</button>` : ""}
     <button class="btn-ghost" id="unassigned-signout">Sign out</button>`;
   box.hidden = false;
-  document.getElementById("unassigned-signout").addEventListener("click", async () => {
+  on("unassigned-signout", "click", async () => {
     await signOut();
     window.location.reload();
   });
+  // Reloading IS the fix when the program simply could not be fetched, and it
+  // is what the text tells them to do, so it should not need the app closing.
+  // Looked up rather than on()'d: it is absent by design for the other two
+  // reasons, and a wiring warning for that would be crying wolf.
+  const retry = document.getElementById("unassigned-retry");
+  if (retry) retry.addEventListener("click", () => window.location.reload());
   showScreen("screen-login");
 }
 
@@ -8864,13 +8887,33 @@ async function routeOnLoad() {
     return await enterFromSession("cache_profile_slow");
   }
   if (res.error) {
+    // That comment was right and the line under it was wrong (2026-11-19,
+    // tester T-13). isOfflineError(null) throws the error away and asks
+    // navigator.onLine instead — which on a phone means airplane mode and
+    // almost nothing else — so a server hiccup, a timeout, or a captive wifi
+    // portal signed the member out of an app their phone could have opened
+    // perfectly well, and handed them a login form carrying wording written
+    // for a failed save.
+    //
+    // A saved profile means there IS a good app to open. The slow path three
+    // lines up already does this; only the error path didn't.
+    if (entryDecision(res, !!savedProfile) === "enter-from-cache") {
+      AUTH_MEMBER = savedProfile.member;
+      AUTH_PROGRAM = savedProfile.program || null;
+      OFFLINE_ENTRY = true;
+      logAuthEvent("entered_on_cache_after_error", res.error);
+      return await enterFromSession("cache_profile_error");
+    }
     const err = document.getElementById("login-error");
-    err.textContent = res.error;
-    err.hidden = false;
-    // Only an account problem signs anyone out. A dead connection is not one,
-    // and signing out offline strands the member: they cannot sign back in
-    // until they have signal.
-    if (!isOfflineError(null)) await signOut();
+    if (err) {
+      err.textContent = res.error;
+      err.hidden = false;
+    }
+    logAuthEvent("entry_failed", (res.kind || "?") + " — " + res.error);
+    // Only the server saying this account or session is no good signs anyone
+    // out. A hiccup must not: signing out strands them, because they cannot
+    // sign back in until the server is reachable again.
+    if (entryDecision(res, !!savedProfile) === "sign-out") await signOut();
     return false;
   }
   return await enterFromSession("returning");
