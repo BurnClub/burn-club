@@ -523,6 +523,13 @@ if (SB) {
 // What this browser can tell us about itself, in words a member can read out
 // or screenshot. The first trial's diagnostics were "it doesn't work" and six
 // days of email; this is the thing they can send instead.
+// How long any ONE line of the panel may take. Short on purpose: the whole
+// point is that the panel appears (tester T-11).
+const DIAG_STEP_MS = 5000;
+// And how long the whole panel may take, as a backstop for a step that fails
+// in a way nobody predicted.
+const DIAG_TOTAL_MS = 12000;
+
 async function authDiagnostics() {
   const lines = [];
   const add = (k, v) => lines.push(k + ": " + v);
@@ -540,31 +547,58 @@ async function authDiagnostics() {
   // session can be kept, so every visit starts from the login form.
   add("Can save a session", storage);
 
-  let session = "no";
-  try {
-    const s = await currentSession();
-    session = s ? "yes, as " + (s.user && s.user.email) : "no";
-  } catch (e) {
-    session = "could not check (" + (e.message || e) + ")";
-  }
-  add("Signed in now", session);
+  // Every step below is time-boxed (2026-11-20, tester T-11). This panel used
+  // to freeze on "Checking…" forever in exactly the situation it exists for:
+  // a connection that STALLS rather than fails. Nothing here resolved, so the
+  // panel never appeared, the button stayed disabled, and the member sat
+  // looking at a frozen screen — with no way to tell us that either.
+  //
+  // A diagnostic that can hang is worse than no diagnostic. Every line now
+  // arrives, and "no answer" is itself one of the most useful answers it can
+  // give: it is the signature of gym wifi behind a sign-in page.
+  // Both network probes START HERE, together. They ask different questions of
+  // different endpoints and neither needs the other's answer — and run in
+  // sequence on a stalled connection they meant waiting out two budgets back
+  // to back, which is ten seconds of "Checking…" for somebody already stuck.
+  // Settled below, in reading order.
+  const timedOut = Symbol("timed out");
+  const probe = (p) => within(p, DIAG_STEP_MS, timedOut).catch((e) => ({ failed: e }));
 
+  const sessionProbe = probe(currentSession().then((v) => ({ v })));
   // Asks ONE question: can this device reach the server at all. Deliberately
   // not a table read — the member tapping this button is signed out, so every
   // table says "permission denied", and a diagnostic that reports a healthy
   // server as broken is worse than none. Any HTTP answer, 401 included, is the
   // server talking. Only a thrown fetch is a real network failure.
-  let server = "no";
-  try {
-    const t0 = Date.now();
-    const res = await fetch(SUPABASE_URL + "/auth/v1/health", {
+  //
+  // timedFetch, not bare fetch: bare fetch has no limit of its own, and this
+  // one request was the likeliest thing to hang the whole panel.
+  const t0 = Date.now();
+  const serverProbe = probe(
+    timedFetch(SUPABASE_URL + "/auth/v1/health", {
       headers: { apikey: SUPABASE_PUBLISHABLE_KEY },
-    });
-    server = "yes (HTTP " + res.status + ", " + (Date.now() - t0) + "ms)";
-  } catch (e) {
-    server = "NO — " + (e.message || e);
-  }
-  add("Server reachable", server);
+      // Timed HERE, at the moment it answers. Measuring after the await would
+      // report how long until we got round to READING it, which on a stalled
+      // session probe is five seconds of someone else's wait.
+    }).then((r) => ({ r, ms: Date.now() - t0 }))
+  );
+
+  const sessionRes = await sessionProbe;
+  add("Signed in now",
+    sessionRes === timedOut
+      ? "NO ANSWER after " + (DIAG_STEP_MS / 1000) + "s — the server could not be asked"
+      : sessionRes.failed
+        ? "could not check (" + (sessionRes.failed.message || sessionRes.failed) + ")"
+        : sessionRes.v ? "yes, as " + (sessionRes.v.user && sessionRes.v.user.email) : "no");
+
+  const serverRes = await serverProbe;
+  add("Server reachable",
+    serverRes === timedOut
+      ? "NO — no answer after " + (DIAG_STEP_MS / 1000) + "s (this is what a wifi "
+        + "sign-in page looks like)"
+      : serverRes.failed
+        ? "NO — " + (serverRes.failed.message || serverRes.failed)
+        : "yes (HTTP " + serverRes.r.status + ", " + serverRes.ms + "ms)");
 
   add("Online", navigator.onLine ? "yes" : "no");
   add("Browser", (navigator.userAgent || "").slice(0, 200));

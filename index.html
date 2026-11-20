@@ -66,6 +66,9 @@
              could not describe its own state to the person holding it. -->
         <button class="btn-ghost" id="trouble-btn">Having trouble?</button>
         <pre class="login-diagnostics" id="login-diagnostics" hidden></pre>
+        <!-- Without this a member has to screenshot the panel, which is what
+             the first trial's diagnosis actually consisted of (tester T-11). -->
+        <button class="btn-ghost" id="diagnostics-copy" hidden>Copy this</button>
 
         <!-- Shown when a member arrives from an invite or reset link. The
              session already exists at that point (detectSessionInUrl); all

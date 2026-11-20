@@ -9069,15 +9069,67 @@ function wireAuthControls() {
       if (!out) return;
       trouble.disabled = true;
       trouble.textContent = "Checking…";
+      let text;
       try {
-        out.textContent = await authDiagnostics();
+        // Belt and braces (2026-11-20, tester T-11). Every step inside
+        // authDiagnostics() is now time-boxed, so this should never fire — but
+        // this is the button a member reaches for when the app is ALREADY
+        // misbehaving, and it has to come back even if something in there
+        // breaks in a way nobody predicted. It used to sit on "Checking…"
+        // forever, on a stalled connection, which is the exact situation it
+        // exists for.
+        const r = await within(authDiagnostics().then((t) => ({ t })), DIAG_TOTAL_MS, null);
+        text = r ? r.t
+          : "The check itself didn't finish within " + (DIAG_TOTAL_MS / 1000)
+            + " seconds. That almost always means this device cannot reach the "
+            + "internet at all.\n\n"
+            + "App version: " + appVersion() + "\n"
+            + "Online: " + (navigator.onLine ? "yes" : "no") + "\n"
+            + "Browser: " + (navigator.userAgent || "").slice(0, 200);
       } catch (e) {
-        out.textContent = "Couldn't run the check: " + (e.message || e);
+        text = "Couldn't run the check: " + (e.message || e);
       }
+      out.textContent = text;
       out.hidden = false;
+      const copy = document.getElementById("diagnostics-copy");
+      if (copy) { copy.hidden = false; copy.textContent = "Copy this"; }
       trouble.disabled = false;
       trouble.textContent = "Having trouble?";
-      logAuthEvent("diagnostics_opened");
+      // The verdict, not the panel: enough to tell whether the device could
+      // reach us, without copying a session email into a log row.
+      logAuthEvent("diagnostics_opened",
+        /Server reachable: yes/.test(text) ? "server reachable"
+          : /no answer|NO ANSWER|didn't finish/.test(text) ? "no answer from server"
+          : "server unreachable");
+    });
+  }
+
+  // Copying beats screenshotting: the panel is deliberately long, and the
+  // first trial's diagnosis consisted of screenshots that cut off the useful
+  // half (tester T-11).
+  const copyBtn = document.getElementById("diagnostics-copy");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", async () => {
+      const out = document.getElementById("login-diagnostics");
+      if (!out) return;
+      try {
+        await navigator.clipboard.writeText(out.textContent);
+        copyBtn.textContent = "Copied";
+      } catch (e) {
+        // No clipboard permission, or not a secure context. Select it instead,
+        // so a long-press copy works — which is what they were doing anyway.
+        try {
+          const range = document.createRange();
+          range.selectNodeContents(out);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          copyBtn.textContent = "Selected — long-press to copy";
+        } catch (e2) {
+          copyBtn.textContent = "Couldn't copy — screenshot it";
+        }
+      }
+      setTimeout(() => { copyBtn.textContent = "Copy this"; }, 4000);
     });
   }
 

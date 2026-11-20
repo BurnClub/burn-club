@@ -2875,6 +2875,52 @@ password?" visible, set-a-password form hidden, address cleaned, and a row in
 `auth_events` — `otp_expired — Email link is invalid or has expired` and
 `server_error — Database error saving new user`.
 
+### The diagnostics panel froze in the one situation it exists for (2026-11-20, tester T-11)
+
+"Having trouble?" is the button a member taps when the app is already
+misbehaving — it is what they send instead of "it doesn't work", and the first
+trial was diagnosed over six days of email precisely because it did not exist
+yet. On a connection that STALLED rather than failed, it sat on "Checking…"
+forever: nothing resolved, the panel never appeared, the button stayed
+disabled, and `diagnostics_opened` was never logged either. So the one screen
+built to describe a broken app was broken by the same thing.
+
+Two unbounded waits. The health check used **bare `fetch`**, not `timedFetch`,
+so it had no limit of its own — the client's 12-second limit is installed on
+the supabase-js client and this request went around it. And `currentSession()`
+can wait on the same stalled token refresh as T-1.
+
+Both are now time-boxed at `DIAG_STEP_MS` (5s), with `DIAG_TOTAL_MS` (12s)
+around the whole thing in the click handler as a backstop. **A diagnostic that
+can hang is worse than no diagnostic**, and "no answer" is one of the most
+useful answers it can give — it is the signature of gym wifi behind a sign-in
+page, which is exactly what the panel now says.
+
+**The two probes run concurrently.** They ask different endpoints different
+questions and neither needs the other's answer; in sequence a stalled
+connection meant waiting out two budgets back to back. That was ten seconds of
+"Checking…" for someone already stuck. Now five.
+
+**A copy button.** The finding also noted there was no way to get the text out
+except a screenshot — and screenshots of this panel cut off the useful half.
+It tries the clipboard, and falls back to selecting the panel so a long-press
+copy works, which is what people were doing anyway.
+
+**Caught while testing, worth remembering.** Once the probes ran concurrently,
+the health check reported `HTTP 200, 5002ms` on a connection where the server
+had in fact answered instantly — because the latency was measured after the
+`await`, which is the time until we got round to READING it, not the time the
+request took. A diagnostic that misreports latency would send us hunting a slow
+server that was never slow. It is now timed at the moment it answers.
+
+**No unit test for this one, deliberately.** What broke is timing against a
+connection that never settles, plus DOM state; the jsc harness has neither, and
+a test with fake timers would pass while the real button hung. Verified in a
+real browser instead, against four connections: stalled (panel at 5.1s, was
+never), clean failure (0.2s), healthy (0.2s, 77ms to the real server), and one
+of each. Button recovers in all four, copy button appears in all four, panel
+fits at 375 wide.
+
 ### The invite form reset itself while the account was still loading (2026-11-19, tester T-17)
 
 The T-2 fix went on the Log In button and not on the set-a-password form,
