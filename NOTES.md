@@ -2875,6 +2875,61 @@ password?" visible, set-a-password form hidden, address cleaned, and a row in
 `auth_events` — `otp_expired — Email link is invalid or has expired` and
 `server_error — Database error saving new user`.
 
+### One unreadable date stopped six testers getting in (2026-11-20, tester T-15)
+
+The finding that killed the October trial. Four `entry_threw` and two
+`return_entry_threw` rows on accounts that were not Chris's, all around v54,
+and the two that carried a detail both read **`key.split is not a function`**.
+Those members had the right password, were signed in, and were handed the
+login form with "You're signed in, but the app couldn't finish loading your
+account." Six sign-ins, two arrivals on Home.
+
+`formatShortDate(key)` did `key.split("-")` on whatever it was given. It is
+called on `completion.date`, `pr.date`, `r.date`, `e.date` — stored records,
+rendered on Home. Render happens inside `enterAsAuthedMember()`, and a throw
+there leaves a signed-in member on the login screen. **One bad date in one
+member's history, and the app never opened again.**
+
+**What the wording rules out.** Reproduced against the old body: a number, a
+Date, an object or a boolean all give exactly `key.split is not a function`.
+`null` and `undefined` give `Cannot read properties of null (reading 'split')`
+— a different message. So the value in those members' data was NOT missing. It
+was a number, a Date, an object or a boolean.
+
+**What nobody has found is what wrote it.** Not the server: every date column
+is `date`-typed, so PostgREST can only return a string. Not any write path
+still in the code — every `logCardioActivity` caller, `recordWeights`,
+`monthsAgo`, the sync row mappers and the v54 diff all check out. The only
+non-string `.date` anywhere is `todayScheduledItems()`'s `date: today`, which
+is never formatted. The tester could not find it either. Most likely a build
+that no longer exists wrote it, and it is still sitting in somebody's
+localStorage.
+
+So this is fixed as a **rule, not a diagnosis**: a date this app cannot read is
+a date it SHOWS badly, never a date that stops it opening. `dateKeyFrom()`
+takes anything and returns `"YYYY-MM-DD"` or null; `formatShortDate`,
+`parseDateKey`, `daysBetween` and the month grouping all go through it. Junk
+now behaves exactly the way a malformed date STRING already behaved — a blank
+label, an Invalid Date, a NaN — instead of throwing. `data.js` had wrapped its
+two equivalents in `String()` since 165d25f; `app.js` never got the same
+treatment.
+
+**A blank beats a plausible lie.** The first version read `12345` as epoch
+milliseconds and rendered "Dec 31" — 1969. That swaps a loud crash for a quiet
+wrong answer and hides the very thing we are hunting. Numbers are now only
+accepted as epoch ms landing between 2000 and 2100; anything else reads blank
+and is reported. The test pins this specifically.
+
+**And it now tells us.** `reportBadDate()` names the type and value, once per
+session, to the console and to `auth_events` as `bad_date`. `throwDetail()`
+appends the top three stack frames to `entry_threw`/`return_entry_threw` —
+four of the trial's six rows carried no detail at all, which is where the hunt
+stalled. Next time the row says which renderer died and on what.
+
+**Still open, and worth saying plainly:** the cause is not found, only
+contained. If a `bad_date` row appears, it will name the value, and that is the
+thread to pull.
+
 ### The T-13 fix made the retry worse than the first try (2026-11-20, tester T-37, T-38)
 
 Two regressions from yesterday's T-13 work, found by the tester on v72. Both

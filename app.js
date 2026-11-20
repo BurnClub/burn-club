@@ -280,8 +280,64 @@ function esc(value) {
     .replace(/'/g, "&#39;");
 }
 
+// Six testers got their password right and the app still would not open, and
+// the two rows that carried a detail both read `key.split is not a function`
+// (tester T-15, builds around v54). The only thing that produces that wording
+// is a date-splitter handed something that is not a string — a number, a Date,
+// an object. One bad date in one member's stored history stopped their whole
+// app loading, every time, with no way back.
+//
+// Nobody has found where the bad value came from: not the server (every date
+// column is `date`-typed, so PostgREST can only return a string), not any
+// write path still in the code. Which means it is in somebody's stored data,
+// put there by a build that no longer exists, and it is still there.
+//
+// So the rule here is now: a date this app cannot read is a date it SHOWS
+// badly, never a date that stops it opening. dateKeyFrom() takes anything and
+// returns "YYYY-MM-DD" or null; every splitter below goes through it, and junk
+// now behaves exactly the way a malformed date STRING already behaved — a
+// blank label, an Invalid Date, a NaN — rather than throwing.
+function dateKeyFrom(value) {
+  if (typeof value === "string") {
+    // Also catches a full ISO timestamp, whose first ten characters are the
+    // local-ish date we want.
+    const m = value.match(/^\d{4}-\d{2}-\d{2}/);
+    return m ? m[0] : null;
+  }
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : dateKey(value);
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const d = new Date(value);
+    const y = isNaN(d.getTime()) ? 0 : d.getFullYear();
+    // Epoch MILLISECONDS, and only for a year this app could possibly mean.
+    // 12345 is a number, not a date: reading it as 1969 would turn a loud
+    // crash into a quiet wrong answer, which is the worse of the two.
+    return (y >= 2000 && y <= 2100) ? dateKey(d) : null;
+  }
+  return null;
+}
+
+// Said once per session, loudly enough to be found and quietly enough not to
+// flood. The first trial had six of these and only two carried any detail at
+// all; next time we should know the value and where it was being shown.
+let BAD_DATE_REPORTED = false;
+function reportBadDate(where, value) {
+  const described = value === null ? "null"
+    : value === undefined ? "undefined"
+    : `${typeof value}: ${String(value).slice(0, 60)}`;
+  console.warn("[date] " + where + " was handed something it cannot read —", described);
+  if (BAD_DATE_REPORTED) return;
+  BAD_DATE_REPORTED = true;
+  try { logAuthEvent("bad_date", where + " <- " + described); } catch (e) {}
+}
+
 function formatShortDate(key) {
-  const [y, m, d] = key.split("-").map(Number);
+  const k = dateKeyFrom(key);
+  // Reported even when it was recovered. Every call site in this app passes a
+  // "YYYY-MM-DD" string; anything else arriving means something upstream is
+  // wrong, and rendering it correctly is not a reason to stay quiet about it.
+  if (!k || typeof key !== "string") reportBadDate("formatShortDate", key);
+  if (!k) return "";
+  const [y, m, d] = k.split("-").map(Number);
   return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
@@ -824,7 +880,7 @@ function notebookLog() {
 
   const byMonth = [];
   older.forEach((r) => {
-    const key = r.date.slice(0, 7);
+    const key = (dateKeyFrom(r.date) || "").slice(0, 7);
     let group = byMonth.find((g) => g.key === key);
     if (!group) {
       const [y, m] = key.split("-").map(Number);
@@ -2544,7 +2600,11 @@ function currentChallenge() {
 // parses as UTC midnight and can roll the day back a date in timezones
 // behind UTC (same class of bug fixed elsewhere via dateKey()).
 function parseDateKey(dateStr) {
-  const [y, m, d] = dateStr.split("-").map(Number);
+  const k = dateKeyFrom(dateStr);
+  // An Invalid Date is what a malformed string already produced here, so
+  // callers see nothing new — only the throw is gone (tester T-15).
+  if (!k) { reportBadDate("parseDateKey", dateStr); return new Date(NaN); }
+  const [y, m, d] = k.split("-").map(Number);
   return new Date(y, m - 1, d);
 }
 
@@ -7903,8 +7963,12 @@ window.addEventListener("storage", (e) => {
 // Whole-day difference between two "YYYY-MM-DD" keys, built from local date
 // parts (not `new Date(string)`, which parses as UTC — see dateKey's own note).
 function daysBetween(startKey, endKey) {
-  const [sy, sm, sd] = startKey.split("-").map(Number);
-  const [ey, em, ed] = endKey.split("-").map(Number);
+  const a = dateKeyFrom(startKey), b = dateKeyFrom(endKey);
+  // NaN is what a malformed string already returned, and it degrades to
+  // "nothing scheduled today" rather than an app that will not open (T-15).
+  if (!a || !b) { reportBadDate("daysBetween", a ? endKey : startKey); return NaN; }
+  const [sy, sm, sd] = a.split("-").map(Number);
+  const [ey, em, ed] = b.split("-").map(Number);
   const start = new Date(sy, sm - 1, sd);
   const end = new Date(ey, em - 1, ed);
   return Math.round((end - start) / 86400000);
@@ -8948,7 +9012,7 @@ async function enterFromSession(how) {
   } catch (e) {
     console.error("[auth] session restored but could not enter:", e);
     const detail = (e && (e.message || e.name)) ? String(e.message || e.name) : "unknown error";
-    logAuthEvent("return_entry_threw", how + ": " + detail);
+    logAuthEvent("return_entry_threw", how + ": " + throwDetail(e));
     const err = document.getElementById("login-error");
     if (err) {
       err.textContent = "You're signed in, but the app couldn't finish loading "
@@ -9230,6 +9294,22 @@ function wireAuthControls() {
 //
 // So: say that sign-in worked, say what broke, and keep it short enough to read
 // back over email. The detail is for us; the first sentence is for them.
+// Where it threw, not just what it said. The first trial logged six of these
+// and four carried no detail at all, so nobody could tell which renderer had
+// died — the hunt for T-15 stalled there. `detail` stays first and short,
+// because the member reads it back over email; the frames are appended for us.
+function throwDetail(e) {
+  const head = (e && (e.message || e.name)) ? String(e.message || e.name) : "unknown error";
+  let frames = "";
+  try {
+    frames = String((e && e.stack) || "")
+      .split("\n").slice(1, 4)
+      .map((l) => l.trim().replace(/^at /, "").replace(/\(?https?:\/\/[^)]*\//g, ""))
+      .filter(Boolean).join(" < ");
+  } catch (e2) { frames = ""; }
+  return frames ? head + " | " + frames : head;
+}
+
 async function enterAfterAuth(err) {
   try {
     await enterAsAuthedMember();
@@ -9238,7 +9318,7 @@ async function enterAfterAuth(err) {
     const detail = (e && (e.message || e.name)) ? String(e.message || e.name) : "unknown error";
     // The failure that cost the first trial three days. It is now on screen
     // for the member AND in a table Chris can read without asking anyone.
-    logAuthEvent("entry_threw", detail);
+    logAuthEvent("entry_threw", throwDetail(e));
     err.textContent = "You're signed in, but the app couldn't finish loading your "
       + "account. Send your coach this message: " + detail;
     err.hidden = false;
