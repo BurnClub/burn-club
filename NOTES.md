@@ -3863,12 +3863,14 @@ restored on load, and `saveGroup` / `deleteGroup` / `saveChallenge` /
 ### Content
 
 - [ ] **Assign programs to the real accounts.** Partly stale as of 2026-10-12:
-      chris@worthitcandy.com now has `program_id = burn-club` (confirmed on the
-      live database), so that one is done. Re-check the other two.
-      Previously: chris@worthitcandy.com,
-      kelly@kellyyager.com and k_yager@yahoo.com all had `program_id` null,
-      so they hit the "not on a program yet" screen. Set them in SQL or through
-      admin once the members table is editable there.
+      Chris's account now has `program_id = burn-club` (confirmed on the live
+      database), so that one is done. Re-check the other two. Previously all
+      three real accounts had `program_id` null, so they hit the "not on a
+      program yet" screen. Set them in SQL or through admin once the members
+      table is editable there.
+      (Addresses removed 2026-11-20, tester T-10: this repo is public and one
+      of them was a personal mailbox. Look them up in `members` or in the
+      spreadsheet — they do not belong in a tracked file.)
 - [ ] **Make Chris's account `role = 'admin'`.** All three real accounts are
       `member`, which is the right default — but nothing can currently pass
       `is_staff()`, so no one can read another member's rows or write content
