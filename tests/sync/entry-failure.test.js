@@ -28,6 +28,37 @@ eval(lift("isOfflineError"));
 eval(lift("isAccountProblem"));
 eval(lift("entryDecision"));
 eval(lift("passwordCheckError"));
+eval(lift("usableCachedProfile"));
+
+// ---------------- what counts as something to open on ----------------
+// The amplifier that made the T-13 fix worse than the bug on a new phone
+// (tester T-37): a first open whose program lookup failed wrote a profile
+// with no program, that entry was truthy, so the NEXT open thought the device
+// had something saved — took the short wait instead of waiting properly, timed
+// out, and dead-ended on the copy it had just written. The retry was strictly
+// worse than the first attempt and stayed worse, on the one path every new
+// invitee walks.
+var MEMBER_ON_PROGRAM = { id: "u1", program_id: "p1" };
+var MEMBER_UNASSIGNED = { id: "u2", program_id: null };
+var PROGRAM = { id: "p1", schedule_type: "structured" };
+
+check(!usableCachedProfile({ member: MEMBER_ON_PROGRAM, program: null }),
+  "a copy with no program is NOT something to open on");
+check(!!usableCachedProfile({ member: MEMBER_ON_PROGRAM, program: PROGRAM }),
+  "a copy with the program IS");
+// A member genuinely not on a program yet is an ordinary state, not a broken
+// copy — showUnassignedScreen("no-program") handles them, and refusing their
+// cache would send them back to the network for nothing.
+check(!!usableCachedProfile({ member: MEMBER_UNASSIGNED, program: null }),
+  "a member with no program ASSIGNED still counts");
+check(!usableCachedProfile(null) && !usableCachedProfile({}) && !usableCachedProfile({ member: null }),
+  "nothing, and a copy with no member, count as nothing");
+
+// Stated once, because this is the whole point: an unusable copy must be
+// treated as NO copy, never as a usable one. "No copy" still waits for the
+// real answer; an unusable copy short-circuits that wait and then fails.
+check(usableCachedProfile({ member: MEMBER_ON_PROGRAM, program: null }) === null,
+  "an unusable copy returns null, so callers take the no-copy path");
 
 // ---------------- who gets signed out ----------------
 var HICCUP = { kind: "server", error: "Couldn't load your account just now." };

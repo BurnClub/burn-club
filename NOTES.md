@@ -2875,6 +2875,63 @@ password?" visible, set-a-password form hidden, address cleaned, and a row in
 `auth_events` — `otp_expired — Email link is invalid or has expired` and
 `server_error — Database error saving new user`.
 
+### The T-13 fix made the retry worse than the first try (2026-11-20, tester T-37, T-38)
+
+Two regressions from yesterday's T-13 work, found by the tester on v72. Both
+are the same mistake in different clothes: **a time limit added without a guard
+on what happens afterwards.**
+
+**T-37 — the amplifier.** On a phone that has never held this member's
+programme — every new invitee's first sign-in — a failed programme lookup wrote
+`{ member, program: null }` to the auth cache. That entry is TRUTHY. So the
+next open believed this device had a saved profile, took the six-second path
+instead of the full wait, timed out, entered on that same programme-less copy,
+and dead-ended on the `program-unavailable` screen I had just added. **The
+retry was strictly worse than the first attempt, and stayed worse.** The tester
+measured it on Jordan's real account: 8.6s and in, then 6.0s and dead-ended
+three times running, same connection, server answering correctly throughout.
+
+I did flag `program-unavailable` as "a new way to be stopped at the door". What
+I missed is that a failed open MANUFACTURES the condition for the next one.
+
+`usableCachedProfile()` is the fix, and it is a rule rather than a patch: **a
+cached profile that cannot open the app is not a saved profile.** Member
+present, and either no `program_id` or a programme to go with it. Nothing is
+deleted — the entry stays, it just stops counting as something to open on, so
+the next attempt takes the no-copy path and waits for the real answer. Applied
+at all three places that ask "do we have something saved": the no-session
+branch, the returning-visit branch, and `loadAuthMember()`'s offline branch.
+
+**T-38 — the late write.** `within()` stops WAITING for a slow answer; it does
+not cancel it. So a profile lookup abandoned at six seconds is still in flight,
+and when it landed it wrote the member straight back onto the phone — even if
+they had signed out meanwhile, which then let the next offline open walk into
+that member's app with no password.
+
+`sync.js` has guarded this exact hazard for the data pull since phase 4
+(`abandonHydrate()` / `HYDRATE_GEN`). I gave the profile lookup the timeout and
+not the guard. `AUTH_GEN` / `abandonAuthLoad()` is the same pattern:
+`loadAuthMember()` captures the generation on entry, holds `AUTH_MEMBER`,
+`AUTH_PROGRAM`, `OFFLINE_ENTRY` and the cache write to a single commit point at
+the end, and writes nothing at all if the generation moved. `signOut()` bumps
+it first, before it clears anything.
+
+**Worth keeping in mind for anything else that gets a timeout**: the pattern in
+this codebase is a limit AND a guard on the late answer. Two of the three
+places that have a limit now have the guard; if a third appears, it needs both.
+
+Verified against the real `loadAuthMember`/`cacheAuthMember`, and both fixes
+mutation-checked — with them removed, the programme-less copy counts as a saved
+profile again and the profile is written back after sign-out. T-13's own cases
+still hold: a failed lookup keeps both the programme and the saved copy.
+
+**A testing note worth remembering.** The first mutation run reported both
+fixes still working, which was false: the server had the mutated file (hashes
+matched) but the PAGE was running the browser's cached copy. Checking the
+server is not checking the page. The way through was a throwaway `__probe.html`
+with `?cb=` on each script tag, plus asserting inside the page that the old
+code really was loaded before trusting a single result.
+
 ### The diagnostics panel froze in the one situation it exists for (2026-11-20, tester T-11)
 
 "Having trouble?" is the button a member taps when the app is already

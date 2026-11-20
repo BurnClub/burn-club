@@ -138,6 +138,29 @@ function loadCachedAuthMember(userId) {
   } catch (e) { return null; }
 }
 
+// A cached profile is only worth having if it can actually OPEN the app
+// (2026-11-20, tester T-37). This is the amplifier that made T-13's fix worse
+// than the bug on a new phone:
+//
+//   first open, program lookup fails -> cacheAuthMember(member, null) writes a
+//   profile with no program -> that entry is TRUTHY, so the next open thinks
+//   this device has something saved -> it takes the 6-second path instead of
+//   waiting properly -> it times out and enters from that same program-less
+//   copy -> dead end on the "program unavailable" screen.
+//
+// So the retry was strictly worse than the first attempt, and stayed worse,
+// on the one path every new invitee walks. Measured: 8.6s and in, then 6.0s
+// and dead-ended three times running on the identical connection.
+//
+// Nothing is deleted — the entry stays, it just no longer counts as something
+// to open on. An unusable copy is worse than none, because "none" still waits
+// for the real answer.
+function usableCachedProfile(cached) {
+  if (!cached || !cached.member) return null;
+  if (cached.member.program_id && !cached.program) return null;
+  return cached;
+}
+
 function clearAuthCache() {
   try { localStorage.removeItem(AUTH_CACHE_KEY); } catch (e) {}
 }
@@ -196,6 +219,18 @@ function isOfflineError(error) {
 
 let AUTH_MEMBER = null;
 let AUTH_PROGRAM = null;
+
+// within() stops WAITING for a slow answer; it does not cancel it. So a
+// profile lookup abandoned at 6 seconds is still in flight, and when it lands
+// it used to write the member straight back onto the phone — even if they had
+// signed out in the meantime, which then let the next offline open walk into
+// that member's app with no password (2026-11-20, tester T-38).
+//
+// sync.js already guards exactly this hazard for the data pull with
+// abandonHydrate()/HYDRATE_GEN. The profile lookup was given the timeout and
+// not the guard. This is that guard.
+let AUTH_GEN = 0;
+function abandonAuthLoad() { AUTH_GEN++; }
 
 // Who this device is signed in as, read straight from where supabase-js keeps
 // the session, without asking the network anything (2026-11-17, tester T-1).
@@ -259,6 +294,9 @@ async function signIn(email, password) {
 
 async function signOut() {
   SIGNING_OUT = true;
+  // First, before anything is cleared: any profile lookup still in flight must
+  // not be allowed to write the member back afterwards (tester T-38).
+  abandonAuthLoad();
   logAuthEvent("signed_out", "member chose to sign out");
   clearAuthCache();
   AUTH_MEMBER = null;
@@ -275,6 +313,9 @@ async function signOut() {
 // forget here — the database will not serve anyone else's.
 async function loadAuthMember(user) {
   if (!SB || !user) return { error: "Not signed in." };
+  // Everything below commits only if this is still the current attempt.
+  const gen = AUTH_GEN;
+  const stale = () => gen !== AUTH_GEN;
   let data, error;
   try {
     ({ data, error } = await SB.from("members").select("*").eq("id", user.id).maybeSingle());
@@ -286,7 +327,11 @@ async function loadAuthMember(user) {
     // on this device, and refusing to show it because a lookup failed is the
     // worst possible answer to bad signal.
     if (isOfflineError(error)) {
-      const cached = loadCachedAuthMember(user.id);
+      if (stale()) return { abandoned: true, error: "Signed out before that could finish." };
+      // usableCachedProfile, not loadCachedAuthMember: a copy with no program
+      // cannot open the app, and entering on it only reaches a dead end
+      // (tester T-37).
+      const cached = usableCachedProfile(loadCachedAuthMember(user.id));
       if (cached) {
         AUTH_MEMBER = cached.member;
         AUTH_PROGRAM = cached.program || null;
@@ -316,7 +361,7 @@ async function loadAuthMember(user) {
     // impossible; saying so plainly beats rendering an app with no member.
     return { kind: "account", error: "Your account isn't finished setting up. Tell your coach." };
   }
-  AUTH_MEMBER = data;
+
 
   // The member's program comes with them. scheduleType decides whether the app
   // shows Workouts or Calendar, so taking it from the seeded demo profile
@@ -329,6 +374,7 @@ async function loadAuthMember(user) {
   // between this member and a blank app the next time the signal is bad
   // (2026-11-19, tester T-13).
   let programFailed = false;
+  let program = null;
   if (data.program_id) {
     let prog = null, progError = null;
     try {
@@ -339,21 +385,27 @@ async function loadAuthMember(user) {
       progError = e;              // supabase-js throws rather than returns on some network faults
     }
     if (prog) {
-      AUTH_PROGRAM = prog;
+      program = prog;
     } else if (progError) {
       // Failed, not absent. Keep whatever this device already had.
       const cached = loadCachedAuthMember(user.id);
-      AUTH_PROGRAM = (cached && cached.program) || null;
-      programFailed = !AUTH_PROGRAM;
+      program = (cached && cached.program) || null;
+      programFailed = !program;
       console.warn("[auth] program lookup failed:", progError.message || progError);
     } else {
       // Succeeded and the row is genuinely gone — a coach deleted it. Caching
       // null here is correct; it is the failure case above that must not.
-      AUTH_PROGRAM = null;
+      program = null;
     }
   }
+  // The single commit point. Held to the end so an attempt that was abandoned
+  // while it was in flight writes nothing at all — not the globals, and not
+  // the cache on the member's phone (tester T-38).
+  if (stale()) return { abandoned: true, error: "Signed out before that could finish." };
+  AUTH_MEMBER = data;
+  AUTH_PROGRAM = program;
   OFFLINE_ENTRY = false;
-  cacheAuthMember(data, AUTH_PROGRAM);
+  cacheAuthMember(data, program);
   return { member: data, programUnavailable: programFailed };
 }
 

@@ -8850,8 +8850,8 @@ async function routeOnLoad() {
     // better witness: it is still there exactly when the member is signed in
     // and the server simply could not be asked.
     const uid = storedSessionUserId();
-    const cached = uid ? loadCachedAuthMember(uid)
-      : (navigator.onLine === false ? loadCachedAuthMember() : null);
+    const cached = usableCachedProfile(uid ? loadCachedAuthMember(uid)
+      : (navigator.onLine === false ? loadCachedAuthMember() : null));
     if (!cached) {
       // Signed in, unreachable, and nothing saved to open: the login form is
       // all there is to show, but it must not be a silent one.
@@ -8876,7 +8876,11 @@ async function routeOnLoad() {
 
   // Same limit on the profile lookup, when there is a saved profile to fall
   // back on. Without one there is nothing to open, so it gets the full wait.
-  const savedProfile = loadCachedAuthMember(session.user.id);
+  // usableCachedProfile, not loadCachedAuthMember: a copy with no program is
+  // not something to open on, and treating it as one cost this path twice over
+  // — it took the short wait AND then dead-ended on what it found
+  // (2026-11-20, tester T-37).
+  const savedProfile = usableCachedProfile(loadCachedAuthMember(session.user.id));
   let res = savedProfile
     ? await within(loadAuthMember(session.user), ENTRY_WAIT_MS, null)
     : await loadAuthMember(session.user);
@@ -8885,6 +8889,11 @@ async function routeOnLoad() {
     AUTH_PROGRAM = savedProfile.program || null;
     OFFLINE_ENTRY = true;
     return await enterFromSession("cache_profile_slow");
+  }
+  if (res.abandoned) {
+    // Signed out while this was in flight. Nothing to show and nothing to
+    // enter: whatever triggered the sign-out owns the screen now (T-38).
+    return false;
   }
   if (res.error) {
     // That comment was right and the line under it was wrong (2026-11-19,
