@@ -9132,14 +9132,27 @@ function wireAuthControls() {
     btn.disabled = true;
     btn.textContent = "Saving…";
     const res = await setPassword(value);
-    btn.disabled = false;
-    btn.textContent = "Save and continue";
     if (res.error) {
+      btn.disabled = false;
+      btn.textContent = "Save and continue";
       err.textContent = res.error;
       err.hidden = false;
       return;
     }
-    await enterAfterAuth(err);
+    // The button used to be re-enabled and relabelled HERE, before the account
+    // had loaded. This form is every invitee's first screen AND always a new
+    // device, so the first pull can take up to 30 seconds — during which the
+    // form sat there looking untouched and tappable. A second tap sent the
+    // same password again, and Supabase refuses a password identical to the
+    // current one, so they were shown an error for a password that had in fact
+    // been saved. Same fix as the Log In button got for T-2 (tester T-17).
+    btn.textContent = "Loading your account…";
+    try {
+      await enterAfterAuth(err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Save and continue";
+    }
   });
 }
 

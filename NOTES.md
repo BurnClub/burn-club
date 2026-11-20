@@ -2875,6 +2875,47 @@ password?" visible, set-a-password form hidden, address cleaned, and a row in
 `auth_events` — `otp_expired — Email link is invalid or has expired` and
 `server_error — Database error saving new user`.
 
+### The invite form reset itself while the account was still loading (2026-11-19, tester T-17)
+
+The T-2 fix went on the Log In button and not on the set-a-password form,
+which is every invitee's FIRST screen and always a new device — so it is the
+one place the first pull can take up to 30 seconds. The button went back to
+"Save and continue", enabled, as soon as the password saved and before the
+account had loaded. From where a new tester stands that is a form that has
+quietly reset itself, which is indistinguishable from a password that did not
+take.
+
+**And a second tap made it worse.** It sent the same password again, and
+Supabase refuses a new password identical to the current one — so the member
+was shown an error for a password that had in fact been saved, on the only
+screen standing between them and the app.
+
+Same shape as the Log In fix: the button now reads "Loading your account…" and
+stays disabled until `enterAfterAuth()` returns, in a `finally` so a throw
+still puts it back. Seven rapid taps on a slow stub now produce **one**
+submission; the old ordering on the identical stub produced seven, with the
+button reading "Save and continue" and tappable throughout.
+
+**The same-password error is now a way IN, not an error.** If `updateUser`
+says the new password matches the current one, the password they typed is
+already theirs, so `setPassword()` loads the member and continues instead of
+refusing them. That is the exact state a double tap used to leave them in.
+
+**And the wording is this form's own.** It was using `friendlyAuthError()`,
+whose fallback is "Couldn't sign you in. Try again, and tell your coach if it
+keeps happening." — a sentence about signing in, on a form that does not sign
+anyone in, shown to someone who has not got into the app yet.
+`setPasswordError()` covers short, breached, rate-limited, offline and spent-
+link, and its catch-all says the password was not saved.
+
+One regex was too greedy on the first pass and is worth remembering: matching
+a bare `invalid` for the expired-link case turned "Invalid password format"
+into "This link has expired", which would send a member to request a new invite
+over a typo. It now matches `expired|jwt|token|session`, and
+`tests/sync/set-password-errors.test.js` pins that specific trap along with
+"no message on this form talks about signing in". Reverting the fallback to the
+old wording fails 2 of its 11 checks.
+
 ### A server hiccup could sign a member out, or hand them somebody else's program (2026-11-19, tester T-13)
 
 Three bugs on the entry path, all the same mistake: a failure to ASK the server

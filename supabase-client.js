@@ -609,10 +609,51 @@ async function changePassword(currentPassword, newPassword) {
   return {};
 }
 
+// Wording for the set-a-password form, which is every invitee's FIRST screen
+// (2026-11-19, tester T-17). friendlyAuthError() was being used here and its
+// fallback is "Couldn't sign you in" — which is not what this form does, and
+// tells a new member the one thing guaranteed to make them give up.
+function setPasswordError(error) {
+  const msg = String((error && error.message) || "");
+  const status = Number(error && error.status) || 0;
+  if (/at least|too short|minimum|length/i.test(msg)) return "Use at least 8 characters.";
+  if (/weak|pwned|compromised|common/i.test(msg)) {
+    return "That password has turned up in a data breach — pick a different one.";
+  }
+  if (status === 429 || /rate limit|too many|for security purposes/i.test(msg)) {
+    return "Too many attempts. Wait a minute, then try again.";
+  }
+  if (isOfflineError(error)) {
+    return "Couldn't reach the server to save it. Check your connection and try again.";
+  }
+  // Deliberately NOT matching a bare "invalid": updateUser says that about
+  // passwords too, and "this link has expired" would be a confusing answer to
+  // "invalid password format".
+  if (/expired|jwt|token|session/i.test(msg)) {
+    return "This link has expired. Tap \u201cForgot your password?\u201d on the login screen to send yourself a fresh one.";
+  }
+  return "Couldn't save that password just now. Try again, or ask your coach for a new invite.";
+}
+
 async function setPassword(password) {
   if (!SB) return { error: "Can't reach the server. Check your connection." };
   const { data, error } = await SB.auth.updateUser({ password });
-  if (error) return { error: friendlyAuthError(error) };
+  if (error) {
+    // "New password should be different from the old password" means the
+    // password they just typed IS already their password. That is a reason to
+    // let them in, not an error to show them — and it is exactly what a second
+    // tap on a slow connection used to produce, so the member was told their
+    // password had failed when it had in fact been saved (tester T-17).
+    if (/different from the old password|should be different|same_password/i.test(String(error.message || ""))) {
+      let who = null;
+      try { who = (await SB.auth.getUser()).data.user; } catch (e) { who = null; }
+      if (who) {
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+        return await loadAuthMember(who);
+      }
+    }
+    return { error: setPasswordError(error) };
+  }
   // Clear the tokens out of the address bar so the link cannot be replayed
   // from history or shared by accident.
   history.replaceState(null, "", window.location.pathname + window.location.search);
