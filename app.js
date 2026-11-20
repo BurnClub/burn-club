@@ -299,10 +299,15 @@ function esc(value) {
 // blank label, an Invalid Date, a NaN — rather than throwing.
 function dateKeyFrom(value) {
   if (typeof value === "string") {
-    // Also catches a full ISO timestamp, whose first ten characters are the
-    // local-ish date we want.
-    const m = value.match(/^\d{4}-\d{2}-\d{2}/);
-    return m ? m[0] : null;
+    // 1-or-2 digit month and day, because "2026-10-5" parsed perfectly well
+    // before this function existed and silently became NaN after it — which
+    // on Home reads as "Week NaN · Day NaN" and "Nothing scheduled today",
+    // with the member fully inside the app and no error anywhere (tester
+    // T-48). Hardening must not narrow what the app already accepted.
+    // Also catches a full ISO timestamp, whose leading date is what we want.
+    const m = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?!\d)/);
+    if (!m) return null;
+    return m[1] + "-" + m[2].padStart(2, "0") + "-" + m[3].padStart(2, "0");
   }
   if (value instanceof Date) return isNaN(value.getTime()) ? null : dateKey(value);
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -8949,6 +8954,19 @@ async function routeOnLoad() {
     ? await within(loadAuthMember(session.user), ENTRY_WAIT_MS, null)
     : await loadAuthMember(session.user);
   if (!res) {
+    // The lookup is STILL RUNNING — within() stops waiting, it does not
+    // cancel. Abandoning it here is the whole point of the guard added for
+    // T-38, and it was not wired to the one timeout it was written for
+    // (2026-11-20, tester T-47). Without this the late answer reaches its
+    // commit point minutes later and writes over the cache we are about to
+    // open on: if its program lookup came back empty, that cache becomes
+    // program-less, T-37's rule then refuses it, and the NEXT open with no
+    // signal says the device has nothing saved. The open that does the damage
+    // looks perfectly successful.
+    //
+    // sync.js has called abandonHydrate() at exactly this point since phase 4.
+    // Same situation, same answer.
+    abandonAuthLoad();
     AUTH_MEMBER = savedProfile.member;
     AUTH_PROGRAM = savedProfile.program || null;
     OFFLINE_ENTRY = true;

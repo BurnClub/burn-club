@@ -76,6 +76,17 @@ check(REPORTED.length === 0, "ordinary dates say nothing");
 
 // ---- the normaliser itself ----
 check(dateKeyFrom("2026-11-04") === "2026-11-04", "a date key passes through");
+
+// Hardening must not NARROW what the app already accepted (tester T-48). This
+// shape parsed fine before dateKeyFrom() existed; when it stopped, Home read
+// "Week NaN - Day NaN" with the member fully inside the app and no error
+// anywhere, which is the worst way for a date to be wrong.
+check(dateKeyFrom("2026-10-5") === "2026-10-05", "a single-digit day is padded, not rejected");
+check(dateKeyFrom("2026-1-05") === "2026-01-05", "and so is a single-digit month");
+check(dateKeyFrom("2026-1-5") === "2026-01-05", "and both at once");
+check(formatShortDate("2026-10-5") === "Oct 5", "so it still reads correctly on screen");
+check(dateKeyFrom("2026-105-01") === null, "but a run-on number is still junk");
+check(dateKeyFrom("2026-10-055") === null, "and so is a three-digit day");
 check(dateKeyFrom("2026-11-04T09:30:00Z") === "2026-11-04", "a timestamp is trimmed to its date");
 check(dateKeyFrom(12345) === null && dateKeyFrom({}) === null && dateKeyFrom(null) === null,
   "junk normalises to null rather than to a plausible-looking lie");

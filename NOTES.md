@@ -2875,6 +2875,56 @@ password?" visible, set-a-password form hidden, address cleaned, and a row in
 `auth_events` — `otp_expired — Email link is invalid or has expired` and
 `server_error — Database error saving new user`.
 
+### The guard I added for T-38 was never armed by the timeout it was for (2026-11-20, tester T-47, T-48)
+
+**T-47 is the third accumulation bug, and it is the one I was looking for in
+the wrong place.** `abandonAuthLoad()` had exactly one caller: `signOut()`. The
+six-second entry timeout at `routeOnLoad()` — the precise situation the guard
+was written for — never called it.
+
+`sync.js` has called `abandonHydrate()` at exactly that point since phase 4. I
+modelled `AUTH_GEN` on it, copied the counter and the commit point, and did not
+copy the one line that arms it.
+
+So: the profile lookup times out at 6s, the member enters on their saved copy,
+and the lookup keeps running. When it lands it reaches its commit point and
+writes `cacheAuthMember()` over the copy they just opened on. If its program
+lookup came back empty, that cache becomes program-less — and T-37's new rule
+then refuses it, so the NEXT open with no signal says the device has nothing
+saved. **The open that does the damage looks perfectly successful. The failure
+arrives on a different day, as a different message, on a different screen.**
+
+Three changes had to line up: T-13 made the damaging open look fine, T-38 left
+the guard unarmed, T-37 turned the result into a lockout. None of them alone
+does this.
+
+Reproduced with the guard removed — entry at 6.0s with the programme and cache
+intact, then after the late answer: `AUTH_PROGRAM` null, `OFFLINE_ENTRY` flipped
+to false, programme gone from the cache, next offline open "nothing saved to
+open yet". With the guard: all four unchanged.
+
+**The trigger is narrow and I am not claiming it is happening.** It needs the
+programs lookup to return no row AND no error, and `members.program_id
+references programs(id)` stops a programme being deleted while anyone is on it.
+The realistic route is RLS: a policy that hides the row returns zero rows, not
+an error, which is exactly this shape. The mechanism is certain; the trigger is
+one changed policy away.
+
+**T-48 — hardening must not narrow what the app already accepted.** My
+`dateKeyFrom()` regex demanded two digits, so `"2026-10-5"` — which parsed
+perfectly well before that function existed — became null, then NaN, and Home
+rendered "Week NaN · Day NaN" with the member fully inside the app and no error
+anywhere. The gate meant to catch a bad start date only checks for a MISSING
+one. Not reachable from the server today (every date column is `date`-typed and
+every constructed string uses `padStart`), but it is a tolerance reduction in
+the one function where being wrong is invisible, sitting on the same path as
+the T-15 value nobody has found. Now 1-or-2 digits, padded.
+
+**The pattern worth naming**, since this is the third time: in this codebase a
+time limit comes with a guard on the late answer, AND the guard has to be armed
+where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
+lookup now has both. Anything else that gets a `within()` needs both.
+
 ### One unreadable date stopped six testers getting in (2026-11-20, tester T-15)
 
 The finding that killed the October trial. Four `entry_threw` and two
