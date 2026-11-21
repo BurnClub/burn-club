@@ -2925,6 +2925,61 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Five of six sets counted as nothing and was deleted without a word (2026-11-20, tester T-54)
+
+A member does five of the six sets of the first block — or three of four
+rounds of a superset — and is interrupted: a child, a phone call, the end of
+their gym slot. Two hours later they open the app. **No banner, no prompt, no
+toast, no mention of a workout at all.** Everything they logged, including any
+weights typed on a "Log your weights" screen, is gone.
+
+The decision to drop a session with nothing behind it is right, and it is not
+what changed. The comment above the line — *"Anything with real work behind it
+is worth keeping; anything else just goes"* — is a written decision. What
+nobody wrote down is the **consequence of how "real work" was measured**: in
+whole blocks. A Fit & Functional block is six sets, so five-sixths of a
+32-minute workout crossed no block boundary and counted as zero.
+
+`hasLoggedWork(rec)` replaces that test. The subtlety is that `setsChecked` is
+rebuilt for each phase, so it cannot be summed over a session — `index` is what
+carries the history, and everything else (typed per-set weights, session
+weights, AMRAP rounds) is work that leaves a trace while the member is still
+on phase one. Erring towards keeping is deliberate: a wrong "keep" costs one
+prompt the member taps Discard on, a wrong "drop" costs them their workout.
+
+**Both ends had to move together.** `maybeOfferResume()` dropped the record
+and `renderResumeBanner()` hid itself on the same `blocksDone < 1` test. Change
+one and the banner offers a session the resume path has already deleted, or
+hides one it is about to ask about.
+
+**The duration was a second, quieter loss.** `logPartialCompletion()` pro-rates
+on `blocksDone / blocks.length`, which is zero below one block, so a member's
+25 minutes of sets would have been written into their own history as **"1
+min"** — the fix for a silent data loss would have produced a visible lie
+instead. Below one block it now pro-rates on the phase queue. Measured in the
+app: one of six phases of a 26-minute workout logs **4 min**, not 1; a whole
+block still logs 9, unchanged. A third caller — the banner's own "Log as
+partial" button — needed the phase queue passing through too, and was easy to
+miss.
+
+Verified in the app, demo mode, with the record's `lastSeenAt` rewound three
+hours: partway through block one with weights typed now shows the banner
+("You were partway through the first block, then left.") and the prompt, and
+the record survives; a session with genuinely nothing in it is still deleted
+silently with no prompt; the typed weights come through onto the logged
+partial.
+
+`tests/sync/partial-workout-kept.test.js`, 28 checks, mutation-proved four
+ways.
+
+**A test-writing note worth keeping.** The first draft reproduced the duration
+arithmetic inside the test instead of calling the shipped function, so
+reverting the fix in `app.js` failed **nothing** — the mutation run caught it,
+not me reading it. The checks now call the real `logPartialCompletion` with a
+stubbed `logCompletion`. Third time today that a check turned out to be
+satisfiable by something other than the thing it was meant to check (the
+deploy grep, the `indexOf("try")` comment, this).
+
 ### The log was refused in exactly the states it exists to record (2026-11-20, tester T-53)
 
 `logAuthEvent()` wrote through `SB`, the signed-in client, which attaches the

@@ -4111,6 +4111,35 @@ function clearInProgress() {
   renderResumeBanner();
 }
 
+// Did the member actually DO anything in this session (2026-11-20, tester
+// T-54)?
+//
+// The resume path used to answer this with "did they finish a whole block",
+// and threw the record away otherwise — silently, two hours later, with no
+// banner, no prompt and no mention. The decision to drop sessions with
+// nothing behind them is right. The MEASUREMENT was wrong: a Fit & Functional
+// block is six sets, so five-sixths of a 32-minute workout counted as nothing
+// and was deleted on sight, taking any weights typed on the way with it.
+//
+// setsChecked is per-phase — it is rebuilt for each phase — so it cannot be
+// summed over the session. index is what carries the history: past the first
+// phase, something happened. Everything else here is work that leaves a trace
+// even when the member is still on phase one.
+//
+// Erring towards keeping is deliberate: the cost of a wrong "keep" is one
+// prompt the member taps Discard on, and the cost of a wrong "drop" is their
+// workout.
+function hasLoggedWork(rec) {
+  if (!rec) return false;
+  if ((rec.index || 0) > 0) return true;
+  if (Array.isArray(rec.setsChecked) && rec.setsChecked.some(Boolean)) return true;
+  const any = (o) => !!o && Object.keys(o).length > 0;
+  if (any(rec.setWeights) || any(rec.sessionWeights)) return true;
+  if (rec.amrapRoundsByBlock && Object.keys(rec.amrapRoundsByBlock)
+      .some((k) => rec.amrapRoundsByBlock[k])) return true;
+  return false;
+}
+
 // How many whole blocks were finished before the phase they stopped on.
 // Phases carry their own blockIndex, so the block they're partway through is
 // simply the count of the ones behind it.
@@ -4123,13 +4152,21 @@ function blocksCompletedAt(phases, index) {
 // member who got two-thirds through and never came back still has it on their
 // record and their coach still sees it. Reuses logCompletion so the entry is
 // shaped like any other and reaches the same stats.
-function logPartialCompletion(circuit, rec, blocksDone) {
+function logPartialCompletion(circuit, rec, blocksDone, phases) {
+  // Pro-rated from the work completed rather than wall time — they were away
+  // for hours, so the elapsed clock is meaningless here.
+  //
+  // Blocks are the honest unit once at least one is finished. Below that the
+  // block count is zero, which would write a member's 25 minutes of sets into
+  // their history as "1 min" (tester T-54), so the phase queue — every set,
+  // round and rest — is what is left to measure with.
+  const fraction = blocksDone >= 1
+    ? blocksDone / circuit.blocks.length
+    : (phases && phases.length ? (rec.index || 0) / phases.length : 0);
   const partial = {
     ...circuit,
     title: `${circuit.title} (partial)`,
-    // Pro-rated from the blocks completed rather than wall time — they were
-    // away for hours, so the elapsed clock is meaningless here.
-    meta: `${Math.max(1, Math.round((parseInt(circuit.meta, 10) || 20) * blocksDone / circuit.blocks.length))} min`,
+    meta: `${Math.max(1, Math.round((parseInt(circuit.meta, 10) || 20) * fraction))} min`,
   };
   return logCompletion(partial, rec.sessionWeights || {}, rec.setWeights || {});
 }
@@ -4174,15 +4211,20 @@ function maybeOfferResume() {
   }
 
   // Past the window it isn't the same session any more. Anything with real
-  // work behind it is worth keeping; anything else just goes.
-  if (blocksDone < 1) { clearInProgress(); return false; }
+  // work behind it is worth keeping; anything else just goes — and "real
+  // work" is whether they logged anything, not whether they crossed a block
+  // boundary (tester T-54). Only a session with nothing in it at all is
+  // dropped without asking, because there is nothing to ask about.
+  if (!hasLoggedWork(rec) && blocksDone < 1) { clearInProgress(); return false; }
   showResumeOverlay({
     title: "Unfinished workout",
-    body: `You finished ${blocksDone} of ${circuit.blocks.length} blocks of ${circuit.title} earlier, then left. Want it logged as a partial workout?`,
+    body: blocksDone >= 1
+      ? `You finished ${blocksDone} of ${circuit.blocks.length} blocks of ${circuit.title} earlier, then left. Want it logged as a partial workout?`
+      : `You were partway through the first block of ${circuit.title} earlier, then left. Want what you logged kept as a partial workout?`,
     primary: "Log as partial",
     secondary: "Discard",
     onPrimary: () => {
-      logPartialCompletion(circuit, rec, blocksDone);
+      logPartialCompletion(circuit, rec, blocksDone, phases);
       clearInProgress();
       init();
       showTab("tab-home");
@@ -4234,9 +4276,12 @@ function renderResumeBanner() {
   const left = RESUME_WINDOW_MS - (Date.now() - (rec.lastSeenAt || 0));
   const onBlock = Math.min(blocksDone + 1, circuit.blocks.length);
 
-  // Past the window with nothing finished there is no decision to put to the
-  // member — the resume path drops these silently, and so does this.
-  if (left <= 0 && blocksDone < 1) {
+  // Past the window with nothing logged at all there is no decision to put to
+  // the member — the resume path drops these silently, and so does this. The
+  // two conditions have to agree, or the banner offers a session the resume
+  // path has already deleted, or hides one it is about to ask about
+  // (tester T-54).
+  if (left <= 0 && !hasLoggedWork(rec) && blocksDone < 1) {
     els.forEach((el) => { el.style.display = "none"; el.innerHTML = ""; });
     return;
   }
@@ -4255,7 +4300,9 @@ function renderResumeBanner() {
          <p class="resume-banner-eyebrow">Unfinished workout</p>
        </div>
        <p class="resume-banner-title">${circuit.title}</p>
-       <p class="resume-banner-sub">You finished ${blocksDone} of ${circuit.blocks.length} blocks, then left.</p>
+       <p class="resume-banner-sub">${blocksDone >= 1
+         ? `You finished ${blocksDone} of ${circuit.blocks.length} blocks, then left.`
+         : "You were partway through the first block, then left."}</p>
        <div class="resume-banner-actions">
          <button class="resume-banner-btn" data-resume-action="log">Log as partial</button>
          <button class="resume-banner-btn is-secondary" data-resume-action="discard">Discard</button>
@@ -4271,7 +4318,10 @@ function handleResumeBannerAction(action) {
 
   if (action === "resume") { Player.resume(circuit, rec); return; }
   if (action === "log") {
-    logPartialCompletion(circuit, rec, blocksCompletedAt(buildPhaseQueue(circuit), rec.index));
+    // phases passed through so a session below one whole block is pro-rated
+    // on the work actually done rather than logged as "1 min" (tester T-54).
+    const phases = buildPhaseQueue(circuit);
+    logPartialCompletion(circuit, rec, blocksCompletedAt(phases, rec.index), phases);
     clearInProgress();
     init();
     showTab("tab-home");
