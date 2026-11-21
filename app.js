@@ -8907,7 +8907,19 @@ async function routeOnLoad() {
     session = null;                 // reading the session can itself need the network
   }
 
-  if (!session) {
+  // A session object that cannot say who it belongs to is not a session
+  // (2026-11-20, tester T-52). getSession() hands back whatever is in storage
+  // when it carries an access token and an unexpired expires_at — it does not
+  // require a user on it. So a token damaged into that shape sailed past a
+  // bare `!session` check, and three lines down `session.user.id` threw into
+  // DOMContentLoaded's catch, which warns to a console no phone has and then
+  // shows the login screen. Blank form, nothing written on it, no auth_events
+  // row: the exact failure T-14 was written to end, reached by the one route
+  // T-14's branch could not see.
+  //
+  // storedSessionState() already calls this shape damaged. Treating it as "no
+  // session" is what puts it in front of the branch that knows what to say.
+  if (!session || !session.user || !session.user.id) {
     // No session usually means "not signed in", and the login screen is right.
     // It can also mean the token refresh couldn't reach the server — in which
     // case this member IS signed in, on a phone that holds their whole
@@ -9144,14 +9156,29 @@ function wireAuthControls() {
     // otherwise tap Log In three times and fire three sign-ins.
     btn.disabled = true;
     btn.textContent = "Signing in…";
-    const res = await signIn(
-      document.getElementById("login-email").value,
-      document.getElementById("login-password").value
-    );
-    if (res.error) {
+    // Belt and braces, the same as the Having trouble? button below
+    // (2026-11-20, tester T-51). signIn() now catches its own throws, so this
+    // should never fire — but between these two lines and the ones that undo
+    // them there must be nothing that can escape. A throw here left the button
+    // reading "Signing in…", disabled, permanently, after a CORRECT password:
+    // no message, no auth_events row, and reloading did it again. That is the
+    // October failure word for word, and the button a member taps when
+    // everything else has failed them is the last place to leave an unguarded
+    // await.
+    let res;
+    try {
+      res = await signIn(
+        document.getElementById("login-email").value,
+        document.getElementById("login-password").value
+      );
+    } catch (e) {
+      logAuthEvent("signin_handler_threw", throwDetail(e));
+      res = { error: "Something went wrong signing you in. Try again, and tell your coach if it keeps happening." };
+    }
+    if (!res || res.error) {
       btn.disabled = false;
       btn.textContent = "Log In";
-      err.textContent = res.error;
+      err.textContent = (res && res.error) || "Something went wrong signing you in. Try again.";
       err.hidden = false;
       return;
     }

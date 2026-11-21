@@ -308,9 +308,59 @@ function friendlyAuthError(error) {
   return "Couldn't sign you in. Try again, and tell your coach if it keeps happening.";
 }
 
+// Sign-in that THREW rather than coming back with an error (2026-11-20,
+// tester T-51).
+//
+// supabase-js does not return {error} when it cannot persist the session it
+// has just been given — it throws. The commonest cause is a browser refusing
+// to write to its own storage: a full phone, Safari with "Block All Cookies",
+// site data blocked for this origin, a managed device, or the in-app browser
+// an email app opens an invite link in. The server said yes; the library
+// could not write the answer down.
+//
+// Every one of these is a case where the member did nothing wrong and the
+// password was right, so none of this wording may imply otherwise.
+function signInThrewError(e) {
+  // Name AND message, not `message || name`. A DOMException carries the shape
+  // in its name ("SecurityError", "QuotaExceededError") and prose in its
+  // message ("The operation is insecure."), so reading only the message
+  // throws away the one word that identifies it — and Safari's "Block All
+  // Cookies", the likeliest real trigger of all of this, is exactly a
+  // SecurityError with an unhelpful message.
+  const m = (((e && e.name) || "") + " " + ((e && e.message) || "")).toLowerCase();
+  if (m.includes("quota") || m.includes("exceeded")) {
+    return "Your phone has no room left to save your sign-in. Free up some space and try again — "
+      + "your password was accepted, so nothing is wrong with your account.";
+  }
+  if (m.includes("security") || m.includes("storage") || m.includes("access is denied")) {
+    return "This browser is blocking Burn Club from saving your sign-in, so it can't keep you logged in. "
+      + "Allow cookies and site data for this site — or open it in Safari or Chrome rather than inside "
+      + "another app — then try again. Your password was accepted.";
+  }
+  if (m.includes("fetch") || m.includes("network")) {
+    return "Can't reach the server. Check your connection and try again.";
+  }
+  return "Your password was accepted, but this browser wouldn't let the app finish signing you in. "
+    + "Try Safari or Chrome, or tell your coach and mention what phone you're on.";
+}
+
 async function signIn(email, password) {
   if (!SB) return { error: "Can't reach the server. Check your connection." };
-  const { data, error } = await SB.auth.signInWithPassword({ email: email.trim(), password });
+  // The whole call, inside a try. Before this, a throw out of
+  // signInWithPassword escaped signIn() entirely, so the login form's handler
+  // never came back and the button stayed on "Signing in…", disabled, for
+  // good — with the password correct and the server's yes already in hand
+  // (tester T-51). Nothing was written to auth_events either, so the member
+  // showed up in admin as never having tried.
+  let data, error;
+  try {
+    const r = await SB.auth.signInWithPassword({ email: email.trim(), password });
+    data = r.data;
+    error = r.error;
+  } catch (e) {
+    logAuthEvent("signin_threw", (e && (e.name || "")) + ": " + (e && e.message), email.trim());
+    return { error: signInThrewError(e) };
+  }
   // Logged at every exit, because the interesting question after the first
   // trial is not "did sign-in work" but "how far did they get". A wrong
   // password and a password that was right but could not load a profile look
@@ -319,7 +369,23 @@ async function signIn(email, password) {
     logAuthEvent("signin_fail", error.message, email.trim());
     return { error: friendlyAuthError(error) };
   }
-  const loaded = await loadAuthMember(data.user);
+  // No error and no user is not a shape the server produces, but reading
+  // .user off nothing throws, and a throw anywhere in here is the stuck
+  // button again (T-51).
+  if (!data || !data.user) {
+    logAuthEvent("signin_no_user", "accepted but returned no user", email.trim());
+    return { error: "Signed you in, but the server didn't say who you are. Try again, and tell your coach if it keeps happening." };
+  }
+  let loaded;
+  try {
+    loaded = await loadAuthMember(data.user);
+  } catch (e) {
+    // Not throwDetail(): that lives in app.js, which loads after this file.
+    // A log line is not worth a cross-file dependency in the one path whose
+    // whole job is to survive things going wrong.
+    logAuthEvent("signin_profile_threw", (e && (e.name || "")) + ": " + (e && e.message), email.trim());
+    return { error: "You're signed in, but the app couldn't finish loading your account. Close it and open it again." };
+  }
   if (loaded.error) {
     logAuthEvent("profile_fail", loaded.error, email.trim());
     return loaded;

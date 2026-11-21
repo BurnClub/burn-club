@@ -2925,6 +2925,84 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### The right password, the server's yes, and a button stuck for ever (2026-11-20, tester T-51, T-52)
+
+Two faults, one screen, same outcome: correct credentials and the member gets
+nowhere.
+
+**T-51 — a throw nobody caught.** `supabase-js` does not return `{error}` when
+it cannot persist the session it has just been handed; it **throws**. The
+commonest cause is a browser refusing to write to its own storage: a full
+phone, Safari with "Block All Cookies", site data blocked for the origin, a
+managed device, or the in-app browser an email app opens an invite link in —
+which matters, because invites arrive by email. `signIn()` destructured the
+call with no `try`, and the submit handler awaited `signIn()` with no `try`
+either, so the throw escaped between `btn.disabled = true; btn.textContent =
+"Signing in…"` and everything that would undo them. The button sat on
+"Signing in…", disabled, permanently. No message. No `auth_events` row, so the
+member appeared in admin as never having tried. **That is the October
+complaint word for word: "I put my password in and nothing happened."**
+
+The `try/finally` a few lines below only ever wrapped `enterAfterAuth`, which
+that path never reaches. Worth noting that the **Having trouble?** button has
+had exactly this belt-and-braces guard since T-11, with a comment saying it
+"has to come back even if something in there breaks in a way nobody
+predicted". The Log In button, which matters far more, did not.
+
+Now: `signIn()` wraps the call, the profile load, and the accepted-but-no-user
+shape; the handler wraps its `await` as well, so nothing between disabling the
+button and restoring it can escape. Every exit is logged.
+
+**The wording bug my own test caught.** The first `signInThrewError()` read
+`(e.message || e.name)`. A `DOMException` carries the shape in its **name**
+and prose in its **message**, so the name was never consulted — and Safari's
+"Block All Cookies", the likeliest real trigger of the whole finding, is a
+`SecurityError` whose message is "The operation is insecure." It would have
+fallen through to generic wording and never told the member which setting to
+change. Now reads name and message together. Proved end to end with the real
+library and a real storage refusal: `signin_threw | SecurityError: The
+operation is insecure.`, correct wording, button restored.
+
+**T-52 — a session that cannot say who it is.** `getSession()` hands back
+whatever is in storage when it carries an access token and an unexpired
+`expires_at`; it does not require a `user` on it. A bare `!session` check let
+that through, and three lines on `session.user.id` threw into
+`DOMContentLoaded`'s catch, which warns to a console no phone has and then
+shows the login screen. Blank form, nothing on it, no log — **the exact
+failure T-14 was written to end, reached by the one route T-14's branch could
+not see.**
+
+The honest part: this is not a regression from the T-14 work. `a0a0bf6` never
+touched the guard or the dereference; the unguarded `session.user.id` dates to
+`ef40255`. What was mine is worse in a quieter way — `storedSessionState()`
+*already named this shape* `damaged` ("token has no user id"), so my own model
+of corruption contained a state my own branch could not reach, and I did not
+notice that the guard upstream was weaker than my classifier. The fix is the
+guard the tester suggested: `!session || !session.user || !session.user.id`.
+It closes the crash and puts the damaged branch within reach of it at once.
+
+**Why no in-memory storage fallback for T-51.** Tempting — let them in anyway
+when storage is blocked. Rejected: there are 54 `localStorage.setItem` calls
+across `sync.js` and `app.js`, so a member admitted with storage blocked is in
+an app that silently keeps nothing they log. That is the same trade refused
+for T-14 four hours earlier, and refusing it twice in one day is the point.
+Tell them what is wrong and which setting to change.
+
+**Still open and touching this:** T-53 — `logAuthEvent()` writes through the
+authenticated client, so a present-but-unusable token gets the insert refused
+("Expected 3 parts in JWT") before any policy runs. For T-51's trigger there
+is no token at all, so the anon insert lands and `signin_threw` is safe. For
+T-52's shape there **is** a token, so `return_session_damaged` may still be
+refused. The message reaches the member either way; the log may not. Fixing
+that means a second, deliberately anonymous client for that one table.
+
+`tests/sync/stuck-signin.test.js`, 36 checks, mutation-proved four ways. One
+of those mutations initially slipped past a positional check that an
+`indexOf("try")` satisfied from a **comment** saying there was a try — the
+checks now strip comments first, which is the same lesson as the deploy grep
+earlier today: a check that can be satisfied by the wrong thing is not a
+check.
+
 ### A damaged saved sign-in gave a blank login form and no log (2026-11-20, tester T-14)
 
 The trial's signature failure, and the last one still standing on this path.
