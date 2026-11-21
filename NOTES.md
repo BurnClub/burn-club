@@ -2925,6 +2925,62 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### The log was refused in exactly the states it exists to record (2026-11-20, tester T-53)
+
+`logAuthEvent()` wrote through `SB`, the signed-in client, which attaches the
+stored access token to every request. When that token is present but unusable
+— damaged, expired, revoked — PostgREST rejects the request **on the JWT,
+before any policy is considered**, and the row never lands.
+
+Which means the log failed precisely where it was needed: `entry_threw`,
+`return_entry_threw`, `entry_failed`, `return_session_damaged` are all written
+at moments when the session has gone wrong. The only trace was a
+`console.warn` no phone can show.
+
+The irony is in `27-login-visibility.sql`, which opened this table to `anon`
+on purpose — *"the event most worth having is a sign-in that FAILED, and there
+is no session at that moment"* — and then the client handed PostgREST a broken
+credential it was obliged to reject before it ever reached that policy.
+
+**Measured on the live backend**, same row, same moment, damaged token in
+storage:
+
+    through the signed-in client   REFUSED: Expected 3 parts in JWT; got 1
+    as a bare anonymous POST       accepted, HTTP 201
+
+**A bare POST, not a second Supabase client.** A second client would work, but
+a plain `fetch` with the publishable key is the stronger guarantee: it cannot
+pick up a session because it has no notion that one exists. It also avoids a
+second GoTrue instance — which would need `detectSessionInUrl: false` set
+correctly or it could consume the invite link's URL fragment before the real
+client sees it. That is a sharp edge worth not having at all.
+
+Two things fall out of it. `logAuthEvent` no longer mentions `SB` anywhere, so
+it keeps working when the Supabase CDN script is blocked (ad blocker, captive
+wifi) — the state where it previously wrote **nothing at all**, and which is
+its own finding (T-55). And it goes through `timedFetch`, so it has the same
+12-second limit as everything else.
+
+Attribution loses nothing: `member_id` was always carried in the row, and the
+policy is `with check (true)` with no comparison to `auth.uid()`, so signing
+the request bought no attribution and cost the whole record.
+
+**This also closes the caveat T-52 shipped with.** That fix showed the member
+a message but could not promise the row would land, because T-52's shape has a
+token present. Verified end to end on the live backend: damaged session →
+message shown → `return_session_damaged`, HTTP 201.
+
+**Honest note on one check.** I could not simulate `SB` being null by
+reassignment — it is a `const`, so my first attempt at that test silently ran
+with the client intact. The claim is instead proved by dependency:
+`logAuthEvent` references no `SB`, and `timedFetch`, `AUTH_LOG_ENDPOINT`,
+`SUPABASE_PUBLISHABLE_KEY` and `appVersion` are all declared in
+`supabase-client.js` itself, which loads whether or not the CDN script did.
+
+`tests/sync/auth-log-anonymous.test.js`, 23 checks, mutation-proved three
+ways: reverting to the signed-in client fails 4, attaching a member JWT fails
+2, dropping `member_id` fails 1.
+
 ### The right password, the server's yes, and a button stuck for ever (2026-11-20, tester T-51, T-52)
 
 Two faults, one screen, same outcome: correct credentials and the member gets

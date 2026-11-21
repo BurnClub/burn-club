@@ -613,8 +613,30 @@ function appVersion() {
 // Fire and forget, always. A log line is never worth delaying a sign-in for,
 // and it must never be the reason one fails — so nothing here is awaited by
 // its callers and nothing here can throw.
+// The log is written ANONYMOUSLY, on purpose (2026-11-20, tester T-53).
+//
+// It used to go through SB, the signed-in client, which attaches the stored
+// access token to every request. When that token is present but not usable —
+// damaged, expired, revoked — PostgREST rejects the request on the JWT before
+// any policy is considered: "Expected 3 parts in JWT; got 1", and the row
+// never lands. So the log was refused in exactly the states it exists to
+// record. `27-login-visibility.sql` deliberately opened this table to `anon`
+// for precisely this reason ("the event most worth having is a sign-in that
+// FAILED, and there is no session at that moment") — and then the client
+// handed PostgREST a broken credential it was obliged to reject first.
+//
+// A bare POST with the publishable key and nothing else cannot carry a
+// member's bad session, because it has no idea one exists. It is also the
+// only form that still works when the supabase CDN script is blocked (ad
+// blocker, captive wifi), where SB is null and this used to write nothing at
+// all.
+//
+// member_id is carried in the row, and the policy is `with check (true)` with
+// no comparison to auth.uid(), so signing the request gained attribution
+// nothing and cost it everything.
+const AUTH_LOG_ENDPOINT = SUPABASE_URL + "/rest/v1/auth_events";
+
 function logAuthEvent(event, detail, email) {
-  if (!SB) return;
   try {
     const row = {
       member_id: AUTH_MEMBER ? AUTH_MEMBER.id : null,
@@ -624,9 +646,26 @@ function logAuthEvent(event, detail, email) {
       user_agent: (navigator.userAgent || "").slice(0, 400),
       app_version: appVersion(),
     };
-    Promise.resolve(SB.from("auth_events").insert(row))
-      .then((r) => { if (r && r.error) console.warn("[auth-log]", r.error.message); })
-      .catch(() => {});
+    // timedFetch, so a stalled connection cannot leave this hanging — the
+    // same 12s limit everything else gets.
+    Promise.resolve(timedFetch(AUTH_LOG_ENDPOINT, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: "Bearer " + SUPABASE_PUBLISHABLE_KEY,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify(row),
+    }))
+      .then((r) => {
+        if (r && !r.ok) {
+          // Still worth a word on the console: a log that is being refused
+          // should not be silent about it, which was half of T-53.
+          console.warn("[auth-log] HTTP " + r.status);
+        }
+      })
+      .catch((e) => { console.warn("[auth-log]", (e && e.message) || e); });
   } catch (e) {
     /* a log that breaks the app is worse than no log */
   }
