@@ -2925,6 +2925,56 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### "You completed all 1 blocks" (2026-11-21, tester T-56)
+
+The finish screen read `You completed all ${this.circuit.blocks.length} blocks
+of ${this.circuit.title}. 🔥` with no singular. Not an edge case: every Fit &
+Functional week schedules a Circuit day (`buildFitFunctionalSchedule()`,
+`focusOrder` = the five focus areas plus `"circuit"`), and that Circuit is
+built from exactly one block (`buildFitFunctionalCircuits()`, `blocks: [ {
+type: "interval", … } ]`). Checked both in the running app: all 16 weekly
+Circuit variants (8 weeks × 2 programme variants) have one block, and 30 of the
+128 circuits in the seed do — the mobility and ab-burn sessions and every
+format demo as well. So this went to every member on the programme, one
+workout in six, for eight weeks.
+
+**The wording.** A one-block workout now names the workout instead of counting
+to one: "You completed Week 7 Circuit. 🔥". Not "all 1 block" — grammatical, and
+still reads like a bug. Two or more blocks is unchanged.
+
+**Why it is a function now.** `completionSentence(circuit)` is top-level rather
+than inlined in `Player.finish()`, because `finish()` cannot be lifted into a
+test — it is a method with DOM work all through it, and the test pattern this
+repo uses (`lift("name")`, brace-match, `eval`) only reaches
+`function name(`. Inline, the only thing a test could do is regex the source.
+Lifted out, the sentence itself is tested, and the source check is reduced to
+"and finish() still calls it".
+
+**Two more strings had the same welded plural**, both on the resume path added
+yesterday for T-54 and both reading the same block count: the prompt ("You
+finished 1 of 1 blocks of Week 7 Circuit earlier") and the Home banner. Both
+now pluralise off the total. The test also checks that **no** string anywhere
+in `app.js` follows a raw `blocks.length` with a hardcoded "blocks" — that is
+the defect signature, and it is the check that caught the two siblings.
+
+**Checked by:** reproduced first against the shipped sentence lifted verbatim
+out of `git show HEAD:app.js` ("You completed all 1 blocks of Week 7 Circuit.
+🔥"); then end to end in the player on the local copy in demo mode, driving
+the real `Player.advance()` to the real finish screen — one-block Week 7
+Circuit reads "You completed Week 7 Circuit. 🔥", three-block Week 1 Shoulders
+and Abs still reads "You completed all 3 blocks of …". `tests/sync/block-count-plural.test.js`,
+19 checks, every one mutation-proved: nine mutations, including putting the
+original inline sentence back, dropping the singular branch, writing "all 1
+block" instead, reverting each sibling, and losing the emoji. Suite is 21
+files, 310 checks.
+
+**Not a finding, but worth recording:** driving `Player.advance()` by hand past
+the end of the phase queue re-runs `finish()` and logs a completion every time
+(162 of them, cleaned up afterwards). Not reachable from the app — `advance()`
+calls `this.stop()`, which clears the phase interval, before it calls
+`finish()`, and the player screen is gone by then, so nothing can call it
+again. Demo history was restored to its original 217 rows and 10 keys.
+
 ### Five of six sets counted as nothing and was deleted without a word (2026-11-20, tester T-54)
 
 A member does five of the six sets of the first block — or three of four

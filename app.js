@@ -4219,7 +4219,7 @@ function maybeOfferResume() {
   showResumeOverlay({
     title: "Unfinished workout",
     body: blocksDone >= 1
-      ? `You finished ${blocksDone} of ${circuit.blocks.length} blocks of ${circuit.title} earlier, then left. Want it logged as a partial workout?`
+      ? `You finished ${blocksDone} of ${circuit.blocks.length} block${circuit.blocks.length === 1 ? "" : "s"} of ${circuit.title} earlier, then left. Want it logged as a partial workout?`
       : `You were partway through the first block of ${circuit.title} earlier, then left. Want what you logged kept as a partial workout?`,
     primary: "Log as partial",
     secondary: "Discard",
@@ -4301,7 +4301,7 @@ function renderResumeBanner() {
        </div>
        <p class="resume-banner-title">${circuit.title}</p>
        <p class="resume-banner-sub">${blocksDone >= 1
-         ? `You finished ${blocksDone} of ${circuit.blocks.length} blocks, then left.`
+         ? `You finished ${blocksDone} of ${circuit.blocks.length} block${circuit.blocks.length === 1 ? "" : "s"}, then left.`
          : "You were partway through the first block, then left."}</p>
        <div class="resume-banner-actions">
          <button class="resume-banner-btn" data-resume-action="log">Log as partial</button>
@@ -5612,6 +5612,21 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && Player.heartbeatId) requestWakeLock();
 });
 
+// The one sentence on the finish screen. A top-level function rather than an
+// inline template inside finish() so it can be tested on its own: this string
+// told every member "You completed all 1 blocks of Week 7 Circuit" once a
+// week for eight weeks, because the weekly Fit & Functional Circuit is built
+// from a single block (tester T-56).
+function completionSentence(circuit) {
+  const blocks = (circuit && circuit.blocks && circuit.blocks.length) || 0;
+  const title = (circuit && circuit.title) || "your workout";
+  // A one-block workout names the workout instead of counting to one.
+  // "all 1 block" is grammatical and still reads like a bug, so the count
+  // only appears when there is more than one thing to count.
+  if (blocks < 2) return `You completed ${title}. 🔥`;
+  return `You completed all ${blocks} blocks of ${title}. 🔥`;
+}
+
 const Player = {
   circuit: null,
   phases: [],
@@ -6030,7 +6045,7 @@ const Player = {
     this.logCardioBlock();
     currentCompletionEntry = entry;
     document.getElementById("workout-complete-text").textContent =
-      `You completed all ${this.circuit.blocks.length} blocks of ${this.circuit.title}. 🔥`;
+      completionSentence(this.circuit);
     // Real wall-clock time from tapping "Start Workout" to finishing the last phase —
     // runs the whole session regardless of which block/format is active, independent
     // of any single block's own clock (and not reduced by time spent paused).
