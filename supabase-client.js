@@ -241,12 +241,48 @@ function abandonAuthLoad() { AUTH_GEN++; }
 // The stored copy tells the two apart. It is only removed when the server
 // REFUSES the session or the member signs out; a refresh that merely could not
 // get through leaves it in place.
-function storedSessionUserId() {
+// Why there is no stored user id, which is a different question from what it
+// is (2026-11-20, tester T-14).
+//
+// storedSessionUserId() answers null for three situations that are nothing
+// alike: a phone that was never signed in, a phone that was signed out, and a
+// phone that IS signed in whose saved sign-in can no longer be read — cut off
+// mid-write, half-overwritten, evicted in pieces under storage pressure. The
+// first two want a quiet login form. The third is a member who is signed in,
+// whose profile and program are very likely still sitting in the cache next
+// to it, and who gets handed a blank login form with nothing written on it
+// and no auth_events row to show it ever happened. That silence is why the
+// first trial had failures nobody could account for afterwards.
+//
+// The key existing but yielding no id is the tell, and it costs one extra
+// read to notice.
+function storedSessionState() {
+  let raw;
   try {
     const ref = new URL(SUPABASE_URL).hostname.split(".")[0];
-    const s = JSON.parse(localStorage.getItem("sb-" + ref + "-auth-token") || "null");
-    return (s && s.user && s.user.id) || null;
-  } catch (e) { return null; }
+    raw = localStorage.getItem("sb-" + ref + "-auth-token");
+  } catch (e) {
+    // localStorage itself is unavailable (Safari private mode, blocked
+    // storage). Nothing is damaged; nothing can be read either, including the
+    // cache, so there is no saved sign-in to speak of.
+    return { state: "unreadable", uid: null, why: "storage unavailable" };
+  }
+  if (raw === null) return { state: "none", uid: null };
+  let parsed = null;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    return { state: "damaged", uid: null, why: "token is not valid JSON (" + raw.length + " bytes)" };
+  }
+  const uid = (parsed && parsed.user && parsed.user.id) || null;
+  if (uid) return { state: "signed-in", uid };
+  // Parsed, but not into a session. An empty string, a bare null, or a shape
+  // with no user on it.
+  return { state: "damaged", uid: null, why: parsed === null ? "token is empty" : "token has no user id" };
+}
+
+function storedSessionUserId() {
+  return storedSessionState().uid;
 }
 
 function authedMemberId() {

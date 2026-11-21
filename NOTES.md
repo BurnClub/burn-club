@@ -2925,6 +2925,56 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### A damaged saved sign-in gave a blank login form and no log (2026-11-20, tester T-14)
+
+The trial's signature failure, and the last one still standing on this path.
+Five fixes had landed here since 2026-11-17 and none of them touched it,
+because every one keys off the user id — and the whole point of this bug is
+that there isn't one.
+
+`storedSessionUserId()` answered `null` for three situations that are nothing
+alike: a phone that was never signed in, a phone that was signed out, and a
+phone that **is** signed in whose saved sign-in can no longer be read (cut off
+mid-write, half-overwritten, evicted in pieces under storage pressure). The
+first two want a quiet login form. The third is a member who is signed in, with
+their profile and programme sitting in `burnclub-auth-cache` right next to the
+damaged token — and they got a login form with **nothing written on it and no
+`auth_events` row at all**. Invisible to the member and invisible in the data,
+which is exactly what October's unexplained failures looked like.
+
+Reproduced against the shipped function before changing anything: corrupt
+token + online = no entry, no message, no log, cache present and untouched.
+
+**The fix is one extra read.** `storedSessionState()` returns `signed-in`,
+`none`, `damaged` or `unreadable`. The tell is that the key **exists** but
+yields no id. `storedSessionUserId()` now delegates to it, so nothing else
+changed.
+
+**What it deliberately does NOT do: enter the app on the cache.** Two reasons.
+Offline already does — the `navigator.onLine === false` branch opens on the
+saved copy and I confirmed it still does, so the gym case was never the broken
+one. T-14 is strictly the **online** case, and there signing in is both
+possible and the actual repair: it overwrites the damaged key. Entering on the
+cache instead would put the member in an app whose sync can never authenticate,
+looking fine, failing quietly, every open, forever. That is the failure mode
+this whole run has been about removing.
+
+**Checked, not assumed:** `SB.auth.getSession()` runs *before* this check in
+`routeOnLoad()`, so if supabase-js cleared the bad key while reading it the fix
+would never fire. It does not — the key survives byte-identical and
+`storedSessionState()` still reads `damaged`. And the library's own persist
+path (`_saveSession`, what a successful sign-in runs) overwrites the damaged
+bytes completely, leaving `state: "signed-in"`. So "sign in once and it'll be
+fixed" is a claim the code actually keeps.
+
+**The check that matters in the other direction** is that a first-time visitor
+is told nothing. Reporting a damaged sign-in to someone who never had one would
+be its own bug, so `none` and `unreadable` stay silent and are pinned by tests.
+
+`tests/sync/damaged-session.test.js`, 31 checks, mutation-proved three ways:
+collapsing `damaged` back into `null` fails 13, over-reporting `none` as
+damaged fails 4, mis-filing blocked storage as damaged fails 2.
+
 ### One unreadable date stopped six testers getting in (2026-11-20, tester T-15)
 
 The finding that killed the October trial. Four `entry_threw` and two

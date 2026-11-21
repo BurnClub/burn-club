@@ -8918,20 +8918,41 @@ async function routeOnLoad() {
     // means airplane mode and almost nothing else. The stored session is the
     // better witness: it is still there exactly when the member is signed in
     // and the server simply could not be asked.
-    const uid = storedSessionUserId();
+    const stored = storedSessionState();
+    const uid = stored.uid;
     const cached = usableCachedProfile(uid ? loadCachedAuthMember(uid)
       : (navigator.onLine === false ? loadCachedAuthMember() : null));
     if (!cached) {
       // Signed in, unreachable, and nothing saved to open: the login form is
       // all there is to show, but it must not be a silent one.
+      const err = document.getElementById("login-error");
       if (uid) {
-        const err = document.getElementById("login-error");
         if (err) {
           err.textContent = "Couldn't reach the server to open your account. "
             + "Check your connection, then close and reopen the app.";
           err.hidden = false;
         }
         logAuthEvent("return_unreachable_no_cache", sessionSlow ? "session check slow" : "no session returned");
+      } else if (stored.state === "damaged") {
+        // The saved sign-in is unreadable, so we cannot say who this phone
+        // belongs to — but the key is there, which means it was signed in
+        // (2026-11-20, tester T-14). This was the one way into the login
+        // screen that wrote nothing on it and logged nothing at all, which
+        // is exactly what the first trial's unexplained failures looked
+        // like.
+        //
+        // No cache entry here, deliberately. Offline, the branch above
+        // already opens on the saved copy and that is the gym case covered.
+        // Online, signing in is both possible and the actual repair: it
+        // overwrites the damaged key, so the member is fixed for good rather
+        // than entering an app whose sync can never authenticate.
+        if (err) {
+          err.textContent = "The saved sign-in on this device was damaged, so we couldn't "
+            + "open your account automatically. Sign in once and it'll be fixed.";
+          err.hidden = false;
+        }
+        logAuthEvent("return_session_damaged",
+          stored.why + "; cache " + (loadCachedAuthMember() ? "present" : "absent"));
       }
       return false;
     }
