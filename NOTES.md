@@ -2925,6 +2925,96 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### One mistyped weight stopped every weight that member ever logged (2026-11-21, tester T-59 and T-60)
+
+Two findings, one failure chain, fixed together because fixing either alone
+leaves the member broken: the typo is how they get there, the batch push is
+what makes it permanent.
+
+**T-60, the typo.** The weight boxes are pre-filled, deliberately, so a member
+can correct one number. Tapping a pre-filled box dropped the caret wherever
+the thumb landed, so correcting 80 to 85 produced **8850**, carried down into
+every set of that exercise. At 86px the box scrolled rather than wrapped, so
+it displayed `8850` while the field held `888550`. 8850 is under the column
+limit, so it saved and was announced as a personal best.
+
+The obvious one-line fix does not work and looks like it does: on an
+`<input type="number">`, `select()` silently does nothing and
+`setSelectionRange()` throws `InvalidStateError`. The tester ran both against
+the live element. So the box is now `type="text" inputmode="decimal"` with a
+`maxlength` (which number inputs also ignore), it selects on focus, and what
+is typed replaces the number instead of being spliced into it.
+
+Everything a box holds now goes through one function, `parseLoggedWeight()`,
+in all three places that ask — seeding the pre-fill, every keystroke, and the
+test. It answers `ok`, `blank` or `rejected`, because "they did not lift it"
+and "that number must not be stored" are different answers. A rejected number
+is **not** stored, **not** carried down, and the row says so in red under the
+box: "Over 2000 — not saved". The cap is `MAX_LOGGED_WEIGHT = 2000`, one
+constant, far above any real lift in either unit and far below the column's
+9999.99. The box went to 96px so everything it will now accept is visible.
+
+**T-59, what made it permanent.** `lifts.weight` is `numeric(6,2)`, PostgREST
+fails the **whole statement** on one unacceptable row, and `pushRows` carries
+the member's entire history for a store. So one weight of 12345 meant not one
+weight from any workout — past or future — ever reached the server again,
+retried every 30 seconds for ever, while the finish screen said "Nice work!".
+The only warning that ever fired said their workouts had not backed up, which
+was false: the workouts had, the weights had not. **This is the same shape as
+the duplicate-rows incident that cost 33 days**, two notes above this one.
+
+`pushRows()` now splits the batch when the server refuses the DATA, lands
+everything either side of the bad row, sets that one row aside, and names it:
+"Cable Row 12345 couldn't be backed up (numeric field overflow). Everything
+else did." The store then goes clean, so the next workout backs up normally
+and the stale-backup warning stops shouting about work that did arrive.
+
+Three guards on that, each one load-bearing:
+
+- **What counts as a refusal.** Postgres class 22 (data) and 23 (integrity),
+  or wording that says overflow / out of range / invalid input syntax /
+  violates a named constraint. A dead connection, a timeout, an expired token
+  keep the old behaviour and are retried, because those come back.
+- **RLS is deliberately NOT a refusal** (code 42501, or the wording). A policy
+  can be fixed server-side, and every row would fail it — treating that as
+  "one bad row" would set a member's whole history aside one row at a time.
+- **`MAX_SET_ASIDE_PER_PUSH = 5`.** A batch refused row after row is not one
+  bad number, it is the statement being wrong. Past five, the push stops, puts
+  back everything it set aside, and fails normally for a later retry.
+
+Set-aside rows live in memory only (`REFUSED_ROWS`), so a reload tries them
+once more — right, if the cause was fixed at the other end. The member is told
+once per push, not once per retry.
+
+**Checked by:** `tests/sync/weight-typo.test.js` (32 checks) and
+`tests/sync/one-bad-row.test.js` (30 checks), the second driving the real
+`pushRows` against a mock server that enforces numeric(6,2) statement-wide,
+the way Postgres does. Sixteen mutations between them, every one caught by a
+named check — including reverting the box to `type="number"`, gutting the
+focus handler, removing the cap, raising it above the column, moving the
+carry-down out of the accepted branch, restoring the original single-shot
+`pushRows`, failing the store on a set-aside row, treating RLS as a refusal
+again, and removing the five-row limit. One check was defective and found by
+mutation: `input.select()` appears elsewhere in app.js, so a bare search for
+it passed with this handler emptied — it is scoped to the handler now.
+
+Then in the browser at 375 and 320, with a **real tap and real keystrokes**,
+not synthetic events: tapping a box pre-filled with 80 selects the whole
+value, typing 85 gives 85 and carries 85 down; typing 8850 turns the box red,
+prints "Over 2000 — not saved" under it, stores nothing for that set, and
+leaves the set below untouched. No page overflow at either width, and both
+the cap and the longest value the app accepts fit inside the box.
+
+**Worth knowing before T-61 is taken.** Correcting a rejected number deletes
+that set's key and retypes it at the end of the object, which is exactly the
+trigger for T-61 (`lifts.set_number` follows `Object.keys` insertion order,
+not the set label). The fix for this makes that path slightly easier to reach.
+T-61 is one sort away and it is the next thing to take.
+
+**Not fixed here:** the warning wording in `warnIfStale()` is unchanged. It
+stops lying as a consequence of the store going clean, not because the text
+was edited.
+
 ### "You completed all 1 blocks" (2026-11-21, tester T-56)
 
 The finish screen read `You completed all ${this.circuit.blocks.length} blocks

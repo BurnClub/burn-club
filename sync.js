@@ -1001,13 +1001,121 @@ function dedupeRows(rows, onConflict) {
   return [...byKey.values()];
 }
 
+// Rows this server has already refused outright, per table, so they are not
+// sent again and again. In memory only, deliberately: a reload tries them
+// once more, which is what you want if the cause was fixed at the other end.
+const REFUSED_ROWS = {};
+
+function rowKeyFor(row, onConflict) {
+  const cols = String(onConflict || "").split(",").map((c) => c.trim()).filter(Boolean);
+  if (!cols.length) return JSON.stringify(row);
+  return cols.map((c) => String(row[c])).join("\u0000");
+}
+
+// A row the server will never accept, as opposed to a request that did not
+// get there. Postgres class 22 is a data exception (numeric overflow, bad
+// syntax for a type), class 23 an integrity violation (not-null, check,
+// foreign key, unique). Retrying either in half an hour changes nothing.
+// Anything else — no connection, a timeout, an expired token, a policy that
+// has to be fixed server-side — keeps the old behaviour and is retried,
+// because those DO come back.
+function isRowRefusal(error) {
+  if (!error) return false;
+  // Not a refusal however it is worded: a policy the member cannot satisfy
+  // today may be fixed server-side tomorrow, and every row would fail it, so
+  // treating this as "one bad row" would set the whole history aside one row
+  // at a time. It keeps the old behaviour and is retried.
+  if (String(error.code || "") === "42501") return false;
+  const m = String(error.message || "").toLowerCase();
+  if (m.includes("row-level security") || m.includes("row level security")) return false;
+  if (/^2[23]/.test(String(error.code || ""))) return true;
+  return m.includes("overflow") || m.includes("out of range")
+      || m.includes("invalid input syntax")
+      || m.includes("violates check constraint")
+      || m.includes("violates not-null constraint")
+      || m.includes("violates foreign key constraint")
+      || m.includes("violates unique constraint");
+}
+
+// Said in the member's words rather than Postgres's. `lifts` is the one that
+// has actually happened, so it names the exercise and the number.
+function describeRefusedRow(table, row, error) {
+  const why = String((error && error.message) || "refused").split("\n")[0];
+  if (table === "lifts") {
+    return `${row.exercise_name || "A weight"} ${row.weight} couldn't be backed up (${why}). Everything else did.`;
+  }
+  return `One ${table} row couldn't be backed up (${why}). Everything else did.`;
+}
+
+// One bad row must not take the batch with it.
+//
+// PostgREST fails the WHOLE STATEMENT on one unacceptable row, and these
+// pushes carry the member's entire history for a store — so a single weight
+// of 12345 in `lifts` (the column is numeric(6,2)) meant not one weight from
+// any workout, past or future, ever reached the server again, retrying every
+// 30 seconds for ever, in silence (tester T-59). That is the same shape as
+// the duplicate-rows incident above, which cost 33 days.
+//
+// So: when the server refuses the DATA, split the batch and find the row it
+// objects to, land everything either side of it, and set that one aside with
+// a message that names it. The store then goes clean, which means the next
+// workout backs up normally and the "nothing has backed up for N days"
+// warning stops firing about work that did.
+
+// How many rows one push will set aside before it stops and calls the whole
+// thing a failure instead. One bad number is a bad number; a batch where row
+// after row is refused is not — that is the statement being wrong, and it is
+// the kind of thing that gets fixed at the other end, so it is retried.
+const MAX_SET_ASIDE_PER_PUSH = 5;
+
 async function pushRows(table, rows, onConflict) {
+  const run = { setAside: [], said: [], aborted: false };
+  const ok = await pushRowsSplitting(table, rows, onConflict, run);
+  if (run.aborted) {
+    // Put back everything this attempt set aside: it was not one bad row.
+    const set = REFUSED_ROWS[table];
+    if (set) run.setAside.forEach((k) => set.delete(k));
+    return false;
+  }
+  if (run.said.length && typeof showToast === "function") showToast(run.said[0]);
+  return ok;
+}
+
+async function pushRowsSplitting(table, rows, onConflict, run) {
   rows = dedupeRows(rows, onConflict);
+  const refused = REFUSED_ROWS[table];
+  if (refused && refused.size) rows = rows.filter((r) => !refused.has(rowKeyFor(r, onConflict)));
   if (!rows.length) return true;
   const { error } = await SB.from(table).upsert(rows, { onConflict });
-  if (error) { recordSyncError(table, error.message); return false; }
-  delete SYNC_STATE.errors[table];
-  return true;
+  if (!error) {
+    // A table still holding a set-aside row keeps its message: it is the only
+    // place the member or Chris can see that something did not make it.
+    if (!(REFUSED_ROWS[table] && REFUSED_ROWS[table].size)) delete SYNC_STATE.errors[table];
+    return true;
+  }
+  if (!isRowRefusal(error)) { recordSyncError(table, error.message); return false; }
+  if (rows.length === 1) {
+    if (run.setAside.length >= MAX_SET_ASIDE_PER_PUSH) {
+      run.aborted = true;
+      recordSyncError(table, "The server refused too many rows to be one bad one: "
+        + String(error.message || "").split("\n")[0]);
+      return false;
+    }
+    const key = rowKeyFor(rows[0], onConflict);
+    (REFUSED_ROWS[table] = REFUSED_ROWS[table] || new Set()).add(key);
+    run.setAside.push(key);
+    const said = describeRefusedRow(table, rows[0], error);
+    run.said.push(said);
+    recordSyncError(table, said);
+    // True on purpose. This row is never going to be accepted, and holding
+    // the whole store dirty for it is what the finding was.
+    return true;
+  }
+  const half = Math.ceil(rows.length / 2);
+  const first = await pushRowsSplitting(table, rows.slice(0, half), onConflict, run);
+  if (run.aborted) return false;
+  const second = await pushRowsSplitting(table, rows.slice(half), onConflict, run);
+  return first && second;
 }
 
 // For stores where removal is meaningful — unpinning a PR, deleting a note.

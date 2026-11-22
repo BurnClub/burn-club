@@ -5627,6 +5627,54 @@ function completionSentence(circuit) {
   return `You completed all ${blocks} blocks of ${title}. 🔥`;
 }
 
+// The heaviest number the app will take for a single set. The column behind
+// it is numeric(6,2) (`supabase/01-schema.sql:202`), so anything from 10000
+// up is refused by Postgres and used to jam that member's weights for ever
+// (tester T-59) — but the number that actually reaches members is smaller
+// and more ordinary than the column limit. A mistyped `80` becomes `8850`
+// (tester T-60), which the column would have accepted and filed as a
+// personal best. 2000 sits far above any real lift in either unit and far
+// below the column's ceiling. One place to change it if Chris disagrees.
+const MAX_LOGGED_WEIGHT = 2000;
+
+// What a weight box holds, decided once, for the three places that ask:
+// seeding the pre-fill, every keystroke, and the test. Returns a state
+// rather than a number because "blank" and "impossible" are different
+// answers — blank means they did not lift it, impossible means they typed
+// something that must not be stored OR shown as if it were stored.
+function parseLoggedWeight(raw) {
+  const text = String(raw == null ? "" : raw).trim();
+  if (!text) return { state: "blank", value: null };
+  if (!/^\d*\.?\d*$/.test(text)) return { state: "rejected", value: null, why: "Numbers only" };
+  const val = Number(text);
+  if (!Number.isFinite(val) || val <= 0) return { state: "blank", value: null };
+  if (val > MAX_LOGGED_WEIGHT) {
+    return { state: "rejected", value: null, why: "Over " + MAX_LOGGED_WEIGHT };
+  }
+  // Two decimal places is what the column keeps; rounding here means the
+  // device and the server hold the same number rather than nearly the same.
+  return { state: "ok", value: Math.round(val * 100) / 100 };
+}
+
+// Says so on the row itself. A number the app will not store must never look
+// like one it has stored — the box is the only thing the member reads.
+function markWeightInput(input, parsed) {
+  const row = input.closest(".weight-row");
+  let warn = row ? row.querySelector(".weight-log-warn") : null;
+  if (parsed.state === "rejected") {
+    input.classList.add("is-bad");
+    if (!warn && row) {
+      warn = document.createElement("span");
+      warn.className = "weight-log-warn";
+      row.appendChild(warn);
+    }
+    if (warn) warn.textContent = parsed.why + " — not saved";
+    return;
+  }
+  input.classList.remove("is-bad");
+  if (warn) warn.remove();
+}
+
 const Player = {
   circuit: null,
   phases: [],
@@ -6727,7 +6775,8 @@ const Player = {
                     ${row.reps ? `<span class="set-row-reps">${repsLabel(row.reps)}</span>` : ""}
                   </span>
                   <span class="set-row-leader"></span>
-                  <input type="number" inputmode="numeric" class="weight-log-input"
+                  <input type="text" inputmode="decimal" enterkeyhint="done"
+                         maxlength="7" class="weight-log-input"
                          data-key="${esc(key)}" data-ex-name="${esc(g.name)}"
                          value="${prefill}" placeholder="lb" />
                 </label>`;
@@ -6752,18 +6801,45 @@ const Player = {
       // mid-screen keeps it too, which is the same promise the input handler
       // below already makes.
       inputs.forEach((input) => {
+        // A pre-fill can itself be a number this app would no longer accept —
+        // it comes from the member's own history, which may already hold an
+        // 8850 typed before T-60 was fixed. Flag it, do not seed it.
+        const parsed = parseLoggedWeight(input.value);
+        markWeightInput(input, parsed);
         if (this.setWeights[input.dataset.key] != null) return;
-        const val = Number(input.value);
-        if (!Number.isFinite(val) || val <= 0) return;
-        this.setWeights[input.dataset.key] = val;
-        this.noteWeight(input.dataset.exName, val);
+        if (parsed.state !== "ok") return;
+        this.setWeights[input.dataset.key] = parsed.value;
+        this.noteWeight(input.dataset.exName, parsed.value);
       });
 
       inputs.forEach((input) => {
+        // Tapping a pre-filled box used to drop the caret wherever the thumb
+        // landed, so correcting 80 to 85 produced 8850 and carried it down
+        // every set (tester T-60). Selecting on focus makes a tap-and-type
+        // replace the number, which is what the pre-fill is for.
+        //
+        // This is why the box is a text input with inputmode="decimal" and
+        // not type="number": on a number input select() silently does
+        // nothing and setSelectionRange() throws InvalidStateError, so the
+        // obvious one-line version of this fix looks right and does nothing.
+        // Deferred by a tick because the caret is placed after the focus
+        // handler runs. setTimeout rather than requestAnimationFrame: rAF is
+        // tied to painting and does not fire in a tab that is not being
+        // drawn, which is a real state for a phone that has just woken.
+        input.addEventListener("focus", () => {
+          setTimeout(() => { try { input.select(); } catch (e) {} }, 0);
+        });
         input.addEventListener("input", () => {
-          const val = Number(input.value);
+          // A text input accepts anything. Keep the box to digits and one
+          // decimal point as they type, rather than letting it hold
+          // something that silently becomes nothing later.
+          const cleaned = input.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+          if (cleaned !== input.value) input.value = cleaned;
+          const parsed = parseLoggedWeight(input.value);
+          const val = parsed.value;
           input.dataset.touched = "1";
-          if (Number.isFinite(val) && val > 0) {
+          markWeightInput(input, parsed);
+          if (parsed.state === "ok") {
             this.setWeights[input.dataset.key] = val;
             this.noteWeight(input.dataset.exName, val);
             // Carry it down this exercise's later sets, stopping at the first
@@ -6777,6 +6853,9 @@ const Player = {
               if (other.dataset.touched === "1") return;
               other.value = val;
               this.setWeights[other.dataset.key] = val;
+              // A row below may have been carrying a flagged pre-fill of its
+              // own; a good number landing on it clears the flag with it.
+              markWeightInput(other, parsed);
             });
           } else {
             delete this.setWeights[input.dataset.key];

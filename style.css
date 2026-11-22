@@ -893,7 +893,10 @@ h1, h2, h3 {
    as the screen they just worked through: number, leader, reps — and the box
    standing exactly where the tick stood. */
 .weight-log-input {
-  width: 86px;
+  /* 96, not 86: at 17px/800 a box of 86 scrolled anything past four digits
+     out of sight, so a member could read 8850 while the field held 888550
+     (tester T-60). Everything this app will now accept fits. */
+  width: 96px;
   text-align: center;
   font-family: inherit;
   font-size: 17px;
@@ -903,6 +906,21 @@ h1, h2, h3 {
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   padding: 8px 6px;
+}
+/* A number the app will not store must not look like one it has. The row
+   wraps so the reason lands under it rather than squeezing the box. */
+.weight-row { flex-wrap: wrap; }
+.weight-log-input.is-bad {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.weight-log-warn {
+  flex-basis: 100%;
+  text-align: right;
+  padding-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--danger);
 }
 
 /* ---------- SUPERSET ROWS (2026-10-02) ----------
