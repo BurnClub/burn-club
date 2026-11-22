@@ -4152,21 +4152,54 @@ function blocksCompletedAt(phases, index) {
 // member who got two-thirds through and never came back still has it on their
 // record and their coach still sees it. Reuses logCompletion so the entry is
 // shaped like any other and reaches the same stats.
+// How long they were actually in the workout: first start to last heartbeat.
+// NOT Date.now() — they walked away hours ago and the clock kept no watch
+// over an empty room. The heartbeat stops when the app does, so this is the
+// time the player was open, to within one heartbeat.
+//
+// Capped at the workout's own length, because a phone left on the weights
+// screen all afternoon keeps the heartbeat ticking, and because a member who
+// resumed once and left again has the gap between the two stints sitting
+// inside this span. Null when the record has no usable timestamps — records
+// written before they existed, and anything with a clock that ran backwards.
+function partialMinutesOnTheClock(rec, fullMinutes) {
+  const started = Number(rec && rec.startedAt);
+  const last = Number(rec && rec.lastSeenAt);
+  // Missing, zero, negative or not a number at all. A stored 0 matters:
+  // without this it reads as 1970 and claims the whole workout.
+  if (!(started > 0)) return null;
+  const mins = Math.round((last - started) / 60000);
+  // Catches a missing lastSeenAt (NaN) and a clock that ran backwards.
+  if (!Number.isFinite(mins) || mins <= 0) return null;
+  return Math.min(mins, fullMinutes);
+}
+
 function logPartialCompletion(circuit, rec, blocksDone, phases) {
-  // Pro-rated from the work completed rather than wall time — they were away
-  // for hours, so the elapsed clock is meaningless here.
-  //
-  // Blocks are the honest unit once at least one is finished. Below that the
-  // block count is zero, which would write a member's 25 minutes of sets into
-  // their history as "1 min" (tester T-54), so the phase queue — every set,
-  // round and rest — is what is left to measure with.
-  const fraction = blocksDone >= 1
-    ? blocksDone / circuit.blocks.length
-    : (phases && phases.length ? (rec.index || 0) / phases.length : 0);
+  const fullMinutes = parseInt(circuit.meta, 10) || 20;
+  // Blocks are the honest unit once at least one is finished.
+  let minutes;
+  if (blocksDone >= 1) {
+    minutes = Math.round(fullMinutes * (blocksDone / circuit.blocks.length));
+  } else {
+    // Below one block there is nothing to count in blocks, and counting
+    // PHASES does not work either: a straight-sets or ladder block is a
+    // single phase holding the whole checklist (`pushSetPhases`), so a member
+    // who did five of six sets still has index 0 and was written into their
+    // history as "1 min" — the exact symptom T-54 was supposed to have fixed
+    // (tester T-62). So ask the clock, which knows.
+    //
+    // The phase fraction stays as the fallback for a record too old to carry
+    // timestamps: coarse, but better than the floor for a format where phases
+    // really do tick along, like an interval circuit.
+    const clocked = partialMinutesOnTheClock(rec, fullMinutes);
+    minutes = clocked !== null
+      ? clocked
+      : Math.round(fullMinutes * (phases && phases.length ? (rec.index || 0) / phases.length : 0));
+  }
   const partial = {
     ...circuit,
     title: `${circuit.title} (partial)`,
-    meta: `${Math.max(1, Math.round((parseInt(circuit.meta, 10) || 20) * fraction))} min`,
+    meta: `${Math.max(1, minutes)} min`,
   };
   return logCompletion(partial, rec.sessionWeights || {}, rec.setWeights || {});
 }

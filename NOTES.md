@@ -2925,6 +2925,58 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### An interrupted workout was STILL logged as "1 min" (2026-11-21, tester T-62)
+
+T-54's fix measured the leftover work in PHASES. That works for an interval
+circuit, where a phase is a station. It does nothing for the shape the finding
+was actually about: `pushSetPhases()` emits **one** phase holding a block's
+whole six-set checklist, so a member who did five of six sets still has
+`index === 0`, a fraction of zero, and the one-minute floor. Reproduced
+against the shipped function before changing it — five of six sets with 26
+minutes in the player came back `1 min`, with the comment above it claiming
+that case was fixed.
+
+I verified T-54 on a workout whose phases tick along per round and generalised
+from it. The case the finding named was the one I did not run.
+
+**The record has always carried the answer.** `persist()` writes `startedAt`
+and refreshes `lastSeenAt` on every heartbeat, so first-start-to-last-beat is
+the time the player was actually open, to within one heartbeat. That is now
+what a partial under one block is measured by, through
+`partialMinutesOnTheClock()`. Not `Date.now()` — they walked away hours ago
+and the clock kept no watch over an empty room, which is what the original
+comment was right about.
+
+Capped at the workout's own stated length, for two reasons: a phone left on
+the weights screen all afternoon keeps the heartbeat ticking, and a member who
+resumed once and left again has the gap between the two stints inside that
+span. The phase fraction stays as the fallback for a record with no usable
+timestamps. One whole block or more is unchanged — blocks remain the unit once
+one is finished, and that decision was not this fix.
+
+**Checked by:** `tests/sync/partial-duration.test.js`, 29 checks on the real
+`logPartialCompletion` with a stubbed `logCompletion`, plus eleven mutations.
+Three of those mutations caught nothing at first because the guards they
+targeted were redundant — `last <= started` and an `isFinite` on the inputs
+were both already covered by the check on the minutes. The function now has
+two guards and each one is load-bearing: dropping either fails a named check.
+
+**The tooling hole this opened, which is the part worth remembering.**
+Lifting `logPartialCompletion` into `partial-workout-kept.test.js` no longer
+worked, because it now calls a function that test did not lift. The file threw
+**part way through** — and `run.sh` could not see it. It only called a file
+crashed when it produced NO checks at all; one that prints twelve PASSes and
+then dies reported "12 passed, 0 failed" and looked green. I compounded it by
+reading the suite's output through `tail -4`, which shows the summary line and
+nothing else. `run.sh` now fails any file whose output contains `Exception:`,
+and that guard was proved by removing the lift again and watching it report
+THREW. **Third time in this file: the thing that watches was itself
+unwatched.** Read the whole suite output, not the last line of it.
+
+**Not repaired:** completions already written as "1 min" stay as they are. The
+in-progress record they were derived from is long gone, so there is nothing
+left to recompute them from.
+
 ### Weights were filed against the set they were typed in (2026-11-21, tester T-61)
 
 `lifts.set_number` recorded the order the boxes were filled, not which set the

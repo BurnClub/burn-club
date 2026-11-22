@@ -94,6 +94,10 @@ function logCompletion(circuit, sessionWeights, setWeights) {
   LOGGED = { meta: circuit.meta, title: circuit.title, sessionWeights: sessionWeights, setWeights: setWeights };
   return LOGGED;
 }
+// logPartialCompletion calls this; without it the file dies at the first
+// duration check, which the runner could not see until run.sh learned to
+// look for exceptions (2026-11-21).
+eval(lift("partialMinutesOnTheClock"));
 eval(lift("logPartialCompletion"));
 
 // A 32-minute, 4-block workout; each block is six sets, so 24 phases.
