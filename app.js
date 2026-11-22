@@ -9004,9 +9004,41 @@ function demoEntriesRequested() {
 function applyDemoEntryVisibility() {
   const demo = document.getElementById("login-demo");
   if (!demo) return;
-  // Still shown when there is no Supabase to sign in to at all — otherwise a
-  // local copy with no config is a login form that cannot do anything.
-  demo.hidden = supabaseReady() && !demoEntriesRequested();
+  // Asked for, or not at all (2026-11-21, tester T-55).
+  //
+  // These used to appear whenever there was no Supabase client, on the
+  // reasoning that a copy with no config is otherwise a login form that
+  // cannot do anything. But the config is not optional — the URL and the
+  // publishable key are constants in supabase-client.js — so in practice
+  // "no client" meant "the library did not load", and a real member whose
+  // sign-in had just broken was shown "Continue as Guest" and "Preview as
+  // Fit & Functional member". Tapping one puts them in a fake app full of
+  // invented people, which looks a great deal like their account having been
+  // wiped. `?demo=1` still works, which is how every demo in this project is
+  // actually opened.
+  demo.hidden = !demoEntriesRequested();
+}
+
+// The sign-in library did not load. Rare now that it is served from this repo
+// and sits in the service worker's SHELL, but a first-ever open with no
+// connection still has nothing cached, and a file can 404 after a bad deploy.
+//
+// Before this, that was the one way into the app where NOTHING was said and
+// nothing was recorded: routeOnLoad() returned at its first line, the member
+// saw an ordinary login form, and admin showed them as never having tried
+// (tester T-55). logAuthEvent() can speak now — since T-53 it posts
+// anonymously and does not touch the client — so this is recordable.
+function showSignInUnavailable() {
+  const err = document.getElementById("login-error");
+  if (err) {
+    err.textContent = "Burn Club couldn't finish loading the part that signs you in. "
+      + "You're not locked out and nothing on this phone is lost — close the app "
+      + "and open it again, on wifi or mobile data. If it keeps happening, tell your coach.";
+    err.hidden = false;
+  }
+  const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+  logAuthEvent("library_missing", "supabase-js did not load; the device reports "
+    + (offline ? "no connection" : "a connection"));
 }
 
 const ENTRY_WAIT_MS = 6000;
@@ -9052,7 +9084,10 @@ function showEmailLinkError(info) {
 
 async function routeOnLoad() {
   applyDemoEntryVisibility();
-  if (!supabaseReady()) return false;          // demo mode; login screen stands
+  // Not "demo mode": the only way to get here is the sign-in library failing
+  // to load, and the member deserves to be told so rather than shown a login
+  // form that cannot work (tester T-55).
+  if (!supabaseReady()) { showSignInUnavailable(); return false; }
   const linkError = emailLinkError();
   if (linkError) {
     showEmailLinkError(linkError);

@@ -2925,6 +2925,77 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### The one file the app could not open without, and could not cache (2026-11-21, tester T-55)
+
+`supabase-js` loaded from `cdn.jsdelivr.net`, and the service worker
+deliberately ignores cross-origin requests — `if (url.origin !== self.location.origin) return;`
+— so that single file was left to the browser's own HTTP cache, which is
+empty on a first load and can be evicted. When it did not arrive, `SB` was
+null and three things happened at once: `routeOnLoad()` returned at its first
+line in silence, the member got an ordinary login form, and
+`applyDemoEntryVisibility()` **un-hid "Continue as Guest" and "Preview as Fit
+& Functional member"** underneath it. Tapping one puts them in a fake app full
+of invented people, which looks a great deal like their account having been
+wiped. Nothing was recorded anywhere: this was the last way into the app that
+left no trace.
+
+**The fix is to stop depending on a CDN.** `vendor/supabase-js-2.116.0.umd.js`
+is the same build, byte-identical from jsdelivr and unpkg (which serve the npm
+tarball independently), 218,318 bytes, sha256 `84ee9bf4…5d5ff6`, recorded in
+`vendor/README.md` with the steps for moving to a newer version. `index.html`
+loads it from here and `SHELL` in `sw.js` caches it like every other file the
+app needs. The version stays in the filename so an upgrade shows up in a diff
+rather than hiding inside a file called `supabase.js`.
+
+**And it is handled when it still fails** — a first-ever open with no
+connection has nothing cached, and a file can 404 after a bad deploy:
+
+- `showSignInUnavailable()` writes a message on the login screen saying the
+  app did not finish loading, that they are not locked out and nothing on the
+  phone is lost, and to open it again. A blank login form reads like a wiped
+  account, which is the thing to head off.
+- It logs `library_missing`, which `logAuthEvent()` can do now: since T-53 it
+  posts anonymously and does not touch the client. This entry existing at all
+  is the point — it was the one state admin could never see.
+- `signIn()`'s `!SB` branch logs `signin_no_library` and says the password has
+  **not been checked**, instead of "Can't reach the server", which was never
+  asked. The other three `!SB` guards are left alone: `changePassword` and
+  `setPassword` need a screen `routeOnLoad()` no longer opens, and "Forgot
+  your password?" already says something true enough.
+- **The demo entries now appear only for `?demo=1`.** They used to appear
+  whenever there was no client, reasoning that a copy with no config is
+  otherwise a dead login form — but the config is not optional, it is two
+  constants in `supabase-client.js`, so in practice that rule only ever fired
+  for a member whose sign-in had just broken. Worth knowing if a config-less
+  copy is ever wanted; `?demo=1` is how every demo here is actually opened.
+
+**Checked by:** `tests/sync/sign-in-library.test.js`, 23 checks, seven
+mutations — back to the CDN, out of `SHELL`, silent return, message without
+the log, the old demo rule, the old `signIn` wording, and a truncated vendor
+file — each caught by a named check.
+
+Then live, in the state the tester could not isolate: a throwaway copy of the
+real page with the script tag removed, served from the local server, deleted
+afterwards. The library was genuinely absent, the message showed, the demo
+buttons stayed hidden, and both rows went to the live `auth_events` with the
+right content — `library_missing` and, after submitting the form,
+`signin_no_library` with the email, HTTP 201.
+
+**Two things that cost time and are worth remembering.** The browser pane's
+network panel shows no cross-origin requests from a page on localhost, so
+"no POST in the panel" was not evidence of anything; wrapping `timedFetch` and
+reading what it was handed is what actually answered it. And the first run of
+this check was against a **stale `supabase-client.js`** — the page had the new
+`app.js` and the old client, because a cache-buster on the HTML does nothing
+for its sub-resources. The check page now stamps every local script and
+stylesheet it loads. Same lesson as the top of this file, again: prove the
+page is running the code you think it is before believing a word of it.
+
+**Not done:** `admin/index.html` and `staff/index.html` still load the same
+file from jsdelivr. Same failure, smaller blast radius — it is Chris and Kelly
+rather than a member mid-trial — and changing them means verifying three apps
+rather than one. Worth doing, as its own job.
+
 ### An interrupted workout was STILL logged as "1 min" (2026-11-21, tester T-62)
 
 T-54's fix measured the leftover work in PHASES. That works for an interval

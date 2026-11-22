@@ -345,7 +345,17 @@ function signInThrewError(e) {
 }
 
 async function signIn(email, password) {
-  if (!SB) return { error: "Can't reach the server. Check your connection." };
+  // The library itself never loaded, so nothing has been sent anywhere and no
+  // password has been checked. Worded for that, and recorded: this used to be
+  // the one path through the login form that left no trace (tester T-55).
+  // The other !SB guards below are not reachable in that state — changePassword
+  // and setPassword both need a screen routeOnLoad() no longer opens — and
+  // "Forgot your password?" already says something true enough.
+  if (!SB) {
+    logAuthEvent("signin_no_library", "sign-in attempted with no supabase-js loaded", (email || "").trim());
+    return { error: "Burn Club hasn't finished loading the part that signs you in, so your "
+      + "password hasn't been checked yet. Close the app and open it again, on wifi or mobile data." };
+  }
   // The whole call, inside a try. Before this, a throw out of
   // signInWithPassword escaped signIn() entirely, so the login form's handler
   // never came back and the button stayed on "Signing in…", disabled, for

@@ -1377,7 +1377,11 @@
 <!-- Supabase, pinned. UMD build because there is no bundler here — it defines
      a `supabase` global, and supabase-client.js guards against it being absent
      (blocked CDN, captive wifi, offline start) rather than throwing later. -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+<!-- Served from this repo, not a CDN: the service worker does not cache
+     cross-origin scripts, so a CDN copy was the one file the app needed that
+     could simply not arrive - and when it did not, a member got a silent
+     login form with the demo buttons under it (tester T-55). See vendor/README.md. -->
+<script src="vendor/supabase-js-2.116.0.umd.js"></script>
 <script src="supabase-client.js"></script>
 <script src="data.js"></script>
 <script src="app.js"></script>
