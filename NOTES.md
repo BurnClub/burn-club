@@ -2925,6 +2925,58 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Weights were filed against the set they were typed in (2026-11-21, tester T-61)
+
+`lifts.set_number` recorded the order the boxes were filled, not which set the
+weight belongs to. `liftsToRows()` numbered each exercise's sets from
+`Object.keys(c.setWeights)`, which is insertion order — and clearing a box
+**deletes** its key while retyping **re-inserts it at the end**. So going back
+to correct one number sent it to the bottom, and a descending scheme entered
+from the lightest set up came out exactly inverted. Reproduced against the
+shipped function before touching it: four sets entered bottom-up gave
+`Set 4 → 1, Set 3 → 2, Set 2 → 3, Set 1 → 4`.
+
+The set labels were in the keys the whole time (`"<n>|Exercise|Set 3"`), and
+the label is what the member saw. So the label decides, through one new
+`setNumberFromLabel()` — "Set 3", "Set 3 · left side", and the pre-2026-10-16
+"Round 3" all read as 3.
+
+**Three cases, and the second is the one that needs care.**
+
+1. **Player keys** (segment 0 is the block index, which repeats): number from
+   the labels when they are all present and distinct. This is the fix.
+2. **Keys pulled back from the server** (segment 0 is the server's own
+   set_number): the numbers stand, *unless* the labels are a rearrangement of
+   the same numbers — then they are put back where they belong. That repairs
+   rows this bug has already crossed, including the ones sitting on Jordan's
+   account now, **without ever writing to a slot that was not already in
+   use**. Writing to new slots and leaving the old rows behind is exactly what
+   T-23 cost: 6 rows to 12 to 16 to 19 to 20 over five opens.
+3. **Labels that cannot decide** — a cued superset legitimately shows two
+   "Set 1"s, left and right. Then the old behaviour, except ordered by the
+   label first, so set 1 still comes before set 2 whoever typed what first.
+
+**Checked by:** `tests/sync/set-number-order.test.js`, 30 checks, driving the
+real `liftsToRows()` **and** the real pull (`liftsOntoCompletions`), so the
+round trip is checked rather than assumed: eight different shapes each pushed,
+pulled and pushed again, and the second push must agree with the first. That
+is the property the growth bug broke, and it is what stops a repair rule from
+becoming a drift. Nine mutations, every one caught by a named check —
+including restoring the original insertion-order line (8 checks fail),
+dropping the rearrangement guard, refusing to repair crossed rows, accepting
+duplicate labels as authoritative, and comparing the two numberings unsorted.
+One check was weak and mutation found it: the cued-superset fixture happened
+to be typed in an order where insertion numbering looked right, so it now
+types set 2 first.
+
+`set-number-growth.test.js` and `per-set-weights.test.js` still pass unchanged.
+
+**What this does not do:** labels that are not a rearrangement of the server's
+numbers are left alone (a legacy row labelled "Set 2" sitting on set_number 1
+stays there). Repairing those means writing to slots nothing is using, which
+is the orphan case above. If Chris wants those cleaned, it is a SQL job with
+eyes on it, not a rule in the sync path.
+
 ### One mistyped weight stopped every weight that member ever logged (2026-11-21, tester T-59 and T-60)
 
 Two findings, one failure chain, fixed together because fixing either alone

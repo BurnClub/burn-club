@@ -834,6 +834,16 @@ function exerciseIdForName(name) {
   return String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "-");
 }
 
+// Which set a weight belongs to, read off the label the member saw.
+// Labels are written as "Set 3", and with a cue as "Set 3 · left side";
+// records written before 2026-10-16 say "Round 3" for the same thing.
+function setNumberFromLabel(label) {
+  const m = /^\s*(?:set|round)\s+(\d+)/i.exec(String(label == null ? "" : label));
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
 function liftsToRows(completions) {
   const rows = [];
   completions.forEach((c) => {
@@ -879,7 +889,42 @@ function liftsToRows(completions) {
           const nums = list.map((e) => e.given);
           const keep = nums.every((n) => n !== null)
             && new Set(nums).size === nums.length;
-          list.forEach((e, i) => { e.setNumber = keep ? e.given : i + 1; });
+
+          // THE LABEL IS THE SET (2026-11-21, tester T-61).
+          //
+          // Numbering by the order the keys happen to sit in filed a member's
+          // weights against whatever set they typed first: clearing a box
+          // deletes its key and retyping re-inserts it at the end, so going
+          // back to fix one number moved it to the bottom. A descending
+          // scheme entered from the lightest set up came out exactly
+          // inverted. The set labels were right there in the keys the whole
+          // time, saying which set each weight belongs to.
+          const labelled = list.map((e) => setNumberFromLabel(e.label));
+          const allLabelled = labelled.every((n) => n !== null)
+            && new Set(labelled).size === labelled.length;
+          // When the server has already numbered these, only re-file them if
+          // the labels are a rearrangement of the SAME numbers. That repairs
+          // rows already crossed without ever writing to a slot that was not
+          // in use, which is what left orphans behind in tester T-23.
+          const samePositions = keep
+            && labelled.slice().sort().join() === nums.slice().sort().join();
+
+          if (allLabelled && (!keep || samePositions)) {
+            list.forEach((e, i) => { e.setNumber = labelled[i]; });
+          } else if (keep) {
+            list.forEach((e) => { e.setNumber = e.given; });
+          } else {
+            // Nothing authoritative to go on — a cued superset can show two
+            // "Set 1"s (left and right). Order by the label where there is
+            // one, which at least keeps the member's own reading order, and
+            // number from there.
+            const order = list.map((e, i) => i).sort((a, b) => {
+              const la = labelled[a] === null ? Infinity : labelled[a];
+              const lb = labelled[b] === null ? Infinity : labelled[b];
+              return la === lb ? a - b : la - lb;
+            });
+            order.forEach((idx, pos) => { list[idx].setNumber = pos + 1; });
+          }
         });
         entries.forEach((e) => {
           rows.push({
