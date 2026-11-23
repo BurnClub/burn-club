@@ -2925,6 +2925,52 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Every weight typed in an EMOM or an AMRAP was thrown away on save (2026-11-23, tester T-69)
+
+`liftsToRows()` wrote the per-set rows and then **returned**, so it never
+reached the branch that writes the by-exercise map — and those two screens'
+weight boxes are the only writers of that map. In any workout with both kinds
+of block the numbers vanished: not written to `lifts`, no column for them on
+`completions`, and the next pull rebuilt the local copy from the rows that
+were never written, so they left the phone too. Nothing was said at any point.
+The member's notebook listed six exercises where they had lifted nine.
+
+**Three of the six workouts on the programme the testers are now on** —
+SHOULDERS/ABS, CHEST/TRICEPS and QUADS/GLUTES — put an EMOM or an AMRAP after
+superset blocks. So a member on Kelly's week lost weights in half their
+sessions. Reproduced against the shipped function before changing it: 6 rows
+out of 9, with Devils Press, 2-Way Lateral Raise and Straight Leg DB Crunch
+all LOST.
+
+**The fix is the missing `return`**, plus the rule that makes removing it
+safe: an exercise that already has per-set rows does not also get a
+by-exercise row. The by-exercise map holds one number for the whole session,
+so there is no honest set to hang it on — writing it would land on set 1 and
+overwrite real data. Per set wins; the by-exercise branch now fills in only
+the exercises with no per-set rows at all, which is exactly what an EMOM or an
+AMRAP produces. No two rows can then share the upsert key
+`(member_id, completion_client_id, exercise_id, set_number)`, which is checked
+directly rather than argued about.
+
+**Why the suite could not catch it, which is the part worth remembering.**
+`per-set-weights.test.js` puts the same exercise names in both maps — the one
+case where the early return costs nothing. 27 files passed before the fix and
+27 passed after it. A fixture that is tidier than real data tests the tidy
+case; Kelly's real week is the untidy one.
+
+**Checked by:** `tests/sync/mixed-block-weights.test.js`, 20 checks, five
+mutations — the early return restored, the overlap rule removed (which
+collides on the upsert key), `perSet` never filled, and the `> 0` guard
+dropped. Push → pull → push is checked for three shapes, because the pull
+rebuilds BOTH maps from the rows and a second push must not grow the set:
+that is the T-23 growth bug's shape and this change walks straight past it.
+
+**What this does and does not repair.** A device still holding a completion
+with its by-exercise map intact will write the missing rows on its next push,
+the way the T-61 numbering repaired itself. A device that has already pulled
+since that session has nothing left to send — those weights are gone and this
+cannot bring them back.
+
 ### Three screens ask for a weight, and only one of them was checking (2026-11-22, tester T-65, T-67, T-68)
 
 Three findings, one chain, fixed together because that is how they bite.

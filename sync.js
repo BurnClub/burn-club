@@ -847,8 +847,11 @@ function setNumberFromLabel(label) {
 function liftsToRows(completions) {
   const rows = [];
   completions.forEach((c) => {
+    // Which exercises the per-set branch below has already written, so the
+    // by-exercise branch can fill in the ones it did not (tester T-69).
+    const perSet = new Set();
     // Per set where we have it (2026-10-02), one row per exercise where we
-    // don't. setWeights keys are "blockIndex|Exercise Name|Set 2"; the label
+    // don't. BOTH, where a workout has both kinds of block. setWeights keys are "blockIndex|Exercise Name|Set 2"; the label
     // is what the member saw, so it is what gets stored rather than an index
     // they would have to decode.
     if (c.setWeights && Object.keys(c.setWeights).length) {
@@ -927,6 +930,7 @@ function liftsToRows(completions) {
           }
         });
         entries.forEach((e) => {
+          perSet.add(e.name);
           rows.push({
             member_id: AUTH_MEMBER.id, completion_client_id: c.id,
             exercise_id: exerciseIdForName(e.name),
@@ -934,11 +938,26 @@ function liftsToRows(completions) {
             set_number: e.setNumber, set_label: e.label,
           });
         });
-        return;
+        // NO early return (2026-11-23, tester T-69). This used to stop here,
+        // which threw away every weight typed into an EMOM or AMRAP box the
+        // moment a workout ALSO had a per-set screen in it — three of the six
+        // workouts on the programme the testers are on. Those boxes write to
+        // the by-exercise map below and nothing else, `completions` has no
+        // column for it, and the next pull overwrote the local copy from the
+        // rows that were never written, so it went from the phone too. The
+        // member was told nothing and their notebook listed six exercises
+        // where they had lifted nine.
       }
     }
     if (!c.weights) return;
     Object.keys(c.weights).forEach((name) => {
+      // An exercise with per-set rows is already fully described by them, and
+      // the by-exercise map holds only one number for the whole session, so
+      // there is no honest set to put it on — writing it would land on set 1
+      // and overwrite real data. Per set wins; this is only for the exercises
+      // that have no per-set rows at all, which is exactly what an EMOM or an
+      // AMRAP produces.
+      if (perSet.has(name)) return;
       const weight = Number(c.weights[name]);
       // `> 0` as well as finite, which this branch never had and its
       // neighbour always did (tester T-65): a 0 or a -50 typed into the
