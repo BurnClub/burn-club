@@ -2925,6 +2925,54 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### A workout done on the wrong day counted for nothing (2026-11-23, tester T-70)
+
+The programme asked whether each scheduled workout had been completed **on
+its own date**. Jordan did Monday's SHOULDERS/ABS on the Sunday: it saved, it
+is in the notebook, it is on the server — and Home still read **0/6 Done This
+Week, 0% Program Complete**, with the calendar showing that Monday as an
+outstanding workout. There was no way to tell the app it had been done.
+
+Every tester who trains a day late sees this, which in a real week is most of
+them. And it was true of the sanctioned path too: a workout **moved** with the
+app's own ⇄ handle changed where the card sat and nothing else, so doing it on
+the new date counted for nothing either.
+
+**`scheduleCompletionMap()`** now works out, once for the whole programme,
+which completion satisfies which scheduled day. Two passes:
+
+1. Exact dates — the moved date where there is one, otherwise the scheduled
+   date. This runs first so that a member who trains on the day is never
+   mis-assigned, and it is what lets a move land outside its own week.
+2. Anything still open is filled from anywhere in that programme week.
+
+The matching is **one-to-one in both directions**: one session cannot tick two
+days, and two sessions of the same workout cannot tick one day twice. Home,
+the progress percentage and the Calendar all read the same map, so they can no
+longer disagree — the Calendar row and Home's counter are now literally the
+same answer.
+
+**The week is the window** because the week is the unit the member is shown
+("2/6 Done This Week"). A session done the FOLLOWING week does not count
+towards the week it was scheduled in — it would make the number on screen
+wrong. On a programme that repeats a workout weekly it instead ticks the new
+week's slot, which my own test asserted backwards until it failed and made me
+look. That behaviour is now pinned deliberately rather than assumed.
+
+**Checked by:** `tests/sync/late-workout-counts.test.js`, 22 checks, six
+mutations — exact-date-only (the shipped behaviour), moves ignored, the
+one-to-one guard removed, the window widened to the whole programme, the
+exact-date pass dropped, and variants not matched. Three of those mutations
+threw partway through the file before the map reads were guarded; the runner
+caught it as THREW, which is the check added yesterday earning its place.
+
+Then in the browser on the structured demo profile, before and after in one
+page: `completionForSlotOnDate('ff-w2-hamstrings-glutes', '2026-11-21')` is
+still **false** — the old rule, unchanged — while the new map ticks day 9 from
+a completion dated two days later. Home went **2/6 → 3/6** and **13% → 15%**,
+and the Calendar's **Sat, Nov 21** row now carries the tick for a session
+logged on the 23rd.
+
 ### Every weight typed in an EMOM or an AMRAP was thrown away on save (2026-11-23, tester T-69)
 
 `liftsToRows()` wrote the per-set rows and then **returned**, so it never

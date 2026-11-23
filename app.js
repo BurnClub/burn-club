@@ -1666,6 +1666,77 @@ function renderDayCell(date, byDate, today) {
 // personal startDate — nobody shares a calendar in a structured program
 // (2026-08-19). Returns null for rolling members and for anyone whose
 // program hasn't started or has finished, so callers can fall back.
+// Which completion satisfies each scheduled workout, worked out once for the
+// whole programme (2026-11-23, tester T-70).
+//
+// A workout used to count only if it was done ON its scheduled date. A member
+// who did Monday's session on Tuesday got no tick, no "Done This Week" and no
+// progress — the app simply did not notice they had trained. In a six-person
+// trial that is most people most weeks. Worse, the same was true of a workout
+// the member MOVED with the app's own ⇄ handle: the move changed where the
+// card sat and nothing else, so doing it on the new date counted for nothing
+// either.
+//
+// Two passes, so nobody who trains on the day is ever mis-assigned: exact
+// dates first (the moved date where there is one), then whatever is left is
+// filled from anywhere in that programme week. The matching is one-to-one in
+// both directions — one session cannot tick two days, and two sessions of the
+// same workout cannot tick one day twice.
+//
+// A week is the window because a week is the unit the member is shown: "2/6
+// Done This Week". A session done the FOLLOWING week still does not count
+// towards the week it was scheduled in, which is deliberate — it would make
+// the number the member is reading wrong.
+function scheduleCompletionMap(template, startDate) {
+  const done = new Map();
+  if (!startDate || !template || !template.length) return done;
+  const items = template.filter((it) => it.type === "workout").slice().sort((a, b) => a.day - b.day);
+  if (!items.length) return done;
+
+  const keyForDay = (programDay) => {
+    const d = parseDateKey(startDate);
+    d.setDate(d.getDate() + (programDay - 1));
+    return dateKey(d);
+  };
+  // One id set per slot rather than one per comparison: this runs on every
+  // render of Home and the Calendar.
+  const idsBySlot = new Map();
+  const idsFor = (slotId) => {
+    if (!idsBySlot.has(slotId)) {
+      const ids = new Set(workoutsForSlot(slotId).map((c) => c.id));
+      ids.add(slotId);
+      idsBySlot.set(slotId, ids);
+    }
+    return idsBySlot.get(slotId);
+  };
+  const matches = (c, slotId) => idsFor(slotId).has(c.workoutId) || c.slotId === slotId;
+
+  const used = new Set();
+  const take = (item, from, to) => {
+    const hit = COMPLETIONS.find((c) => !used.has(c.id) && c.date >= from && c.date <= to
+      && matches(c, item.workoutId));
+    if (!hit) return false;
+    used.add(hit.id);
+    done.set(item.day, hit);
+    return true;
+  };
+
+  // Pass one: done on the day it was meant to be done — or on the day it was
+  // moved to, which may be outside that week entirely.
+  items.forEach((item) => {
+    const moved = moveForProgramDay(item.day);
+    const on = moved ? moved.date : keyForDay(item.day);
+    take(item, on, on);
+  });
+  // Pass two: anywhere else in the same programme week.
+  items.forEach((item) => {
+    if (done.has(item.day)) return;
+    const weekFirst = (Math.ceil(item.day / 7) - 1) * 7 + 1;
+    take(item, keyForDay(weekFirst), keyForDay(weekFirst + 6));
+  });
+  return done;
+}
+
 function memberProgramPosition() {
   const m = CURRENT_MEMBER;
   if (m.scheduleType !== "structured" || !m.startDate) return null;
@@ -1694,13 +1765,18 @@ function memberProgramPosition() {
     d.setDate(d.getDate() + (pd - 1));
     return d;
   };
-  const doneThisWeek = weekItems.filter((it) => completionForSlotOnDate(it.workoutId, dateKey(dateForProgramDay(it.day)))).length;
+  // One assignment for the whole programme, so the week count, the progress
+  // percentage and the Calendar's ticks can never disagree (tester T-70).
+  const doneByDay = scheduleCompletionMap(template, m.startDate);
+  const doneThisWeek = weekItems.filter((it) => doneByDay.has(it.day)).length;
 
   const allWorkouts = template.filter((it) => it.type === "workout");
-  const doneAll = allWorkouts.filter((it) => completionForSlotOnDate(it.workoutId, dateKey(dateForProgramDay(it.day)))).length;
+  const doneAll = allWorkouts.filter((it) => doneByDay.has(it.day)).length;
 
   return {
     day, clampedDay, totalDays, week, totalWeeks, weekFirstDay,
+    // Shared with the Calendar and Home so every screen ticks the same days.
+    doneByDay,
     weekStartDate: dateForProgramDay(weekFirstDay),
     scheduledThisWeek: weekItems.length,
     doneThisWeek,
@@ -7591,7 +7667,13 @@ function todayScheduledItems() {
       // home-only member still sees one.
       const options = workoutsForSlot(item.workoutId);
       if (!options.length) return;
-      const completion = completionForSlotOnDate(item.workoutId, todayKey);
+      // Same rule as the Calendar (T-70): done is done, whichever day they
+      // did it on, so today's card stops offering a session they finished
+      // yesterday.
+      const pos = memberProgramPosition();
+      const completion = (pos && pos.doneByDay && item.day != null)
+        ? (pos.doneByDay.get(item.day) || null)
+        : completionForSlotOnDate(item.workoutId, todayKey);
       // The day is done once EITHER variant is, so the one they did keeps its
       // tick and the other stops being offered — no half-finished day for a
       // combo member. Same rule as the Calendar.
@@ -8624,7 +8706,7 @@ function renderCalendarWeekHeader(pos, weekStart) {
 // look ahead, not a new place to be.
 let calendarWeekStart = null;
 
-function renderCalendarDayRow(date, member, template, isPast, lastDay) {
+function renderCalendarDayRow(date, member, template, isPast, lastDay, position) {
   const today = new Date();
   const isToday = dateKey(date) === dateKey(today);
   // A structured member with no start date is a data error, not a state to
@@ -8692,7 +8774,14 @@ function renderCalendarDayRow(date, member, template, isPast, lastDay) {
       // The day is done once either variant is completed, so the tick lands
       // on the one they actually did and the other simply stops being
       // offered — no half-finished day for a combo member.
-      const completion = completionForSlotOnDate(item.workoutId, dateKey(date));
+      //
+      // Asked of the schedule rather than of this date (tester T-70): a
+      // session done a day late, or on the day it was moved to, ticks the day
+      // it belongs to. `item.day` is the programme day this card came from,
+      // which is the key the assignment is made on.
+      const completion = (position && position.doneByDay && item.day != null)
+        ? (position.doneByDay.get(item.day) || null)
+        : completionForSlotOnDate(item.workoutId, dateKey(date));
       const showVariantLabels = options.length > 1;
       return options
         .filter((c) => !completion || completion.workoutId === c.id)
@@ -8782,7 +8871,7 @@ function renderCalendarTab() {
     const date = new Date(weekStart);
     date.setDate(date.getDate() + i);
     const key = dateKey(date);
-    const html = renderCalendarDayRow(date, member, template, key < todayKey, pos.totalDays);
+    const html = renderCalendarDayRow(date, member, template, key < todayKey, pos.totalDays, pos);
     if (key === todayKey) todayHtml = html;
     else rows.push(html);
   }
