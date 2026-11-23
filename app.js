@@ -1406,14 +1406,28 @@ function topWeightsFrom(weights, setWeights) {
   return top;
 }
 
-function logCompletion(circuit, weights, setWeights) {
+// `opts.minutes` is what the member actually spent, when the caller knows it.
+// Without it this falls back to the workout's own label, which is what every
+// completion used to store: a session the member skipped to the end of in 11
+// minutes was recorded as the full 45 the coach had written on it, and the
+// finish screen showed one number while the notebook showed the other
+// (tester T-73).
+function logCompletion(circuit, weights, setWeights, opts) {
   // No circuit means there's nothing to write, and writing a completion with
   // a null workoutId would put a junk row in the member's history that every
   // stat then has to count around. Returning null rather than throwing:
   // both callers treat the entry as optional, and a failed log should not
   // take the screen down with it (2026-09-16).
   if (!circuit || !circuit.id) return null;
-  const minutes = parseInt(circuit.meta, 10) || 20;
+  // Zero counts as an answer, not as silence. Both callers always know the
+  // time — absence is signalled by leaving `opts` out — so a session that
+  // really did take no measurable time is a one-minute session, not a
+  // forty-five-minute one. Caught in the browser, where a scripted run
+  // finished in 0ms and was recorded as the full label again.
+  const given = opts ? Number(opts.minutes) : NaN;
+  const minutes = Number.isFinite(given) && given >= 0
+    ? Math.max(1, Math.round(given))
+    : (parseInt(circuit.meta, 10) || 20);
   const topWeights = topWeightsFrom(weights, setWeights);
   const entry = {
     id: `local-${Date.now()}`,
@@ -4272,12 +4286,12 @@ function logPartialCompletion(circuit, rec, blocksDone, phases) {
       ? clocked
       : Math.round(fullMinutes * (phases && phases.length ? (rec.index || 0) / phases.length : 0));
   }
-  const partial = {
-    ...circuit,
-    title: `${circuit.title} (partial)`,
-    meta: `${Math.max(1, minutes)} min`,
-  };
-  return logCompletion(partial, rec.sessionWeights || {}, rec.setWeights || {});
+  // One way of saying "this took N minutes", shared with the finished-workout
+  // path (2026-11-23). This used to fabricate a `meta` string purely so
+  // logCompletion would parse the number back out of it.
+  const partial = { ...circuit, title: `${circuit.title} (partial)` };
+  return logCompletion(partial, rec.sessionWeights || {}, rec.setWeights || {},
+    { minutes: Math.max(1, minutes) });
 }
 
 function showResumeOverlay({ title, body, primary, secondary, onPrimary, onSecondary }) {
@@ -5726,9 +5740,35 @@ document.addEventListener("visibilitychange", () => {
 // told every member "You completed all 1 blocks of Week 7 Circuit" once a
 // week for eight weeks, because the weekly Fit & Functional Circuit is built
 // from a single block (tester T-56).
-function completionSentence(circuit) {
+// How many of the workout's blocks the member actually did any of.
+//
+// A block whose every real phase was skipped was not done, whatever the
+// finish screen used to say (tester T-73). Rests and the weights screen are
+// not work: skipping a rest is not skipping the block, and a superset whose
+// first round was skipped but whose other three were done is still a block
+// the member did.
+function blocksWorked(phases, skipped) {
+  const perBlock = new Map();
+  (phases || []).forEach((p, i) => {
+    if (!p || p.blockIndex == null) return;
+    if (p.kind === "rest" || p.kind === "log-weights") return;
+    const already = perBlock.get(p.blockIndex) || false;
+    perBlock.set(p.blockIndex, already || !(skipped && skipped.has(i)));
+  });
+  let n = 0;
+  perBlock.forEach((did) => { if (did) n += 1; });
+  return n;
+}
+
+function completionSentence(circuit, blocksDone) {
   const blocks = (circuit && circuit.blocks && circuit.blocks.length) || 0;
   const title = (circuit && circuit.title) || "your workout";
+  // "You completed all 4 blocks" over a block the member had just explicitly
+  // skipped, with the app's own warning still fresh ("This skips the whole
+  // EMOM block, not just part of it") — tester T-73.
+  if (Number.isFinite(blocksDone) && blocksDone >= 0 && blocksDone < blocks) {
+    return `You finished ${blocksDone} of ${blocks} blocks of ${title}. 🔥`;
+  }
   // A one-block workout names the workout instead of counting to one.
   // "all 1 block" is grammatical and still reads like a bug, so the count
   // only appears when there is more than one thing to count.
@@ -5846,6 +5886,14 @@ const Player = {
   paused: false,
   amrapRoundsByBlock: {},
   startedAt: null,
+  // Time the member was away between leaving and resuming, so the elapsed
+  // clock measures the workout rather than the gap (2026-11-23). Without it,
+  // now that elapsed is what gets RECORDED, a session resumed after an hour
+  // and a half would go into their history as a ninety-minute workout.
+  awayMs: 0,
+  // Phase indexes the member skipped through the confirm dialog. A block
+  // counts as done if any of its real phases was not skipped (tester T-73).
+  skippedPhases: new Set(),
   setsChecked: [],
   notesShownFor: new Set(),
   restIntervalId: null,
@@ -5864,6 +5912,8 @@ const Player = {
     this.index = 0;
     this.amrapRoundsByBlock = {};
     this.startedAt = Date.now();
+    this.awayMs = 0;
+    this.skippedPhases = new Set();
     this.deadlineAt = null;
     this.lastShownRemaining = null;
     this.sessionWeights = {};
@@ -5981,6 +6031,8 @@ const Player = {
       paused: this.paused,
       awaitingStart,
       startedAt: this.startedAt,
+      awayMs: this.awayMs,
+      skippedPhases: [...this.skippedPhases],
       lastSeenAt: Date.now(),
       amrapRoundsByBlock: this.amrapRoundsByBlock,
       sessionWeights: this.sessionWeights,
@@ -6036,6 +6088,10 @@ const Player = {
       if (onlyAmrap) this.amrapRoundsByBlock[onlyAmrap.blockIndex] = rec.amrapRounds;
     }
     this.startedAt = rec.startedAt || Date.now();
+    // Everything between the last heartbeat and now is time they were not in
+    // the workout. Accumulated, so a second resume does not forget the first.
+    this.awayMs = (rec.awayMs || 0) + Math.max(0, Date.now() - (rec.lastSeenAt || Date.now()));
+    this.skippedPhases = new Set(rec.skippedPhases || []);
     this.sessionWeights = rec.sessionWeights || {};
     this.setWeights = rec.setWeights || {};
     this.cardioChoice = rec.cardioChoice || null;
@@ -6233,7 +6289,17 @@ const Player = {
     // new best. logCompletion() derives the same top weight one line below;
     // both now read from one place.
     const prs = newPersonalBests(topWeightsFrom(this.sessionWeights, this.setWeights));
-    const entry = logCompletion(this.circuit, this.sessionWeights, this.setWeights);
+    // Real wall-clock time from tapping "Start Workout" to finishing the last
+    // phase, less any stretch the member was away for and came back from.
+    // Computed HERE, before the completion is written, because it is now what
+    // gets recorded as well as what gets shown — the two were different
+    // numbers until today, 11 minutes on screen and 45 in their history
+    // (tester T-73).
+    const elapsedSec = this.startedAt
+      ? Math.max(0, Math.round((Date.now() - this.startedAt - (this.awayMs || 0)) / 1000))
+      : 0;
+    const entry = logCompletion(this.circuit, this.sessionWeights, this.setWeights,
+      { minutes: elapsedSec / 60 });
     renderPRBanner(prs);
     // A previous session's note must not be sitting in the box.
     resetSessionNoteField();
@@ -6244,11 +6310,7 @@ const Player = {
     this.logCardioBlock();
     currentCompletionEntry = entry;
     document.getElementById("workout-complete-text").textContent =
-      completionSentence(this.circuit);
-    // Real wall-clock time from tapping "Start Workout" to finishing the last phase —
-    // runs the whole session regardless of which block/format is active, independent
-    // of any single block's own clock (and not reduced by time spent paused).
-    const elapsedSec = this.startedAt ? Math.round((Date.now() - this.startedAt) / 1000) : 0;
+      completionSentence(this.circuit, blocksWorked(this.phases, this.skippedPhases));
     const statsEl = document.getElementById("workout-complete-stats");
     if (statsEl) {
       // Deliberately just Total Time here — Chris pulled Calories Burned/Avg Heart
@@ -6449,6 +6511,8 @@ const Player = {
   },
 
   confirmSkip() {
+    // Recorded before advancing, because advance() is what moves off it.
+    this.skippedPhases.add(this.index);
     this.closeSkipConfirm();
     this.advance();
   },

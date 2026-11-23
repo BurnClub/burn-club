@@ -2925,6 +2925,53 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### The finish screen said 11 minutes and the app recorded 45 (2026-11-23, tester T-73)
+
+`elapsedSec` was computed only to be printed. What got STORED was
+`parseInt(circuit.meta, 10)` — the length the coach wrote on the workout — so
+a session skipped to the end of in eleven and a half minutes went into the
+member's history, their notebook and their totals as the full forty-five, with
+the calories scaled to match. And the finish screen told them they had
+completed **all four blocks**, one of which they had just skipped with the
+app's own warning still on screen.
+
+Three changes:
+
+- **`logCompletion(circuit, weights, setWeights, opts)`** takes the real
+  minutes. `logPartialCompletion` now says it the same way instead of
+  fabricating a `meta` string for logCompletion to parse back out — one way of
+  saying "this took N minutes", shared by both paths.
+- **The elapsed clock is measured properly, now that it is recorded.** The
+  player accumulates `awayMs` across resumes, so a session picked up an hour
+  later is not logged as an hour longer. Pauses still count, as they always
+  have; that is a separate question and nobody has asked it.
+- **`blocksWorked(phases, skipped)`** counts the blocks the member did any of.
+  `confirmSkip()` records the phase index before advancing off it, and both it
+  and `awayMs` ride in the in-progress record so a resumed session still
+  knows. A block counts as done if **any** of its real phases was not skipped:
+  skipping one round of a superset is not skipping the block, and skipping a
+  rest is not skipping anything.
+
+**Checked by:** `tests/sync/recorded-time.test.js`, 33 checks, eight
+mutations. One mutation — "the last phase of a block decides" — caught nothing
+until a case was added where the LAST round is the skipped one; the fixture
+happened to put the skip first, where either rule gives the same answer.
+
+**And then the browser found a bug in my own guard.** I had written "a time of
+zero means no time was given, fall back to the label". A scripted run finished
+in 0ms and was duly recorded as 45 minutes again — the exact bug, for the one
+input my unit test had asserted was correct. Both callers always know the
+time; absence is signalled by leaving `opts` out. Zero is now an answer, and a
+session of no measurable length records one minute. **The unit test had pinned
+my intent rather than the right behaviour, and only a real run disagreed.**
+
+With that fixed, the tester's own scenario end to end on the real workout
+(SHOULDERS/ABS, "45 min", three supersets and an EMOM): screen **11:36**,
+recorded **12 min**, calories **109** rather than 384, and the sentence reads
+**"You finished 3 of 4 blocks of SHOULDERS/ABS."** A full run of the same
+workout taking 46 minutes records 46 and still reads "You completed all 4
+blocks".
+
 ### A workout done on the wrong day counted for nothing (2026-11-23, tester T-70)
 
 The programme asked whether each scheduled workout had been completed **on

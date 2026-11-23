@@ -26,8 +26,16 @@ function lift(name) {
   throw new Error("could not find the end of " + name + "()");
 }
 var LOGGED = null;
-function logCompletion(circuit, sessionWeights, setWeights) {
-  LOGGED = { meta: circuit.meta, title: circuit.title, sessionWeights: sessionWeights, setWeights: setWeights };
+// The minutes arrive as an argument now rather than smuggled through a
+// fabricated `meta` string (2026-11-23, with T-73). Same contract as the real
+// logCompletion: opts.minutes when the caller knows the time, otherwise the
+// workout's own label.
+function logCompletion(circuit, sessionWeights, setWeights, opts) {
+  var given = opts ? Number(opts.minutes) : NaN;
+  var minutes = isFinite(given) && given >= 0 ? Math.max(1, Math.round(given))
+    : (parseInt(circuit.meta, 10) || 20);
+  LOGGED = { minutes: minutes, meta: minutes + " min", title: circuit.title,
+             sessionWeights: sessionWeights, setWeights: setWeights };
   return LOGGED;
 }
 eval(lift("partialMinutesOnTheClock"));
@@ -42,7 +50,7 @@ var phases = [{ blockIndex: 0, kind: "sets" }, { blockIndex: 1, kind: "sets" }, 
 function minutesOf(rec, blocksDone, phaseList) {
   LOGGED = null;
   logPartialCompletion(circuit, rec, blocksDone, phaseList === undefined ? phases : phaseList);
-  return parseInt(LOGGED.meta, 10);
+  return LOGGED.minutes;
 }
 function worked(mins, extra) {
   var rec = { index: 0, setsChecked: [true, true, true, true, true, false],
@@ -120,6 +128,6 @@ check(LOGGED.setWeights && typeof LOGGED.setWeights === "object",
 var noMeta = { id: "y", title: "Odd One", meta: "", blocks: [1, 2] };
 LOGGED = null;
 logPartialCompletion(noMeta, worked(45), 0, phases);
-check(parseInt(LOGGED.meta, 10) === 20, "a workout with no stated length falls back to the same 20 the old code used");
+check(LOGGED.minutes === 20, "a workout with no stated length falls back to the same 20 the old code used");
 
 print("\n  " + pass + " passed, " + fail + " failed");

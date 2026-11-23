@@ -77,8 +77,8 @@ check(completionSentence({ title: "Empty", blocks: [] }).indexOf("0 blocks") ===
 // ---------------- the finish screen uses it ----------------
 // A correct helper nothing calls is the other way this stays broken.
 
-check(CODE.indexOf("completionSentence(this.circuit)") !== -1,
-  "finish() writes the completion text with completionSentence(this.circuit)");
+check(CODE.indexOf("completionSentence(this.circuit, blocksWorked(") !== -1,
+  "finish() writes the completion text with completionSentence, told how many blocks were worked");
 check(CODE.indexOf("blocks of ${this.circuit.title}") === -1,
   "the old inline sentence is gone from finish()");
 check(CODE.indexOf("workout-complete-text") !== -1, "and still writes it into #workout-complete-text");

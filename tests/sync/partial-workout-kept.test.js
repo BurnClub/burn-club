@@ -90,8 +90,14 @@ check(droppedSilently({ index: 23 }, phases) === false,
 // and reverting the fix in app.js failed none of these.
 
 var LOGGED = null;
-function logCompletion(circuit, sessionWeights, setWeights) {
-  LOGGED = { meta: circuit.meta, title: circuit.title, sessionWeights: sessionWeights, setWeights: setWeights };
+// Minutes come through opts now, not through a fabricated `meta` string
+// (2026-11-23, with T-73) — same contract as the real logCompletion.
+function logCompletion(circuit, sessionWeights, setWeights, opts) {
+  var given = opts ? Number(opts.minutes) : NaN;
+  var minutes = isFinite(given) && given >= 0 ? Math.max(1, Math.round(given))
+    : (parseInt(circuit.meta, 10) || 20);
+  LOGGED = { minutes: minutes, meta: minutes + " min", title: circuit.title,
+             sessionWeights: sessionWeights, setWeights: setWeights };
   return LOGGED;
 }
 // logPartialCompletion calls this; without it the file dies at the first
@@ -106,7 +112,7 @@ var circuit = { id: "ff-1", title: "Fit & Functional", meta: "32 min", blocks: [
 function minutesOf(rec, blocksDone, phaseList) {
   LOGGED = null;
   logPartialCompletion(circuit, rec, blocksDone, phaseList);
-  return parseInt(LOGGED.meta, 10);
+  return LOGGED.minutes;
 }
 
 // The finding's own example: five of the six sets of block one.
