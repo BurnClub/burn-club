@@ -2825,6 +2825,4116 @@ const CIRCUITS = [
       ],
       "availableFrom": "2026-10-26"
     }
+,
+  {
+      "id": "circuit-1792975829465-copy-1795448578034-0-copy-1795448745931-5",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-8-1795448659432",
+      "category": "structured",
+      "tag": "New",
+      "title": "CIRCUIT",
+      "meta": "25 min · Abs & Full Body",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 720,
+              "exercises": [
+                  {
+                      "name": "DB Walking Lunge",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Contralateral DB/KB Staggered Stance RDL",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Renegade Row",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Lateral Bear Crawl",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Bear Plank",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 720,
+              "exercises": [
+                  {
+                      "name": "Single Arm KB/DB Power Clean",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Overhead Walk",
+                      "reps": "10 Steps",
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Power Clean",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Overhead Walk",
+                      "reps": "10 Steps",
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Downward Dog to Single Leg Crunch",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Downward Dog Push Ups",
+                      "reps": 10
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448745931-4",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-8-1795448659432",
+      "category": "structured",
+      "tag": "Supersets to 15 Minute AMRAP FINISHER",
+      "title": "QUADS/GLUTES",
+      "meta": "50 min · Quads & Glutes",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 2,
+              "rest": 45,
+              "exercises": [
+                  {
+                      "name": "Air Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Worlds Greatest Stretch",
+                      "reps": 6
+                  },
+                  {
+                      "name": "90/90 Hip Switch",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 90,
+              "exercises": [
+                  {
+                      "name": "DB RDL to Top Loaded Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Dual DB Top Loaded Squat",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 90,
+              "exercises": [
+                  {
+                      "name": "Box/Bench Step Ups",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Jump Split Squat",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "straight",
+              "label": "Bench/Box Pistol Squats",
+              "exercise": {
+                  "name": "Bench/Box Pistol Squats",
+                  "cue": "Modify by lowing down on one leg and standing up with both, using a higher box/bench"
+              },
+              "sets": 3,
+              "reps": "10 Each Leg",
+              "rest": 60
+          },
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 900,
+              "exercises": [
+                  {
+                      "name": "Goblet Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Banded Duck Walk",
+                      "reps": "10 Steps"
+                  },
+                  {
+                      "name": "Up and Overs",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Side to Side Lemon Squeezers",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Banded Glute Bridge w/ Abductions",
+                      "reps": 10
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448745931-3",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-8-1795448659432",
+      "category": "structured",
+      "tag": "Superset x 4",
+      "title": "BACK/BICPES",
+      "meta": "40 min · Biceps & Full Body",
+      "color": "deepblue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Worlds Greatest Stretch",
+                      "reps": 6
+                  },
+                  {
+                      "name": "Band Pull Aparts",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Gorilla Row",
+                      "reps": "12 Each",
+                      "cue": "KBs or DBs"
+                  },
+                  {
+                      "name": "KB Swing",
+                      "reps": 10,
+                      "cue": "KB or DB"
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "3-Point Row",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating DB Curl",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Up Downs",
+                      "scheme": [
+                          10,
+                          9,
+                          8,
+                          7
+                      ]
+                  },
+                  {
+                      "name": "Hammer Curl w/ Supination",
+                      "scheme": [
+                          10,
+                          10,
+                          10,
+                          10
+                      ]
+                  },
+                  {
+                      "name": "DB Hammer Curl Static Hold",
+                      "reps": "20 Sec"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448745931-2",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-8-1795448659432",
+      "category": "structured",
+      "tag": "Supersets w/ EMOM Finisher",
+      "title": "CHEST/TRICEPS",
+      "meta": "50 min · Chest & Triceps",
+      "color": "yellow",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Band Pull Aparts",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Scap Push Up",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Alternating Neutral DB Chest Press",
+                      "reps": "10 Each"
+                  },
+                  {
+                      "name": "DB Chest Fly w/ Supination",
+                      "reps": 8
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Alternating Supinated DB Chest Press",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Supinated DB Chest Press",
+                      "reps": 6
+                  },
+                  {
+                      "name": "Tricep Bench Dips",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Incline Bench Push Up",
+                      "reps": 10,
+                      "cue": "higher the incline the easier it'll be. Slow and controlled reps"
+                  },
+                  {
+                      "name": "Supinated Tricep Kickback",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "emom",
+              "label": "EMOM",
+              "duration": 720,
+              "interval": 60,
+              "exercises": [
+                  {
+                      "name": "Burpee",
+                      "reps": 8
+                  },
+                  {
+                      "name": "Overhead DB Tricep Extension",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating Side Plank",
+                      "reps": "18 Switches"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448745931-1",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-8-1795448659432",
+      "category": "structured",
+      "tag": "New",
+      "title": "HAMSTRINGS/GLUTES",
+      "meta": "55 min · Glutes & Hamstrings",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Staggered Stance Good Morning",
+                      "reps": 10
+                  },
+                  {
+                      "name": "90/90 Hip Switch",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Death March",
+                      "reps": 8
+                  },
+                  {
+                      "name": "Dual KB/DB Sumo Deadlift",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Glute Focused KB/DB Reverse Lunge",
+                      "reps": "8 Each"
+                  },
+                  {
+                      "name": "DB Hip Thrust",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Lateral Step Up w/ Slow Eccentric",
+                      "reps": "6 Each Leg"
+                  },
+                  {
+                      "name": "KB Swing",
+                      "reps": 12,
+                      "cue": "KB or DB"
+                  },
+                  {
+                      "name": "Seated Band Abduction",
+                      "reps": 15
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Side Lying Leg Raise",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Bicycles",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Reverse Bicycles",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Leg Raise",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Side Lying Bicycles",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Side Lying Reverse Bicycles",
+                      "reps": 10,
+                      "cue": "right"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448745931-0",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-8-1795448659432",
+      "category": "structured",
+      "tag": "Supersets w/ 12 Min EMOM",
+      "title": "SHOULDERS/ABS",
+      "meta": "45 min · Abs & Shoulders",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Around the World Raise",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Walk Out Plank/Inchworm",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Single Arm Arnold Press",
+                      "reps": "10 each"
+                  },
+                  {
+                      "name": "DB Upright Row",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Reverse Crunch w/ Plate Pass",
+                      "reps": 10,
+                      "cue": "drop weight to modify or do dead bugs"
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "DB Thruster",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Single Arm DB Rear Delt Fly",
+                      "reps": "12 Each"
+                  },
+                  {
+                      "name": "Bent Over High Row",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "emom",
+              "label": "EMOM",
+              "duration": 720,
+              "interval": 60,
+              "exercises": [
+                  {
+                      "name": "Devils Press",
+                      "reps": 12
+                  },
+                  {
+                      "name": "2-Way Lateral Raise",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating Single Leg Raise/Heel Taps",
+                      "reps": "12 Each"
+                  },
+                  {
+                      "name": "Straight Leg DB Crunch",
+                      "reps": 20
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "circuit-1792975829465-copy-1795448578034-0-copy-1795448738031-5",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-7-1795448646882",
+      "category": "structured",
+      "tag": "New",
+      "title": "CIRCUIT",
+      "meta": "25 min · Abs & Full Body",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 720,
+              "exercises": [
+                  {
+                      "name": "DB Walking Lunge",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Contralateral DB/KB Staggered Stance RDL",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Renegade Row",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Lateral Bear Crawl",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Bear Plank",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 720,
+              "exercises": [
+                  {
+                      "name": "Single Arm KB/DB Power Clean",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Overhead Walk",
+                      "reps": "10 Steps",
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Power Clean",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Overhead Walk",
+                      "reps": "10 Steps",
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Downward Dog to Single Leg Crunch",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Downward Dog Push Ups",
+                      "reps": 10
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448738031-4",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-7-1795448646882",
+      "category": "structured",
+      "tag": "Supersets to 15 Minute AMRAP FINISHER",
+      "title": "QUADS/GLUTES",
+      "meta": "50 min · Quads & Glutes",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 2,
+              "rest": 45,
+              "exercises": [
+                  {
+                      "name": "Air Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Worlds Greatest Stretch",
+                      "reps": 6
+                  },
+                  {
+                      "name": "90/90 Hip Switch",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 90,
+              "exercises": [
+                  {
+                      "name": "DB RDL to Top Loaded Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Dual DB Top Loaded Squat",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 90,
+              "exercises": [
+                  {
+                      "name": "Box/Bench Step Ups",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Jump Split Squat",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "straight",
+              "label": "Bench/Box Pistol Squats",
+              "exercise": {
+                  "name": "Bench/Box Pistol Squats",
+                  "cue": "Modify by lowing down on one leg and standing up with both, using a higher box/bench"
+              },
+              "sets": 3,
+              "reps": "10 Each Leg",
+              "rest": 60
+          },
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 900,
+              "exercises": [
+                  {
+                      "name": "Goblet Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Banded Duck Walk",
+                      "reps": "10 Steps"
+                  },
+                  {
+                      "name": "Up and Overs",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Side to Side Lemon Squeezers",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Banded Glute Bridge w/ Abductions",
+                      "reps": 10
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448738031-3",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-7-1795448646882",
+      "category": "structured",
+      "tag": "Superset x 4",
+      "title": "BACK/BICPES",
+      "meta": "40 min · Biceps & Full Body",
+      "color": "deepblue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Worlds Greatest Stretch",
+                      "reps": 6
+                  },
+                  {
+                      "name": "Band Pull Aparts",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Gorilla Row",
+                      "reps": "12 Each",
+                      "cue": "KBs or DBs"
+                  },
+                  {
+                      "name": "KB Swing",
+                      "reps": 10,
+                      "cue": "KB or DB"
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "3-Point Row",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating DB Curl",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Up Downs",
+                      "scheme": [
+                          10,
+                          9,
+                          8,
+                          7
+                      ]
+                  },
+                  {
+                      "name": "Hammer Curl w/ Supination",
+                      "scheme": [
+                          10,
+                          10,
+                          10,
+                          10
+                      ]
+                  },
+                  {
+                      "name": "DB Hammer Curl Static Hold",
+                      "reps": "20 Sec"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448738031-2",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-7-1795448646882",
+      "category": "structured",
+      "tag": "Supersets w/ EMOM Finisher",
+      "title": "CHEST/TRICEPS",
+      "meta": "50 min · Chest & Triceps",
+      "color": "yellow",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Band Pull Aparts",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Scap Push Up",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Alternating Neutral DB Chest Press",
+                      "reps": "10 Each"
+                  },
+                  {
+                      "name": "DB Chest Fly w/ Supination",
+                      "reps": 8
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Alternating Supinated DB Chest Press",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Supinated DB Chest Press",
+                      "reps": 6
+                  },
+                  {
+                      "name": "Tricep Bench Dips",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Incline Bench Push Up",
+                      "reps": 10,
+                      "cue": "higher the incline the easier it'll be. Slow and controlled reps"
+                  },
+                  {
+                      "name": "Supinated Tricep Kickback",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "emom",
+              "label": "EMOM",
+              "duration": 720,
+              "interval": 60,
+              "exercises": [
+                  {
+                      "name": "Burpee",
+                      "reps": 8
+                  },
+                  {
+                      "name": "Overhead DB Tricep Extension",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating Side Plank",
+                      "reps": "18 Switches"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448738031-1",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-7-1795448646882",
+      "category": "structured",
+      "tag": "New",
+      "title": "HAMSTRINGS/GLUTES",
+      "meta": "55 min · Glutes & Hamstrings",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Staggered Stance Good Morning",
+                      "reps": 10
+                  },
+                  {
+                      "name": "90/90 Hip Switch",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Death March",
+                      "reps": 8
+                  },
+                  {
+                      "name": "Dual KB/DB Sumo Deadlift",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Glute Focused KB/DB Reverse Lunge",
+                      "reps": "8 Each"
+                  },
+                  {
+                      "name": "DB Hip Thrust",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Lateral Step Up w/ Slow Eccentric",
+                      "reps": "6 Each Leg"
+                  },
+                  {
+                      "name": "KB Swing",
+                      "reps": 12,
+                      "cue": "KB or DB"
+                  },
+                  {
+                      "name": "Seated Band Abduction",
+                      "reps": 15
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Side Lying Leg Raise",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Bicycles",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Reverse Bicycles",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Leg Raise",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Side Lying Bicycles",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Side Lying Reverse Bicycles",
+                      "reps": 10,
+                      "cue": "right"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448738031-0",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-7-1795448646882",
+      "category": "structured",
+      "tag": "Supersets w/ 12 Min EMOM",
+      "title": "SHOULDERS/ABS",
+      "meta": "45 min · Abs & Shoulders",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Around the World Raise",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Walk Out Plank/Inchworm",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Single Arm Arnold Press",
+                      "reps": "10 each"
+                  },
+                  {
+                      "name": "DB Upright Row",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Reverse Crunch w/ Plate Pass",
+                      "reps": 10,
+                      "cue": "drop weight to modify or do dead bugs"
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "DB Thruster",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Single Arm DB Rear Delt Fly",
+                      "reps": "12 Each"
+                  },
+                  {
+                      "name": "Bent Over High Row",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "emom",
+              "label": "EMOM",
+              "duration": 720,
+              "interval": 60,
+              "exercises": [
+                  {
+                      "name": "Devils Press",
+                      "reps": 12
+                  },
+                  {
+                      "name": "2-Way Lateral Raise",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating Single Leg Raise/Heel Taps",
+                      "reps": "12 Each"
+                  },
+                  {
+                      "name": "Straight Leg DB Crunch",
+                      "reps": 20
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "circuit-1792975829465-copy-1795448578034-0-copy-1795448731565-5",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-6-1795448638799",
+      "category": "structured",
+      "tag": "New",
+      "title": "CIRCUIT",
+      "meta": "25 min · Abs & Full Body",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 720,
+              "exercises": [
+                  {
+                      "name": "DB Walking Lunge",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Contralateral DB/KB Staggered Stance RDL",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Renegade Row",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Lateral Bear Crawl",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Bear Plank",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 720,
+              "exercises": [
+                  {
+                      "name": "Single Arm KB/DB Power Clean",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Overhead Walk",
+                      "reps": "10 Steps",
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Power Clean",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Overhead Walk",
+                      "reps": "10 Steps",
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Downward Dog to Single Leg Crunch",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Downward Dog Push Ups",
+                      "reps": 10
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448731565-4",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-6-1795448638799",
+      "category": "structured",
+      "tag": "Supersets to 15 Minute AMRAP FINISHER",
+      "title": "QUADS/GLUTES",
+      "meta": "50 min · Quads & Glutes",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 2,
+              "rest": 45,
+              "exercises": [
+                  {
+                      "name": "Air Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Worlds Greatest Stretch",
+                      "reps": 6
+                  },
+                  {
+                      "name": "90/90 Hip Switch",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 90,
+              "exercises": [
+                  {
+                      "name": "DB RDL to Top Loaded Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Dual DB Top Loaded Squat",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 90,
+              "exercises": [
+                  {
+                      "name": "Box/Bench Step Ups",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Jump Split Squat",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "straight",
+              "label": "Bench/Box Pistol Squats",
+              "exercise": {
+                  "name": "Bench/Box Pistol Squats",
+                  "cue": "Modify by lowing down on one leg and standing up with both, using a higher box/bench"
+              },
+              "sets": 3,
+              "reps": "10 Each Leg",
+              "rest": 60
+          },
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 900,
+              "exercises": [
+                  {
+                      "name": "Goblet Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Banded Duck Walk",
+                      "reps": "10 Steps"
+                  },
+                  {
+                      "name": "Up and Overs",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Side to Side Lemon Squeezers",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Banded Glute Bridge w/ Abductions",
+                      "reps": 10
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448731565-3",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-6-1795448638799",
+      "category": "structured",
+      "tag": "Superset x 4",
+      "title": "BACK/BICPES",
+      "meta": "40 min · Biceps & Full Body",
+      "color": "deepblue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Worlds Greatest Stretch",
+                      "reps": 6
+                  },
+                  {
+                      "name": "Band Pull Aparts",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Gorilla Row",
+                      "reps": "12 Each",
+                      "cue": "KBs or DBs"
+                  },
+                  {
+                      "name": "KB Swing",
+                      "reps": 10,
+                      "cue": "KB or DB"
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "3-Point Row",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating DB Curl",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Up Downs",
+                      "scheme": [
+                          10,
+                          9,
+                          8,
+                          7
+                      ]
+                  },
+                  {
+                      "name": "Hammer Curl w/ Supination",
+                      "scheme": [
+                          10,
+                          10,
+                          10,
+                          10
+                      ]
+                  },
+                  {
+                      "name": "DB Hammer Curl Static Hold",
+                      "reps": "20 Sec"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448731565-2",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-6-1795448638799",
+      "category": "structured",
+      "tag": "Supersets w/ EMOM Finisher",
+      "title": "CHEST/TRICEPS",
+      "meta": "50 min · Chest & Triceps",
+      "color": "yellow",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Band Pull Aparts",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Scap Push Up",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Alternating Neutral DB Chest Press",
+                      "reps": "10 Each"
+                  },
+                  {
+                      "name": "DB Chest Fly w/ Supination",
+                      "reps": 8
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Alternating Supinated DB Chest Press",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Supinated DB Chest Press",
+                      "reps": 6
+                  },
+                  {
+                      "name": "Tricep Bench Dips",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Incline Bench Push Up",
+                      "reps": 10,
+                      "cue": "higher the incline the easier it'll be. Slow and controlled reps"
+                  },
+                  {
+                      "name": "Supinated Tricep Kickback",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "emom",
+              "label": "EMOM",
+              "duration": 720,
+              "interval": 60,
+              "exercises": [
+                  {
+                      "name": "Burpee",
+                      "reps": 8
+                  },
+                  {
+                      "name": "Overhead DB Tricep Extension",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating Side Plank",
+                      "reps": "18 Switches"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448731565-1",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-6-1795448638799",
+      "category": "structured",
+      "tag": "New",
+      "title": "HAMSTRINGS/GLUTES",
+      "meta": "55 min · Glutes & Hamstrings",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Staggered Stance Good Morning",
+                      "reps": 10
+                  },
+                  {
+                      "name": "90/90 Hip Switch",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Death March",
+                      "reps": 8
+                  },
+                  {
+                      "name": "Dual KB/DB Sumo Deadlift",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Glute Focused KB/DB Reverse Lunge",
+                      "reps": "8 Each"
+                  },
+                  {
+                      "name": "DB Hip Thrust",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Lateral Step Up w/ Slow Eccentric",
+                      "reps": "6 Each Leg"
+                  },
+                  {
+                      "name": "KB Swing",
+                      "reps": 12,
+                      "cue": "KB or DB"
+                  },
+                  {
+                      "name": "Seated Band Abduction",
+                      "reps": 15
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Side Lying Leg Raise",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Bicycles",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Reverse Bicycles",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Leg Raise",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Side Lying Bicycles",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Side Lying Reverse Bicycles",
+                      "reps": 10,
+                      "cue": "right"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448731565-0",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-6-1795448638799",
+      "category": "structured",
+      "tag": "Supersets w/ 12 Min EMOM",
+      "title": "SHOULDERS/ABS",
+      "meta": "45 min · Abs & Shoulders",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Around the World Raise",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Walk Out Plank/Inchworm",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Single Arm Arnold Press",
+                      "reps": "10 each"
+                  },
+                  {
+                      "name": "DB Upright Row",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Reverse Crunch w/ Plate Pass",
+                      "reps": 10,
+                      "cue": "drop weight to modify or do dead bugs"
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "DB Thruster",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Single Arm DB Rear Delt Fly",
+                      "reps": "12 Each"
+                  },
+                  {
+                      "name": "Bent Over High Row",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "emom",
+              "label": "EMOM",
+              "duration": 720,
+              "interval": 60,
+              "exercises": [
+                  {
+                      "name": "Devils Press",
+                      "reps": 12
+                  },
+                  {
+                      "name": "2-Way Lateral Raise",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating Single Leg Raise/Heel Taps",
+                      "reps": "12 Each"
+                  },
+                  {
+                      "name": "Straight Leg DB Crunch",
+                      "reps": 20
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "circuit-1792975829465-copy-1795448578034-0-copy-1795448715249-5",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-5-1795448632383",
+      "category": "structured",
+      "tag": "New",
+      "title": "CIRCUIT",
+      "meta": "25 min · Abs & Full Body",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 720,
+              "exercises": [
+                  {
+                      "name": "DB Walking Lunge",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Contralateral DB/KB Staggered Stance RDL",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Renegade Row",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Lateral Bear Crawl",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Bear Plank",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 720,
+              "exercises": [
+                  {
+                      "name": "Single Arm KB/DB Power Clean",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Overhead Walk",
+                      "reps": "10 Steps",
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Power Clean",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Overhead Walk",
+                      "reps": "10 Steps",
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Downward Dog to Single Leg Crunch",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Downward Dog Push Ups",
+                      "reps": 10
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448715249-4",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-5-1795448632383",
+      "category": "structured",
+      "tag": "Supersets to 15 Minute AMRAP FINISHER",
+      "title": "QUADS/GLUTES",
+      "meta": "50 min · Quads & Glutes",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 2,
+              "rest": 45,
+              "exercises": [
+                  {
+                      "name": "Air Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Worlds Greatest Stretch",
+                      "reps": 6
+                  },
+                  {
+                      "name": "90/90 Hip Switch",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 90,
+              "exercises": [
+                  {
+                      "name": "DB RDL to Top Loaded Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Dual DB Top Loaded Squat",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 90,
+              "exercises": [
+                  {
+                      "name": "Box/Bench Step Ups",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Jump Split Squat",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "straight",
+              "label": "Bench/Box Pistol Squats",
+              "exercise": {
+                  "name": "Bench/Box Pistol Squats",
+                  "cue": "Modify by lowing down on one leg and standing up with both, using a higher box/bench"
+              },
+              "sets": 3,
+              "reps": "10 Each Leg",
+              "rest": 60
+          },
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 900,
+              "exercises": [
+                  {
+                      "name": "Goblet Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Banded Duck Walk",
+                      "reps": "10 Steps"
+                  },
+                  {
+                      "name": "Up and Overs",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Side to Side Lemon Squeezers",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Banded Glute Bridge w/ Abductions",
+                      "reps": 10
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448715249-3",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-5-1795448632383",
+      "category": "structured",
+      "tag": "Superset x 4",
+      "title": "BACK/BICPES",
+      "meta": "40 min · Biceps & Full Body",
+      "color": "deepblue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Worlds Greatest Stretch",
+                      "reps": 6
+                  },
+                  {
+                      "name": "Band Pull Aparts",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Gorilla Row",
+                      "reps": "12 Each",
+                      "cue": "KBs or DBs"
+                  },
+                  {
+                      "name": "KB Swing",
+                      "reps": 10,
+                      "cue": "KB or DB"
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "3-Point Row",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating DB Curl",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Up Downs",
+                      "scheme": [
+                          10,
+                          9,
+                          8,
+                          7
+                      ]
+                  },
+                  {
+                      "name": "Hammer Curl w/ Supination",
+                      "scheme": [
+                          10,
+                          10,
+                          10,
+                          10
+                      ]
+                  },
+                  {
+                      "name": "DB Hammer Curl Static Hold",
+                      "reps": "20 Sec"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448715249-2",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-5-1795448632383",
+      "category": "structured",
+      "tag": "Supersets w/ EMOM Finisher",
+      "title": "CHEST/TRICEPS",
+      "meta": "50 min · Chest & Triceps",
+      "color": "yellow",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Band Pull Aparts",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Scap Push Up",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Alternating Neutral DB Chest Press",
+                      "reps": "10 Each"
+                  },
+                  {
+                      "name": "DB Chest Fly w/ Supination",
+                      "reps": 8
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Alternating Supinated DB Chest Press",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Supinated DB Chest Press",
+                      "reps": 6
+                  },
+                  {
+                      "name": "Tricep Bench Dips",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Incline Bench Push Up",
+                      "reps": 10,
+                      "cue": "higher the incline the easier it'll be. Slow and controlled reps"
+                  },
+                  {
+                      "name": "Supinated Tricep Kickback",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "emom",
+              "label": "EMOM",
+              "duration": 720,
+              "interval": 60,
+              "exercises": [
+                  {
+                      "name": "Burpee",
+                      "reps": 8
+                  },
+                  {
+                      "name": "Overhead DB Tricep Extension",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating Side Plank",
+                      "reps": "18 Switches"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448715249-1",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-5-1795448632383",
+      "category": "structured",
+      "tag": "New",
+      "title": "HAMSTRINGS/GLUTES",
+      "meta": "55 min · Glutes & Hamstrings",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Staggered Stance Good Morning",
+                      "reps": 10
+                  },
+                  {
+                      "name": "90/90 Hip Switch",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Death March",
+                      "reps": 8
+                  },
+                  {
+                      "name": "Dual KB/DB Sumo Deadlift",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Glute Focused KB/DB Reverse Lunge",
+                      "reps": "8 Each"
+                  },
+                  {
+                      "name": "DB Hip Thrust",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Lateral Step Up w/ Slow Eccentric",
+                      "reps": "6 Each Leg"
+                  },
+                  {
+                      "name": "KB Swing",
+                      "reps": 12,
+                      "cue": "KB or DB"
+                  },
+                  {
+                      "name": "Seated Band Abduction",
+                      "reps": 15
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Side Lying Leg Raise",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Bicycles",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Reverse Bicycles",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Leg Raise",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Side Lying Bicycles",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Side Lying Reverse Bicycles",
+                      "reps": 10,
+                      "cue": "right"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448715249-0",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-5-1795448632383",
+      "category": "structured",
+      "tag": "Supersets w/ 12 Min EMOM",
+      "title": "SHOULDERS/ABS",
+      "meta": "45 min · Abs & Shoulders",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Around the World Raise",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Walk Out Plank/Inchworm",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Single Arm Arnold Press",
+                      "reps": "10 each"
+                  },
+                  {
+                      "name": "DB Upright Row",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Reverse Crunch w/ Plate Pass",
+                      "reps": 10,
+                      "cue": "drop weight to modify or do dead bugs"
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "DB Thruster",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Single Arm DB Rear Delt Fly",
+                      "reps": "12 Each"
+                  },
+                  {
+                      "name": "Bent Over High Row",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "emom",
+              "label": "EMOM",
+              "duration": 720,
+              "interval": 60,
+              "exercises": [
+                  {
+                      "name": "Devils Press",
+                      "reps": 12
+                  },
+                  {
+                      "name": "2-Way Lateral Raise",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating Single Leg Raise/Heel Taps",
+                      "reps": "12 Each"
+                  },
+                  {
+                      "name": "Straight Leg DB Crunch",
+                      "reps": 20
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "circuit-1792975829465-copy-1795448578034-0-copy-1795448704449-5",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-4-1795448620115",
+      "category": "structured",
+      "tag": "New",
+      "title": "CIRCUIT",
+      "meta": "25 min · Abs & Full Body",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 720,
+              "exercises": [
+                  {
+                      "name": "DB Walking Lunge",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Contralateral DB/KB Staggered Stance RDL",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Renegade Row",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Lateral Bear Crawl",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Bear Plank",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 720,
+              "exercises": [
+                  {
+                      "name": "Single Arm KB/DB Power Clean",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Overhead Walk",
+                      "reps": "10 Steps",
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Power Clean",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Overhead Walk",
+                      "reps": "10 Steps",
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Downward Dog to Single Leg Crunch",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Downward Dog Push Ups",
+                      "reps": 10
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448704449-4",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-4-1795448620115",
+      "category": "structured",
+      "tag": "Supersets to 15 Minute AMRAP FINISHER",
+      "title": "QUADS/GLUTES",
+      "meta": "50 min · Quads & Glutes",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 2,
+              "rest": 45,
+              "exercises": [
+                  {
+                      "name": "Air Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Worlds Greatest Stretch",
+                      "reps": 6
+                  },
+                  {
+                      "name": "90/90 Hip Switch",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 90,
+              "exercises": [
+                  {
+                      "name": "DB RDL to Top Loaded Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Dual DB Top Loaded Squat",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 90,
+              "exercises": [
+                  {
+                      "name": "Box/Bench Step Ups",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Jump Split Squat",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "straight",
+              "label": "Bench/Box Pistol Squats",
+              "exercise": {
+                  "name": "Bench/Box Pistol Squats",
+                  "cue": "Modify by lowing down on one leg and standing up with both, using a higher box/bench"
+              },
+              "sets": 3,
+              "reps": "10 Each Leg",
+              "rest": 60
+          },
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 900,
+              "exercises": [
+                  {
+                      "name": "Goblet Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Banded Duck Walk",
+                      "reps": "10 Steps"
+                  },
+                  {
+                      "name": "Up and Overs",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Side to Side Lemon Squeezers",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Banded Glute Bridge w/ Abductions",
+                      "reps": 10
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448704449-3",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-4-1795448620115",
+      "category": "structured",
+      "tag": "Superset x 4",
+      "title": "BACK/BICPES",
+      "meta": "40 min · Biceps & Full Body",
+      "color": "deepblue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Worlds Greatest Stretch",
+                      "reps": 6
+                  },
+                  {
+                      "name": "Band Pull Aparts",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Gorilla Row",
+                      "reps": "12 Each",
+                      "cue": "KBs or DBs"
+                  },
+                  {
+                      "name": "KB Swing",
+                      "reps": 10,
+                      "cue": "KB or DB"
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "3-Point Row",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating DB Curl",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Up Downs",
+                      "scheme": [
+                          10,
+                          9,
+                          8,
+                          7
+                      ]
+                  },
+                  {
+                      "name": "Hammer Curl w/ Supination",
+                      "scheme": [
+                          10,
+                          10,
+                          10,
+                          10
+                      ]
+                  },
+                  {
+                      "name": "DB Hammer Curl Static Hold",
+                      "reps": "20 Sec"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448704449-2",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-4-1795448620115",
+      "category": "structured",
+      "tag": "Supersets w/ EMOM Finisher",
+      "title": "CHEST/TRICEPS",
+      "meta": "50 min · Chest & Triceps",
+      "color": "yellow",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Band Pull Aparts",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Scap Push Up",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Alternating Neutral DB Chest Press",
+                      "reps": "10 Each"
+                  },
+                  {
+                      "name": "DB Chest Fly w/ Supination",
+                      "reps": 8
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Alternating Supinated DB Chest Press",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Supinated DB Chest Press",
+                      "reps": 6
+                  },
+                  {
+                      "name": "Tricep Bench Dips",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Incline Bench Push Up",
+                      "reps": 10,
+                      "cue": "higher the incline the easier it'll be. Slow and controlled reps"
+                  },
+                  {
+                      "name": "Supinated Tricep Kickback",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "emom",
+              "label": "EMOM",
+              "duration": 720,
+              "interval": 60,
+              "exercises": [
+                  {
+                      "name": "Burpee",
+                      "reps": 8
+                  },
+                  {
+                      "name": "Overhead DB Tricep Extension",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating Side Plank",
+                      "reps": "18 Switches"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448704449-1",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-4-1795448620115",
+      "category": "structured",
+      "tag": "New",
+      "title": "HAMSTRINGS/GLUTES",
+      "meta": "55 min · Glutes & Hamstrings",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Staggered Stance Good Morning",
+                      "reps": 10
+                  },
+                  {
+                      "name": "90/90 Hip Switch",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Death March",
+                      "reps": 8
+                  },
+                  {
+                      "name": "Dual KB/DB Sumo Deadlift",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Glute Focused KB/DB Reverse Lunge",
+                      "reps": "8 Each"
+                  },
+                  {
+                      "name": "DB Hip Thrust",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Lateral Step Up w/ Slow Eccentric",
+                      "reps": "6 Each Leg"
+                  },
+                  {
+                      "name": "KB Swing",
+                      "reps": 12,
+                      "cue": "KB or DB"
+                  },
+                  {
+                      "name": "Seated Band Abduction",
+                      "reps": 15
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Side Lying Leg Raise",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Bicycles",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Reverse Bicycles",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Leg Raise",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Side Lying Bicycles",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Side Lying Reverse Bicycles",
+                      "reps": 10,
+                      "cue": "right"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448704449-0",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-4-1795448620115",
+      "category": "structured",
+      "tag": "Supersets w/ 12 Min EMOM",
+      "title": "SHOULDERS/ABS",
+      "meta": "45 min · Abs & Shoulders",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Around the World Raise",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Walk Out Plank/Inchworm",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Single Arm Arnold Press",
+                      "reps": "10 each"
+                  },
+                  {
+                      "name": "DB Upright Row",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Reverse Crunch w/ Plate Pass",
+                      "reps": 10,
+                      "cue": "drop weight to modify or do dead bugs"
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "DB Thruster",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Single Arm DB Rear Delt Fly",
+                      "reps": "12 Each"
+                  },
+                  {
+                      "name": "Bent Over High Row",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "emom",
+              "label": "EMOM",
+              "duration": 720,
+              "interval": 60,
+              "exercises": [
+                  {
+                      "name": "Devils Press",
+                      "reps": 12
+                  },
+                  {
+                      "name": "2-Way Lateral Raise",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating Single Leg Raise/Heel Taps",
+                      "reps": "12 Each"
+                  },
+                  {
+                      "name": "Straight Leg DB Crunch",
+                      "reps": 20
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "circuit-1792975829465-copy-1795448578034-0-copy-1795448695732-5",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-3-1795448608016",
+      "category": "structured",
+      "tag": "New",
+      "title": "CIRCUIT",
+      "meta": "25 min · Abs & Full Body",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 720,
+              "exercises": [
+                  {
+                      "name": "DB Walking Lunge",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Contralateral DB/KB Staggered Stance RDL",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Renegade Row",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Lateral Bear Crawl",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Bear Plank",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 720,
+              "exercises": [
+                  {
+                      "name": "Single Arm KB/DB Power Clean",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Overhead Walk",
+                      "reps": "10 Steps",
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Power Clean",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Overhead Walk",
+                      "reps": "10 Steps",
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Downward Dog to Single Leg Crunch",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Downward Dog Push Ups",
+                      "reps": 10
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448695732-4",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-3-1795448608016",
+      "category": "structured",
+      "tag": "Supersets to 15 Minute AMRAP FINISHER",
+      "title": "QUADS/GLUTES",
+      "meta": "50 min · Quads & Glutes",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 2,
+              "rest": 45,
+              "exercises": [
+                  {
+                      "name": "Air Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Worlds Greatest Stretch",
+                      "reps": 6
+                  },
+                  {
+                      "name": "90/90 Hip Switch",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 90,
+              "exercises": [
+                  {
+                      "name": "DB RDL to Top Loaded Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Dual DB Top Loaded Squat",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 90,
+              "exercises": [
+                  {
+                      "name": "Box/Bench Step Ups",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Jump Split Squat",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "straight",
+              "label": "Bench/Box Pistol Squats",
+              "exercise": {
+                  "name": "Bench/Box Pistol Squats",
+                  "cue": "Modify by lowing down on one leg and standing up with both, using a higher box/bench"
+              },
+              "sets": 3,
+              "reps": "10 Each Leg",
+              "rest": 60
+          },
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 900,
+              "exercises": [
+                  {
+                      "name": "Goblet Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Banded Duck Walk",
+                      "reps": "10 Steps"
+                  },
+                  {
+                      "name": "Up and Overs",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Side to Side Lemon Squeezers",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Banded Glute Bridge w/ Abductions",
+                      "reps": 10
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448695732-3",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-3-1795448608016",
+      "category": "structured",
+      "tag": "Superset x 4",
+      "title": "BACK/BICPES",
+      "meta": "40 min · Biceps & Full Body",
+      "color": "deepblue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Worlds Greatest Stretch",
+                      "reps": 6
+                  },
+                  {
+                      "name": "Band Pull Aparts",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Gorilla Row",
+                      "reps": "12 Each",
+                      "cue": "KBs or DBs"
+                  },
+                  {
+                      "name": "KB Swing",
+                      "reps": 10,
+                      "cue": "KB or DB"
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "3-Point Row",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating DB Curl",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Up Downs",
+                      "scheme": [
+                          10,
+                          9,
+                          8,
+                          7
+                      ]
+                  },
+                  {
+                      "name": "Hammer Curl w/ Supination",
+                      "scheme": [
+                          10,
+                          10,
+                          10,
+                          10
+                      ]
+                  },
+                  {
+                      "name": "DB Hammer Curl Static Hold",
+                      "reps": "20 Sec"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448695732-2",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-3-1795448608016",
+      "category": "structured",
+      "tag": "Supersets w/ EMOM Finisher",
+      "title": "CHEST/TRICEPS",
+      "meta": "50 min · Chest & Triceps",
+      "color": "yellow",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Band Pull Aparts",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Scap Push Up",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Alternating Neutral DB Chest Press",
+                      "reps": "10 Each"
+                  },
+                  {
+                      "name": "DB Chest Fly w/ Supination",
+                      "reps": 8
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Alternating Supinated DB Chest Press",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Supinated DB Chest Press",
+                      "reps": 6
+                  },
+                  {
+                      "name": "Tricep Bench Dips",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Incline Bench Push Up",
+                      "reps": 10,
+                      "cue": "higher the incline the easier it'll be. Slow and controlled reps"
+                  },
+                  {
+                      "name": "Supinated Tricep Kickback",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "emom",
+              "label": "EMOM",
+              "duration": 720,
+              "interval": 60,
+              "exercises": [
+                  {
+                      "name": "Burpee",
+                      "reps": 8
+                  },
+                  {
+                      "name": "Overhead DB Tricep Extension",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating Side Plank",
+                      "reps": "18 Switches"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448695732-1",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-3-1795448608016",
+      "category": "structured",
+      "tag": "New",
+      "title": "HAMSTRINGS/GLUTES",
+      "meta": "55 min · Glutes & Hamstrings",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Staggered Stance Good Morning",
+                      "reps": 10
+                  },
+                  {
+                      "name": "90/90 Hip Switch",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Death March",
+                      "reps": 8
+                  },
+                  {
+                      "name": "Dual KB/DB Sumo Deadlift",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Glute Focused KB/DB Reverse Lunge",
+                      "reps": "8 Each"
+                  },
+                  {
+                      "name": "DB Hip Thrust",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Lateral Step Up w/ Slow Eccentric",
+                      "reps": "6 Each Leg"
+                  },
+                  {
+                      "name": "KB Swing",
+                      "reps": 12,
+                      "cue": "KB or DB"
+                  },
+                  {
+                      "name": "Seated Band Abduction",
+                      "reps": 15
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Side Lying Leg Raise",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Bicycles",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Reverse Bicycles",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Leg Raise",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Side Lying Bicycles",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Side Lying Reverse Bicycles",
+                      "reps": 10,
+                      "cue": "right"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448695732-0",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-3-1795448608016",
+      "category": "structured",
+      "tag": "Supersets w/ 12 Min EMOM",
+      "title": "SHOULDERS/ABS",
+      "meta": "45 min · Abs & Shoulders",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Around the World Raise",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Walk Out Plank/Inchworm",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Single Arm Arnold Press",
+                      "reps": "10 each"
+                  },
+                  {
+                      "name": "DB Upright Row",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Reverse Crunch w/ Plate Pass",
+                      "reps": 10,
+                      "cue": "drop weight to modify or do dead bugs"
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "DB Thruster",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Single Arm DB Rear Delt Fly",
+                      "reps": "12 Each"
+                  },
+                  {
+                      "name": "Bent Over High Row",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "emom",
+              "label": "EMOM",
+              "duration": 720,
+              "interval": 60,
+              "exercises": [
+                  {
+                      "name": "Devils Press",
+                      "reps": 12
+                  },
+                  {
+                      "name": "2-Way Lateral Raise",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating Single Leg Raise/Heel Taps",
+                      "reps": "12 Each"
+                  },
+                  {
+                      "name": "Straight Leg DB Crunch",
+                      "reps": 20
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "shoulders-abs-1792948000381-copy-1795448578035-5",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-2-1795448543052",
+      "category": "structured",
+      "tag": "Supersets w/ 12 Min EMOM",
+      "title": "SHOULDERS/ABS",
+      "meta": "45 min · Abs & Shoulders",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Around the World Raise",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Walk Out Plank/Inchworm",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Single Arm Arnold Press",
+                      "reps": "10 each"
+                  },
+                  {
+                      "name": "DB Upright Row",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Reverse Crunch w/ Plate Pass",
+                      "reps": 10,
+                      "cue": "drop weight to modify or do dead bugs"
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "DB Thruster",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Single Arm DB Rear Delt Fly",
+                      "reps": "12 Each"
+                  },
+                  {
+                      "name": "Bent Over High Row",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "emom",
+              "label": "EMOM",
+              "duration": 720,
+              "interval": 60,
+              "exercises": [
+                  {
+                      "name": "Devils Press",
+                      "reps": 12
+                  },
+                  {
+                      "name": "2-Way Lateral Raise",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating Single Leg Raise/Heel Taps",
+                      "reps": "12 Each"
+                  },
+                  {
+                      "name": "Straight Leg DB Crunch",
+                      "reps": 20
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "hamstrings-glutes-1792972456231-copy-1795448578035-4",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-2-1795448543052",
+      "category": "structured",
+      "tag": "New",
+      "title": "HAMSTRINGS/GLUTES",
+      "meta": "55 min · Glutes & Hamstrings",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Staggered Stance Good Morning",
+                      "reps": 10
+                  },
+                  {
+                      "name": "90/90 Hip Switch",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Death March",
+                      "reps": 8
+                  },
+                  {
+                      "name": "Dual KB/DB Sumo Deadlift",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Glute Focused KB/DB Reverse Lunge",
+                      "reps": "8 Each"
+                  },
+                  {
+                      "name": "DB Hip Thrust",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Lateral Step Up w/ Slow Eccentric",
+                      "reps": "6 Each Leg"
+                  },
+                  {
+                      "name": "KB Swing",
+                      "reps": 12,
+                      "cue": "KB or DB"
+                  },
+                  {
+                      "name": "Seated Band Abduction",
+                      "reps": 15
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Side Lying Leg Raise",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Bicycles",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Reverse Bicycles",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Side Lying Leg Raise",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Side Lying Bicycles",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Side Lying Reverse Bicycles",
+                      "reps": 10,
+                      "cue": "right"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "chest-triceps-1792972793728-copy-1795448578035-3",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-2-1795448543052",
+      "category": "structured",
+      "tag": "Supersets w/ EMOM Finisher",
+      "title": "CHEST/TRICEPS",
+      "meta": "50 min · Chest & Triceps",
+      "color": "yellow",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Band Pull Aparts",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Scap Push Up",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Alternating Neutral DB Chest Press",
+                      "reps": "10 Each"
+                  },
+                  {
+                      "name": "DB Chest Fly w/ Supination",
+                      "reps": 8
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Alternating Supinated DB Chest Press",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Supinated DB Chest Press",
+                      "reps": 6
+                  },
+                  {
+                      "name": "Tricep Bench Dips",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Incline Bench Push Up",
+                      "reps": 10,
+                      "cue": "higher the incline the easier it'll be. Slow and controlled reps"
+                  },
+                  {
+                      "name": "Supinated Tricep Kickback",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "emom",
+              "label": "EMOM",
+              "duration": 720,
+              "interval": 60,
+              "exercises": [
+                  {
+                      "name": "Burpee",
+                      "reps": 8
+                  },
+                  {
+                      "name": "Overhead DB Tricep Extension",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating Side Plank",
+                      "reps": "18 Switches"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "back-bicpes-1792974726372-copy-1795448578035-2",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-2-1795448543052",
+      "category": "structured",
+      "tag": "Superset x 4",
+      "title": "BACK/BICPES",
+      "meta": "40 min · Biceps & Full Body",
+      "color": "deepblue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 3,
+              "rest": 30,
+              "exercises": [
+                  {
+                      "name": "Worlds Greatest Stretch",
+                      "reps": 6
+                  },
+                  {
+                      "name": "Band Pull Aparts",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Gorilla Row",
+                      "reps": "12 Each",
+                      "cue": "KBs or DBs"
+                  },
+                  {
+                      "name": "KB Swing",
+                      "reps": 10,
+                      "cue": "KB or DB"
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "3-Point Row",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Alternating DB Curl",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 60,
+              "exercises": [
+                  {
+                      "name": "Up Downs",
+                      "scheme": [
+                          10,
+                          9,
+                          8,
+                          7
+                      ]
+                  },
+                  {
+                      "name": "Hammer Curl w/ Supination",
+                      "scheme": [
+                          10,
+                          10,
+                          10,
+                          10
+                      ]
+                  },
+                  {
+                      "name": "DB Hammer Curl Static Hold",
+                      "reps": "20 Sec"
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "quads-glutes-1792975325761-copy-1795448578035-1",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-2-1795448543052",
+      "category": "structured",
+      "tag": "Supersets to 15 Minute AMRAP FINISHER",
+      "title": "QUADS/GLUTES",
+      "meta": "50 min · Quads & Glutes",
+      "color": "periwinkle",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 2,
+              "rest": 45,
+              "exercises": [
+                  {
+                      "name": "Air Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Worlds Greatest Stretch",
+                      "reps": 6
+                  },
+                  {
+                      "name": "90/90 Hip Switch",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 90,
+              "exercises": [
+                  {
+                      "name": "DB RDL to Top Loaded Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Dual DB Top Loaded Squat",
+                      "reps": 10
+                  }
+              ]
+          },
+          {
+              "type": "superset",
+              "label": "Superset",
+              "rounds": 4,
+              "rest": 90,
+              "exercises": [
+                  {
+                      "name": "Box/Bench Step Ups",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Jump Split Squat",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "straight",
+              "label": "Bench/Box Pistol Squats",
+              "exercise": {
+                  "name": "Bench/Box Pistol Squats",
+                  "cue": "Modify by lowing down on one leg and standing up with both, using a higher box/bench"
+              },
+              "sets": 3,
+              "reps": "10 Each Leg",
+              "rest": 60
+          },
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 900,
+              "exercises": [
+                  {
+                      "name": "Goblet Squat",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Banded Duck Walk",
+                      "reps": "10 Steps"
+                  },
+                  {
+                      "name": "Up and Overs",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Side to Side Lemon Squeezers",
+                      "reps": 10
+                  },
+                  {
+                      "name": "Banded Glute Bridge w/ Abductions",
+                      "reps": 10
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "id": "circuit-1792975829465-copy-1795448578034-0",
+      "programId": "fit-functional-test-week-1792947605130",
+      "folderId": "week-2-1795448543052",
+      "category": "structured",
+      "tag": "New",
+      "title": "CIRCUIT",
+      "meta": "25 min · Abs & Full Body",
+      "color": "blue",
+      "desc": "No description yet.",
+      "blocks": [
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 720,
+              "exercises": [
+                  {
+                      "name": "DB Walking Lunge",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Contralateral DB/KB Staggered Stance RDL",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Renegade Row",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Lateral Bear Crawl",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Bear Plank",
+                      "reps": 12
+                  }
+              ]
+          },
+          {
+              "type": "amrap",
+              "label": "AMRAP",
+              "duration": 720,
+              "exercises": [
+                  {
+                      "name": "Single Arm KB/DB Power Clean",
+                      "reps": 10,
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Overhead Walk",
+                      "reps": "10 Steps",
+                      "cue": "left"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Power Clean",
+                      "reps": 10,
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Single Arm KB/DB Overhead Walk",
+                      "reps": "10 Steps",
+                      "cue": "right"
+                  },
+                  {
+                      "name": "Downward Dog to Single Leg Crunch",
+                      "reps": 12
+                  },
+                  {
+                      "name": "Downward Dog Push Ups",
+                      "reps": 10
+                  }
+              ]
+          }
+      ]
+  }
 ];
 
 // Workouts the admin app publishes get bridged in here via localStorage —
@@ -2927,6 +7037,55 @@ const SCHEDULE_TEMPLATES = {
     { day: 5, type: "workout", workoutId: "quads-glutes-1792975325761" }, // QUADS/GLUTES
     { day: 6, type: "workout", workoutId: "circuit-1792975829465" }, // CIRCUIT
     { day: 7, type: "rest" },
+    { day: 8, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1795448578035-5" }, // SHOULDERS/ABS
+    { day: 9, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1795448578035-4" }, // HAMSTRINGS/GLUTES
+    { day: 10, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1795448578035-3" }, // CHEST/TRICEPS
+    { day: 11, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2" }, // BACK/BICPES
+    { day: 12, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1795448578035-1" }, // QUADS/GLUTES
+    { day: 13, type: "workout", workoutId: "circuit-1792975829465-copy-1795448578034-0" }, // CIRCUIT
+    { day: 14, type: "rest" },
+    { day: 15, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448695732-0" }, // SHOULDERS/ABS
+    { day: 16, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448695732-1" }, // HAMSTRINGS/GLUTES
+    { day: 17, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448695732-2" }, // CHEST/TRICEPS
+    { day: 18, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448695732-3" }, // BACK/BICPES
+    { day: 19, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448695732-4" }, // QUADS/GLUTES
+    { day: 20, type: "workout", workoutId: "circuit-1792975829465-copy-1795448578034-0-copy-1795448695732-5" }, // CIRCUIT
+    { day: 21, type: "rest" },
+    { day: 22, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448704449-0" }, // SHOULDERS/ABS
+    { day: 23, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448704449-1" }, // HAMSTRINGS/GLUTES
+    { day: 24, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448704449-2" }, // CHEST/TRICEPS
+    { day: 25, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448704449-3" }, // BACK/BICPES
+    { day: 26, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448704449-4" }, // QUADS/GLUTES
+    { day: 27, type: "workout", workoutId: "circuit-1792975829465-copy-1795448578034-0-copy-1795448704449-5" }, // CIRCUIT
+    { day: 28, type: "rest" },
+    { day: 29, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448715249-0" }, // SHOULDERS/ABS
+    { day: 30, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448715249-1" }, // HAMSTRINGS/GLUTES
+    { day: 31, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448715249-2" }, // CHEST/TRICEPS
+    { day: 32, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448715249-3" }, // BACK/BICPES
+    { day: 33, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448715249-4" }, // QUADS/GLUTES
+    { day: 34, type: "workout", workoutId: "circuit-1792975829465-copy-1795448578034-0-copy-1795448715249-5" }, // CIRCUIT
+    { day: 35, type: "rest" },
+    { day: 36, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448731565-0" }, // SHOULDERS/ABS
+    { day: 37, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448731565-1" }, // HAMSTRINGS/GLUTES
+    { day: 38, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448731565-2" }, // CHEST/TRICEPS
+    { day: 39, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448731565-3" }, // BACK/BICPES
+    { day: 40, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448731565-4" }, // QUADS/GLUTES
+    { day: 41, type: "workout", workoutId: "circuit-1792975829465-copy-1795448578034-0-copy-1795448731565-5" }, // CIRCUIT
+    { day: 42, type: "rest" },
+    { day: 43, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448738031-0" }, // SHOULDERS/ABS
+    { day: 44, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448738031-1" }, // HAMSTRINGS/GLUTES
+    { day: 45, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448738031-2" }, // CHEST/TRICEPS
+    { day: 46, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448738031-3" }, // BACK/BICPES
+    { day: 47, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448738031-4" }, // QUADS/GLUTES
+    { day: 48, type: "workout", workoutId: "circuit-1792975829465-copy-1795448578034-0-copy-1795448738031-5" }, // CIRCUIT
+    { day: 49, type: "rest" },
+    { day: 50, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448745931-0" }, // SHOULDERS/ABS
+    { day: 51, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448745931-1" }, // HAMSTRINGS/GLUTES
+    { day: 52, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448745931-2" }, // CHEST/TRICEPS
+    { day: 53, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448745931-3" }, // BACK/BICPES
+    { day: 54, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448745931-4" }, // QUADS/GLUTES
+    { day: 55, type: "workout", workoutId: "circuit-1792975829465-copy-1795448578034-0-copy-1795448745931-5" }, // CIRCUIT
+    { day: 56, type: "rest" },
   ],
   // Four workouts across seven days, with rest on 3, 6 and 7.
   "30-minute-burn-test-1792976073830": [
