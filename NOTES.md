@@ -2925,6 +2925,74 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Three screens ask for a weight, and only one of them was checking (2026-11-22, tester T-65, T-67, T-68)
+
+Three findings, one chain, fixed together because that is how they bite.
+
+**T-65 — the second and third weight boxes.** T-60 gave the end-of-block "Log
+your weights" screen a cap, a cleaner and select-on-focus. The AMRAP list and
+the EMOM field ask for a weight too, and had none of it: they called
+`noteWeight()`, which was one line — `if (val) this.sessionWeights[name] =
+Number(val)`. So 5,000 lb went into a member's history as a real lift and a
+personal best, and because the app keeps one heaviest-this-session figure per
+exercise and takes the larger, **it also beat a properly capped weight typed
+on the good screen for the same exercise in the same workout**. The markup had
+no limit either, and `liftsToRows()`'s fallback branch never had the `> 0`
+guard its neighbour always did, so `0` and `-50` stored as weights too.
+
+`noteWeight()` now parses what it is handed and clears the entry rather than
+keeping a number it will not store. Every box on every screen goes through one
+`readWeightBox()` — clean, parse, mark — and both markups are
+`type="text" inputmode="decimal" maxlength="7"` like the weights screen. The
+point of the shared door is that the next screen to ask for a weight cannot
+quietly become the fourth exception.
+
+**T-67 — my own cliff, and it was silent.** `MAX_SET_ASIDE_PER_PUSH = 5` meant
+six impossible weights put the member straight back in the T-59 state: nothing
+set aside, store dirty for ever, retrying every 30 seconds — and with **no
+toast at all**, because the message was only ever sent on the path that did
+not abort. The reasoning was sound (row after row refused usually means the
+statement is wrong, not the data) but the number was wrong and the silence was
+indefensible. Now 20, which is past anything a member types by hand, and the
+abort says so. T-65 was the only way to make six impossible weights, so the
+two findings went together.
+
+**T-68 — also mine, from the day before.** The input cleaner stripped commas,
+turning `12,5` into `125` — ten times the weight, silently, on every set it
+carried down to. `normaliseDecimalComma()`: one comma with one or two digits
+behind it is a decimal point, anything else is a thousands separator and goes.
+`12,5` → 12.5, `1,000` → 1000, `1,234.5` → 1234.5.
+
+**Checked by:** `tests/sync/weight-box-one-door.test.js` (38 checks) plus the
+extended `one-bad-row.test.js`, which stopped at a single bad row and now
+covers 6, 20 and a batch that is wrong all the way through. Twelve mutations,
+each caught by a named check.
+
+**Three mutations caught nothing on the first pass**, and each one was worth
+the trip: a redundant branch in the comma reader (removed — both paths gave
+the same answer), a missing `> 0` guard that no test reached (a behavioural
+check on `liftsToRows` now does), and **a check that passed with the code it
+tested deleted**, because a fixed 500-character window ran past the end of
+`readWeightBox()` into `markWeightInput`'s own definition and matched the call
+there. Brace-matching, not windows — the same lesson as the comment-stripping
+one, in a new disguise.
+
+**Then both screens, by hand, at 375 and 320.** The AMRAP list: `5000`
+outlines the box in red with "Over 2000 — not saved" under it and stores
+nothing, `12,5` stores **12.5** and shows what was typed, `0` stores nothing,
+`47.5` stores 47.5, and the row below is untouched throughout. The EMOM field:
+the same, plus `99999` refused. Both boxes report `type=text`,
+`inputmode=decimal`, `maxlength=7`. At 320 the warning sits on its own line
+under the box, inside the viewport, with no page overflow and the whole value
+visible.
+
+Chris started the local server in a terminal tab after Bash was denied for a
+background process and `preview_start` resolved the `burn-club` config to the
+wrong port and attached without starting anything. Worth knowing for next
+time: **a tab created by `preview_start` would not navigate to
+`localhost:8441` at all** — a fresh tab from `tabs_create` went there first
+try.
+
 ### The one file the app could not open without, and could not cache (2026-11-21, tester T-55)
 
 `supabase-js` loaded from `cdn.jsdelivr.net`, and the service worker

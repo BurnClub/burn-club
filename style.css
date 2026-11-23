@@ -909,13 +909,21 @@ h1, h2, h3 {
 }
 /* A number the app will not store must not look like one it has. The row
    wraps so the reason lands under it rather than squeezing the box. */
-.weight-row { flex-wrap: wrap; }
-.weight-log-input.is-bad {
+.weight-row, .amrap-row-line2, .player-emom-weight { flex-wrap: wrap; }
+/* The AMRAP row's box is transparent at rest and its own rule later in this
+   file sets border-color, so the refused state has to out-specify it. */
+.weight-log-input.is-bad,
+.superset-weight-input.is-bad,
+.amrap-row-line2 .superset-weight-input.is-bad {
   border-color: var(--danger);
   color: var(--danger);
 }
 .weight-log-warn {
+  /* Sits under three different rows now (the checklist row, an AMRAP row and
+     the EMOM field), so it has to drop onto its own line in a flex row and in
+     an ordinary block alike. */
   flex-basis: 100%;
+  width: 100%;
   text-align: right;
   padding-top: 4px;
   font-size: 12px;

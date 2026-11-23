@@ -108,18 +108,49 @@ function saveCompletions(list) {
   check(UPSERTS >= 3, "the batch really was split rather than quietly skipped (" + UPSERTS + ")");
   check(UPSERTS <= 8, "finding the bad row in six costs a handful of requests, not one each (" + UPSERTS + ")");
 
+  // ---------------- more than one bad row ----------------
+  // The cliff: MAX_SET_ASIDE_PER_PUSH was 5, so six impossible weights put
+  // the member straight back in the T-59 state, and silently, because the
+  // toast was only ever sent on the path that did not abort (tester T-67).
+  // This file stopped at one bad row, which is why nothing caught it.
+
+  async function withBadRows(n, id) {
+    SERVER.lifts = []; REFUSED_ROWS.lifts = null; TOASTS = [];
+    var weights = [];
+    for (var i = 0; i < 24; i++) weights.push(i < n ? 12345 + i : 60 + i);
+    saveCompletions([workout(id, "2026-11-22", weights)]);
+    SYNC_STATE.queue.clear();
+    clearDirty("completions");
+    var ok = await pushStore("completions");
+    return { ok: ok, landed: serverLifts().length, setAside: (REFUSED_ROWS.lifts || { size: 0 }).size, toasts: TOASTS.length };
+  }
+
+  var six = await withBadRows(6, "local-6");
+  print("  six bad of 24: " + JSON.stringify(six));
+  check(six.landed === 18, "six impossible weights: the other eighteen still land");
+  check(six.setAside === 6, "all six are set aside, not abandoned at the fifth");
+  check(six.ok === true, "and the store goes clean instead of retrying for ever");
+  check(six.toasts === 1, "the member is told once");
+
+  var twenty = await withBadRows(20, "local-20");
+  print("  twenty bad of 24: " + JSON.stringify(twenty));
+  check(twenty.landed === 4, "twenty bad rows: the four good ones still land");
+  check(twenty.setAside === 20, "and twenty is still inside the limit");
+  check(twenty.ok === true, "store clean");
+
   // ---------------- a batch that is wrong all the way through ----------------
-  // Not one bad row. Setting each of them aside would throw away the lot, so
-  // it stops, keeps nothing aside, and stays dirty for the next attempt.
-  SERVER.lifts = []; REFUSED_ROWS.lifts = null; TOASTS = [];
-  var allBad = [12345, 12346, 12347, 12348, 12349, 12350, 12351, 12352];
-  saveCompletions([workout("local-5", "2026-11-25", allBad)]);
-  SYNC_STATE.queue.clear();
-  var systemic = await pushStore("completions");
-  check(systemic === false, "a batch refused row after row fails rather than being set aside piece by piece");
-  check(!REFUSED_ROWS.lifts || REFUSED_ROWS.lifts.size === 0,
-    "and nothing is left on the do-not-send list from that attempt");
-  check(TOASTS.length === 0, "the member is not told eight times about a server-side problem");
+  // Past the limit it is not one bad row any more, it is the statement being
+  // wrong — which a later attempt may well clear. So it stops, keeps nothing
+  // aside, stays dirty, AND says so. The silence was the T-67 half.
+
+  var all = await withBadRows(24, "local-24");
+  print("  everything bad: " + JSON.stringify(all));
+  check(all.ok === false, "a batch refused row after row fails rather than being set aside piece by piece");
+  check(all.setAside === 0, "and nothing is left on the do-not-send list from that attempt");
+  check(all.toasts === 1, "the member is told once — not eight times, and not never");
+  check(TOASTS.length === 1 && /can't be backed up/i.test(TOASTS[0]),
+    "and what they are told says some of it could not be backed up");
+  check(/everything else/i.test(TOASTS[0]), "while making clear the rest did land");
   SERVER.lifts = []; REFUSED_ROWS.lifts = null; TOASTS = [];
 
   // ---------------- a failure that WILL come back is still retried ----------------

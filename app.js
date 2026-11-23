@@ -5675,8 +5675,22 @@ const MAX_LOGGED_WEIGHT = 2000;
 // rather than a number because "blank" and "impossible" are different
 // answers — blank means they did not lift it, impossible means they typed
 // something that must not be stored OR shown as if it were stored.
+// "12,5" is twelve and a half to most of the world, and an iOS numeric keypad
+// offers the comma. The input cleaner used to strip it, turning 12,5 into 125
+// — ten times the weight, silently, on every set it carried down to (tester
+// T-68). "1,000" is a thousand, though, so: one comma with one or two digits
+// behind it is a decimal point; anything else is a separator and goes.
+function normaliseDecimalComma(text) {
+  if (text.indexOf(",") === -1) return text;
+  // Only the one-comma-then-one-or-two-digits shape is a decimal point.
+  // "1,234.5" fails that test on the dot and falls through to the strip,
+  // which is the right answer for it anyway.
+  const m = /^(\d+),(\d{1,2})$/.exec(text);
+  return m ? m[1] + "." + m[2] : text.replace(/,/g, "");
+}
+
 function parseLoggedWeight(raw) {
-  const text = String(raw == null ? "" : raw).trim();
+  const text = normaliseDecimalComma(String(raw == null ? "" : raw).trim());
   if (!text) return { state: "blank", value: null };
   if (!/^\d*\.?\d*$/.test(text)) return { state: "rejected", value: null, why: "Numbers only" };
   const val = Number(text);
@@ -5689,10 +5703,38 @@ function parseLoggedWeight(raw) {
   return { state: "ok", value: Math.round(val * 100) / 100 };
 }
 
+// Every weight box in the app goes through here (tester T-65).
+//
+// The end-of-block screen was given a cap, a cleaner and select-on-focus for
+// T-60; the AMRAP list and the EMOM field — a second, completely separate
+// place the app asks for a weight — kept none of it, so 5,000 lb went
+// straight into the member's history as a personal best. Three screens, one
+// door, so the next screen that asks for a weight cannot quietly be the
+// fourth exception.
+function readWeightBox(input) {
+  // Digits, a decimal point and a comma survive; a second point does not.
+  const cleaned = input.value.replace(/[^0-9.,]/g, "").replace(/(\..*)\./g, "$1");
+  if (cleaned !== input.value) input.value = cleaned;
+  const parsed = parseLoggedWeight(input.value);
+  markWeightInput(input, parsed);
+  return parsed;
+}
+
+// Tapping a pre-filled box selects what is in it, so typing replaces the
+// number instead of being spliced into it (T-60). Deferred by a tick because
+// the caret is placed after the focus handler runs; setTimeout rather than
+// requestAnimationFrame, which does not fire in a tab that is not being drawn.
+function selectWeightBoxOnFocus(input) {
+  setTimeout(() => { try { input.select(); } catch (e) {} }, 0);
+}
+
 // Says so on the row itself. A number the app will not store must never look
 // like one it has stored — the box is the only thing the member reads.
 function markWeightInput(input, parsed) {
-  const row = input.closest(".weight-row");
+  // Three screens have weight boxes now, and they are laid out differently:
+  // the end-of-block checklist row, an AMRAP list row, and the EMOM field.
+  const row = input.closest(".weight-row, .amrap-row-line2, .player-emom-weight")
+    || input.parentElement;
   let warn = row ? row.querySelector(".weight-log-warn") : null;
   if (parsed.state === "rejected") {
     input.classList.add("is-bad");
@@ -6339,11 +6381,17 @@ const Player = {
   // what's coming (e.g. the AMRAP's exercise list) before committing to start it.
   // One place every weight field reports to, so the value survives the
   // re-renders each block type does between rounds/minutes.
+  // Checked, not trusted (2026-11-22, tester T-65). This used to store
+  // Number(whatever was typed), which is how an AMRAP box put 5,000 lb into a
+  // member's history and won the personal best against a properly capped
+  // number typed on the weights screen for the same exercise. Anything the
+  // app will not store clears the entry rather than keeping a stale one.
   noteWeight(name, raw) {
-    const val = String(raw).trim();
-    if (val) this.sessionWeights[name] = Number(val);
+    const parsed = parseLoggedWeight(raw);
+    if (parsed.state === "ok") this.sessionWeights[name] = parsed.value;
     else delete this.sessionWeights[name];
     this.persist();
+    return parsed;
   },
 
   // EMOM rotates exercises minute by minute, so it gets one field that follows
@@ -6366,7 +6414,11 @@ const Player = {
     input.placeholder = last ? `${last} last time` : "lbs";
     // Assigning oninput (rather than addEventListener) replaces the previous
     // exercise's handler instead of stacking another one on each rotation.
-    input.oninput = () => this.noteWeight(exerciseName, input.value);
+    input.oninput = () => {
+      const parsed = readWeightBox(input);
+      this.noteWeight(exerciseName, parsed.state === "ok" ? parsed.value : "");
+    };
+    input.onfocus = () => selectWeightBoxOnFocus(input);
   },
 
   awaitStart() {
@@ -6859,19 +6911,11 @@ const Player = {
         // handler runs. setTimeout rather than requestAnimationFrame: rAF is
         // tied to painting and does not fire in a tab that is not being
         // drawn, which is a real state for a phone that has just woken.
-        input.addEventListener("focus", () => {
-          setTimeout(() => { try { input.select(); } catch (e) {} }, 0);
-        });
+        input.addEventListener("focus", () => selectWeightBoxOnFocus(input));
         input.addEventListener("input", () => {
-          // A text input accepts anything. Keep the box to digits and one
-          // decimal point as they type, rather than letting it hold
-          // something that silently becomes nothing later.
-          const cleaned = input.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
-          if (cleaned !== input.value) input.value = cleaned;
-          const parsed = parseLoggedWeight(input.value);
+          const parsed = readWeightBox(input);
           const val = parsed.value;
           input.dataset.touched = "1";
-          markWeightInput(input, parsed);
           if (parsed.state === "ok") {
             this.setWeights[input.dataset.key] = val;
             this.noteWeight(input.dataset.exName, val);
@@ -7001,7 +7045,7 @@ const Player = {
             </div>
             <div class="amrap-row-line2">
               ${e.reps ? `<span class="amrap-reps">${repsLabel(e.reps)}</span>` : ""}
-              ${tracks ? `<input type="number" class="superset-weight-input" inputmode="numeric"
+              ${tracks ? `<input type="text" inputmode="decimal" maxlength="7" class="superset-weight-input"
                     data-ex-name="${esc(e.name)}"
                     value="${this.sessionWeights[e.name] || ""}"
                     placeholder="${last ? last + " lb" : "add weight"}"
@@ -7023,7 +7067,11 @@ const Player = {
         btn.addEventListener("click", () => openSwapPicker(name));
       });
       document.querySelectorAll("#player-amrap-list .superset-weight-input").forEach((input) => {
-        input.addEventListener("input", () => this.noteWeight(input.dataset.exName, input.value));
+        input.addEventListener("focus", () => selectWeightBoxOnFocus(input));
+        input.addEventListener("input", () => {
+          const parsed = readWeightBox(input);
+          this.noteWeight(input.dataset.exName, parsed.state === "ok" ? parsed.value : "");
+        });
       });
       // Visibility of player-round-counter is handled by awaitStart()/beginPhaseTimer()
       // below — it should only appear once the clock is actually running.

@@ -29,6 +29,9 @@ var capLine = APP.match(/const MAX_LOGGED_WEIGHT = ([0-9.]+);/);
 if (!capLine) throw new Error("MAX_LOGGED_WEIGHT is gone from app.js");
 // `const` inside eval would not escape it; the value is the shipped one either way.
 eval(capLine[0].replace("const", "var"));
+// parseLoggedWeight calls this; without it the file throws at the first
+// check and the runner reports THREW (2026-11-22, T-68).
+eval(lift("normaliseDecimalComma"));
 eval(lift("parseLoggedWeight"));
 
 // Comments are stripped before the positional checks: a check that only needs
@@ -84,10 +87,14 @@ check(box.indexOf("type=\"number\"") === -1,
 
 var onFocus = CODE.indexOf("input.addEventListener(\"focus\"");
 check(onFocus !== -1, "tapping a box does something");
-// Scoped to that handler on purpose: app.js calls input.select() elsewhere,
-// so a check for the bare call passes with this handler gutted.
-check(onFocus !== -1 && CODE.slice(onFocus, onFocus + 220).indexOf("select()") !== -1,
-  "and what it does is select what is in the box, which only works on a text input");
+// Scoped on purpose, twice over: app.js calls input.select() elsewhere, so a
+// check for the bare call passes with the handler gutted — and the handler
+// now delegates, so the call itself has to be followed into the helper.
+check(onFocus !== -1 && CODE.slice(onFocus, onFocus + 160).indexOf("selectWeightBoxOnFocus(input)") !== -1,
+  "and what it does is hand the box to selectWeightBoxOnFocus");
+var helper = CODE.indexOf("function selectWeightBoxOnFocus(");
+check(helper !== -1 && CODE.slice(helper, helper + 240).indexOf(".select()") !== -1,
+  "which selects what is in it, something that only works on a text input");
 
 // Every place a number is taken from a box goes through the one function.
 check(CODE.indexOf("parseLoggedWeight(input.value)") !== -1, "typing goes through parseLoggedWeight");

@@ -940,7 +940,10 @@ function liftsToRows(completions) {
     if (!c.weights) return;
     Object.keys(c.weights).forEach((name) => {
       const weight = Number(c.weights[name]);
-      if (!Number.isFinite(weight)) return;
+      // `> 0` as well as finite, which this branch never had and its
+      // neighbour always did (tester T-65): a 0 or a -50 typed into the
+      // AMRAP box was written to the member's history as a lift.
+      if (!Number.isFinite(weight) || weight <= 0) return;
       rows.push({
         member_id: AUTH_MEMBER.id, completion_client_id: c.id,
         exercise_id: exerciseIdForName(name),
@@ -1111,7 +1114,14 @@ function describeRefusedRow(table, row, error) {
 // thing a failure instead. One bad number is a bad number; a batch where row
 // after row is refused is not — that is the statement being wrong, and it is
 // the kind of thing that gets fixed at the other end, so it is retried.
-const MAX_SET_ASIDE_PER_PUSH = 5;
+//
+// Was 5, which put a cliff in the middle of ordinary data (tester T-67): six
+// impossible weights and the member was back in the T-59 state — nothing set
+// aside, store dirty for ever, retrying every 30 seconds — and this time with
+// no toast at all, because the message was only ever sent on the path that
+// did not abort. Both halves are fixed: 20 is past anything a member types by
+// hand, and the abort now SAYS so.
+const MAX_SET_ASIDE_PER_PUSH = 20;
 
 async function pushRows(table, rows, onConflict) {
   const run = { setAside: [], said: [], aborted: false };
@@ -1120,6 +1130,14 @@ async function pushRows(table, rows, onConflict) {
     // Put back everything this attempt set aside: it was not one bad row.
     const set = REFUSED_ROWS[table];
     if (set) run.setAside.forEach((k) => set.delete(k));
+    // And say so. Silence here is what made T-67 worse than the bug it came
+    // from: the member's weights stopped backing up and the only thing they
+    // ever saw was a warning days later saying their workouts had not backed
+    // up, which was false — the workouts had.
+    if (typeof showToast === "function") {
+      showToast("Some of your " + table + " can't be backed up. Everything else has been. "
+        + "Tell your coach — nothing on this phone is lost.");
+    }
     return false;
   }
   if (run.said.length && typeof showToast === "function") showToast(run.said[0]);
