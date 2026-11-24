@@ -107,8 +107,11 @@ check(completionSentence({ title: "Week 7 Circuit", blocks: [1] }, 0) === "You f
 
 var finish = CODE.indexOf("  finish() {");
 var finishBody = CODE.slice(finish, CODE.indexOf("\n  exit() {", finish));
+// Not the whole opts object: it carries the EMOM/AMRAP round weights as well
+// since T-76, and pinning the exact literal makes this check fail whenever
+// anything else is passed, which says nothing about the elapsed time.
 check(finishBody.indexOf("logCompletion(this.circuit, this.sessionWeights, this.setWeights,") !== -1
-  && finishBody.indexOf("{ minutes: elapsedSec / 60 }") !== -1,
+  && /minutes: elapsedSec \/ 60\b/.test(finishBody),
   "finish() hands the real elapsed time to logCompletion");
 check(finishBody.indexOf("const elapsedSec") < finishBody.indexOf("logCompletion("),
   "and works it out BEFORE writing the completion, not after");

@@ -126,10 +126,45 @@ check(CODE.indexOf("markWeightInput(other, parsed)") !== -1,
 
 // The carry-down must sit inside the accepted branch — carrying a refused
 // number down six sets is how one bad tap became six bad rows.
-var okBranch = CODE.indexOf("if (parsed.state === \"ok\") {");
-var carry = CODE.indexOf("other.value = val;");
-var elseBranch = CODE.indexOf("} else {", okBranch);
-check(okBranch !== -1 && carry > okBranch && carry < elseBranch,
+//
+// Scoped to the end-of-block handler rather than taken from the first match in
+// the file. This used to anchor on the first `if (parsed.state === "ok") {`
+// anywhere in app.js; when noteWeight() grew a braced branch of its own for
+// T-76 that match moved, and the check quietly stopped looking at the
+// carry-down it was written for (2026-11-23).
+// There are two `inputs.forEach((input) => {` blocks on this screen — one
+// re-marks the boxes on render, one wires the listeners — so take the one that
+// actually contains the carry-down rather than whichever comes first.
+var handler = (function () {
+  var from = 0;
+  while (true) {
+    var at = CODE.indexOf("inputs.forEach((input) => {", from);
+    if (at < 0) return "";
+    var depth = 0, block = "";
+    for (var i = CODE.indexOf("{", at); i < CODE.length; i++) {
+      if (CODE[i] === "{") depth++;
+      else if (CODE[i] === "}") { depth--; if (depth === 0) { block = CODE.slice(at, i + 1); break; } }
+    }
+    if (block.indexOf("other.value = val;") !== -1) return block;
+    from = at + 1;
+  }
+})();
+check(handler.indexOf("other.value = val;") !== -1,
+  "the end-of-block handler is where the carry-down lives");
+// Brace-matched, not "somewhere between these two strings": the ordering
+// version passes with the carry-down lifted OUT of the branch, because the
+// `} else {` still comes after it. It has to be INSIDE.
+var okBranch = handler.indexOf("if (parsed.state === \"ok\") {");
+var accepted = (function () {
+  if (okBranch < 0) return "";
+  var depth = 0;
+  for (var i = handler.indexOf("{", okBranch); i < handler.length; i++) {
+    if (handler[i] === "{") depth++;
+    else if (handler[i] === "}") { depth--; if (depth === 0) return handler.slice(okBranch, i + 1); }
+  }
+  return "";
+})();
+check(okBranch !== -1 && accepted.indexOf("other.value = val;") !== -1,
   "the carry-down only runs for a number the app accepted");
 
 print("\n  " + pass + " passed, " + fail + " failed");

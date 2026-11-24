@@ -2925,6 +2925,58 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### The EMOM recorded the last number typed, not the heaviest (2026-11-23, tester T-76)
+
+An EMOM gives one weight box per exercise, following the clock round by round.
+Work up — 30, 35, 40 — then back off to 25 for the last rotation, and **25**
+was what went into the member's history, their notebook, their "last time"
+pre-fill and their personal bests. The identical numbers typed on a per-set
+screen record 40, because that was deliberately fixed for T-5 and T-24. The
+EMOM and AMRAP boxes were never brought in line: `topWeightsFrom()` takes the
+maximum across `setWeights`, and those screens write no `setWeights` at all.
+
+It mattered less yesterday, because those weights never reached the server.
+T-69 fixed that the same morning, which is what made this live.
+
+**The fix is not "take the maximum of everything ever typed into the box."**
+That box is reused, so a member who types 400, sees it and corrects it to 40
+would have the typo kept for ever with no way to reach it — the same shape as
+T-74, which was the morning's other bug. Instead the player keeps
+`roundWeights`, one entry per time the box is **handed to** an exercise:
+
+- correcting a number inside a rotation overwrites that rotation;
+- the next rotation is a new entry;
+- emptying the box drops that rotation and leaves the earlier ones standing;
+- and `topWeightsFrom()` takes the heaviest across them, exactly as it already
+  did for the per-set screens.
+
+`emomBindSeq` counts rotations, and is bumped in the one place the box changes
+hands — `syncEmomWeightField()`, past its early return. That early return
+matters: `updateClock()` calls it every second, and counting the clock rather
+than the change of exercise would make every tick a new rotation. Both the
+rounds and the counter ride in the saved session, so a workout resumed after a
+phone call still knows what was lifted before it.
+
+A number corrected only AFTER the box has moved on is kept as that rotation's
+lift. That is a decision, not an oversight — the rotation happened — and there
+is a check saying so.
+
+**Two existing checks broke on this change, and one of them was wrong before
+it.** `weight-typo.test.js` anchored on the first `if (parsed.state === "ok") {`
+anywhere in app.js; `noteWeight()` grew a braced branch of its own, that match
+moved, and the check quietly stopped looking at the carry-down it was written
+for. It now finds the right block by the code it contains — and it checks
+CONTAINMENT rather than textual order, because the ordering version passed
+with the carry-down lifted out of the accepted branch entirely. The other,
+in `recorded-time.test.js`, pinned the whole opts literal and so failed merely
+because a second field was added; it now checks the field it cares about.
+
+Fourteen mutations of the fix are each caught by a named check. Verified in a
+browser driving the real `syncEmomWeightField()` against the real DOM: the
+counter advances once per rotation, repeated calls with the same exercise do
+not count, and a worked-up-then-backed-off EMOM records 40 while the box still
+shows what was typed last.
+
 ### Kelly's only coach note, and a typo in all eight weeks (2026-11-23, testers T-79 and T-78)
 
 Two content faults, both invisible to any test of the code.

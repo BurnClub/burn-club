@@ -1393,16 +1393,29 @@ let LAST_WEIGHTS = {};
 // Left where it is rather than changed in noteWeight(): sessionWeights is
 // also what fills the box back in on a re-render, so making IT the maximum
 // would stop a member correcting a number downwards.
-function topWeightsFrom(weights, setWeights) {
+// The heaviest the member actually lifted for each exercise, whichever screen
+// they typed it on.
+//
+// `setWeights` is the end-of-block screens, one entry per set. `roundWeights`
+// is the EMOM and AMRAP boxes, one entry per time the box was handed to an
+// exercise — those had no per-slot record at all, so working up 30/35/40 and
+// backing off to 25 for the last rotation recorded 25, while the identical
+// numbers on a per-set screen recorded 40 (tester T-76). Both maps are keyed
+// "something|Exercise Name|something", so both are read the same way.
+function topWeightsFrom(weights, setWeights, roundWeights) {
   const top = Object.assign({}, weights || {});
-  Object.keys(setWeights || {}).forEach((key) => {
-    // "setNumber|Exercise Name|Set 2" - the middle part is the exercise.
-    const name = key.split("|")[1];
-    const w = Number(setWeights[key]);
-    if (!name || !Number.isFinite(w)) return;
-    const cur = Number(top[name]);
-    if (!Number.isFinite(cur) || w > cur) top[name] = w;
-  });
+  const takeHeaviest = (map) => {
+    Object.keys(map || {}).forEach((key) => {
+      // "setNumber|Exercise Name|Set 2" - the middle part is the exercise.
+      const name = key.split("|")[1];
+      const w = Number(map[key]);
+      if (!name || !Number.isFinite(w)) return;
+      const cur = Number(top[name]);
+      if (!Number.isFinite(cur) || w > cur) top[name] = w;
+    });
+  };
+  takeHeaviest(setWeights);
+  takeHeaviest(roundWeights);
   return top;
 }
 
@@ -1428,7 +1441,7 @@ function logCompletion(circuit, weights, setWeights, opts) {
   const minutes = Number.isFinite(given) && given >= 0
     ? Math.max(1, Math.round(given))
     : (parseInt(circuit.meta, 10) || 20);
-  const topWeights = topWeightsFrom(weights, setWeights);
+  const topWeights = topWeightsFrom(weights, setWeights, opts && opts.roundWeights);
   const entry = {
     id: `local-${Date.now()}`,
     workoutId: circuit.id,
@@ -4291,7 +4304,7 @@ function logPartialCompletion(circuit, rec, blocksDone, phases) {
   // logCompletion would parse the number back out of it.
   const partial = { ...circuit, title: `${circuit.title} (partial)` };
   return logCompletion(partial, rec.sessionWeights || {}, rec.setWeights || {},
-    { minutes: Math.max(1, minutes) });
+    { minutes: Math.max(1, minutes), roundWeights: rec.roundWeights || {} });
 }
 
 function showResumeOverlay({ title, body, primary, secondary, onPrimary, onSecondary }) {
@@ -6012,6 +6025,16 @@ const Player = {
     // Per set, keyed block|exercise|label — sessionWeights keeps the top
     // number for personal bests, this keeps what was actually lifted each set.
     this.setWeights = {};
+    // The same idea for the screens that have ONE box per exercise rather than
+    // one per set: the EMOM field that follows the clock, and the AMRAP list.
+    // Without it the only record of those was sessionWeights, which holds
+    // whatever was typed last, so backing off on the final rotation threw away
+    // the heaviest thing the member lifted (tester T-76).
+    this.roundWeights = {};
+    // Bumped every time the EMOM box is handed to an exercise, which is what
+    // separates one rotation from the next. Correcting a typo inside a
+    // rotation overwrites that rotation; the next rotation is a new entry.
+    this.emomBindSeq = 0;
     this.cardioChoice = null;
     this.cardioMinutes = 0;
     // Reset per workout, so the explainers come back for the next session.
@@ -6129,6 +6152,8 @@ const Player = {
       amrapRoundsByBlock: this.amrapRoundsByBlock,
       sessionWeights: this.sessionWeights,
       setWeights: this.setWeights,
+      roundWeights: this.roundWeights,
+      emomBindSeq: this.emomBindSeq,
       setsChecked: this.setsChecked,
       cardioChoice: this.cardioChoice,
       cardioMinutes: this.cardioMinutes,
@@ -6186,6 +6211,10 @@ const Player = {
     this.skippedPhases = new Set(rec.skippedPhases || []);
     this.sessionWeights = rec.sessionWeights || {};
     this.setWeights = rec.setWeights || {};
+    // Carried across a resume like the others: a session picked up after a
+    // phone call must still know what was lifted before it.
+    this.roundWeights = rec.roundWeights || {};
+    this.emomBindSeq = rec.emomBindSeq || 0;
     this.cardioChoice = rec.cardioChoice || null;
     this.cardioMinutes = rec.cardioMinutes || 0;
     this.notesShownFor = new Set(rec.notesShownFor || []);
@@ -6380,7 +6409,7 @@ const Player = {
     // banner and no "Add to Progress" offer at all, though Progress showed the
     // new best. logCompletion() derives the same top weight one line below;
     // both now read from one place.
-    const prs = newPersonalBests(topWeightsFrom(this.sessionWeights, this.setWeights));
+    const prs = newPersonalBests(topWeightsFrom(this.sessionWeights, this.setWeights, this.roundWeights));
     // Real wall-clock time from tapping "Start Workout" to finishing the last
     // phase, less any stretch the member was away for and came back from.
     // Computed HERE, before the completion is written, because it is now what
@@ -6391,7 +6420,7 @@ const Player = {
       ? Math.max(0, Math.round((Date.now() - this.startedAt - (this.awayMs || 0)) / 1000))
       : 0;
     const entry = logCompletion(this.circuit, this.sessionWeights, this.setWeights,
-      { minutes: elapsedSec / 60 });
+      { minutes: elapsedSec / 60, roundWeights: this.roundWeights });
     renderPRBanner(prs);
     // A previous session's note must not be sitting in the box.
     resetSessionNoteField();
@@ -6618,10 +6647,30 @@ const Player = {
   // member's history and won the personal best against a properly capped
   // number typed on the weights screen for the same exercise. Anything the
   // app will not store clears the entry rather than keeping a stale one.
+  // Which entry in `roundWeights` the box in front of the member belongs to.
+  // On an EMOM that is the current rotation, so a weight typed on one rotation
+  // is not overwritten by the next; everywhere else there is one box per
+  // exercise per block, which is one entry.
+  weightSlotFor(name) {
+    const phase = this.currentPhase();
+    const kind = phase && phase.kind;
+    if (kind === "emom") return `${this.index}|${name}|emom-${this.emomBindSeq}`;
+    return `${this.index}|${name}|${kind || "block"}`;
+  },
+
   noteWeight(name, raw) {
     const parsed = parseLoggedWeight(raw);
-    if (parsed.state === "ok") this.sessionWeights[name] = parsed.value;
-    else delete this.sessionWeights[name];
+    const slot = this.weightSlotFor(name);
+    if (parsed.state === "ok") {
+      this.sessionWeights[name] = parsed.value;
+      // The box the member is looking at, not the exercise as a whole: an
+      // emptied or refused box clears this rotation and leaves the earlier
+      // ones standing, which is what actually happened.
+      this.roundWeights[slot] = parsed.value;
+    } else {
+      delete this.sessionWeights[name];
+      delete this.roundWeights[slot];
+    }
     this.persist();
     return parsed;
   },
@@ -6641,6 +6690,8 @@ const Player = {
     wrap.style.display = "flex";
     if (this.emomWeightFor === exerciseName) return;
     this.emomWeightFor = exerciseName;
+    // A new rotation. Edits before this point belong to the previous one.
+    this.emomBindSeq++;
     const last = lastWeightFor(exerciseName);
     input.value = this.sessionWeights[exerciseName] || "";
     input.placeholder = last ? `${last} last time` : "lbs";
