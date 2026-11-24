@@ -1833,7 +1833,7 @@ const CIRCUITS = [
       "folderId": "fit-functional-test-week-1792947605130-week-1",
       "category": "structured",
       "tag": "Superset x 4",
-      "title": "BACK/BICPES",
+      "title": "BACK/BICEPS",
       "meta": "40 min · Biceps & Full Body",
       "color": "deepblue",
       "desc": "No description yet.",
@@ -3010,7 +3010,7 @@ const CIRCUITS = [
       "folderId": "week-8-1795448659432",
       "category": "structured",
       "tag": "Superset x 4",
-      "title": "BACK/BICPES",
+      "title": "BACK/BICEPS",
       "meta": "40 min · Biceps & Full Body",
       "color": "deepblue",
       "desc": "No description yet.",
@@ -3597,7 +3597,7 @@ const CIRCUITS = [
       "folderId": "week-7-1795448646882",
       "category": "structured",
       "tag": "Superset x 4",
-      "title": "BACK/BICPES",
+      "title": "BACK/BICEPS",
       "meta": "40 min · Biceps & Full Body",
       "color": "deepblue",
       "desc": "No description yet.",
@@ -4184,7 +4184,7 @@ const CIRCUITS = [
       "folderId": "week-6-1795448638799",
       "category": "structured",
       "tag": "Superset x 4",
-      "title": "BACK/BICPES",
+      "title": "BACK/BICEPS",
       "meta": "40 min · Biceps & Full Body",
       "color": "deepblue",
       "desc": "No description yet.",
@@ -4771,7 +4771,7 @@ const CIRCUITS = [
       "folderId": "week-5-1795448632383",
       "category": "structured",
       "tag": "Superset x 4",
-      "title": "BACK/BICPES",
+      "title": "BACK/BICEPS",
       "meta": "40 min · Biceps & Full Body",
       "color": "deepblue",
       "desc": "No description yet.",
@@ -5358,7 +5358,7 @@ const CIRCUITS = [
       "folderId": "week-4-1795448620115",
       "category": "structured",
       "tag": "Superset x 4",
-      "title": "BACK/BICPES",
+      "title": "BACK/BICEPS",
       "meta": "40 min · Biceps & Full Body",
       "color": "deepblue",
       "desc": "No description yet.",
@@ -5945,7 +5945,7 @@ const CIRCUITS = [
       "folderId": "week-3-1795448608016",
       "category": "structured",
       "tag": "Superset x 4",
-      "title": "BACK/BICPES",
+      "title": "BACK/BICEPS",
       "meta": "40 min · Biceps & Full Body",
       "color": "deepblue",
       "desc": "No description yet.",
@@ -6670,7 +6670,7 @@ const CIRCUITS = [
       "folderId": "week-2-1795448543052",
       "category": "structured",
       "tag": "Superset x 4",
-      "title": "BACK/BICPES",
+      "title": "BACK/BICEPS",
       "meta": "40 min · Biceps & Full Body",
       "color": "deepblue",
       "desc": "No description yet.",
@@ -7004,8 +7004,21 @@ function buildFitFunctionalSchedule() {
 // content: admin writes to its own storage and nothing reaches a member until
 // it comes through here. That is the limitation the content migration exists
 // to remove, and this is one more reason to do it.
+// Kelly's note for the second week. The lookup in renderCalendarWeekNote() is
+// an exact match on `${programId}-week-N`, so a key naming a programme nobody
+// is on shows nothing and says nothing about it (tester T-79): this was keyed
+// to `fit-functional` alone while every tester sat on the test-week copy of
+// the same content, in week 2, the week the note is about. One string, keyed
+// for both programmes rather than written out twice.
+//
+// programme-content.test.js fails if a key here names a programme that does
+// not exist or a week outside its length, so the next one cannot go missing
+// quietly.
+const WEEK_2_NOTE = "Week 2 is the one that usually bites — the volume steps up before your body has caught up with it. If something has to give, drop a set rather than a session.";
+
 const WEEK_NOTES = {
-  "fit-functional-week-2": "Week 2 is the one that usually bites — the volume steps up before your body has caught up with it. If something has to give, drop a set rather than a session.",
+  "fit-functional-week-2": WEEK_2_NOTE,
+  "fit-functional-test-week-1792947605130-week-2": WEEK_2_NOTE,
 };
 
 // Seven rest days each, which is EXACTLY what admin currently holds for both
@@ -7033,56 +7046,56 @@ const SCHEDULE_TEMPLATES = {
     { day: 1, type: "workout", workoutId: "shoulders-abs-1792948000381" }, // SHOULDERS/ABS
     { day: 2, type: "workout", workoutId: "hamstrings-glutes-1792972456231" }, // HAMSTRINGS/GLUTES
     { day: 3, type: "workout", workoutId: "chest-triceps-1792972793728" }, // CHEST/TRICEPS
-    { day: 4, type: "workout", workoutId: "back-bicpes-1792974726372" }, // BACK/BICPES
+    { day: 4, type: "workout", workoutId: "back-bicpes-1792974726372" }, // BACK/BICEPS
     { day: 5, type: "workout", workoutId: "quads-glutes-1792975325761" }, // QUADS/GLUTES
     { day: 6, type: "workout", workoutId: "circuit-1792975829465" }, // CIRCUIT
     { day: 7, type: "rest" },
     { day: 8, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1795448578035-5" }, // SHOULDERS/ABS
     { day: 9, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1795448578035-4" }, // HAMSTRINGS/GLUTES
     { day: 10, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1795448578035-3" }, // CHEST/TRICEPS
-    { day: 11, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2" }, // BACK/BICPES
+    { day: 11, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2" }, // BACK/BICEPS
     { day: 12, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1795448578035-1" }, // QUADS/GLUTES
     { day: 13, type: "workout", workoutId: "circuit-1792975829465-copy-1795448578034-0" }, // CIRCUIT
     { day: 14, type: "rest" },
     { day: 15, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448695732-0" }, // SHOULDERS/ABS
     { day: 16, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448695732-1" }, // HAMSTRINGS/GLUTES
     { day: 17, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448695732-2" }, // CHEST/TRICEPS
-    { day: 18, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448695732-3" }, // BACK/BICPES
+    { day: 18, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448695732-3" }, // BACK/BICEPS
     { day: 19, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448695732-4" }, // QUADS/GLUTES
     { day: 20, type: "workout", workoutId: "circuit-1792975829465-copy-1795448578034-0-copy-1795448695732-5" }, // CIRCUIT
     { day: 21, type: "rest" },
     { day: 22, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448704449-0" }, // SHOULDERS/ABS
     { day: 23, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448704449-1" }, // HAMSTRINGS/GLUTES
     { day: 24, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448704449-2" }, // CHEST/TRICEPS
-    { day: 25, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448704449-3" }, // BACK/BICPES
+    { day: 25, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448704449-3" }, // BACK/BICEPS
     { day: 26, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448704449-4" }, // QUADS/GLUTES
     { day: 27, type: "workout", workoutId: "circuit-1792975829465-copy-1795448578034-0-copy-1795448704449-5" }, // CIRCUIT
     { day: 28, type: "rest" },
     { day: 29, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448715249-0" }, // SHOULDERS/ABS
     { day: 30, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448715249-1" }, // HAMSTRINGS/GLUTES
     { day: 31, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448715249-2" }, // CHEST/TRICEPS
-    { day: 32, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448715249-3" }, // BACK/BICPES
+    { day: 32, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448715249-3" }, // BACK/BICEPS
     { day: 33, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448715249-4" }, // QUADS/GLUTES
     { day: 34, type: "workout", workoutId: "circuit-1792975829465-copy-1795448578034-0-copy-1795448715249-5" }, // CIRCUIT
     { day: 35, type: "rest" },
     { day: 36, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448731565-0" }, // SHOULDERS/ABS
     { day: 37, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448731565-1" }, // HAMSTRINGS/GLUTES
     { day: 38, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448731565-2" }, // CHEST/TRICEPS
-    { day: 39, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448731565-3" }, // BACK/BICPES
+    { day: 39, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448731565-3" }, // BACK/BICEPS
     { day: 40, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448731565-4" }, // QUADS/GLUTES
     { day: 41, type: "workout", workoutId: "circuit-1792975829465-copy-1795448578034-0-copy-1795448731565-5" }, // CIRCUIT
     { day: 42, type: "rest" },
     { day: 43, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448738031-0" }, // SHOULDERS/ABS
     { day: 44, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448738031-1" }, // HAMSTRINGS/GLUTES
     { day: 45, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448738031-2" }, // CHEST/TRICEPS
-    { day: 46, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448738031-3" }, // BACK/BICPES
+    { day: 46, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448738031-3" }, // BACK/BICEPS
     { day: 47, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448738031-4" }, // QUADS/GLUTES
     { day: 48, type: "workout", workoutId: "circuit-1792975829465-copy-1795448578034-0-copy-1795448738031-5" }, // CIRCUIT
     { day: 49, type: "rest" },
     { day: 50, type: "workout", workoutId: "shoulders-abs-1792948000381-copy-1795448578035-5-copy-1795448745931-0" }, // SHOULDERS/ABS
     { day: 51, type: "workout", workoutId: "hamstrings-glutes-1792972456231-copy-1795448578035-4-copy-1795448745931-1" }, // HAMSTRINGS/GLUTES
     { day: 52, type: "workout", workoutId: "chest-triceps-1792972793728-copy-1795448578035-3-copy-1795448745931-2" }, // CHEST/TRICEPS
-    { day: 53, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448745931-3" }, // BACK/BICPES
+    { day: 53, type: "workout", workoutId: "back-bicpes-1792974726372-copy-1795448578035-2-copy-1795448745931-3" }, // BACK/BICEPS
     { day: 54, type: "workout", workoutId: "quads-glutes-1792975325761-copy-1795448578035-1-copy-1795448745931-4" }, // QUADS/GLUTES
     { day: 55, type: "workout", workoutId: "circuit-1792975829465-copy-1795448578034-0-copy-1795448745931-5" }, // CIRCUIT
     { day: 56, type: "rest" },

@@ -2925,6 +2925,44 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Kelly's only coach note, and a typo in all eight weeks (2026-11-23, testers T-79 and T-78)
+
+Two content faults, both invisible to any test of the code.
+
+**T-79 — the note was filed where nobody was standing.** `WEEK_NOTES` was keyed
+`"fit-functional-week-2"`. Every tester is on the test-week copy of that
+programme, `fit-functional-test-week-1792947605130`. The lookup in
+`renderCalendarWeekHeader()` is an exact match on
+`` `${m.programId}-week-${weekNumber}` ``, so the note simply did not appear —
+and a key that matches nothing looks exactly like a week with no note. They were
+in week 2, the week the note is about, when it was found.
+
+It is now one string keyed for both programmes rather than written out twice,
+and `programme-content.test.js` fails if a key names a programme that does not
+exist or a week outside its length. **Coach notes are authored here, in
+`data.js`, not in admin** — so this is the file to add them to, and the test is
+the thing that will notice when a new one is misfiled.
+
+**T-78 — `BACK/BICPES`.** It was in week 1, and the fold-in that built weeks 2
+to 8 copied it faithfully into all eight. Only the eight `title`s changed.
+**The ids still say `back-bicpes-`, deliberately**: the schedule points at them
+and members' completions are already stored against them, so renaming an id
+would orphan history for the sake of a string nobody sees. There is a check
+asserting the ids are left alone, so that stays a decision rather than
+something half-finished later.
+
+**Still to do, and it is Chris's to do:** the typo is in the admin app's own
+copy of the programme, in that browser's localStorage. `data.js` is downstream
+of it, so **the next export and fold-in will bring `BACK/BICPES` straight
+back**. The title wants correcting in admin as well.
+
+One thing the browser check turned up on the way: the test's week count was
+reading `template.length / 7`, which counts ENTRIES, while
+`memberProgramPosition()` uses the highest `day` number — a day can hold a
+workout and a cardio item. That read Fit & Functional as a 10-week programme
+instead of 8, and would have let a note be filed against two weeks that do not
+exist. The test now counts weeks the same way the app does.
+
 ### The weight box lost a race against the member's thumb (2026-11-23, tester T-74)
 
 T-60 stopped a tap-and-type splicing a digit into a pre-filled weight box by
