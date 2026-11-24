@@ -2925,6 +2925,56 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### A refused request now says which one it was (2026-11-23, tester T-84)
+
+**The 400 did not reproduce, and that is reported rather than papered over.**
+T-84 said one request came back 400 on every signed-in page load. On the
+current build, signed in as Jordan on the deployed site, across four clean
+loads, there was no 400 at all: 44 resources, 39×200, 2×201, 1×204, and two
+cross-origin responses whose status a page cannot read. Both of those were
+checked independently — the Storage avatar answers 200 with a real JPEG and
+renders at 158×158, and the Google Fonts stylesheet answers 200 to curl. The
+whole signed-in load sequence was then replayed through a `fetch` wrapper
+installed before the app's scripts ran: 26 requests, none refused.
+
+Two things worth knowing for the next time something like this is chased:
+
+- **The console in these tools is cumulative, not per load.** Reloading and
+  reading the console shows entries from earlier in the session. Two
+  consecutive clean loads returned a byte-identical error list, stale entries
+  of mine included. So "reload and a 400 appears" can be an old line. That is
+  not a dismissal of the finding — it is the first thing to rule out.
+- **Resource timing carries `responseStatus` for every resource**, including
+  images and cross-origin ones, which is how a whole load was audited at once
+  without the network panel — which shows no cross-origin requests at all.
+
+**What was fixed is the half that is fixable, and the half T-84's title is
+actually about: nothing anywhere said a word.** Every request this app makes to
+Supabase — REST, auth and storage — goes through `timedFetch`, because the
+client is built with `global: { fetch: timedFetch }`. That is the one place
+that can see a refusal, and it was not looking. Call sites check their own
+errors, but only the ones somebody remembered to check, and the two that WOULD
+have reported this never fired, so whatever it was belonged to no code path
+that looks.
+
+Now a non-2xx response is named on the console with its method, path, status
+and what the server said back, kept in a capped list of the last ten, and read
+out in the diagnostics panel as "Refused requests" — "none since this page
+opened" when there are none, which is itself the useful answer, and the one a
+tester without DevTools can report.
+
+**Query values are dropped and only the keys kept.** These strings go to a
+panel a member can read out: a member filter carries their id and an auth call
+can carry an email address. `/rest/v1/members?select&email&order` says
+everything needed to find the request and nothing about who. The fallback for
+an engine with no `URL` drops the query entirely and the host with it, so it
+can never say more than the main path does.
+
+The response is handed back untouched and the body is read off a **clone** —
+verified in a browser, where a request through the wrapper still returned its
+194-byte body to the caller. Ten mutations are each caught by a named check,
+including one that reads the body without cloning it.
+
 ### Going back to redo an EMOM minute is the same minute (2026-11-23, tester T-81)
 
 With the heaviest rule in place, the one way a member could reach a number they

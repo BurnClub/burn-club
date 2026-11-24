@@ -27,6 +27,63 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_hCeLK3T8z-vl_PYMYlPj7Q_EkzjMoLI
 const REQUEST_TIMEOUT_MS = 12000;
 const UPLOAD_TIMEOUT_MS = 60000;
 
+// Every request this app makes to Supabase — REST, auth and storage alike —
+// goes through timedFetch, because the client is built with
+// `global: { fetch: timedFetch }`. That makes it the one place that can see a
+// refused request, and until now nothing did.
+//
+// Tester T-84: one request came back 400 on every signed-in page load and not
+// a word was said about it anywhere. Individual call sites check their own
+// errors, but only the ones somebody remembered to check — the two that WOULD
+// have reported this (`[auth-log]` and `[last-seen]`) never fired, so whatever
+// it was belonged to no code path that looks. A failure nobody can name is the
+// shape of thing that hid the first trial's failure for six days.
+//
+// This does not fix a request. It makes one that fails say which it was.
+const FAILED_REQUESTS = [];
+const MAX_REMEMBERED_FAILURES = 10;
+
+// Query VALUES are dropped and only the keys kept: these strings go to the
+// console and into the diagnostics panel a member can read out, and a member
+// filter carries their id, while an auth call can carry an email address.
+function describeRequestUrl(url) {
+  try {
+    const u = new URL(url, location.href);
+    const keys = [];
+    u.searchParams.forEach((_, k) => { if (keys.indexOf(k) === -1) keys.push(k); });
+    return u.pathname + (keys.length ? "?" + keys.join("&") : "");
+  } catch (e) {
+    // Same shape without URL to parse it: everything after the ? goes, and so
+    // does the scheme and host, so the fallback can never say more than the
+    // main path does.
+    return String(url).split("?")[0].replace(/^[a-z]+:\/\/[^/]+/i, "") || String(url).split("?")[0];
+  }
+}
+
+function noteFailedRequest(method, url, status, body) {
+  const where = describeRequestUrl(url);
+  const entry = {
+    at: new Date().toISOString(),
+    method: method || "GET",
+    where,
+    status,
+    detail: body == null ? "" : String(body).slice(0, 200),
+  };
+  FAILED_REQUESTS.push(entry);
+  if (FAILED_REQUESTS.length > MAX_REMEMBERED_FAILURES) FAILED_REQUESTS.shift();
+  console.warn("[request] HTTP " + status + " " + entry.method + " " + where
+    + (entry.detail ? " — " + entry.detail : ""));
+}
+
+// Read out in the diagnostics panel, so a tester with no DevTools can say
+// what was refused. "none" is itself a useful answer: it is the difference
+// between "something is wrong and I cannot see what" and a fact.
+function refusedRequestsSummary() {
+  if (!FAILED_REQUESTS.length) return "none since this page opened";
+  return FAILED_REQUESTS.map((f) => f.status + " " + f.method + " " + f.where
+    + (f.detail ? " (" + f.detail.slice(0, 80) + ")" : "")).join(" | ");
+}
+
 function timedFetch(input, init) {
   const url = typeof input === "string" ? input : ((input && input.url) || "");
   const ms = url.indexOf("/storage/v1/") !== -1 ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS;
@@ -38,7 +95,24 @@ function timedFetch(input, init) {
     if (outer.aborted) ctl.abort();
     else outer.addEventListener("abort", () => ctl.abort(), { once: true });
   }
+  const method = (init && init.method) || (input && input.method) || "GET";
   return fetch(input, Object.assign({}, init, { signal: ctl.signal }))
+    .then((res) => {
+      // Named, not swallowed, and never in the way: the response is handed
+      // back untouched and the body is read off a clone, so a caller that
+      // wants to read it still can.
+      if (res && !res.ok) {
+        try {
+          res.clone().text().then(
+            (body) => noteFailedRequest(method, url, res.status, body),
+            () => noteFailedRequest(method, url, res.status, null)
+          );
+        } catch (e) {
+          noteFailedRequest(method, url, res.status, null);
+        }
+      }
+      return res;
+    })
     .catch((e) => {
       if (timedOut) throw new TypeError("Failed to fetch (no answer after " + (ms / 1000) + "s)");
       throw e;
@@ -749,6 +823,11 @@ async function authDiagnostics() {
   // The one that would explain "it worked yesterday": no storage means no
   // session can be kept, so every visit starts from the login form.
   add("Can save a session", storage);
+
+  // Anything the server refused since this page opened. Usually "none", and
+  // that is worth saying out loud — it is the line that turns "something is
+  // wrong and I cannot see what" into a fact (tester T-84).
+  add("Refused requests", refusedRequestsSummary());
 
   // Every step below is time-boxed (2026-11-20, tester T-11). This panel used
   // to freeze on "Checking…" forever in exactly the situation it exists for:
