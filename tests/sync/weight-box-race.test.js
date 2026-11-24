@@ -106,12 +106,21 @@ function tap(box, caret) {
   box.selectionStart = box.selectionEnd = caret;
 }
 
+// The real `input` event is an InputEvent carrying inputType — confirmed in a
+// browser, not assumed, because `beforeinput` turned out never to be delivered
+// at all. The fake says so too, or the deletion rule would go untested.
+function fireInput(box, inputType, data) {
+  var ev = new Event("input", { bubbles: true });
+  ev.inputType = inputType;
+  ev.data = data === undefined ? null : data;
+  box.dispatchEvent(ev);
+}
 // A real keystroke: the browser edits the box, then fires input.
 function typeChar(box, ch) {
   var v = box.value, from = box.selectionStart, to = box.selectionEnd;
   box.value = v.slice(0, from) + ch + v.slice(to);
   box.selectionStart = box.selectionEnd = from + ch.length;
-  box.dispatchEvent(new Event("input", { bubbles: true }));
+  fireInput(box, "insertText", ch);
 }
 function typeInto(box, text) { for (var i = 0; i < text.length; i++) typeChar(box, text[i]); }
 function backspace(box) {
@@ -119,18 +128,20 @@ function backspace(box) {
   if (from === to && from > 0) from -= 1;
   box.value = box.value.slice(0, from) + box.value.slice(to);
   box.selectionStart = box.selectionEnd = from;
-  box.dispatchEvent(new Event("input", { bubbles: true }));
+  fireInput(box, "deleteContentBackward");
 }
 function pasteOver(box, text) {   // a paste replacing the whole box
   box.value = text;
   box.selectionStart = box.selectionEnd = text.length;
-  box.dispatchEvent(new Event("input", { bubbles: true }));
+  fireInput(box, "insertFromPaste", text);
 }
 
 eval(lift("selectWeightBoxOnFocus"));
 // One per line, at the top level: an eval inside a callback defines the
 // function in the callback's scope, where the code under test cannot see it.
 eval(lift("trySelectWeightBox"));
+eval(lift("armWeightBox"));
+eval(lift("fillWeightBox"));
 eval(lift("wireWeightBoxTyping"));
 eval(lift("undoWeightSplice"));
 eval(lift("splicedAddition"));
@@ -224,10 +235,35 @@ i2.selectionStart = i2.selectionEnd = 0;
 typeChar(i2, "9");               // spliced   -> "92"
 check(ran(i2, 2) === "92", "the rule is one keystroke only, not every keystroke (got " + i2.value + ")");
 
+// A backspace as the first thing after tapping in: had the select landed, the
+// whole box would have gone with it, so it does.
 var j = new Box("150"); screenWiring(j);
 tap(j, 3);
 backspace(j);
-check(ran(j, 1) === "15", "a backspace deletes, and is not read as a splice (got " + j.value + ")");
+check(ran(j, 1) === "", "a first-keystroke backspace clears the box, as the select would have (got '" + j.value + "')");
+
+// T-83: and the digits typed after it are not spliced into what was left.
+var j2 = new Box("35"); screenWiring(j2);
+tap(j2, 1);
+backspace(j2);
+typeInto(j2, "40");
+check(ran(j2, 3) === "40", "35, backspace, 40 gives 40 — not 405 carried down the column (got " + j2.value + ")");
+
+// A backspace that is NOT the first thing is an ordinary backspace.
+var j3 = new Box("35"); screenWiring(j3);
+tap(j3, 1);
+typeInto(j3, "456");
+backspace(j3);
+check(ran(j3, 4) === "45", "a backspace later on just deletes a character (got " + j3.value + ")");
+
+// An engine that reports no inputType gets the safe half of the rule: deleting
+// a character from "25" and replacing "25" with "2" both leave "2", so a
+// shorter value is left alone rather than guessed at and emptied.
+var j4 = new Box("25"); screenWiring(j4);
+tap(j4, 2);
+j4.value = "2"; j4.selectionStart = j4.selectionEnd = 1;
+j4.dispatchEvent(new Event("input", { bubbles: true }));
+check(ran(j4, 1) === "2", "with no inputType to go on, a shorter value is left alone (got '" + j4.value + "')");
 
 var k = new Box("150"); screenWiring(k);
 tap(k, 1);
@@ -303,6 +339,40 @@ check(splicedAddition("80", "870") === "7", "870 is 80 with a 7 in the middle");
 check(splicedAddition("15", "1000") === null, "1000 is not 15 with anything added, so it is left alone");
 check(splicedAddition("", "45") === "45", "nothing plus 45 is 45");
 
+// ---------------- T-80: the box the member never taps ----------------
+
+// On an EMOM the box is never re-focused between rotations: the keyboard is
+// already up and the app just refills the field as the clock hands it to the
+// next exercise. Arming only on focus meant the correction never ran there.
+var emom = new Box(""); screenWiring(emom);
+tap(emom, 0);                       // tapped once, at the start of the block
+typeInto(emom, "15");               // first rotation logged
+// The clock turns. The app refills the box — no focus, no tap, keyboard up.
+fillWeightBox(emom, "15");
+emom.selectionStart = emom.selectionEnd = 1;   // the caret sits where it was
+typeInto(emom, "20");
+check(ran(emom, 4) === "20",
+  "a rotation refilled by the app still replaces on the next keystroke (got " + emom.value + ")");
+check(emom.value !== "1205", "and does not give the spliced number T-80 was filed for");
+
+// Refilling with nothing leaves an empty box that simply takes what is typed.
+var emom2 = new Box("40"); screenWiring(emom2);
+fillWeightBox(emom2, "");
+typeInto(emom2, "35");
+check(ran(emom2, 2) === "35", "a box the app empties takes what is typed (got " + emom2.value + ")");
+
+// Arming happens once per refill, not once per keystroke after it.
+var emom3 = new Box(""); screenWiring(emom3);
+fillWeightBox(emom3, "40");
+typeInto(emom3, "35");
+check(ran(emom3, 2) === "35", "the refilled number is replaced, then typing continues normally (got " + emom3.value + ")");
+
+// A refill wires the box even if it has never been focused in its life.
+var never = new Box("");
+fillWeightBox(never, "40");
+check(never.dataset.weightBoxWired === "1", "a box the member never tapped is still wired");
+check(never.dataset.weightBoxWas === "40", "and remembers what the app put in it");
+
 // ---------------- still one door, still a text input ----------------
 
 function bodyOfFn(name) {
@@ -315,10 +385,35 @@ function bodyOfFn(name) {
   }
   return "";
 }
-check(bodyOfFn("selectWeightBoxOnFocus").indexOf("wireWeightBoxTyping(input)") !== -1,
+// Followed one hop into armWeightBox, which is where both now live — a box is
+// armed by the app refilling it as well as by a tap (T-80).
+check(bodyOfFn("selectWeightBoxOnFocus").indexOf("armWeightBox(input)") !== -1,
   "every screen that selects on focus gets the correction with it");
-check(bodyOfFn("selectWeightBoxOnFocus").indexOf("weightBoxWas") !== -1,
-  "and what the box held when it was tapped is remembered on the way in");
+check(bodyOfFn("armWeightBox").indexOf("wireWeightBoxTyping(input)") !== -1,
+  "arming wires the correction");
+check(bodyOfFn("armWeightBox").indexOf("weightBoxWas") !== -1,
+  "and remembers what the box held on the way in");
+check(bodyOfFn("fillWeightBox").indexOf("armWeightBox(input)") !== -1,
+  "and the app putting a number into a box arms it too");
+// The EMOM refill must go through that door, which is the whole of T-80.
+// syncEmomWeightField is a METHOD on the player, not a function declaration,
+// so bodyOfFn cannot find it — it returned "" and the check passed on nothing.
+function methodBody(sig) {
+  var at = CODE.indexOf("\n  " + sig + " {");
+  if (at < 0) return "";
+  var depth = 0;
+  for (var i = CODE.indexOf("{", at); i < CODE.length; i++) {
+    if (CODE[i] === "{") depth++;
+    else if (CODE[i] === "}") { depth--; if (depth === 0) return CODE.slice(at, i + 1); }
+  }
+  return "";
+}
+var emomField = methodBody("syncEmomWeightField(exerciseName)");
+check(emomField !== "", "the EMOM weight field is still wired by the player");
+check(emomField.indexOf("fillWeightBox(input,") !== -1,
+  "the EMOM field is refilled through it, not by a bare assignment");
+check(/input\.value = this\.sessionWeights\[exerciseName\]/.test(CODE) === false,
+  "the bare assignment that left the EMOM box unarmed is gone");
 check(bodyOfFn("wireWeightBoxTyping").indexOf('"input"') !== -1
   && bodyOfFn("wireWeightBoxTyping").indexOf("true)") !== -1,
   "the correction listens for input, in the capture phase");

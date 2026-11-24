@@ -5868,9 +5868,7 @@ function readWeightBox(input) {
 // rather than replacing it, the splice is undone and only what was typed is
 // kept.
 function selectWeightBoxOnFocus(input) {
-  wireWeightBoxTyping(input);
-  input.dataset.weightBoxFresh = "1";
-  input.dataset.weightBoxWas = input.value;
+  armWeightBox(input);
   trySelectWeightBox(input);
   // Second pass, for the caret the browser places after this handler. Skipped
   // the moment anything has been typed, so it can no longer eat a keystroke.
@@ -5889,6 +5887,28 @@ function selectWeightBoxOnFocus(input) {
 // still be typable.
 function trySelectWeightBox(input) {
   try { input.select(); } catch (e) {}
+}
+
+// Remembers what the box held, so the first thing typed into it can be told
+// from the number that was already there.
+//
+// Tapping in is not the only way a box comes to hold a number the member is
+// about to type over. On an EMOM the box is NEVER re-focused between rotations
+// — the keyboard is already up and the app simply refills the field with the
+// last weight as the clock hands it to the next exercise. Arming only on focus
+// meant the correction never ran there at all, so 15 with 20 typed over it
+// still gave 1205, stored and synced (tester T-80). Anything that changes a
+// weight box under the member arms it.
+function armWeightBox(input) {
+  wireWeightBoxTyping(input);
+  input.dataset.weightBoxFresh = "1";
+  input.dataset.weightBoxWas = input.value;
+}
+
+// The one way the app puts a number into a weight box.
+function fillWeightBox(input, value) {
+  input.value = value == null ? "" : String(value);
+  armWeightBox(input);
 }
 
 let weightSpliceWatcherWired = false;
@@ -5911,7 +5931,7 @@ let weightSpliceWatcherWired = false;
 function wireWeightBoxTyping(input) {
   if (!weightSpliceWatcherWired) {
     weightSpliceWatcherWired = true;
-    document.addEventListener("input", (e) => undoWeightSplice(e.target), true);
+    document.addEventListener("input", (e) => undoWeightSplice(e.target, e), true);
   }
   if (input.dataset.weightBoxWired === "1") return;
   input.dataset.weightBoxWired = "1";
@@ -5923,13 +5943,36 @@ function wireWeightBoxTyping(input) {
 // The first thing typed after tapping into a box that already held a number
 // replaces that number. Runs once per visit to the box, for every box in the
 // app, and ignores anything that is not a weight box the member has just tapped.
-function undoWeightSplice(input) {
+function undoWeightSplice(input, event) {
   if (!input || !input.dataset) return;
   if (input.dataset.weightBoxFresh !== "1") return;
-  delete input.dataset.weightBoxFresh;
   const was = input.dataset.weightBoxWas || "";
   const now = input.value;
-  if (!was || now.length <= was.length) return;   // a replacement or a deletion
+  // `input` IS an InputEvent and carries inputType — checked in the browser,
+  // because `beforeinput` turned out not to be delivered at all and a fix that
+  // rests on an event that may not arrive is no fix (T-74).
+  const how = event && typeof event.inputType === "string" ? event.inputType : "";
+
+  // A backspace as the first thing after tapping in. Had the select landed,
+  // the whole box would have gone with it — so it does. Before this, the
+  // deletion spent the one correction and the digits typed afterwards were
+  // spliced into what was left: 35, backspace, 40 gave 405, carried down the
+  // column (tester T-83).
+  if (how.indexOf("delete") === 0) {
+    delete input.dataset.weightBoxFresh;
+    if (!was || now === "") return;
+    input.value = "";
+    try { input.setSelectionRange(0, 0); } catch (e) {}
+    return;
+  }
+
+  delete input.dataset.weightBoxFresh;
+  // Shorter means the browser replaced a selection, which is already right.
+  // Without an inputType to go on this is genuinely ambiguous — deleting a
+  // character from "25" and replacing "25" with "2" both leave "2" — so an
+  // engine that does not report one gets the safe half of the rule rather
+  // than a guess that could empty a box the member had just filled.
+  if (!was || now.length <= was.length) return;
   const typed = splicedAddition(was, now);
   if (typed === null || typed === now) return;    // not a splice; leave it be
   input.value = typed;
@@ -6693,7 +6736,10 @@ const Player = {
     // A new rotation. Edits before this point belong to the previous one.
     this.emomBindSeq++;
     const last = lastWeightFor(exerciseName);
-    input.value = this.sessionWeights[exerciseName] || "";
+    // Through fillWeightBox, not a bare assignment: the member's keyboard is
+    // still up and their next keystroke must replace this number rather than
+    // being spliced into it (tester T-80).
+    fillWeightBox(input, this.sessionWeights[exerciseName] || "");
     input.placeholder = last ? `${last} last time` : "lbs";
     // Assigning oninput (rather than addEventListener) replaces the previous
     // exercise's handler instead of stacking another one on each rotation.

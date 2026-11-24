@@ -2925,6 +2925,49 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### The weight box the member never taps, and the backspace that spent the fix (2026-11-23, testers T-80 and T-83)
+
+Two holes in the morning's T-74 fix, both found by the tester driving the real
+app rather than reading the code — which is the only reason they were found,
+since the unit tests were green through both.
+
+**T-80 — the EMOM box is never re-focused, so the correction never armed.**
+T-74 armed on focus. On an EMOM the member taps the box once; after that the
+keyboard stays up and the app simply **refills the field** with the last weight
+as the clock hands it to the next exercise. No focus event, no tap, so nothing
+armed — and `15` with `20` typed over it still gave **1205**, under the cap, no
+warning, stored and synced. The three per-set screens were fine the whole time,
+which is exactly why this was invisible.
+
+Arming is now its own thing, `armWeightBox()`, and the app has one door for
+putting a number into a weight box — `fillWeightBox()` — which arms it. Tapping
+in is not the only way a box comes to hold a number the member is about to type
+over.
+
+**T-83 — a backspace spent the one correction before it was used.** Tap a box
+holding `35`, press backspace, then type `40`, and the deletion consumed the
+correction; the digits that followed were spliced into what was left, giving
+`405` and carrying it down the column. A backspace as the FIRST thing after
+tapping in now clears the box, which is what would have happened if the select
+had landed — so the member gets the same answer whether it won the race or not.
+
+**That fix rests on `event.inputType`, which was checked before it was used.**
+Telling a backspace from a replacement cannot be done from the value: deleting
+a character from `25` and replacing `25` with `2` both leave `2`. The plain
+`input` event turns out to be an `InputEvent` carrying `inputType` — verified in
+a browser, precisely because `beforeinput` had been assumed and was never
+delivered at all. An engine that reports no `inputType` gets the safe half of
+the rule rather than a guess that could empty a box the member had just filled.
+
+Seven mutations, six caught by a named check. The seventh removes the `return`
+after the box is cleared and is **equivalent** — `now` is `""` by then, so the
+next guard returns anyway. It is kept for clarity, not for behaviour.
+
+Verified in a browser on the real EMOM field: the box refilled by the app with
+focus never leaving it and the caret mid-number took `20` and recorded 20, not
+1205; a first-keystroke backspace cleared it and `40` gave 40, not 405; and the
+weight recorded across the rotations was the heaviest, 40.
+
 ### Home carried on as if the workout had never been moved (2026-11-23, tester T-75)
 
 The Calendar's ⇄ handle moves a workout to another day and the Calendar
@@ -2994,6 +3037,22 @@ T-74, which was the morning's other bug. Instead the player keeps
 - emptying the box drops that rotation and leaves the earlier ones standing;
 - and `topWeightsFrom()` takes the heaviest across them, exactly as it already
   did for the per-set screens.
+
+**Correction (2026-11-23, tester T-82): this covers the EMOM, not the AMRAP.**
+The commit and the title said "EMOM or AMRAP" and that was wrong. An AMRAP
+hands the box to its exercise once per block, so there is no rotation boundary
+to tell a work-up from a typo, and 40 → 50 → 30 still records 30 exactly as
+before. The code was right and the description was not. Whether an AMRAP
+should take the heaviest at all is open, and is Chris's call.
+
+**Decision (2026-11-23, Chris): keep the heaviest.** Tester T-81 showed the
+cost — a wrong number from a PAST rotation cannot be reached, because
+correcting it later writes a new entry and emptying the box clears only the
+current one, so 400 corrected to 40 records 400. Within a rotation it is still
+correctable, which is a narrower window than the commit claimed. Chris chose
+heaviest with that known. **Still open:** tapping Back to redo a minute counts
+as a NEW rotation, because `back()` nulls `emomWeightFor` and the rebind bumps
+the counter — redoing the minute you mistyped ought to overwrite it.
 
 `emomBindSeq` counts rotations, and is bumped in the one place the box changes
 hands — `syncEmomWeightField()`, past its early return. That early return

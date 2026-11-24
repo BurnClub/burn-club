@@ -112,8 +112,10 @@ check(helper !== -1 && focusFn.indexOf("trySelectWeightBox(input)") !== -1
   "which selects what is in it, something that only works on a text input");
 // And the select can no longer be the only thing standing between a thumb and
 // a spliced weight — see weight-box-race.test.js for the race it used to lose.
-check(focusFn.indexOf("wireWeightBoxTyping(input)") !== -1,
+check(focusFn.indexOf("armWeightBox(input)") !== -1,
   "with the first-keystroke rule behind it, which does not depend on timing");
+check(bodyOfFn("armWeightBox").indexOf("wireWeightBoxTyping(input)") !== -1,
+  "and arming is what wires it, however the box came to hold a number (T-80)");
 
 // Every place a number is taken from a box goes through the one function.
 check(CODE.indexOf("parseLoggedWeight(input.value)") !== -1, "typing goes through parseLoggedWeight");
