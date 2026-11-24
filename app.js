@@ -5837,11 +5837,103 @@ function readWeightBox(input) {
 }
 
 // Tapping a pre-filled box selects what is in it, so typing replaces the
-// number instead of being spliced into it (T-60). Deferred by a tick because
-// the caret is placed after the focus handler runs; setTimeout rather than
-// requestAnimationFrame, which does not fire in a tab that is not being drawn.
+// number instead of being spliced into it (T-60).
+//
+// The select has to be deferred a tick, because the browser places the caret
+// after the focus handler runs and undoes a synchronous select(). That tick is
+// a race, and on a phone — where the keyboard is already up by the second box,
+// so there is nothing to wait for — it loses (tester T-74). Tap a box holding
+// 15, type 20 with no pause, and both keystrokes land before the select: 1205,
+// under the cap, so it is stored, carried down the column, synced and filed as
+// a personal best. The mirror case is worse still: one keystroke lands, the
+// select then takes the whole box, and the next keystroke wipes the lot — 20
+// typed, 0 recorded.
+//
+// So both selects are now best-effort, and correctness no longer rests on
+// either of them landing. What the box held when it was tapped is remembered,
+// and if the first thing typed turns out to have been spliced into that number
+// rather than replacing it, the splice is undone and only what was typed is
+// kept.
 function selectWeightBoxOnFocus(input) {
-  setTimeout(() => { try { input.select(); } catch (e) {} }, 0);
+  wireWeightBoxTyping(input);
+  input.dataset.weightBoxFresh = "1";
+  input.dataset.weightBoxWas = input.value;
+  trySelectWeightBox(input);
+  // Second pass, for the caret the browser places after this handler. Skipped
+  // the moment anything has been typed, so it can no longer eat a keystroke.
+  // setTimeout rather than requestAnimationFrame, which does not fire in a tab
+  // that is not being drawn — a real state for a phone that has just woken.
+  setTimeout(() => {
+    if (input.dataset.weightBoxFresh !== "1") return;
+    if (document.activeElement !== input) return;
+    trySelectWeightBox(input);
+  }, 0);
+}
+
+// select() does nothing on a number input and setSelectionRange() throws
+// InvalidStateError there, which is why every weight box is a text input with
+// inputmode="decimal". Wrapped anyway: a box that cannot be selected must
+// still be typable.
+function trySelectWeightBox(input) {
+  try { input.select(); } catch (e) {}
+}
+
+let weightSpliceWatcherWired = false;
+
+// Two listeners, and the difference between them matters.
+//
+// The correction is ONE listener, on the document, in the capture phase. It has
+// to run before whichever input handler the screen itself attached, because
+// those handlers are what carry a weight down the column, record it against the
+// exercise and check it for a personal best — a correction attached to the box
+// would run last, after the wrong number had already been spread around. In the
+// capture phase the value is put right before the screen ever reads it, so no
+// screen needs to know this exists.
+//
+// It deliberately uses the plain input event. The first version of this fix
+// cancelled `beforeinput` instead, and its unit tests passed — because the fake
+// browser in the tests implemented beforeinput and the real one did not deliver
+// it at all. An event that may or may not arrive is no basis for a fix that
+// stops a wrong weight being stored.
+function wireWeightBoxTyping(input) {
+  if (!weightSpliceWatcherWired) {
+    weightSpliceWatcherWired = true;
+    document.addEventListener("input", (e) => undoWeightSplice(e.target), true);
+  }
+  if (input.dataset.weightBoxWired === "1") return;
+  input.dataset.weightBoxWired = "1";
+  // Per box, and only ever on a box that has been tapped: the EMOM field
+  // outlives every exercise rotation.
+  input.addEventListener("blur", () => { delete input.dataset.weightBoxFresh; });
+}
+
+// The first thing typed after tapping into a box that already held a number
+// replaces that number. Runs once per visit to the box, for every box in the
+// app, and ignores anything that is not a weight box the member has just tapped.
+function undoWeightSplice(input) {
+  if (!input || !input.dataset) return;
+  if (input.dataset.weightBoxFresh !== "1") return;
+  delete input.dataset.weightBoxFresh;
+  const was = input.dataset.weightBoxWas || "";
+  const now = input.value;
+  if (!was || now.length <= was.length) return;   // a replacement or a deletion
+  const typed = splicedAddition(was, now);
+  if (typed === null || typed === now) return;    // not a splice; leave it be
+  input.value = typed;
+  try { input.setSelectionRange(typed.length, typed.length); } catch (e) {}
+}
+
+// What was added to `was` to make `now`, if `now` is `was` with something
+// inserted into it. Null if it is not — a paste over a selection, an autofill
+// or anything else that rewrote the box is the member's business, not a splice.
+function splicedAddition(was, now) {
+  let head = 0;
+  while (head < was.length && was[head] === now[head]) head++;
+  let tail = 0;
+  while (tail < was.length - head
+    && was[was.length - 1 - tail] === now[now.length - 1 - tail]) tail++;
+  if (head + tail !== was.length) return null;
+  return now.slice(head, now.length - tail);
 }
 
 // Says so on the row itself. A number the app will not store must never look

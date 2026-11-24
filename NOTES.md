@@ -2925,6 +2925,56 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### The weight box lost a race against the member's thumb (2026-11-23, tester T-74)
+
+T-60 stopped a tap-and-type splicing a digit into a pre-filled weight box by
+selecting the box's contents on focus. That select has to be deferred a tick,
+because the browser places the caret after the focus handler runs and undoes a
+synchronous `select()`. The tick is a race, and on a phone it loses — from the
+second box onward the keyboard is already up, so there is nothing to wait for:
+
+| what the member does | `15` with `20` typed |
+| --- | --- |
+| taps and types, no pause | **1205** |
+| one key lands, then the tick | **0** |
+| pauses (the only case T-60 was tested on) | 20 |
+
+1205 is under the 2,000 cap, so it was stored, carried down the column, synced
+and filed as a personal best with nothing flagged. The second row is the other
+half and is worse: the select arrives mid-word and the next keystroke wipes
+what was already typed.
+
+**The fix stops depending on the select landing.** What the box held when it was
+tapped is remembered (`weightBoxWas`); if the first thing typed turns out to
+have been spliced into that number rather than replacing it, the splice is
+undone and only what was typed is kept. Both selects are now best-effort, and
+the deferred one is skipped the moment anything has been typed, so it can no
+longer eat a keystroke either.
+
+Two details that are the whole fix, not decoration:
+
+- **The correction is one listener, on the document, in the capture phase.** The
+  screens' own input handlers are what carry a weight down the column, record it
+  against the exercise and check it for a personal best. A correction attached
+  to the box would run after all of that, with the wrong number already spread
+  around. In the capture phase the value is right before any screen reads it,
+  so no screen needs to know this exists — and a fourth weight screen gets it
+  without being told.
+- **It listens for `input`, not `beforeinput`.** The first version of this fix
+  cancelled `beforeinput`, and its 21 unit checks passed — because the fake
+  browser in the tests implemented `beforeinput` and the real one never
+  delivered it. Caught by probing the real event in the browser before
+  believing the suite. An event that may or may not arrive is no basis for a
+  fix whose job is to stop a wrong weight being stored.
+
+`weight-box-race.test.js` drives the real focus and typing path with the tick
+under the test's control, so the fix is checked at every point in the race
+rather than where it used to work; thirteen mutations of the fix are each
+caught by a named check. Verified in a browser on the real EMOM box with real
+edits: ten cases, twenty-five real input events, and the scenario named in
+T-60's own comment — correcting 80 to 85, which used to give 8850 — now gives
+85, with the screen's handler shown `8` then `85` and never the spliced number.
+
 ### The finish screen said 11 minutes and the app recorded 45 (2026-11-23, tester T-73)
 
 `elapsedSec` was computed only to be printed. What got STORED was

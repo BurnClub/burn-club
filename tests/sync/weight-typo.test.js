@@ -93,8 +93,27 @@ check(onFocus !== -1, "tapping a box does something");
 check(onFocus !== -1 && CODE.slice(onFocus, onFocus + 160).indexOf("selectWeightBoxOnFocus(input)") !== -1,
   "and what it does is hand the box to selectWeightBoxOnFocus");
 var helper = CODE.indexOf("function selectWeightBoxOnFocus(");
-check(helper !== -1 && CODE.slice(helper, helper + 240).indexOf(".select()") !== -1,
+// One more hop, for the same reason as the hop above: the select itself now
+// lives in trySelectWeightBox, which the focus helper calls twice (T-74). A
+// check for ".select()" anywhere in app.js would pass with both calls deleted.
+function bodyOfFn(name) {
+  var start = CODE.indexOf("function " + name + "(");
+  if (start < 0) return "";
+  var depth = 0;
+  for (var i = CODE.indexOf("{", start); i < CODE.length; i++) {
+    if (CODE[i] === "{") depth++;
+    else if (CODE[i] === "}") { depth--; if (depth === 0) return CODE.slice(start, i + 1); }
+  }
+  return "";
+}
+var focusFn = bodyOfFn("selectWeightBoxOnFocus");
+check(helper !== -1 && focusFn.indexOf("trySelectWeightBox(input)") !== -1
+  && bodyOfFn("trySelectWeightBox").indexOf(".select()") !== -1,
   "which selects what is in it, something that only works on a text input");
+// And the select can no longer be the only thing standing between a thumb and
+// a spliced weight — see weight-box-race.test.js for the race it used to lose.
+check(focusFn.indexOf("wireWeightBoxTyping(input)") !== -1,
+  "with the first-keystroke rule behind it, which does not depend on timing");
 
 // Every place a number is taken from a box goes through the one function.
 check(CODE.indexOf("parseLoggedWeight(input.value)") !== -1, "typing goes through parseLoggedWeight");
