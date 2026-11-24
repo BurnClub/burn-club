@@ -6074,10 +6074,15 @@ const Player = {
     // whatever was typed last, so backing off on the final rotation threw away
     // the heaviest thing the member lifted (tester T-76).
     this.roundWeights = {};
-    // Bumped every time the EMOM box is handed to an exercise, which is what
-    // separates one rotation from the next. Correcting a typo inside a
-    // rotation overwrites that rotation; the next rotation is a new entry.
+    // Which rotation the EMOM box currently belongs to. Correcting a typo
+    // inside a rotation overwrites that rotation; the next one is a new entry.
     this.emomBindSeq = 0;
+    // The rotation id each MINUTE of an EMOM was given, so a minute the member
+    // returns to is the same rotation it was the first time. Tapping Back to
+    // redo a minute used to allocate a new one, which under the heaviest rule
+    // meant the number you went back to correct was the one that got kept
+    // (tester T-81).
+    this.emomSeqByMinute = {};
     this.cardioChoice = null;
     this.cardioMinutes = 0;
     // Reset per workout, so the explainers come back for the next session.
@@ -6197,6 +6202,7 @@ const Player = {
       setWeights: this.setWeights,
       roundWeights: this.roundWeights,
       emomBindSeq: this.emomBindSeq,
+      emomSeqByMinute: this.emomSeqByMinute,
       setsChecked: this.setsChecked,
       cardioChoice: this.cardioChoice,
       cardioMinutes: this.cardioMinutes,
@@ -6258,6 +6264,7 @@ const Player = {
     // phone call must still know what was lifted before it.
     this.roundWeights = rec.roundWeights || {};
     this.emomBindSeq = rec.emomBindSeq || 0;
+    this.emomSeqByMinute = rec.emomSeqByMinute || {};
     this.cardioChoice = rec.cardioChoice || null;
     this.cardioMinutes = rec.cardioMinutes || 0;
     this.notesShownFor = new Set(rec.notesShownFor || []);
@@ -6694,6 +6701,27 @@ const Player = {
   // On an EMOM that is the current rotation, so a weight typed on one rotation
   // is not overwritten by the next; everywhere else there is one box per
   // exercise per block, which is one entry.
+  // Which minute of the current EMOM the clock is in. The same arithmetic
+  // updateClock() and emomBackTarget() use — if those three ever disagree the
+  // member's weight lands against a minute they are not on.
+  currentEmomMinute() {
+    const phase = this.currentPhase();
+    if (!phase || phase.kind !== "emom" || !phase.interval) return null;
+    return Math.floor((phase.duration - this.remaining) / phase.interval);
+  },
+
+  // The rotation id for where the clock is now. Allocated the first time a
+  // minute is reached and remembered, so going back to it returns to the same
+  // rotation rather than starting another one.
+  emomSlotForNow() {
+    const minute = this.currentEmomMinute();
+    const key = `${this.index}|${minute === null ? "no-clock" : minute}`;
+    if (this.emomSeqByMinute[key] == null) {
+      this.emomSeqByMinute[key] = Object.keys(this.emomSeqByMinute).length + 1;
+    }
+    return this.emomSeqByMinute[key];
+  },
+
   weightSlotFor(name) {
     const phase = this.currentPhase();
     const kind = phase && phase.kind;
@@ -6733,8 +6761,12 @@ const Player = {
     wrap.style.display = "flex";
     if (this.emomWeightFor === exerciseName) return;
     this.emomWeightFor = exerciseName;
-    // A new rotation. Edits before this point belong to the previous one.
-    this.emomBindSeq++;
+    // Which rotation this is. Not a bare increment: back() nulls emomWeightFor
+    // to force the field to re-read, so redoing a minute came back through
+    // here and counted as a NEW rotation — and under the heaviest rule the
+    // number the member went back to correct was the one that survived
+    // (tester T-81). Keyed by the minute, so returning to it returns to it.
+    this.emomBindSeq = this.emomSlotForNow();
     const last = lastWeightFor(exerciseName);
     // Through fillWeightBox, not a bare assignment: the member's keyboard is
     // still up and their next keystroke must replace this number rather than

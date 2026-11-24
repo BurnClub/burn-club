@@ -2925,6 +2925,40 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Going back to redo an EMOM minute is the same minute (2026-11-23, tester T-81)
+
+With the heaviest rule in place, the one way a member could reach a number they
+had mistyped was to tap Back and redo the minute. That did not work: `back()`
+nulls `emomWeightFor` to force the weight field to re-read, so redoing a minute
+came back through `syncEmomWeightField()` and the bare `emomBindSeq++` counted
+it as a **new** rotation. The slip and the correction became two entries and
+the heavier one — the slip — was kept. 400 corrected to 40 recorded 400.
+
+Rotations are now identified by the MINUTE they belong to. `emomSeqByMinute`
+hands out a rotation id the first time a minute is reached and gives back the
+same one every time the member returns to it, so going back to a minute returns
+to its rotation and retyping overwrites it. Going forward again does not reuse
+the minute behind it. The map rides the saved session, so a resumed workout
+still knows which minute was which.
+
+**Keyed by the minute, not by the minute alone.** Keying the weight slot purely
+on the minute would have been simpler and would have broken the single-exercise
+EMOM: there the box never changes hands, so there is one field for the whole
+block and today one rotation — per-minute slots would have split it and made a
+correction two minutes later unreachable, which is the very problem being
+fixed. `syncEmomWeightField()`'s early return is what keeps that case whole,
+and there is a check for it.
+
+Seven of eight mutations are caught by a named check. The eighth drops the
+block index from the minute map's key and is **equivalent**: `weightSlotFor()`
+already puts the block in the slot key, so two blocks cannot collide either
+way. It is kept because the map should be readable on its own.
+
+Verified in a browser by driving the real `back()`: three minutes typed
+40 / 55 / 400, Back returned to minute 2 and reused rotation 3 rather than
+allocating a fourth, the corrected 45 replaced the 400, and the exercise
+recorded **45**.
+
 ### The weight box the member never taps, and the backspace that spent the fix (2026-11-23, testers T-80 and T-83)
 
 Two holes in the morning's T-74 fix, both found by the tester driving the real
@@ -3050,9 +3084,8 @@ cost — a wrong number from a PAST rotation cannot be reached, because
 correcting it later writes a new entry and emptying the box clears only the
 current one, so 400 corrected to 40 records 400. Within a rotation it is still
 correctable, which is a narrower window than the commit claimed. Chris chose
-heaviest with that known. **Still open:** tapping Back to redo a minute counts
-as a NEW rotation, because `back()` nulls `emomWeightFor` and the rebind bumps
-the counter — redoing the minute you mistyped ought to overwrite it.
+heaviest with that known. The Back half of T-81 was fixed the same day — see
+below.
 
 `emomBindSeq` counts rotations, and is bumped in the one place the box changes
 hands — `syncEmomWeightField()`, past its early return. That early return

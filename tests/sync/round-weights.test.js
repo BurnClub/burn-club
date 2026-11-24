@@ -51,28 +51,43 @@ eval(liftFn("parseLoggedWeight"));
 eval(APP.match(/const MAX_LOGGED_WEIGHT = [0-9.]+;/)[0].replace("const", "var"));
 eval(liftFn("topWeightsFrom"));
 
-// A player with nothing in it but the state these two methods touch.
+// A player with nothing in it but the state these methods touch. A twelve
+// minute EMOM on a one-minute interval, so the clock can be moved about.
+var EMOM_DURATION = 720, EMOM_INTERVAL = 60;
 function makePlayer(phaseKind) {
   var P = {
     sessionWeights: {}, setWeights: {}, roundWeights: {},
-    index: 3, emomBindSeq: 0, persisted: 0,
+    index: 3, emomBindSeq: 0, emomSeqByMinute: {}, persisted: 0,
+    remaining: EMOM_DURATION,
     _kind: phaseKind,
     persist: function () { this.persisted++; },
-    currentPhase: function () { return { kind: this._kind }; },
+    currentPhase: function () {
+      return { kind: this._kind, duration: EMOM_DURATION, interval: EMOM_INTERVAL };
+    },
   };
+  eval("P.currentEmomMinute = " + liftMethod("currentEmomMinute()"));
+  eval("P.emomSlotForNow = " + liftMethod("emomSlotForNow()"));
   eval("P.weightSlotFor = " + liftMethod("weightSlotFor(name)"));
   eval("P.noteWeight = " + liftMethod("noteWeight(name, raw)"));
   return P;
 }
-// What the member sees happen: the box is handed to an exercise (a rotation),
-// then typed into. Typing again without a rebind is the same rotation.
-function rotate(P) { P.emomBindSeq++; }
+// The clock reaching a minute, and the box being handed to the exercise on it.
+// Typing again without the box changing hands is the same rotation.
+function atMinute(P, minute) {
+  P.remaining = EMOM_DURATION - minute * EMOM_INTERVAL;
+  P.emomBindSeq = P.emomSlotForNow();
+}
+// Each rotation of a multi-exercise EMOM is the next minute.
+var _m = -1;
+function rotate(P) { _m++; atMinute(P, _m); }
+function resetClock() { _m = -1; }
 function recorded(P) {
   return topWeightsFrom(P.sessionWeights, P.setWeights, P.roundWeights);
 }
 
 // ---------------- the finding itself ----------------
 
+resetClock();
 var emom = makePlayer("emom");
 ["30", "35", "40", "25"].forEach(function (w) { rotate(emom); emom.noteWeight("Devils Press", w); });
 check(recorded(emom)["Devils Press"] === 40,
@@ -91,6 +106,7 @@ check(perSet["Bench Press"] === recorded(emom)["Devils Press"],
 
 // ---------------- what a careless maximum would have broken ----------------
 
+resetClock();
 var typo = makePlayer("emom");
 rotate(typo);
 typo.noteWeight("Devils Press", "400");   // a slip, under the 2000 cap
@@ -103,6 +119,7 @@ check(recorded(typo)["Devils Press"] !== 400,
 // Once the box has moved on, the earlier number stands — that rotation
 // happened, and the member is now logging the next one. Written down because
 // it is a decision, not an accident.
+resetClock();
 var late = makePlayer("emom");
 rotate(late); late.noteWeight("Devils Press", "400");
 rotate(late); late.noteWeight("Devils Press", "40");
@@ -110,6 +127,7 @@ check(recorded(late)["Devils Press"] === 400,
   "a number corrected only after the next rotation began is treated as that rotation's lift");
 
 // Clearing the box clears THIS rotation and leaves the others standing.
+resetClock();
 var cleared = makePlayer("emom");
 rotate(cleared); cleared.noteWeight("Devils Press", "40");
 rotate(cleared); cleared.noteWeight("Devils Press", "30");
@@ -118,6 +136,7 @@ check(recorded(cleared)["Devils Press"] === 40,
   "emptying the box drops that rotation, not the whole exercise (got "
   + recorded(cleared)["Devils Press"] + ")");
 
+resetClock();
 var allCleared = makePlayer("emom");
 rotate(allCleared); allCleared.noteWeight("Devils Press", "40");
 allCleared.noteWeight("Devils Press", "");
@@ -125,12 +144,104 @@ check(recorded(allCleared)["Devils Press"] === undefined,
   "and clearing the only rotation leaves no weight at all");
 
 // A number the app refuses is not a lift.
+resetClock();
 var capped = makePlayer("emom");
 rotate(capped); capped.noteWeight("Devils Press", "40");
 rotate(capped); capped.noteWeight("Devils Press", "9999");
 check(recorded(capped)["Devils Press"] === 40,
   "a weight over the cap is refused rather than recorded as the heaviest (got "
   + recorded(capped)["Devils Press"] + ")");
+
+// ---------------- going back to a minute returns to it (T-81) ------------
+
+// back() nulls emomWeightFor to force the weight field to re-read, so redoing
+// a minute comes back through syncEmomWeightField. That used to allocate a NEW
+// rotation — and under the heaviest rule the number the member went back to
+// correct was the one that survived.
+resetClock();
+var redo = makePlayer("emom");
+atMinute(redo, 0); redo.noteWeight("Devils Press", "40");
+atMinute(redo, 1); redo.noteWeight("Devils Press", "400");   // the slip
+atMinute(redo, 1); redo.noteWeight("Devils Press", "45");    // Back, same minute
+check(recorded(redo)["Devils Press"] === 45,
+  "going back to the minute you mistyped lets you correct it (got "
+  + recorded(redo)["Devils Press"] + ")");
+check(recorded(redo)["Devils Press"] !== 400,
+  "rather than keeping the slip for ever, which is what T-81 was");
+check(Object.keys(redo.roundWeights).length === 2,
+  "redoing a minute is the same rotation, not another one (got "
+  + Object.keys(redo.roundWeights).length + ")");
+
+// Back to an EARLIER minute returns to that minute's rotation too.
+resetClock();
+var backFurther = makePlayer("emom");
+atMinute(backFurther, 0); backFurther.noteWeight("Devils Press", "999");
+atMinute(backFurther, 1); backFurther.noteWeight("Devils Press", "40");
+atMinute(backFurther, 2); backFurther.noteWeight("Devils Press", "45");
+atMinute(backFurther, 0); backFurther.noteWeight("Devils Press", "50");  // back to the first
+check(recorded(backFurther)["Devils Press"] === 50,
+  "and a minute further back is reachable as well (got "
+  + recorded(backFurther)["Devils Press"] + ")");
+check(Object.keys(backFurther.roundWeights).length === 3,
+  "three minutes, three rotations, however often they are revisited (got "
+  + Object.keys(backFurther.roundWeights).length + ")");
+
+// Going forward again after a Back does not reuse the minute behind it.
+resetClock();
+var forward = makePlayer("emom");
+atMinute(forward, 0); forward.noteWeight("Devils Press", "40");
+atMinute(forward, 1); forward.noteWeight("Devils Press", "30");
+atMinute(forward, 0); forward.noteWeight("Devils Press", "35");   // Back, corrected
+atMinute(forward, 1); forward.noteWeight("Devils Press", "32");   // on again
+check(Object.keys(forward.roundWeights).length === 2,
+  "two minutes stay two rotations across a Back and forward again");
+check(recorded(forward)["Devils Press"] === 35,
+  "and the corrected minute is the one that counts (got "
+  + recorded(forward)["Devils Press"] + ")");
+
+// A single-exercise EMOM never changes hands, so it stays one rotation — the
+// box is not rebound and the member sees one field for the whole block. This
+// is the case keying purely by minute would have broken.
+resetClock();
+var solo = makePlayer("emom");
+atMinute(solo, 0);
+solo.noteWeight("Devils Press", "400");
+solo.remaining = EMOM_DURATION - 3 * EMOM_INTERVAL;   // clock runs on, no rebind
+solo.noteWeight("Devils Press", "40");
+check(recorded(solo)["Devils Press"] === 40,
+  "a single-exercise EMOM stays correctable the whole way through (got "
+  + recorded(solo)["Devils Press"] + ")");
+check(Object.keys(solo.roundWeights).length === 1,
+  "because the box is never handed on, so there is one rotation");
+
+// The minute is worked out the same way the clock and the Back button do it.
+resetClock();
+var clock = makePlayer("emom");
+clock.remaining = EMOM_DURATION;
+check(clock.currentEmomMinute() === 0, "minute 0 at the start");
+clock.remaining = EMOM_DURATION - 90;
+check(clock.currentEmomMinute() === 1, "minute 1 halfway through the second minute");
+clock.remaining = 0;
+check(clock.currentEmomMinute() === 12, "and the last tick is past the last minute");
+clock._kind = "amrap";
+check(clock.currentEmomMinute() === null, "there is no EMOM minute on a block without a clock");
+
+// An EMOM with no interval is malformed content, not a crash and not minute
+// NaN: it answers "no minute" and the whole block is one rotation, which is
+// how every weight box behaved before any of this.
+resetClock();
+var noInterval = makePlayer("emom");
+noInterval.currentPhase = function () { return { kind: "emom", duration: 600 }; };
+check(noInterval.currentEmomMinute() === null,
+  "an EMOM with no interval has no minute to be on (got " + noInterval.currentEmomMinute() + ")");
+noInterval.emomBindSeq = noInterval.emomSlotForNow();
+noInterval.noteWeight("Devils Press", "400");
+noInterval.emomBindSeq = noInterval.emomSlotForNow();
+noInterval.noteWeight("Devils Press", "40");
+check(Object.keys(noInterval.roundWeights).length === 1,
+  "so it stays one rotation and remains correctable (got "
+  + Object.keys(noInterval.roundWeights).length + ")");
+check(recorded(noInterval)["Devils Press"] === 40, "with the corrected number kept");
 
 // ---------------- the other screens keep their own shape ----------------
 
@@ -146,6 +257,7 @@ check(recorded(amrap)["Goblet Squat"] === 50,
 check(Object.keys(amrap.roundWeights).length === 2, "as two entries, one per block");
 
 // Outside an EMOM the rotation counter must not split one box into many.
+resetClock();
 var block = makePlayer("amrap");
 rotate(block); block.noteWeight("Goblet Squat", "50");
 rotate(block); block.noteWeight("Goblet Squat", "35");
@@ -155,11 +267,13 @@ check(Object.keys(block.roundWeights).length === 1,
 check(recorded(block)["Goblet Squat"] === 35, "and simply holds what is in it");
 
 // The key has to be readable by topWeightsFrom, which splits on "|".
+resetClock();
 var slot = makePlayer("emom").weightSlotFor("Devils Press");
 check(slot.split("|")[1] === "Devils Press",
   "the exercise is the middle part of the key, as topWeightsFrom expects (got " + slot + ")");
 
 // Two different exercises in the same rotation are two entries.
+resetClock();
 var two = makePlayer("emom");
 rotate(two);
 two.noteWeight("Devils Press", "40");
@@ -208,9 +322,13 @@ var sync = (function () {
   }
   return "";
 })();
-check(sync.indexOf("this.emomBindSeq++") !== -1,
-  "a new rotation is counted where the box is handed to the next exercise");
-check((CODE.match(/emomBindSeq\+\+/g) || []).length === 1,
-  "and nowhere else (got " + (CODE.match(/emomBindSeq\+\+/g) || []).length + ")");
+check(sync.indexOf("this.emomBindSeq = this.emomSlotForNow()") !== -1,
+  "the rotation is decided where the box is handed to the next exercise");
+check((CODE.match(/emomBindSeq\+\+/g) || []).length === 0,
+  "and is no longer a bare increment, which is what made Back a new rotation");
+check(/emomSeqByMinute: this\.emomSeqByMinute/.test(CODE),
+  "the minute-to-rotation map rides the saved session");
+check(/this\.emomSeqByMinute = rec\.emomSeqByMinute \|\| \{\}/.test(CODE),
+  "and comes back on a resume, so a resumed minute is still its own rotation");
 
 print(pass + " passed, " + fail + " failed");
