@@ -7858,8 +7858,15 @@ function todayScheduledItems() {
   const todayProgramDay = daysBetween(member.startDate, todayKey) + 1;
 
   const out = [];
-  template.forEach((item) => {
-    if (item.day !== todayProgramDay) return;
+  // The same rule the Calendar uses, from the same place: a workout moved off
+  // today is not today's session, and one moved onto today is (tester T-75).
+  const { items, movedAway } = scheduledItemsOnDay(template, todayProgramDay, todayKey);
+  // Said rather than left blank, and in the Calendar's words — the member put
+  // it there and should be able to see where it went without hunting the week.
+  if (movedAway) {
+    out.push({ kind: "moved", date: today, movedTo: movedAway.date });
+  }
+  items.forEach((item) => {
     if (item.type === "rest") { out.push({ kind: "rest" }); return; }
     if (item.type === "cardio") {
       out.push({ kind: "cardio", item, date: today, done: cardioLoggedOnDate(todayKey).done });
@@ -7967,12 +7974,17 @@ function renderHomeUpcomingWorkouts() {
 
   // A rest day is a thing the coach said, not an absence — so it gets said
   // back, rather than falling through to the empty state as if the schedule
-  // had a hole in it.
+  // had a hole in it. A workout the member MOVED is the same: they put it
+  // somewhere, and "Nothing scheduled today" reads as though it vanished
+  // (tester T-75). Same wording as the Calendar, so the two screens answer
+  // the same question the same way.
   const onlyRest = items.length && items.every((i) => i.kind === "rest");
-  const real = items.filter((i) => i.kind !== "rest");
+  const moved = items.find((i) => i.kind === "moved");
+  const real = items.filter((i) => i.kind !== "rest" && i.kind !== "moved");
 
   document.getElementById("home-circuit-list").innerHTML =
     real.length ? real.map(renderUpcomingWorkoutCard).join("")
+    : moved ? `<p class="home-upcoming-empty">Moved to ${formatWeekdayDate(parseDateKey(moved.movedTo))}.</p>`
     : onlyRest ? `<p class="home-upcoming-empty">Rest day — nothing scheduled. Take it.</p>`
     : `<p class="home-upcoming-empty">Nothing scheduled today.</p>`;
 }
@@ -8746,6 +8758,34 @@ function workoutsMovedOnto(dateStr) {
   return workoutMoves().filter((m) => m.date === dateStr);
 }
 
+// What is actually on a day, once the member's moves are taken into account.
+//
+// A workout moved AWAY leaves its day; one moved ONTO this date joins it. Only
+// workouts move — a coach's cardio or reminder stays where it was put, because
+// it is the coach's instruction about that day.
+//
+// This lives in one place because it did not used to: the Calendar knew both
+// halves and Home knew neither, so a member who swapped Monday and Tuesday was
+// shown one session by the Calendar and a different one by Home — on the day
+// they moved it off, Home still offered it, and on the day they moved it to,
+// Home said nothing was scheduled (tester T-75). Home is the screen members
+// actually open. Anything that answers "what is on this day" calls this.
+function scheduledItemsOnDay(template, programDay, dayKey) {
+  const movedAway = moveForProgramDay(programDay);
+  const items = scheduleItemsForProgramDay(template, programDay)
+    .filter((it) => !(it.type === "workout" && movedAway));
+  const movedIn = workoutsMovedOnto(dayKey).flatMap((m) =>
+    scheduleItemsForProgramDay(template, m.day)
+      .filter((it) => it.type === "workout")
+      // The programme day it belongs to is kept, not rewritten to the day it
+      // landed on: it is what the completion map is keyed by, and what tells
+      // the Calendar where the workout came from.
+      .map((it) => ({ ...it, movedFromDay: m.day }))
+  );
+  items.push(...movedIn);
+  return { items, movedAway };
+}
+
 // Today through the end of NEXT week. Monday-based, matching startOfWeek()
 // everywhere else — "next week" has to mean the same thing here as it does in
 // the week strip above it.
@@ -8930,18 +8970,9 @@ function renderCalendarDayRow(date, member, template, isPast, lastDay, position)
   const programDay = daysBetween(member.startDate, dateKey(date)) + 1;
   const dayKey = dateKey(date);
 
-  // A workout moved AWAY leaves its day; one moved ONTO this date joins it
-  // (2026-10-26). Only workouts move — a coach's cardio or reminder stays
-  // where it was put, because it is the coach's instruction about that day.
-  const movedAway = moveForProgramDay(programDay);
-  const items = scheduleItemsForProgramDay(template, programDay)
-    .filter((it) => !(it.type === "workout" && movedAway));
-  const movedIn = workoutsMovedOnto(dayKey).flatMap((m) =>
-    scheduleItemsForProgramDay(template, m.day)
-      .filter((it) => it.type === "workout")
-      .map((it) => ({ ...it, movedFromDay: m.day }))
-  );
-  items.push(...movedIn);
+  // Moves are applied in one shared place so this screen and Home cannot
+  // disagree about what day a workout is on (2026-10-26, tester T-75).
+  const { items, movedAway } = scheduledItemsOnDay(template, programDay, dayKey);
 
   let bodyHtml;
   if (!items.length) {

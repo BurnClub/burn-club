@@ -2925,6 +2925,51 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Home carried on as if the workout had never been moved (2026-11-23, tester T-75)
+
+The Calendar's ⇄ handle moves a workout to another day and the Calendar
+honours it. **Home knew about neither half of that.** On the day the member
+moved a session OFF, Home still offered it as today's workout; on the day they
+moved it ONTO, Home said nothing was scheduled. The two screens disagreed in
+both directions — and Home is the screen members actually open, so a member who
+trusts it does the wrong session, and the day they meant to clear stays open.
+
+The ordinary case is a swap: move Monday's SHOULDERS/ABS to Tuesday and
+Tuesday's HAMSTRINGS/GLUTES to Monday, and the Calendar said HAMSTRINGS/GLUTES
+while Home said SHOULDERS/ABS.
+
+**The fix is one rule in one place.** `scheduledItemsOnDay(template, programDay,
+dayKey)` answers "what is actually on this day", moves included, and both
+screens call it. The Calendar had the logic inline; Home selected straight off
+the template with `item.day !== todayProgramDay` and never consulted the move
+store at all. Copying the rule into Home would have left two copies to drift
+apart, which is how this happened in the first place.
+
+Three details that are load-bearing:
+
+- **A moved workout keeps the programme day it belongs to**, rather than being
+  re-dated to the day it landed on. That day is what the completion map from
+  T-70 is keyed by, and what lets the Calendar say "Moved from Tue, Nov 24".
+- **Only workouts move.** A coach's cardio or reminder stays on the day he put
+  it, because it is his instruction about that day — it neither leaves with the
+  session nor travels to the destination with it.
+- **Home says where it went**, in the Calendar's words: "Moved to Tue, Nov 24."
+  rather than "Nothing scheduled today", which reads as though the session
+  vanished. The notice is something to say, not a card to offer, so it is kept
+  out of the renderer's list the same way the rest-day marker is.
+
+Seven mutations, each caught by a named check — but two of them survived the
+first pass and the checks they exposed were worth having. One moved the coach's
+cardio along with the workout, which nothing noticed because no day in the real
+programme carries both a workout and a coach's item; that case is now built
+rather than hoped for. The other let the "moved" notice reach the card
+renderer, which would put a broken card where the member's rest day used to be.
+
+Verified in a browser against Home's real renderer: no move → SHOULDERS/ABS;
+moved away → "Moved to Tue, Nov 24."; moved onto today → both sessions; swapped
+→ HAMSTRINGS/GLUTES, with the Calendar naming the same session for the same
+day.
+
 ### The EMOM recorded the last number typed, not the heaviest (2026-11-23, tester T-76)
 
 An EMOM gives one weight box per exercise, following the clock round by round.
