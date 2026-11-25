@@ -5932,12 +5932,44 @@ function wireWeightBoxTyping(input) {
   if (!weightSpliceWatcherWired) {
     weightSpliceWatcherWired = true;
     document.addEventListener("input", (e) => undoWeightSplice(e.target, e), true);
+    document.addEventListener("click", (e) => armWeightBoxOnTap(e.target), true);
   }
   if (input.dataset.weightBoxWired === "1") return;
   input.dataset.weightBoxWired = "1";
   // Per box, and only ever on a box that has been tapped: the EMOM field
   // outlives every exercise rotation.
   input.addEventListener("blur", () => { delete input.dataset.weightBoxFresh; });
+}
+
+// Tapping a box that is ALREADY focused fires no focus event. The browser
+// still moves the caret to wherever the thumb landed, so the member's
+// correction was spliced into the old number: 60, tap, 5 meaning 65, and the
+// box held 650 — carried down every set, under the cap, no warning, filed as a
+// personal best (tester T-85).
+//
+// That is the fourth entry point into the same bug, and the first three were
+// each fixed one at a time: focus (T-74), the app refilling the field between
+// EMOM rotations (T-80), a backspace spending the arming (T-83). The pattern
+// in all four is that the arming hung off a state CHANGE — focus, a refill —
+// while the thing that actually endangers the number is the member putting the
+// caret somewhere. A click says that, every time, focused or not. So this
+// listens for the gesture rather than for another state change, and does it on
+// the document beside the correction itself, so no screen has to remember.
+//
+// It selects as well as arms, which is the visible half: the number highlights
+// on the second tap exactly as it does on the first, so the box stops quietly
+// behaving differently depending on how many times it has been tapped. The
+// select stays best-effort — correctness rests on the correction below, never
+// on the select landing (T-74).
+function armWeightBoxOnTap(input) {
+  // A weight box is one the app has already armed at least once. Every box
+  // reaches that state the moment it is first focused or first filled, both of
+  // which happen before a second tap is possible, so there is nothing to mark
+  // at the three places boxes are built — and so a fourth place cannot forget.
+  if (!input || !input.dataset) return;
+  if (input.dataset.weightBoxWired !== "1") return;
+  armWeightBox(input);
+  trySelectWeightBox(input);
 }
 
 // The first thing typed after tapping into a box that already held a number

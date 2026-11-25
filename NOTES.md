@@ -2925,6 +2925,80 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Tapping a box you are already in (2026-11-24, tester T-85)
+
+**The app's rule is "tapping a weight box replaces what is in it". It held the
+first time and only the first time.** A click on an input that already has
+focus fires no `focus` event — but the browser still moves the caret to where
+the thumb landed. So nothing re-armed, and the most ordinary correction there
+is produced the worst number in the app: type `60`, tap the box, type `5`
+meaning 65, and the box holds `650`. Under the 2,000 cap, so no warning;
+carried down every set of that exercise; four real lift rows; offered as "last
+time" next week; filed as a personal best.
+
+**This is the fourth entry point into one bug.** The first three were each
+fixed on their own — focus (T-74), the app refilling the field between EMOM
+rotations (T-80), a backspace spending the arming (T-83) — and every one of
+them hung the arming off a state CHANGE. A second tap changes no state, so
+there was nothing to hang it on. What actually endangers the number is the
+member putting the caret somewhere, and a **click** says that every time,
+focused or not.
+
+So the arming now listens for the gesture, on the document, in the capture
+phase, beside the correction itself. Three things follow from that:
+
+- **No screen has to remember.** `armWeightBoxOnTap()` is referenced exactly
+  twice — the listener, and itself. A fifth weight box added tomorrow is
+  covered without anyone thinking about it, which is the only answer that has
+  not failed yet.
+- **A weight box is recognised by the mark it already carries.** Every box gets
+  `data-weight-box-wired` the first time it is armed, which is the first focus
+  or the first refill — both of which necessarily happen before a second tap is
+  possible. So there is nothing to add at the three places boxes are built,
+  and no fourth place to forget.
+- **It selects as well as arms.** That is the visible half: the number
+  highlights on the second tap exactly as on the first, so the box stops
+  quietly behaving differently depending on how many times it has been tapped.
+  The finding's last line is that a member has no way to know the rule only
+  holds the first time. The select stays best-effort — correctness rests on the
+  correction, never on the select landing (T-74).
+
+**Verified in a real browser before a single unit check was written**, with a
+real pointer and real keystrokes, because the first attempt at T-74 passed 21
+unit checks against a fix that did nothing: it rested on `beforeinput`, which
+this engine never delivers. Three runs on one box, the app's own listeners:
+
+| | result |
+|---|---|
+| fix on, select landing | `5`, and the number visibly highlighted (selection 0–2) |
+| fix on, select disabled | `5` — the browser really did make `650` first, and the correction undid it |
+| fix off | `650`, with `data-weight-box-was` stuck at `""` — the tester's reading, exactly |
+
+The middle row is the one that matters: it proves the correction alone is
+enough, so losing the select race cannot bring the bug back.
+
+**Checked by:** `tests/sync/weight-box-second-tap.test.js`, 38 checks, nine
+groups, driving the real arming and correction in the smallest browser that can
+show it. That fake models only what the real one was observed to do — a second
+tap fires `click` and no `focus`, and the caret has already moved by the time
+the handler runs — and every check counts the input AND focus events it caused,
+so a check cannot pass on a box nothing reached. All four numbers the tester
+watched go wrong (`2555`, `350`, `450`, `650`) are in there by name, along with
+the EMOM field that is never re-focused, three taps in a row, and the T-83
+backspace and paste rules holding on a re-tap.
+
+**Mutation-tested**, six mutants, all six killed by named checks: removing the
+click listener (22), the handler doing nothing (21), selecting without arming
+(3 — caught only by the select-disabled group, which is the whole reason that
+group exists), arming without selecting (1), arming anything that is clicked
+(3), and registering the listener outside the capture phase (the fake refuses
+it outright).
+
+**Not covered here:** reaching a real weights screen in the running app needs a
+signed-in session and a workout in progress, which is the tester's job. What
+was proved in the browser is the mechanism, against the app's own listeners, on
+a box the app itself armed — not a per-screen walk-through.
+
 ### "Move this workout" only offers days you can get back to (2026-11-24, tester T-72)
 
 **The picker had its own idea of how far ahead you can go.** The Calendar
