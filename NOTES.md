@@ -2925,6 +2925,69 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### "Not saved" was saving it anyway (2026-11-25, tester T-92)
+
+**The screen said "Over 2000 — not saved" and three sets of that exercise had
+just been saved.** Type 2500 into set 1 one key at a time and the app sees 2,
+then 25, then 250, then 2500. The third of those is a perfectly good weight, so
+it was carried down sets 2, 3 and 4 the way the pre-fill is meant to be. The
+fourth is over the cap, so set 1 went red — and cleaned up after itself and
+nothing else. Sets 2, 3 and 4 sat there in ordinary black holding 250, and they
+were saved: to the phone, to the server as real `lifts` rows, into "last time",
+and into personal bests. The tester followed it all the way: Jordan holds three
+250 lb KB Swing rows from this, and 250 lb is what that device offers next week.
+
+Reproduced on the live site before changing anything — real pointer, real
+keyboard, one character per keystroke, on an `app.js` proved byte-identical to
+the deployed build. And while reproducing it, **a second way in**: with set 1
+holding a good 100, typing 2500 into set 2 left 250 standing as the exercise's
+weight, because the old `stillSet` guard only cleared it when EVERY set of the
+exercise had gone empty. `newPersonalBests()` offered that 250 as a PR over a
+previous 80. Same lie on the screen, no carry-down involved.
+
+**The shape of it, which is the part worth keeping.** A keystroke in one of
+those boxes changes three things, not one: the box, the later untouched sets
+that mirror it, and the exercise's own weight. That was written as two branches
+in the middle of a render function — one for a number the app accepts, one for a
+number it refuses — and the refusing branch did less work than the accepting
+one. Not a missing line so much as two places to keep in step, in a function
+too big to notice them in.
+
+So it is now one way in, on the player rather than in the render:
+
+- `recordSetWeight(input, inputs, parsed)` — the only thing the input listener
+  does. Stores or deletes this box, then the walk, then re-reads the column.
+- `carryWeightDown(input, inputs, parsed)` — **one walk, used both ways.** It
+  carries the number when the app accepts it and carries emptiness when it does
+  not, so the two directions cannot drift apart again. It still stops at any set
+  the member set themselves: a refusal on set 1 does not reach a 200 they typed
+  on set 3.
+- `syncExerciseWeight(exName, inputs)` — the exercise's weight is **read off the
+  boxes** rather than set by whichever keystroke happened to be last. The
+  invariant: the number the app holds for an exercise is always a number the
+  member can see in one of its boxes. The seeding pass goes through here too,
+  so `noteWeight()` has one caller on this screen instead of three.
+
+**Checked by `refused-weight-leaves-nothing.test.js` (39 checks)**, which drives
+the real lifted methods keystroke by keystroke, including a 41-keystroke clumsy
+session that re-checks the invariant after *every single key* — what T-92 left
+behind was a number from a keystroke in the middle, not at the end. Twelve
+mutants, all killed by named checks: reinstating the old "only carry when
+accepted", dropping the re-read, reinstating the `stillSet` guard, ignoring the
+touched set, ignoring the exercise boundary, leaving the stored value behind,
+leaving the old text on screen, flagging the rows below as bad, skipping the one
+door in the listener, and setting the weight per box while seeding.
+
+`weight-typo.test.js` had three shape checks anchored on the old inline
+carry-down, one of which asserted a property that is now deliberately false
+("the carry-down only runs for a number the app accepted" — it runs for every
+keystroke now). Rewritten against the new shape rather than deleted.
+
+Verified in a real browser on both sides of the fix: before, `2500` left
+`250 / 250 / 250` and a PR; after, the column empties the moment the number
+goes over, nothing is stored, no PR, and correcting set 2 to 110 refills sets 3
+and 4 and leaves the 100 on set 1 alone.
+
 ### Signing out takes the data off the device with it (2026-11-24, tester T-88)
 
 **Log Out ended the session and left everything else exactly where it was.** A

@@ -123,50 +123,43 @@ var seeding = CODE.indexOf("if (this.setWeights[input.dataset.key] != null) retu
 check(seeding !== -1 && CODE.lastIndexOf("parseLoggedWeight", seeding) > seeding - 300,
   "and so does the pre-fill, which can hold a bad number typed before this fix");
 check(CODE.indexOf("markWeightInput(input, parsed)") !== -1, "a refused number is marked on the row");
-check(CODE.indexOf("markWeightInput(other, parsed)") !== -1,
-  "and the mark clears on rows a good number is carried down into");
+check(CODE.indexOf("markWeightInput(other, parseLoggedWeight(other.value))") !== -1,
+  "and every row the carry-down writes to is re-marked from what now stands in it");
 
-// The carry-down must sit inside the accepted branch — carrying a refused
-// number down six sets is how one bad tap became six bad rows.
+// Where the carry-down lives, and what it is allowed to write.
 //
-// Scoped to the end-of-block handler rather than taken from the first match in
-// the file. This used to anchor on the first `if (parsed.state === "ok") {`
-// anywhere in app.js; when noteWeight() grew a braced branch of its own for
-// T-76 that match moved, and the check quietly stopped looking at the
-// carry-down it was written for (2026-11-23).
-// There are two `inputs.forEach((input) => {` blocks on this screen — one
-// re-marks the boxes on render, one wires the listeners — so take the one that
-// actually contains the carry-down rather than whichever comes first.
-var handler = (function () {
-  var from = 0;
-  while (true) {
-    var at = CODE.indexOf("inputs.forEach((input) => {", from);
-    if (at < 0) return "";
-    var depth = 0, block = "";
-    for (var i = CODE.indexOf("{", at); i < CODE.length; i++) {
-      if (CODE[i] === "{") depth++;
-      else if (CODE[i] === "}") { depth--; if (depth === 0) { block = CODE.slice(at, i + 1); break; } }
-    }
-    if (block.indexOf("other.value = val;") !== -1) return block;
-    from = at + 1;
-  }
-})();
-check(handler.indexOf("other.value = val;") !== -1,
-  "the end-of-block handler is where the carry-down lives");
-// Brace-matched, not "somewhere between these two strings": the ordering
-// version passes with the carry-down lifted OUT of the branch, because the
-// `} else {` still comes after it. It has to be INSIDE.
-var okBranch = handler.indexOf("if (parsed.state === \"ok\") {");
-var accepted = (function () {
-  if (okBranch < 0) return "";
+// It used to sit inline in the render function, inside an `if the app accepted
+// it` branch, with the refusing branch beside it cleaning up only the box in
+// front of the member. That is how a refused 2500 left the 250 of the keystroke
+// before standing on three sets nobody had touched (tester T-92). It now lives
+// on the player, runs for every keystroke, and carries emptiness down when the
+// box holds nothing the app will store.
+//
+// These are shape checks. What the carry-down actually does, keystroke by
+// keystroke, is in refused-weight-leaves-nothing.test.js.
+function playerMethod(sig) {
+  var at = CODE.indexOf("\n  " + sig + " {");
+  if (at < 0) return "";
   var depth = 0;
-  for (var i = handler.indexOf("{", okBranch); i < handler.length; i++) {
-    if (handler[i] === "{") depth++;
-    else if (handler[i] === "}") { depth--; if (depth === 0) return handler.slice(okBranch, i + 1); }
+  for (var i = CODE.indexOf("{", at); i < CODE.length; i++) {
+    if (CODE[i] === "{") depth++;
+    else if (CODE[i] === "}") { depth--; if (depth === 0) return CODE.slice(at, i + 1); }
   }
   return "";
-})();
-check(okBranch !== -1 && accepted.indexOf("other.value = val;") !== -1,
-  "the carry-down only runs for a number the app accepted");
+}
+var carry = playerMethod("carryWeightDown(input, inputs, parsed)");
+check(carry.indexOf("other.value =") !== -1,
+  "the carry-down lives in the player's carryWeightDown, where both directions share one walk");
+check(carry.indexOf("const val = parsed.state === \"ok\" ? parsed.value : \"\";") !== -1,
+  "and what it carries is the number only when the app accepted it, and nothing when it did not");
+// The one thing that must never happen: a refused number written into another
+// member's row. parsed.value is null for a refusal, so the danger is not the
+// value itself but a branch that writes before checking.
+check(carry.split("parsed.value").length - 1 === 1,
+  "the parsed number is read once, on that line, and nowhere else in the walk");
+var record = playerMethod("recordSetWeight(input, inputs, parsed)");
+check(record.indexOf("this.carryWeightDown(input, inputs, parsed)") !== -1
+   && record.indexOf("this.syncExerciseWeight(input.dataset.exName, inputs)") !== -1,
+  "and every keystroke runs the walk and then re-reads the column, accepted or refused");
 
 print("\n  " + pass + " passed, " + fail + " failed");

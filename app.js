@@ -6939,6 +6939,73 @@ const Player = {
     return parsed;
   },
 
+  // Every change to a weight box on the end-of-block screen goes through here
+  // (tester T-92).
+  //
+  // A keystroke in one of those boxes changes three things, not one: the box
+  // itself, the later untouched sets of the same exercise that mirror it, and
+  // the exercise's own weight, which is what personal bests and "last time"
+  // are read from. Those used to be done in two branches -- one for a number
+  // the app accepts, one for a number it refuses -- and the refusing branch
+  // cleaned up only the box in front of the member. So typing 2500 one key at
+  // a time left the 250 of the keystroke before standing on three sets nobody
+  // had touched, and standing in sessionWeights as a 250 lb personal best,
+  // while the screen said "Over 2000 -- not saved" and the member believed it.
+  //
+  // One way in for all three, so a refusal cannot clean up less than an
+  // acceptance did.
+  recordSetWeight(input, inputs, parsed) {
+    if (parsed.state === "ok") this.setWeights[input.dataset.key] = parsed.value;
+    else delete this.setWeights[input.dataset.key];
+    this.carryWeightDown(input, inputs, parsed);
+    this.syncExerciseWeight(input.dataset.exName, inputs);
+  },
+
+  // The later sets of this exercise MIRROR the box above them until the member
+  // touches one. Carrying a good number down is what spares a member with no
+  // history typing the same number four times -- the pre-fill only helped
+  // people who had lifted before, which is the wrong half. Carrying emptiness
+  // down is the other half of the same rule, and the half T-92 was missing: a
+  // box holding nothing the app will store leaves the rows it filled holding
+  // nothing either.
+  //
+  // One walk, used both ways, so the two directions cannot drift apart again.
+  carryWeightDown(input, inputs, parsed) {
+    const val = parsed.state === "ok" ? parsed.value : "";
+    let seen = false;
+    inputs.forEach((other) => {
+      if (other === input) { seen = true; return; }
+      if (!seen || other.dataset.exName !== input.dataset.exName) return;
+      if (other.dataset.touched === "1") return;
+      other.value = val === "" ? "" : String(val);
+      if (val === "") delete this.setWeights[other.dataset.key];
+      else this.setWeights[other.dataset.key] = val;
+      // A row below may have been carrying a flagged pre-fill of its own;
+      // whatever lands on it now decides the flag, number or nothing.
+      markWeightInput(other, parseLoggedWeight(other.value));
+    });
+  },
+
+  // What the boxes actually say about this exercise, rather than what the last
+  // keystroke happened to say. Read off the column each time, so the number
+  // this exercise carries is always one that is standing on the screen.
+  //
+  // The old version only cleared it when EVERY set had gone empty, which is
+  // why a refused keystroke's predecessor could stay behind as a personal best
+  // while a good number on another set held the door open (tester T-92).
+  //
+  // The bottom-most set that still holds one, which is the number the
+  // carry-down leaves standing and the one the member finished on.
+  syncExerciseWeight(exName, inputs) {
+    let standing = null;
+    inputs.forEach((other) => {
+      if (other.dataset.exName !== exName) return;
+      const val = this.setWeights[other.dataset.key];
+      if (val != null) standing = val;
+    });
+    this.noteWeight(exName, standing === null ? "" : standing);
+  },
+
   // EMOM rotates exercises minute by minute, so it gets one field that follows
   // the active exercise rather than a list of them. Only rebuilt when the
   // exercise actually changes — updateClock() runs every second, and swapping
@@ -7448,8 +7515,12 @@ const Player = {
         if (this.setWeights[input.dataset.key] != null) return;
         if (parsed.state !== "ok") return;
         this.setWeights[input.dataset.key] = parsed.value;
-        this.noteWeight(input.dataset.exName, parsed.value);
       });
+      // The exercise's own weight is read off the boxes once they have all
+      // been seeded, rather than being set by whichever box was seeded last.
+      // Same one way in as every keystroke below uses (tester T-92).
+      [...new Set(inputs.map((i) => i.dataset.exName))]
+        .forEach((name) => this.syncExerciseWeight(name, inputs));
 
       inputs.forEach((input) => {
         // Tapping a pre-filled box used to drop the caret wherever the thumb
@@ -7466,40 +7537,14 @@ const Player = {
         // tied to painting and does not fire in a tab that is not being
         // drawn, which is a real state for a phone that has just woken.
         input.addEventListener("focus", () => selectWeightBoxOnFocus(input));
+        // What a keystroke does to the column lives on the player, in
+        // recordSetWeight, and not here: a refused number has to undo exactly
+        // what an accepted one did, and two branches sitting in a render
+        // function is how they came to disagree (tester T-92).
         input.addEventListener("input", () => {
           const parsed = readWeightBox(input);
-          const val = parsed.value;
           input.dataset.touched = "1";
-          if (parsed.state === "ok") {
-            this.setWeights[input.dataset.key] = val;
-            this.noteWeight(input.dataset.exName, val);
-            // Carry it down this exercise's later sets, stopping at the first
-            // one the member has set themselves. Without this, a member with
-            // no history types the same number four times — the pre-fill only
-            // helped people who had lifted before, which is the wrong half.
-            let seen = false;
-            inputs.forEach((other) => {
-              if (other === input) { seen = true; return; }
-              if (!seen || other.dataset.exName !== input.dataset.exName) return;
-              if (other.dataset.touched === "1") return;
-              other.value = val;
-              this.setWeights[other.dataset.key] = val;
-              // A row below may have been carrying a flagged pre-fill of its
-              // own; a good number landing on it clears the flag with it.
-              markWeightInput(other, parsed);
-            });
-          } else {
-            delete this.setWeights[input.dataset.key];
-            // Blanking the last box of an exercise means "I did not lift
-            // this". Before the pre-fill was seeded above, nothing had been
-            // recorded for an untouched exercise, so there was nothing to
-            // undo; now there is, and sessionWeights would otherwise keep it.
-            const exName = input.dataset.exName;
-            const stillSet = inputs.some((other) =>
-              other.dataset.exName === exName
-              && this.setWeights[other.dataset.key] != null);
-            if (!stillSet) this.noteWeight(exName, "");
-          }
+          this.recordSetWeight(input, inputs, parsed);
         });
       });
 
