@@ -441,6 +441,12 @@
           <h2 class="cardio-log-title" id="resume-title">Resume workout?</h2>
           <p class="resume-body" id="resume-body"></p>
           <button class="btn-primary" id="resume-primary-btn">Resume</button>
+          <!-- Optional third choice, hidden unless the overlay is given one.
+               Starting a DIFFERENT workout with one unfinished is a genuine
+               three-way question — go back to it, keep it, or bin it — and
+               two buttons could only ask it by leaving one of those out
+               (tester T-86). The destructive answer stays last. -->
+          <button class="btn-ghost-lg resume-secondary" id="resume-third-btn" hidden></button>
           <button class="btn-ghost-lg resume-secondary" id="resume-secondary-btn">Discard</button>
         </div>
       </div>

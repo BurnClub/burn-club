@@ -4178,6 +4178,7 @@ function openCircuit(id) {
   document.getElementById("detail-desc").textContent = c.desc;
   document.getElementById("block-summary-list").innerHTML = c.blocks.map(renderBlockSummaryCard).join("");
   renderDetailSaveButton(id);
+  renderDetailStartButton(id);
   showScreen("screen-detail");
 }
 
@@ -4210,8 +4211,10 @@ function clearInProgress() {
   localStorage.removeItem(memberKey(IN_PROGRESS_STORAGE_KEY));
   // Every path that bins a session goes through here — finishing it, starting
   // over, discarding, a workout that no longer exists. Redrawing from this one
-  // place is what keeps the banner from outliving the thing it describes.
+  // place is what keeps the banner from outliving the thing it describes, and
+  // the detail screen's button from offering to resume a session that is gone.
   renderResumeBanner();
+  if (typeof openCircuitId !== "undefined" && openCircuitId) renderDetailStartButton(openCircuitId);
 }
 
 // Did the member actually DO anything in this session (2026-11-20, tester
@@ -4307,18 +4310,27 @@ function logPartialCompletion(circuit, rec, blocksDone, phases) {
     { minutes: Math.max(1, minutes), roundWeights: rec.roundWeights || {} });
 }
 
-function showResumeOverlay({ title, body, primary, secondary, onPrimary, onSecondary }) {
+function showResumeOverlay({ title, body, primary, secondary, third, onPrimary, onSecondary, onThird }) {
   document.getElementById("resume-title").textContent = title;
   document.getElementById("resume-body").textContent = body;
   const primaryBtn = document.getElementById("resume-primary-btn");
   const secondaryBtn = document.getElementById("resume-secondary-btn");
+  const thirdBtn = document.getElementById("resume-third-btn");
   primaryBtn.textContent = primary;
   secondaryBtn.textContent = secondary;
-  // onclick, not addEventListener: this overlay is reused for both outcomes
+  // onclick, not addEventListener: this overlay is reused for every outcome
   // and can be raised more than once per page load, so handlers have to
   // replace rather than stack.
-  primaryBtn.onclick = () => { document.getElementById("resume-overlay").classList.remove("visible"); onPrimary(); };
-  secondaryBtn.onclick = () => { document.getElementById("resume-overlay").classList.remove("visible"); onSecondary(); };
+  const close = () => document.getElementById("resume-overlay").classList.remove("visible");
+  primaryBtn.onclick = () => { close(); onPrimary(); };
+  secondaryBtn.onclick = () => { close(); onSecondary(); };
+  // Hidden AND unbound when there is no third choice. Leaving a stale handler
+  // on a hidden button is how a dialog ends up doing the last dialog's job.
+  if (thirdBtn) {
+    thirdBtn.hidden = !third;
+    thirdBtn.textContent = third || "";
+    thirdBtn.onclick = third ? () => { close(); onThird(); } : null;
+  }
   document.getElementById("resume-overlay").classList.add("visible");
 }
 
@@ -4368,6 +4380,123 @@ function maybeOfferResume() {
     onSecondary: () => { clearInProgress(); },
   });
   return true;
+}
+
+// Starting a workout used to throw away the one you were part-way through,
+// without a word (tester T-86). Four blocks and seven weights, left with the
+// X, Home showing "WORKOUT IN PROGRESS" — then Start Workout on any workout,
+// the same one included, and it was gone. There is one record per member, so
+// the first persist() of the new session wrote over it and there was nowhere
+// for the old one to go.
+//
+// The app already knew how to ask this question. maybeOfferResume() has asked
+// it since August — but only on the way INTO the app, which is one of the two
+// moments an unfinished session can be destroyed. This is the other one.
+//
+// So the guard lives in Player.start() rather than on the button that calls
+// it: the detail screen's Start is the only route in today, and a guard on
+// the button would be a guard on today's route. Anything that starts a
+// workout tomorrow gets this for free.
+
+// The unfinished session a new workout would destroy, or null if there is
+// nothing to lose. "Something to lose" is the same test the resume path and
+// the banner use (hasLoggedWork, or a whole block behind them), so all three
+// agree about what counts as a session worth a question.
+function unfinishedWorthKeeping() {
+  const rec = loadInProgress();
+  if (!rec) return null;
+  const circuit = CIRCUITS.find((c) => c.id === rec.circuitId);
+  // Unpublished, or the member changed programmes — nothing to resume into.
+  if (!circuit) { clearInProgress(); return null; }
+  const phases = buildPhaseQueue(circuit);
+  const blocksDone = blocksCompletedAt(phases, rec.index);
+  if (!hasLoggedWork(rec) && blocksDone < 1) return null;
+  const inWindow = Date.now() - (rec.lastSeenAt || 0) <= RESUME_WINDOW_MS;
+  return { rec, circuit, phases, blocksDone, inWindow };
+}
+
+// Asked before any workout starts. Returns true if it put the question to the
+// member, in which case the caller must not start anything — the overlay's
+// buttons carry on from here.
+function offerBeforeStart(nextCircuit) {
+  const held = unfinishedWorthKeeping();
+  if (!held) {
+    // Nothing to lose, but a record with nothing in it is still a record: it
+    // would raise a resume prompt later for a session the member abandoned.
+    if (loadInProgress()) clearInProgress();
+    return false;
+  }
+  const onBlock = Math.min(held.blocksDone + 1, held.circuit.blocks.length);
+  const where = `block ${onBlock} of ${held.circuit.blocks.length}`;
+  const startAnyway = () => { clearInProgress(); Player.beginFresh(nextCircuit); };
+  const logAndStart = () => {
+    logPartialCompletion(held.circuit, held.rec, held.blocksDone, held.phases);
+    clearInProgress();
+    Player.beginFresh(nextCircuit);
+    showToast(`${held.circuit.title} logged as a partial workout.`);
+  };
+
+  // Past the resume window it is not the same session any more, so resuming
+  // it is not on offer — the same rule the banner follows, which stops saying
+  // "Resume" at two hours and starts asking to log or discard.
+  if (!held.inWindow) {
+    showResumeOverlay({
+      title: "Unfinished workout",
+      body: `You left ${held.circuit.title} at ${where} earlier. Starting `
+        + `${nextCircuit.title} will clear it — what would you like to do with it?`,
+      primary: "Log it as partial, then start",
+      secondary: "Discard it and start",
+      onPrimary: logAndStart,
+      onSecondary: startAnyway,
+    });
+    return true;
+  }
+
+  // The same workout, within the window. Almost always a member meaning to
+  // carry on: the detail screen offered them "Start Workout" and nothing
+  // else, which is what makes this the worse half of the finding.
+  if (held.circuit.id === nextCircuit.id) {
+    showResumeOverlay({
+      title: "Resume workout?",
+      body: `You're partway through ${held.circuit.title} — ${where}. `
+        + `Starting again would throw that away.`,
+      primary: "Resume",
+      secondary: "Start over",
+      onPrimary: () => Player.resume(held.circuit, held.rec),
+      onSecondary: startAnyway,
+    });
+    return true;
+  }
+
+  // A different workout, within the window: a real three-way question. The
+  // names are in the body so the buttons can stay short enough to read on a
+  // phone, and the one that destroys something is last.
+  showResumeOverlay({
+    title: "You have one unfinished",
+    body: `You're partway through ${held.circuit.title} — ${where}. `
+      + `Starting ${nextCircuit.title} will clear it.`,
+    primary: `Back to ${held.circuit.title}`,
+    third: "Log it as partial, then start",
+    secondary: "Discard it and start",
+    onPrimary: () => Player.resume(held.circuit, held.rec),
+    onThird: logAndStart,
+    onSecondary: startAnyway,
+  });
+  return true;
+}
+
+// The detail screen said "Start Workout" and nothing else while a session of
+// that very workout was waiting, which is what a member would tap expecting
+// to carry on (tester T-86). The button now says what it will do.
+function renderDetailStartButton(id) {
+  const btn = document.getElementById("start-circuit-btn");
+  if (!btn) return;
+  const held = unfinishedWorthKeeping();
+  const resumable = held && held.inWindow && held.circuit.id === id;
+  btn.textContent = resumable
+    ? `Resume workout \u00b7 Block ${Math.min(held.blocksDone + 1, held.circuit.blocks.length)}`
+      + ` of ${held.circuit.blocks.length}`
+    : "Start Workout";
 }
 
 // ---------------- Unfinished workout banner (2026-09-30, Chris) ----------------
@@ -6082,7 +6211,15 @@ const Player = {
   restSetIndex: null,
   restIsLastSet: false,
 
+  // Nothing starts over an unfinished session without the member saying so
+  // (tester T-86). Here rather than on the button, so a second way to start a
+  // workout cannot be a second way to lose one.
   start(circuit) {
+    if (offerBeforeStart(circuit)) return;
+    this.beginFresh(circuit);
+  },
+
+  beginFresh(circuit) {
     // The coach's workout, kept aside untouched. this.circuit is whatever the
     // member is actually doing, which is the same object until they swap.
     this.sourceCircuit = circuit;

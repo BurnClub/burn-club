@@ -2925,6 +2925,84 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Starting a workout no longer bins the one you are part-way through (2026-11-24, tester T-86)
+
+**Four blocks and seven weights, gone without a word.** A member leaves a
+workout with the X, Home shows "WORKOUT IN PROGRESS · Resume for 2h 0m", they
+tap a workout in the Calendar and tap Start Workout — and everything they
+logged is gone. No question, no warning, no way back. There is one in-progress
+record per member, so the new session's first `persist()` wrote over it and
+there was nowhere for the old one to go.
+
+It was worse with the SAME workout, because the detail screen for a workout you
+are half-way through said only "Start Workout". There was nothing on it to say
+a session was waiting, and "Start Workout" is what a member would tap expecting
+to carry on.
+
+**The app already knew how to ask this.** `maybeOfferResume()` has asked since
+August — but it is called from exactly one place, entering the app. That is one
+of the two moments an unfinished session can be destroyed. This is the other.
+
+**The guard is in `Player.start()`, not on the button that calls it.** The
+detail screen's Start is the only route in today, so a guard on the button
+would be a guard on today's route; anything that starts a workout tomorrow gets
+this for free. That is the same lesson as the weight box, where four fixes in a
+row each closed the one door in front of them.
+
+**Three situations, three questions:**
+
+- **The same workout, within the two hours.** "Resume" / "Start over" — the
+  question `maybeOfferResume()` has always asked on the way in, now asked here
+  too.
+- **A different workout, within the two hours.** A real three-way question:
+  go back to it, keep it, or bin it. Two buttons could only ask that by leaving
+  one of those out, so the overlay gained an optional third. The workout names
+  live in the body text so the buttons stay short enough to read on a phone,
+  and the answer that destroys something is last.
+- **Past the two hours.** Resuming is not offered, because it is not the same
+  session any more — the same rule the banner follows when it stops saying
+  "Resume" and starts asking to log or discard. Two answers: log it as a
+  partial and start, or discard it and start.
+
+**What counts as a session worth asking about** is `hasLoggedWork()` or a whole
+block behind them — the same test the resume path and the banner already use,
+so all three agree. A record with nothing in it is cleared rather than kept,
+because otherwise it would raise a resume prompt later for a session the member
+had abandoned.
+
+**And the detail screen now says what the button will do:** opening a workout
+you are part-way through reads "Resume workout · Block 3 of 5" instead of
+"Start Workout". Past the window it goes back to "Start Workout", because
+"Resume" would be a lie.
+
+**Checked by:** `tests/sync/unfinished-not-lost.test.js`, 52 checks, nine
+groups, driving the real `offerBeforeStart()`, `unfinishedWorthKeeping()` and
+`renderDetailStartButton()` against the real storage helpers — and pressing
+every button the overlay offers, because what each answer DOES is the half that
+loses data if it is wrong. The record is checked to still exist while the
+question is on screen: raising it must not itself destroy anything.
+
+**Mutation-tested**, eleven mutants, all eleven killed by named checks: no
+guard, a guard that asks without blocking, clearing the record before asking,
+treating the same workout as a different one, dropping the third choice,
+leaving the third button's handler bound, offering Resume past the window,
+forgetting to clear after logging a partial, a detail button that never offers
+to resume, one that offers it past the window, and leaving an empty record
+behind.
+
+**A check of mine was vacuous and the mutants found it.** "The third button is
+unbound on the next question" passed against a build that left the handler on,
+because the test reset its fake DOM between the two dialogs and the second one
+got a fresh button. It now runs both questions over the SAME element and then
+presses the button, which is what a member would do. Second time today that a
+check has been satisfied by the wrong thing — the other was a substring match
+in `request-never-answered`.
+
+**Not verified in a browser yet.** The tester was using the pane for run 16
+when this was written, and the weight-box findings were all timing races, so a
+second page in the same browser was not worth the risk. The overlay's three-
+button layout on a phone is the part unit tests cannot judge.
+
 ### The panel said nothing had failed while nothing was getting through (2026-11-24, tester T-87)
 
 **The other half of T-84.** That fix made a request the server *refused* name
