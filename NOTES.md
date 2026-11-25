@@ -2925,6 +2925,70 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### A number put in all at once came out scrambled (2026-11-25, tester T-91)
+
+**A box holding 35, a tap, and 50 pasted into it gave 05 — five pounds, on
+every set of that exercise, under the cap, with no warning.** Reproduced on the
+live site before changing anything, with real gestures: box typed to 35, tapped
+again, caret moved inside with the arrow keys, then 50 put in in one go. Box
+`05`, sets 2, 3 and 4 at `5`, `setWeights` all four sets at 5.
+
+**It is not only a paste**, which is what the finding was first written as. It
+is anything that puts in more than one character at once: an autofill, a
+dictated number, a clipboard suggestion above the keys, a keyboard that inserts
+a whole word. Typing one character at a time is clean, which is why this
+survived five previous weight-box findings — every one of them was tested by
+typing.
+
+**The cause is the correction's arithmetic, not the arming.** `splicedAddition()`
+worked out what had been put in by matching a common prefix and suffix. That is
+exactly right for ONE character and a guess for several: for `was="35"`,
+`now="3505"` the prefix match eats the original 35 and hands back `"05"`. The
+same arithmetic answers `"7.53"` for a 3 with 37.5 put in front of it, and
+`"205"` for the `12.5` the tester checked against the running page.
+
+**The fix uses what the browser already knows, and I read it off the live site
+before writing a line** — the T-74 lesson, where the first attempt rested on
+`beforeinput` and that engine never delivered it. A real multi-character
+insertion carries:
+
+```
+inputType "insertText"   data "50"   selectionEnd 3   value "3505"
+```
+
+So the caret sits immediately after whatever was just put in. `insertedIntoBox()`
+takes the insertion point from the caret (`at = caret - added`), checks that
+what sits in front of it and what follows it are what the old number had in
+those places, and returns the slice between. `data` is a cross-check, not the
+rule, because a paste reports none. **The caret is exact where the prefix match
+was a guess.**
+
+`splicedAddition()` stays, used only when an engine reports no caret at all, and
+only for a single character — where it is unambiguous. Several characters with
+no caret are **left alone** rather than guessed at, which keeps T-74, T-80, T-83
+and T-85 fixed in that degraded case without inventing a number.
+
+**One thing deliberately removed.** The first version had a bounds test on the
+caret. Mutation testing showed it could not change an answer: a caret outside
+the box fails the prefix comparison anyway, because that comparison only holds
+when the two strings are the same length everywhere such a caret would put the
+split. It was dead, and it implied the two comparisons did less than they do, so
+it went — and the check that proves an impossible caret is refused is now killed
+by removing the prefix comparison, which is the honest anchor for it.
+
+**Checked by `pasted-weight-intact.test.js` (36 checks)**, which drives the real
+lifted functions, including a **336-insertion matrix**: seven starting numbers
+× seven inserted numbers × every caret position × `insertText` and
+`insertFromPaste`, each asserting the box ends up holding exactly what was put
+in. Most caret positions look fine under the old code, which is how this hid.
+Ten mutants, all killed. `weight-box-race.test.js` (50) and
+`weight-box-second-tap.test.js` (38) both still pass unchanged, which is the
+regression guard for the four earlier findings sharing this function.
+
+Verified in a real browser on both sides: before, `05` and 5 lb on four sets;
+after, `50` on all four and `setWeights` agreeing — and a single key after a tap
+still replaces the box (`50` + `7` → `7`), which is T-85 intact.
+
 ### "Not saved" was saving it anyway (2026-11-25, tester T-92)
 
 **The screen said "Over 2000 — not saved" and three sets of that exercise had

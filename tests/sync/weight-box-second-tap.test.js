@@ -152,6 +152,10 @@ eval(lift("armWeightBoxOnTap"));
 eval(lift("fillWeightBox"));
 eval(lift("wireWeightBoxTyping"));
 eval(lift("undoWeightSplice"));
+// What undoWeightSplice now works the insertion out with: the caret, which
+// is exact where matching a prefix was a guess for more than one character
+// (tester T-91). splicedAddition stays as the no-caret fallback.
+eval(lift("insertedIntoBox"));
 eval(lift("splicedAddition"));
 eval(APP.match(/^let weightSpliceWatcherWired = false;$/m)[0].replace("let", "var"));
 

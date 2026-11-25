@@ -6134,15 +6134,62 @@ function undoWeightSplice(input, event) {
   // engine that does not report one gets the safe half of the rule rather
   // than a guess that could empty a box the member had just filled.
   if (!was || now.length <= was.length) return;
-  const typed = splicedAddition(was, now);
+  const caret = typeof input.selectionEnd === "number"
+    && isFinite(input.selectionEnd) ? input.selectionEnd : null;
+  // With no caret to go on, several characters arriving at once cannot be
+  // taken apart with any confidence, so they are left alone rather than
+  // guessed at. One character still can be, which keeps T-74, T-80, T-83 and
+  // T-85 fixed on an engine that reports no selection on a text input.
+  const typed = caret === null
+    ? (now.length - was.length === 1 ? splicedAddition(was, now) : null)
+    : insertedIntoBox(was, now, caret, event && event.data);
   if (typed === null || typed === now) return;    // not a splice; leave it be
   input.value = typed;
   try { input.setSelectionRange(typed.length, typed.length); } catch (e) {}
 }
 
-// What was added to `was` to make `now`, if `now` is `was` with something
-// inserted into it. Null if it is not — a paste over a selection, an autofill
-// or anything else that rewrote the box is the member's business, not a splice.
+// What the member just put into the box, worked out from where the caret
+// ended up rather than from the shape of the two strings (tester T-91).
+//
+// Matching a common prefix and suffix is exactly right for ONE character and a
+// guess for several. With "35" in the box and "50" put in after the 3, the
+// prefix match eats the original 35 and hands back "05" — 5 lb, carried down
+// every set of the exercise, under the cap, no warning. The same arithmetic
+// answers "7.53" for a 3 with 37.5 put in front of it, and "205" for a 12.5
+// with 205 put into it.
+//
+// The browser already knows the answer and says so twice: the caret sits
+// immediately after whatever was just put in, and an insertText carries the
+// inserted string in `event.data`. Both were read off the live site with a
+// real insertion before this was written — the beforeinput lesson from T-74 is
+// that a fix resting on something the engine may not deliver is no fix. The
+// caret is the rule because every weight box is a text input and always has
+// one; `data` is a cross-check, because a paste reports none.
+//
+// Null when the box was not simply added to. An autofill or an autocorrect
+// that rewrote the whole value is the member's business, not a splice.
+function insertedIntoBox(was, now, caret, data) {
+  const added = now.length - was.length;
+  if (added <= 0) return null;
+  // No bounds test on the caret: a position that could not have produced this
+  // box fails the two comparisons below anyway, because they only hold when
+  // what is in front of the insertion and what follows it are what the old
+  // number had in those places — which forces the two strings to be the same
+  // length everywhere a caret outside the box would put the split. A guard
+  // here would be a line that can never change an answer, and would suggest
+  // these two do less than they do.
+  const at = caret - added;                      // where it went in
+  if (now.slice(0, at) !== was.slice(0, at)) return null;
+  if (now.slice(caret) !== was.slice(at)) return null;
+  const inserted = now.slice(at, caret);
+  if (typeof data === "string" && data !== "" && data !== inserted) return null;
+  return inserted;
+}
+
+// The same question answered without a caret, for an engine that reports none.
+// Only ever asked about a single character, where matching a common prefix and
+// suffix is unambiguous — see insertedIntoBox above for why it is not, beyond
+// that.
 function splicedAddition(was, now) {
   let head = 0;
   while (head < was.length && was[head] === now[head]) head++;
