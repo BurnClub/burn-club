@@ -9942,7 +9942,11 @@ async function routeOnLoad() {
     // Only the server saying this account or session is no good signs anyone
     // out. A hiccup must not: signing out strands them, because they cannot
     // sign back in until the server is reachable again.
-    if (entryDecision(res, !!savedProfile) === "sign-out") await signOut();
+    // keepLocalData: this sign-out is the server rejecting the session, not
+    // the member choosing to leave the device. T-13's reasoning applies —
+    // signing someone out on a bad day already strands them, and clearing
+    // their phone as well would make a recoverable situation worse.
+    if (entryDecision(res, !!savedProfile) === "sign-out") await signOut({ keepLocalData: true });
     return false;
   }
   return await enterFromSession("returning");
@@ -10521,10 +10525,20 @@ function wireRemainingControls() {
     // Ends the Supabase session, not just the screen. Without this, Log Out
     // hides the app while the session stays in storage and the next visit
     // walks straight back in — which on a shared phone is the whole problem.
-    await signOut();
+    // It now takes the member's saved data with it too (tester T-88), and
+    // says which of the two things happened rather than leaving them to
+    // guess whether the device is clean.
+    const forgot = await signOut();
     document.getElementById("main-app").classList.remove("visible");
     document.getElementById("bottom-nav").style.display = "none";
     document.getElementById("login-password").value = "";
     showScreen("screen-login");
+    showToast(
+      forgot && forgot.kept && forgot.kept.length
+        ? "Signed out. Some work hasn't backed up yet, so it was kept on this device."
+        : forgot && forgot.cleared
+          ? "Signed out. Your training data was removed from this device."
+          : "Signed out."
+    );
   });
 }

@@ -537,12 +537,27 @@ async function signIn(email, password) {
   return { member: AUTH_MEMBER };
 }
 
-async function signOut() {
+// Signing out takes the member's data off this device with it (tester T-88),
+// unless something on it has not reached the server yet.
+//
+// The sweep is the DEFAULT and keeping the data is the exception, on purpose.
+// A new deliberate sign-out path that forgot to ask for the sweep would bring
+// the privacy bug back silently; a forced one that forgets to ask for
+// `keepLocalData` only costs a re-download of things the server already has.
+// The cheaper mistake is the one left unguarded.
+async function signOut(opts) {
   SIGNING_OUT = true;
   // First, before anything is cleared: any profile lookup still in flight must
   // not be allowed to write the member back afterwards (tester T-38).
   abandonAuthLoad();
   logAuthEvent("signed_out", "member chose to sign out");
+  // Before AUTH_MEMBER goes: the sweep is keyed by the member's own id, and
+  // wrapped because losing the session must not depend on sync.js having
+  // loaded or on anything inside it behaving.
+  let forgot = { cleared: 0, kept: [] };
+  if (!(opts && opts.keepLocalData) && typeof forgetThisDeviceOnSignOut === "function") {
+    try { forgot = forgetThisDeviceOnSignOut(); } catch (e) { forgot = { cleared: 0, kept: ["error"] }; }
+  }
   clearAuthCache();
   AUTH_MEMBER = null;
   AUTH_PROGRAM = null;
@@ -551,6 +566,7 @@ async function signOut() {
   } finally {
     SIGNING_OUT = false;
   }
+  return forgot;
 }
 
 // The members row is the profile; the auth user is only an identity. RLS means
@@ -898,6 +914,14 @@ async function authDiagnostics() {
   // Read here for the same reason as the one above: the probes below go out
   // through timedFetch, so after they start this would always count them.
   add("Requests still waiting", pendingRequestsSummary());
+
+  // Counted, never read, and never named: a sign-out before 2026-11-24 left
+  // the whole of that member's training history on the device (tester T-88).
+  // The sweep on sign-out only runs from now on, so this says whether any of
+  // it is still here.
+  if (typeof otherAccountDataOnDevice === "function") {
+    try { add("Other accounts on this device", otherAccountDataOnDevice()); } catch (e) {}
+  }
 
   // Every step below is time-boxed (2026-11-20, tester T-11). This panel used
   // to freeze on "Checking…" forever in exactly the situation it exists for:

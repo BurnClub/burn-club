@@ -2925,6 +2925,68 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Signing out takes the data off the device with it (2026-11-24, tester T-88)
+
+**Log Out ended the session and left everything else exactly where it was.** A
+tester counted 17 keys, about 32 KB, belonging to an account that had signed
+out of that browser months earlier: completions, daily stats, check-ins,
+habits, notebook notes, benchmarks, equipment and saved workouts. None of it
+was ever SHOWN to the next member — every read goes through `memberKey()`,
+scoped to whoever is signed in — so this was never a data mix-up. It is that a
+shared phone, a borrowed tablet or a gym iPad kept the last person's training
+history after they had signed out and believed they were gone.
+
+**The sweep already existed.** `discardLocalMemberData()` walks exactly those
+keys, including the scheduled items, which are not keyed like the rest, and the
+member's entry inside the shared health-profiles object. It was written for a
+server-side reset; this is the same sweep for a different reason, with one
+condition on it.
+
+**That condition: never anything that has not reached the server.** A store
+still marked dirty, or a push still sitting in the in-memory queue, is work
+that exists only on this device, and choosing to sign out is not choosing to
+throw it away. In that case nothing is cleared and the member is told —
+"Signed out. Some work hasn't backed up yet, so it was kept on this device."
+A sweep that quietly skipped would be worse than no sweep, because they would
+believe the device was clean.
+
+**The sweep is the default and keeping the data is the exception, on purpose.**
+A new deliberate sign-out path that forgot to ask for the sweep would bring the
+privacy bug back silently; a forced one that forgets `keepLocalData` only costs
+a re-download of things the server already has. The cheaper mistake is the one
+left unguarded. The forced sign-out — the server rejecting a session, not the
+member choosing to leave — passes `keepLocalData: true`, because T-13's
+reasoning applies: signing someone out on a bad day already strands them, and
+clearing their phone as well would make a recoverable situation worse.
+
+**What this does NOT do: remove what an older sign-out already left.** Another
+account's unsynced work could be in there and only that member can say whether
+it matters, so it is reported rather than deleted — a new diagnostics line,
+"Other accounts on this device: 17 items, about 32 KB". Counted, never read,
+never named.
+
+**The counter matches the sweep, by key and not by prefix.** It was written
+first as "anything starting with `burnclub-`", which looked right and was
+wrong: the equipment list is `burnClubMyEquipment-<id>`. A counter that skipped
+it would report a device as cleaner than a sweep would leave it. Both now match
+on the member id at the END of the key, and there is a check that the number
+reported and the number taken are the same.
+
+**Checked by:** `tests/sync/sign-out-clears-device.test.js`, 42 checks, nine
+groups, driving the real `signOut()`, the real sweep and the real
+`discardLocalMemberData()` on a device holding two members' data. The dirty
+case is checked in both directions — with a dirty flag and with an in-memory
+queue entry — and the sign-out still completes in both.
+
+**Mutation-tested**, ten mutants, all ten killed by named checks: no sweep, the
+sweep after the member is cleared, ignoring the dirty flag, ignoring the queue,
+an unwrapped sweep that takes the sign-out down with it, ignoring
+`keepLocalData`, sweeping the Supabase sign-in key, wiping the whole shared
+health object instead of one entry, a counter that needs a `burnclub-` prefix,
+and one that counts the signed-in member's own data as somebody else's.
+
+**Not verified in a browser yet.**
+
 ### An AMRAP round is a rotation (2026-11-24, tester T-82)
 
 **T-76, unchanged, on the AMRAP screen.** A member who works up through the

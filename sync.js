@@ -234,6 +234,61 @@ function discardLocalMemberData() {
   return removed.length;
 }
 
+// ---------------- Leaving the device (2026-11-24, tester T-88) ----------------
+// Signing out ended the session and cleared the small profile cache, and left
+// everything else exactly where it was. A tester found 17 keys, about 32 KB,
+// belonging to an account that had signed out of this browser months ago:
+// their completions, daily stats, check-ins, habits, notebook notes,
+// benchmarks, equipment and saved workouts. Nothing was ever SHOWN to the next
+// member — every read goes through memberKey(), scoped to whoever is signed in
+// — so this was never a data mix-up. It is that a shared phone, a borrowed
+// tablet or a gym iPad kept the last person's training history after they had
+// signed out and believed they were gone.
+//
+// discardLocalMemberData() already walks exactly the right keys. It was
+// written for a server-side reset; this is the same sweep for a different
+// reason, with one condition on it.
+//
+// NEVER anything that has not reached the server. A store still dirty is work
+// that exists only on this device, and choosing to sign out is not choosing to
+// throw that away. In that case the data stays and the member is told — a
+// sweep that quietly skipped would be worse than no sweep, because they would
+// believe the device was clean.
+function forgetThisDeviceOnSignOut() {
+  if (!AUTH_MEMBER) return { cleared: 0, kept: [] };
+  const kept = [...loadDirty()];
+  SYNC_STATE.queue.forEach((n) => { if (kept.indexOf(n) === -1) kept.push(n); });
+  if (kept.length) return { cleared: 0, kept };
+  return { cleared: discardLocalMemberData(), kept: [] };
+}
+
+// How much of this browser's storage belongs to somebody who is not signed in
+// — counted, never read. The sweep above only runs from now on, so anything
+// left by a sign-out before today is still here, and removing it is not a
+// decision this code can take: another account's unsynced work could be in
+// there and only that member can say whether it matters. So it is reported
+// rather than deleted, which at least makes it something a person can see.
+function otherAccountDataOnDevice() {
+  const mine = AUTH_MEMBER ? AUTH_MEMBER.id : null;
+  let keys = 0, bytes = 0;
+  Object.keys(localStorage).forEach((k) => {
+    // Never the sign-in itself, same as the sweep.
+    if (k.startsWith("sb-")) return;
+    // Matched the way the sweep matches — by the member id on the END — and
+    // NOT by a "burnclub-" prefix. Not every member key has one: the
+    // equipment list is "burnClubMyEquipment-<id>", and a counter that quietly
+    // skipped it would report a device as cleaner than a sweep would leave it.
+    // What this counts has to be exactly what discardLocalMemberData() takes.
+    const m = k.match(/-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+    if (!m) return;
+    if (mine && m[1].toLowerCase() === String(mine).toLowerCase()) return;
+    keys++;
+    bytes += (localStorage.getItem(k) || "").length;
+  });
+  if (!keys) return "none";
+  return keys + " item" + (keys === 1 ? "" : "s") + ", about " + Math.round(bytes / 1024) + " KB";
+}
+
 // A reset can happen while a tab is already open and signed in. That tab
 // never passes through sign-in again, so the check in hydrateMemberData never
 // sees it — and it goes on pushing its stale copy, undoing the reset. That is
