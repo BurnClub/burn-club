@@ -39,7 +39,8 @@ const UPLOAD_TIMEOUT_MS = 60000;
 // it was belonged to no code path that looks. A failure nobody can name is the
 // shape of thing that hid the first trial's failure for six days.
 //
-// This does not fix a request. It makes one that fails say which it was.
+// This does not fix a request. It makes one that fails say which it was —
+// whether the server refused it or never answered at all (tester T-87).
 const FAILED_REQUESTS = [];
 const MAX_REMEMBERED_FAILURES = 10;
 
@@ -60,27 +61,65 @@ function describeRequestUrl(url) {
   }
 }
 
-function noteFailedRequest(method, url, status, body) {
-  const where = describeRequestUrl(url);
-  const entry = {
-    at: new Date().toISOString(),
-    method: method || "GET",
-    where,
-    status,
-    detail: body == null ? "" : String(body).slice(0, 200),
-  };
-  FAILED_REQUESTS.push(entry);
-  if (FAILED_REQUESTS.length > MAX_REMEMBERED_FAILURES) FAILED_REQUESTS.shift();
-  console.warn("[request] HTTP " + status + " " + entry.method + " " + where
-    + (entry.detail ? " — " + entry.detail : ""));
+// A request that never answered has no status. Status 0 means exactly that,
+// and it is worded rather than printed, because "HTTP 0" is not a thing that
+// happened to anybody and "no answer" is the sentence a stuck member needs.
+function describeRequestStatus(status) {
+  return status ? "HTTP " + status : "no answer";
 }
 
-// Read out in the diagnostics panel, so a tester with no DevTools can say
-// what was refused. "none" is itself a useful answer: it is the difference
-// between "something is wrong and I cannot see what" and a fact.
+function noteFailedRequest(method, url, status, body) {
+  const where = describeRequestUrl(url);
+  const m = method || "GET";
+  const detail = body == null ? "" : String(body).slice(0, 200);
+  // The same request failing over and over is ONE fact, not ten. A member on a
+  // dead connection has every retry fail, and ten copies of the same line is
+  // the line they are being asked to read out loud. Matched anywhere in the
+  // list, not just against the last: a sync pass cycles through several
+  // endpoints, so the repeats come interleaved rather than in a row.
+  const same = FAILED_REQUESTS.find(
+    (f) => f.status === status && f.method === m && f.where === where
+  );
+  if (same) {
+    same.count++;
+    same.at = new Date().toISOString();
+    if (detail) same.detail = detail;
+  } else {
+    FAILED_REQUESTS.push({ at: new Date().toISOString(), method: m, where, status, detail, count: 1 });
+    if (FAILED_REQUESTS.length > MAX_REMEMBERED_FAILURES) FAILED_REQUESTS.shift();
+  }
+  console.warn("[request] " + describeRequestStatus(status) + " " + m + " " + where
+    + (detail ? " — " + detail : ""));
+}
+
+// Requests that have gone out and not come back yet. A request that is merely
+// SLOW has not failed — the 12-second limit has not run out — so it appears
+// nowhere above, and that is the other way the panel could say "nothing
+// failed" while nothing is getting through: a member taps "Having trouble?"
+// four seconds into being stuck, which is most of them. Being stuck is not a
+// failure yet, so it gets its own line rather than being called one.
+//
+// The url is kept raw and described only when the line is read: this runs on
+// every request the app makes, and parsing a URL per request to produce a
+// string nobody asks for is a cost paid for nothing.
+const IN_FLIGHT = new Set();
+
+function pendingRequestsSummary() {
+  if (!IN_FLIGHT.size) return "none";
+  let oldest = null;
+  IN_FLIGHT.forEach((r) => { if (!oldest || r.at < oldest.at) oldest = r; });
+  const secs = Math.round((Date.now() - oldest.at) / 1000);
+  return IN_FLIGHT.size + ", oldest " + secs + "s ("
+    + oldest.method + " " + describeRequestUrl(oldest.url) + ")";
+}
+
+// Read out in the diagnostics panel, so a tester with no DevTools can say what
+// went wrong. "none" is itself a useful answer: it is the difference between
+// "something is wrong and I cannot see what" and a fact.
 function refusedRequestsSummary() {
   if (!FAILED_REQUESTS.length) return "none since this page opened";
-  return FAILED_REQUESTS.map((f) => f.status + " " + f.method + " " + f.where
+  return FAILED_REQUESTS.map((f) => describeRequestStatus(f.status) + " " + f.method + " " + f.where
+    + (f.count > 1 ? " \u00d7" + f.count : "")
     + (f.detail ? " (" + f.detail.slice(0, 80) + ")" : "")).join(" | ");
 }
 
@@ -96,6 +135,8 @@ function timedFetch(input, init) {
     else outer.addEventListener("abort", () => ctl.abort(), { once: true });
   }
   const method = (init && init.method) || (input && input.method) || "GET";
+  const pending = { method, url, at: Date.now() };
+  IN_FLIGHT.add(pending);
   return fetch(input, Object.assign({}, init, { signal: ctl.signal }))
     .then((res) => {
       // Named, not swallowed, and never in the way: the response is handed
@@ -114,10 +155,28 @@ function timedFetch(input, init) {
       return res;
     })
     .catch((e) => {
+      // The other half, and the half this app actually suffers from: the
+      // server that never answers at all — gym wifi behind a sign-in page, one
+      // bar of signal. Only a bad STATUS was recorded, so the panel's most
+      // useful line was blank in exactly the situation it was written for. A
+      // member stuck on the login screen read "Refused requests: none since
+      // this page opened" directly above "Server reachable: NO" (tester T-87).
+      //
+      // Wrapped, because a line written to explain a failure must never be
+      // able to cause one: whatever happens in here, the caller gets the error
+      // it would have got anyway.
+      try {
+        noteFailedRequest(method, url, 0,
+          timedOut ? "no answer after " + (ms / 1000) + "s"
+            // A deliberate cancellation is not a broken connection, and saying
+            // so beats both staying silent and calling it a failure.
+            : (outer && outer.aborted) ? "cancelled"
+            : (e && e.message) || String(e));
+      } catch (ignored) {}
       if (timedOut) throw new TypeError("Failed to fetch (no answer after " + (ms / 1000) + "s)");
       throw e;
     })
-    .finally(() => clearTimeout(timer));
+    .finally(() => { clearTimeout(timer); IN_FLIGHT.delete(pending); });
 }
 
 // Resolves with `fallback` if the promise has not settled in time. The promise
@@ -824,10 +883,21 @@ async function authDiagnostics() {
   // session can be kept, so every visit starts from the login form.
   add("Can save a session", storage);
 
-  // Anything the server refused since this page opened. Usually "none", and
-  // that is worth saying out loud — it is the line that turns "something is
-  // wrong and I cannot see what" into a fact (tester T-84).
-  add("Refused requests", refusedRequestsSummary());
+  // Anything that failed since this page opened — refused with a status, or
+  // never answered at all. Usually "none", and that is worth saying out loud:
+  // it is the line that turns "something is wrong and I cannot see what" into
+  // a fact (testers T-84, T-87).
+  //
+  // READ BEFORE THE PROBES BELOW START, deliberately. They go through
+  // timedFetch like everything else, so on a dead connection the panel's own
+  // health check would fail and this line would name it — the panel reporting
+  // its own probe back to itself, every time, whatever the app had been doing.
+  // Taking the string here means the line describes the member's session.
+  add("Failed requests", refusedRequestsSummary());
+  // The line that stops "nothing failed" from meaning "nothing is wrong".
+  // Read here for the same reason as the one above: the probes below go out
+  // through timedFetch, so after they start this would always count them.
+  add("Requests still waiting", pendingRequestsSummary());
 
   // Every step below is time-boxed (2026-11-20, tester T-11). This panel used
   // to freeze on "Checking…" forever in exactly the situation it exists for:

@@ -47,6 +47,7 @@ var console = { warn: function () { WARNINGS.push(Array.prototype.join.call(argu
 var FAILED_REQUESTS = [];
 eval(SRC.match(/const MAX_REMEMBERED_FAILURES = \d+;/)[0].replace("const", "var"));
 eval(liftFn("describeRequestUrl"));
+eval(liftFn("describeRequestStatus"));
 eval(liftFn("noteFailedRequest"));
 
 // ---------------- what gets kept, and what does not ----------------
@@ -99,13 +100,40 @@ noteFailedRequest("POST", "https://x.supabase.co/rest/v1/auth_events", 400, null
 check(FAILED_REQUESTS.length === 1 && FAILED_REQUESTS[0].detail === "",
   "a refusal with no readable body is still recorded");
 
-// It must not grow without limit on a page left open all day.
+// It must not grow without limit on a page left open all day. Forty DIFFERENT
+// requests, because identical ones now collapse into one line (below).
 FAILED_REQUESTS.length = 0;
-for (var i = 0; i < 40; i++) noteFailedRequest("GET", "https://x.supabase.co/rest/v1/lifts", 500, "boom " + i);
+for (var i = 0; i < 40; i++) noteFailedRequest("GET", "https://x.supabase.co/rest/v1/t" + i, 500, "boom " + i);
 check(FAILED_REQUESTS.length === MAX_REMEMBERED_FAILURES,
   "the list is capped (got " + FAILED_REQUESTS.length + ")");
 check(FAILED_REQUESTS[FAILED_REQUESTS.length - 1].detail.indexOf("boom 39") !== -1,
   "and keeps the most recent, which is the one being asked about");
+
+// The same request failing over and over is one fact, not ten — a member on a
+// dead connection has every retry fail, and ten copies of one line is the line
+// they are being asked to read out (tester T-87).
+FAILED_REQUESTS.length = 0; WARNINGS.length = 0;
+for (var j = 0; j < 7; j++) noteFailedRequest("GET", "https://x.supabase.co/rest/v1/lifts", 500, "boom " + j);
+check(FAILED_REQUESTS.length === 1, "seven goes at the same request are one entry (got " + FAILED_REQUESTS.length + ")");
+check(FAILED_REQUESTS[0].count === 7, "that counts them (got " + FAILED_REQUESTS[0].count + ")");
+check(FAILED_REQUESTS[0].detail.indexOf("boom 6") !== -1, "and carries the latest reason");
+check(WARNINGS.length === 7, "while the console still says every one, which is what a console is for");
+
+// Collapsed by WHAT failed, not by when: a sync pass cycles through several
+// endpoints, so the repeats arrive interleaved rather than in a row.
+FAILED_REQUESTS.length = 0;
+["a", "b", "a", "b", "a"].forEach(function (name) {
+  noteFailedRequest("POST", "https://x.supabase.co/rest/v1/" + name, 500, "boom");
+});
+check(FAILED_REQUESTS.length === 2, "two endpoints alternating are two entries (got " + FAILED_REQUESTS.length + ")");
+check(FAILED_REQUESTS[0].count === 3 && FAILED_REQUESTS[1].count === 2,
+  "counted 3 and 2, in the order they first failed");
+
+// A different status on the same path is a different fact and keeps its own line.
+FAILED_REQUESTS.length = 0;
+noteFailedRequest("GET", "https://x.supabase.co/rest/v1/lifts", 500, "server");
+noteFailedRequest("GET", "https://x.supabase.co/rest/v1/lifts", 401, "signed out");
+check(FAILED_REQUESTS.length === 2, "a 500 and a 401 on the same path are not merged");
 
 // A long error body is trimmed rather than carried whole.
 FAILED_REQUESTS.length = 0;
@@ -146,7 +174,16 @@ var summary = refusedRequestsSummary();
 check(summary.indexOf("400") !== -1 && summary.indexOf("/rest/v1/lifts") !== -1,
   "and with one refused it names the status and the request (got " + summary + ")");
 check(summary.indexOf("abc") === -1, "without the filter values, same as everywhere else");
-check(bodyOf("authDiagnostics").indexOf('add("Refused requests", refusedRequestsSummary())') !== -1,
+check(bodyOf("authDiagnostics").indexOf('add("Failed requests", refusedRequestsSummary())') !== -1,
   "and the diagnostics panel reports it");
+
+// Repeats say so in the panel too, rather than running the same words together
+// ten times.
+FAILED_REQUESTS.length = 0;
+for (var k = 0; k < 4; k++) noteFailedRequest("GET", "https://x.supabase.co/rest/v1/lifts", 500, "boom");
+var repeated = refusedRequestsSummary();
+check(repeated.indexOf("\u00d74") !== -1, "four of the same request reads as x4 (got " + repeated + ")");
+check(repeated.split("/rest/v1/lifts").length - 1 === 1,
+  "and the request is named once, not four times (got " + repeated + ")");
 
 print(pass + " passed, " + fail + " failed");

@@ -2925,6 +2925,93 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### The panel said nothing had failed while nothing was getting through (2026-11-24, tester T-87)
+
+**The other half of T-84.** That fix made a request the server *refused* name
+itself, and it works. But the failure this app actually suffers from is the one
+where the server never answers at all — gym wifi behind a sign-in page, one bar
+of signal. `noteFailedRequest()` was only ever reached from the branch that has
+a response, and the `.catch` branch just re-threw. So a member stuck on the
+login screen read:
+
+```
+Failed requests: none since this page opened
+Server reachable: NO — no answer after 5s
+```
+
+The panel's most useful new line was blank in exactly the situation it was
+written for, and so was the console.
+
+**Two things were missing, not one.** The tester's fix — record in the catch
+branch — is right and is here. But their screenshot was taken four seconds into
+being stuck, and at four seconds nothing has timed out, so nothing has failed
+*yet*. With only the catch-branch fix, that exact screenshot would still have
+said "Failed requests: none" above "Server reachable: NO". Being stuck is not a
+failure, so it gets its own line rather than being called one:
+
+```
+Failed requests: none since this page opened
+Requests still waiting: 2, oldest 4s (GET /rest/v1/completions?select&member_id)
+Server reachable: NO — no answer after 5s
+```
+
+and six seconds later, past the limit:
+
+```
+Failed requests: no answer GET /rest/v1/completions?select&member_id (no answer after 12s) | ...
+Requests still waiting: none
+```
+
+Both of those are real output from `authDiagnostics()` in a browser, on a
+connection that accepts requests and never answers.
+
+**The details that are load-bearing:**
+
+- **Status 0 is worded, not printed.** "HTTP 0" is not a thing that happened to
+  anybody; "no answer" is the sentence a stuck member needs to read out.
+- **A deliberate cancellation says `cancelled`** rather than being silently
+  dropped or reported as a broken connection. Nothing in the app passes an
+  outer signal today, so this is a dead branch — but a dead branch that stays
+  silent is how T-87 happened.
+- **Repeats collapse.** A dead connection fails every retry, and ten copies of
+  one line is the line a member is being asked to read out. Matched anywhere in
+  the list rather than against the last entry only, because a sync pass cycles
+  through several endpoints and the repeats arrive interleaved. The console
+  still says every one — that is what a console is for.
+- **The recording is wrapped in its own try/catch.** A line written to explain a
+  failure must never be able to cause one: whatever happens in there, the caller
+  gets the error it would have got anyway.
+- **Both lines are read BEFORE the panel's own probes start.** The probes go out
+  through `timedFetch` like everything else, so after they start, the panel
+  would report its own health check back to itself on every dead connection,
+  whatever the member's session had been doing. There is a check on that
+  ordering, because it is invisible and one line-move away.
+- **The in-flight url is kept raw** and described only when the line is read.
+  That set is touched on every request the app makes, and parsing a URL per
+  request to build a string nobody asks for is a cost paid for nothing.
+
+**Checked by:** `tests/sync/request-never-answered.test.js`, 50 checks, nine
+groups, driving the real `timedFetch()` against a fetch that hangs, rejects or
+is cancelled, with the 12-second timer under the test's control. Every case also
+records what came back out of `timedFetch`, because the point is that none of
+this may change what the caller sees. `tests/sync/failed-request-log.test.js`
+grew from 29 checks to 38: the cap is now proved with forty DIFFERENT requests,
+since identical ones collapse, and the collapsing has its own checks.
+
+**Mutation-tested**, eleven mutants, all eleven killed by named checks: no
+recording in the catch branch, not distinguishing a timeout, calling a
+cancellation a failure, printing "HTTP 0", no collapsing, collapsing across
+different statuses, letting the recording throw into the caller, not tracking
+in-flight requests, never clearing them, dropping the waiting line, and reading
+the lines after the probes start.
+
+**One check was weak and the mutants found it.** "The console says no answer"
+passed against a build that printed "HTTP 0", because the detail text
+*contains* the words "no answer after 12s". It is now asked directly —
+`describeRequestStatus(0) === "no answer"` — and the summary is checked for the
+absence of "HTTP 0". Worth noting as a pattern: a check that looks for a
+substring in a long assembled string can be satisfied by the wrong part of it.
+
 ### Tapping a box you are already in (2026-11-24, tester T-85)
 
 **The app's rule is "tapping a weight box replaces what is in it". It held the
