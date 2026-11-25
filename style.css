@@ -4008,6 +4008,17 @@ h1, h2, h3 {
 .program-complete-stats { margin-bottom: 18px; }
 .program-complete-stats .stat-num { color: #FFFFFF; }
 .program-complete-stats .stat-label { color: #FFFFFF; opacity: 0.8; }
+/* A number must not split mid-value. "54h 15m" wrapping to "54h" / "15m"
+   pushes that column's label down and the three labels stop sharing a
+   baseline — seen at 320 wide while relabelling them for T-71. The wrap is
+   older than those labels (the columns are 1fr, so label length cannot cause
+   it), it was simply easier to miss under one short word.
+   At 320 the columns are 80px, which 22px type cannot hold: "54h 15m" needs
+   92px at 22px and 80px at 19px, measured in the browser. */
+.program-complete-stats .stat-num { white-space: nowrap; }
+@media (max-width: 360px) {
+  .program-complete-stats .stat-num { font-size: 19px; }
+}
 .program-complete-cta {
   width: 100%;
   background: var(--card-white);
