@@ -61,6 +61,12 @@ var localStorage = {
   removeItem: function (k) { delete STORE[k]; },
 };
 function El() { this.textContent = ""; this.hidden = false; this.onclick = null; this._c = {}; var self = this;
+  // Overlays are opened through showOverlay now, which puts their scrolling
+  // areas back to the top once they are shown (tester T-89). Nothing in this
+  // file scrolls, so an empty list of children and a scrollTop of 0 is all it
+  // needs - but it has to answer both, or the resume dialog cannot open.
+  this.scrollTop = 0;
+  this.querySelectorAll = function () { return []; };
   this.classList = {
     add: function (c) { self._c[c] = true; },
     remove: function (c) { delete self._c[c]; },
@@ -104,6 +110,8 @@ eval(lift("loadInProgress"));
 eval(lift("clearInProgress"));
 eval(lift("hasLoggedWork"));
 eval(lift("blocksCompletedAt"));
+eval(lift("resetOverlayScroll"));
+eval(lift("showOverlay"));
 eval(lift("showResumeOverlay"));
 eval(lift("unfinishedWorthKeeping"));
 eval(lift("offerBeforeStart"));

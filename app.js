@@ -570,7 +570,7 @@ function renderPRPicker() {
 
 function openPRPicker() {
   renderPRPicker();
-  document.getElementById("pr-picker-overlay").classList.add("visible");
+  showOverlay("pr-picker-overlay");
 }
 
 function closePRPicker() {
@@ -783,9 +783,9 @@ function qualityLabel(value) {
 function openNotebook(tab) {
   notebookTab = tab || "today";
   renderNotebook();
-  // Opening starts at the top; toggling a month inside it does not.
-  document.getElementById("notebook-page").scrollTop = 0;
-  document.getElementById("notebook-overlay").classList.add("visible");
+  // Opening starts at the top; toggling a month inside it does not. That reset
+  // used to be written here, a line early, where it could not work.
+  showOverlay("notebook-overlay");
 }
 
 function closeNotebook() {
@@ -1148,7 +1148,7 @@ function openCheckinModal() {
   // "Not now" is only meaningful on a fresh day — once there's an entry the
   // button below is Done, not a dismissal.
   document.getElementById("checkin-skip-btn").textContent = existing ? "Close" : "Not now";
-  document.getElementById("checkin-overlay").classList.add("visible");
+  showOverlay("checkin-overlay");
 }
 
 function closeCheckinModal() {
@@ -1563,7 +1563,7 @@ function openCardioLogModal(dateStr) {
   document.getElementById("cardio-distance-input").value = "";
   document.getElementById("cardio-minutes-input").value = "";
   document.getElementById("cardio-log-saved").style.display = "none";
-  document.getElementById("cardio-log-overlay").classList.add("visible");
+  showOverlay("cardio-log-overlay");
 }
 
 function closeCardioLogModal() {
@@ -2554,7 +2554,7 @@ function openBenchmarkAction(benchmarkId) {
     document.getElementById("benchmark-log-sec").value = "";
   }
 
-  document.getElementById("benchmark-log-overlay").classList.add("visible");
+  showOverlay("benchmark-log-overlay");
 }
 
 function closeBenchmarkLog() {
@@ -3441,7 +3441,7 @@ function openPasswordScreen() {
   ["pw-current", "pw-new", "pw-confirm"].forEach((id) => { document.getElementById(id).value = ""; });
   document.getElementById("pw-error").hidden = true;
   document.getElementById("pw-saved").style.display = "none";
-  document.getElementById("password-overlay").classList.add("visible");
+  showOverlay("password-overlay");
 }
 
 function closePasswordScreen() {
@@ -3497,7 +3497,7 @@ function openHealthProfileScreen() {
   document.getElementById("hp-injuries").value = saved.injuries || "";
   document.getElementById("hp-saved-note").style.display = "none";
   renderHealthProfileFieldFlags();
-  document.getElementById("health-profile-overlay").classList.add("visible");
+  showOverlay("health-profile-overlay");
 }
 
 function closeHealthProfileScreen() {
@@ -3588,7 +3588,7 @@ function renderAppearanceSettings() {
 
 function openAppearanceSettings() {
   renderAppearanceSettings();
-  document.getElementById("appearance-overlay").classList.add("visible");
+  showOverlay("appearance-overlay");
 }
 
 function closeAppearanceSettings() {
@@ -3620,7 +3620,7 @@ function renderSoundSettings() {
 function openSoundSettings() {
   ensureAudio();
   renderSoundSettings();
-  document.getElementById("sound-settings-overlay").classList.add("visible");
+  showOverlay("sound-settings-overlay");
 }
 
 function closeSoundSettings() {
@@ -3646,7 +3646,7 @@ function renderCheckinSettings() {
 
 function openCheckinSettings() {
   renderCheckinSettings();
-  document.getElementById("checkin-settings-overlay").classList.add("visible");
+  showOverlay("checkin-settings-overlay");
 }
 
 function closeCheckinSettings() {
@@ -3656,7 +3656,7 @@ function closeCheckinSettings() {
 function openNotificationsScreen() {
   NOTIF_PREFS = loadNotifPrefs();
   renderNotifPrefs();
-  document.getElementById("notifications-overlay").classList.add("visible");
+  showOverlay("notifications-overlay");
 }
 
 function closeNotificationsScreen() {
@@ -3673,7 +3673,7 @@ function referralCodeFor(member) {
 function openInviteScreen() {
   document.getElementById("invite-code").textContent = referralCodeFor(CURRENT_MEMBER);
   document.getElementById("invite-copied-note").style.display = "none";
-  document.getElementById("invite-overlay").classList.add("visible");
+  showOverlay("invite-overlay");
 }
 
 function closeInviteScreen() {
@@ -3708,7 +3708,7 @@ function renderSupportScreen() {
 
 function openSupportScreen() {
   renderSupportScreen();
-  document.getElementById("support-overlay").classList.add("visible");
+  showOverlay("support-overlay");
 }
 
 function closeSupportScreen() {
@@ -3722,7 +3722,7 @@ function closeSupportScreen() {
 function openBlockNotes(blockLabel, notes) {
   document.getElementById("block-notes-eyebrow").textContent = blockLabel || "";
   document.getElementById("block-notes-body").textContent = notes;
-  document.getElementById("block-notes-overlay").classList.add("visible");
+  showOverlay("block-notes-overlay");
 }
 
 function closeBlockNotes() {
@@ -4135,6 +4135,45 @@ function renderBlockSummaryCard(block, index) {
   `;
 }
 
+// ---------------- Overlays ----------------
+
+// Show a modal overlay, starting at the top of whatever is inside it.
+//
+// The reset has to come AFTER the overlay is shown, and that is the whole
+// trap. A hidden overlay is display:none, so the scrolling areas inside it
+// have no scroll box at all: reading scrollTop answers 0 whatever the real
+// offset is, and writing it is silently ignored. The browser remembers the
+// offset from the last time the overlay was shown and puts it back on the way
+// in. So the obvious one-line fix, written a line too early, looks right and
+// does nothing — openNotebook() had exactly that, under a comment saying
+// "Opening starts at the top", for months.
+//
+// What it cost: the move picker reopened wherever the member had last left it,
+// and a member only ever leaves it scrolled DOWN, because scrolling down is how
+// they reached the later day they picked. Coming back to undo the move, they
+// got a list that began five days late, with "Back to its own day" — always
+// the first row — clipped out of the top with no sliver, no arrow and no
+// shadow to say anything was up there. Tapping where that row belongs does
+// nothing at all, which reads as a broken button (tester T-89).
+//
+// Every scrolling area inside the overlay, not just the one that is known to
+// be long today: the next list someone puts in a modal should not have to
+// rediscover this.
+function showOverlay(overlay) {
+  const el = typeof overlay === "string" ? document.getElementById(overlay) : overlay;
+  if (!el) return null;
+  el.classList.add("visible");
+  resetOverlayScroll(el);
+  return el;
+}
+
+function resetOverlayScroll(el) {
+  if (el.scrollTop) el.scrollTop = 0;
+  // scrollTop is 0 for anything that does not scroll, so this only writes
+  // where there is something to put back.
+  el.querySelectorAll("*").forEach((node) => { if (node.scrollTop) node.scrollTop = 0; });
+}
+
 // ---------------- Screen / tab navigation ----------------
 
 function showScreen(id) {
@@ -4331,7 +4370,7 @@ function showResumeOverlay({ title, body, primary, secondary, third, onPrimary, 
     thirdBtn.textContent = third || "";
     thirdBtn.onclick = third ? () => { close(); onThird(); } : null;
   }
-  document.getElementById("resume-overlay").classList.add("visible");
+  showOverlay("resume-overlay");
 }
 
 function maybeOfferResume() {
@@ -4687,7 +4726,7 @@ function startTour(isReplay) {
   tourDeck = tourSlides();
   tourIndex = 0;
   tourIsReplay = !!isReplay;
-  document.getElementById("tour-overlay").classList.add("visible");
+  showOverlay("tour-overlay");
   window.addEventListener("resize", positionTourSpotlight);
   renderTourSlide();
 }
@@ -5131,7 +5170,7 @@ function openExerciseVideo(name) {
   document.getElementById("exercise-video-technique").innerHTML = ex ? techniqueBodyHtml(ex) : "";
   // Show the overlay first: a video inside a hidden element won't start
   // playing, and it would sit there on frame one until the member tapped it.
-  document.getElementById("exercise-video-overlay").classList.add("visible");
+  showOverlay("exercise-video-overlay");
   showDemoVideo("exercise-video-frame", "exercise-video-el", ex);
 }
 
@@ -5484,7 +5523,7 @@ function openSwapPicker(name) {
   const search = document.getElementById("swap-picker-search");
   if (search) search.value = "";
   renderSwapPickerList("");
-  document.getElementById("swap-picker-overlay").classList.add("visible");
+  showOverlay("swap-picker-overlay");
 }
 
 function closeSwapPicker() {
@@ -5719,7 +5758,7 @@ function openWorkoutOverview() {
       </div>`;
   }).join("");
 
-  document.getElementById("overview-overlay").classList.add("visible");
+  showOverlay("overview-overlay");
 }
 
 function closeWorkoutOverview() {
@@ -6661,7 +6700,7 @@ const Player = {
       }, 250);
     }
 
-    document.getElementById("rest-timer-overlay").classList.add("visible");
+    showOverlay("rest-timer-overlay");
   },
 
 
@@ -6911,7 +6950,7 @@ const Player = {
   requestSkip() {
     if (!this.currentPhase()) return;
     document.getElementById("skip-confirm-body").textContent = this.skipConfirmText();
-    document.getElementById("skip-confirm-overlay").classList.add("visible");
+    showOverlay("skip-confirm-overlay");
   },
 
   closeSkipConfirm() {
@@ -8735,7 +8774,7 @@ function askText({ title, label, value = "", placeholder = "", multiline = false
   input.placeholder = placeholder || "";
   overlay.dataset.allowEmpty = allowEmpty ? "1" : "";
   overlay.dataset.multiline = multiline ? "1" : "";
-  overlay.classList.add("visible");
+  showOverlay(overlay);
   input.focus();
   if (!multiline) input.select();
 
@@ -9001,7 +9040,7 @@ function openCompleteScheduledPopup(itemId) {
   note.style.display = isFuture ? "block" : "none";
   note.textContent = `You can log this on ${formatWeekdayDate(parseDateKey(item.date))}.`;
 
-  document.getElementById("complete-sched-overlay").classList.add("visible");
+  showOverlay("complete-sched-overlay");
 }
 
 function closeCompleteScheduledPopup() {
@@ -9053,7 +9092,7 @@ function openCalendarAddPopup(presetDate) {
   document.querySelector("#calendar-add-overlay .cardio-log-title").textContent =
     presetDate ? `Add to ${formatWeekdayDate(parseDateKey(presetDate))}` : "Add to Calendar";
   document.getElementById("calendar-add-saved").style.display = "none";
-  document.getElementById("calendar-add-overlay").classList.add("visible");
+  showOverlay("calendar-add-overlay");
 }
 
 function closeCalendarAddPopup() {
@@ -9258,7 +9297,7 @@ function openMoveWorkoutPopup(day) {
       renderCalendarTab();
     });
   });
-  document.getElementById("move-workout-overlay").classList.add("visible");
+  showOverlay("move-workout-overlay");
 }
 
 function closeMoveWorkoutPopup() {

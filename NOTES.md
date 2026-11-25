@@ -2925,6 +2925,80 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Overlays reopened where you left them (2026-11-25, tester T-89)
+
+**Move a workout to a day late next week, change your mind, and the row that
+puts it back is clipped off the top of the picker.** Measured on the live site
+at 375 wide, after moving Wednesday's CHEST/TRICEPS to the furthest day offered:
+
+```
+scrollTop 260.5 of a maximum 260      - pinned to the bottom
+five rows unreachable, elementFromPoint at each centre returns something else:
+  Nov 25 [Back to its own day], Nov 26, Nov 27, Nov 28, Nov 29
+the hidden rows end at y 221; the visible list starts at y 268 - not even a sliver
+```
+
+"Back to its own day" is always the FIRST row, so it is always the first thing
+hidden. Tapping where it belongs does nothing, which reads as a broken button.
+
+**The cause is not what it looks like, and the finding's guess was wrong.** It
+looks like the picker scrolls the "currently here" row into view. With the
+workout on Nov 29 — a row that happened to fit on screen — the list opened at
+0 and nothing scrolled at all. The real cause: **the list keeps the offset from
+the last time the picker was open**, and a member only ever leaves it scrolled
+DOWN, because scrolling down is how they reached the later day they picked. The
+correlation between "moved it far away" and "list is scrolled" is real; the
+causation runs the other way.
+
+**The trap, which is the part worth keeping.** Measured step by step:
+
+```
+start: 0    after subtitle: 0    after innerHTML: 0    after .visible: 260.5
+```
+
+The jump happens on `classList.add("visible")`. A hidden overlay is
+`display:none`, so the list inside it has no scroll box: reading `scrollTop`
+answers 0 whatever the real offset is, and **writing it is silently ignored**.
+The browser remembers the offset and restores it when the overlay is shown.
+
+So the obvious one-line fix, written a line too early, looks right and does
+nothing — and `openNotebook()` has had exactly that for months:
+
+```js
+document.getElementById("notebook-page").scrollTop = 0;   // dead
+document.getElementById("notebook-overlay").classList.add("visible");
+```
+
+under a comment saying "Opening starts at the top". It never did. (None of
+Jordan's notebook tabs are long enough to scroll today, so I am not claiming a
+symptom there — only that the line cannot work.)
+
+**The fix is `showOverlay()`**: add the class, then reset the scroll of the
+overlay and every scrolling area inside it. **All 24 modal overlays** go through
+it now, not just the move picker — the same browser behaviour applies to every
+one of them, and the next list someone puts in a modal should not have to
+rediscover this. Screens, tabs and the toast keep their own class toggling.
+
+Proved general before shipping, on the same gesture, same browser, two builds:
+the **swap picker** — 240 rows — scrolled to 3200 and reopened at **3200** on
+the deployed build, and at **0** with the top row reachable on the fixed one.
+
+**Checked by `move-picker-opens-at-top.test.js` (20 checks)**. The fake scroller
+models the measured behaviour exactly: a write while hidden is thrown away and
+the remembered offset comes back on show. That is what makes the ORDERING
+checkable — the mutant that resets before showing is killed by seven checks,
+and it is the version anyone would write first. Seven mutants, all killed.
+
+Jordan's workout was moved and moved back during this; `scheduled_items` is
+back to **0 rows** on the server, deleted rather than left behind.
+
+**Still open, and Chris's call:** at the top of the list there is now nothing
+hidden, but at the BOTTOM the list ends flush after the seventh row — no
+half-row, no fade — so the five later days give no hint they exist. Scrolling
+down in a list is the natural gesture and scrolling up in one that starts at its
+top is not, so this is much better than it was; a fade on the bottom edge when
+the list can scroll would finish it.
+
 ### The warning outlived the number it was about (2026-11-25, tester T-90)
 
 **An empty box, red, with "Over 2000 — not saved" beside it, two minutes and
