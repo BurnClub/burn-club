@@ -2925,6 +2925,60 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### The warning outlived the number it was about (2026-11-25, tester T-90)
+
+**An empty box, red, with "Over 2000 — not saved" beside it, two minutes and
+two rotations after the number it was about.** On an EMOM there is one weight
+box; the clock hands it to the next exercise each minute and the app refills it.
+Reproduced on the live site by walking the real clock a minute at a time:
+
+```
+minute 2  typed 2500      value "2500"  class "...is-bad"  warning shown
+minute 3  Burpees         box hidden, still carrying both
+minute 4  Goblet Squats   value ""      class "...is-bad"  warning VISIBLE
+```
+
+The member is being told an empty box was not saved, about a number they typed
+two minutes ago, on a rotation they never touched.
+
+**The cause is two things that should have been one.** The value and the red
+mark beside it were written in different places: `fillWeightBox()` set the value
+and re-armed the box, and `markWeightInput()` decided the mark — and nothing
+made the second follow the first. Four places wrote a box's value and only some
+of them marked it.
+
+So there is now **one writer**. `setWeightBoxValue()` writes the value and marks
+the row from what it just wrote, and it is the only place a weight box's value
+is set: by the member's keystroke through `readWeightBox()`, by the EMOM refill
+through `fillWeightBox()`, by the correction in `undoWeightSplice()`, and by the
+carry-down in `carryWeightDown()`. The mark cannot fall behind the value because
+it is set in the same breath.
+
+It only assigns when the value actually differs — assigning an input's `value`
+moves the caret to the end in some engines, and this runs on every keystroke.
+That is a checked property, not a comment: the mutant that assigns
+unconditionally is killed by a box that counts writes.
+
+**Checked by `stale-weight-warning.test.js` (44 checks)**, which drives the real
+`syncEmomWeightField()` across rotations — type, roll the minute on, roll it on
+again, and look at what arrives. Ten mutants, all killed, including putting the
+raw assignment back in each of the four callers one at a time.
+
+**Left deliberately:** during the bodyweight minute the hidden box still carries
+the old mark, because nothing refills it while it is hidden. It is corrected the
+moment it is shown, which is the moment it can be read. Clearing it on the way
+out would be a line with no observable effect.
+
+Four older weight-box suites needed the new function lifted, and their fake
+boxes grew a row and a class list so they now watch the red mark as well as the
+number — `weight-box-one-door`, `weight-box-race`, `weight-box-second-tap`,
+`weight-typo`, `refused-weight-leaves-nothing` and `pasted-weight-intact` all
+still pass unchanged otherwise.
+
+Verified in a real browser on both sides, and the per-set column re-checked
+after the refactor: `2500` into set 1 still leaves one warning on set 1, rows
+below empty and unmarked, nothing stored.
+
 ### A number put in all at once came out scrambled (2026-11-25, tester T-91)
 
 **A box holding 35, a tap, and 50 pasted into it gave 05 — five pounds, on

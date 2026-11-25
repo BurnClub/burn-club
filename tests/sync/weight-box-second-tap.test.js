@@ -54,6 +54,10 @@ function tick() { var q = TIMERS; TIMERS = []; q.forEach(function (f) { f(); });
 // screen's own input handler, which is what carries a weight down a column.
 var CAPTURE = {};
 var document = {
+  createElement: function () {
+    return { className: "", textContent: "", removed: false,
+             remove: function () { this.removed = true; } };
+  },
   activeElement: null,
   addEventListener: function (type, fn, capture) {
     if (!capture) throw new Error("document listeners must be in the capture phase");
@@ -151,6 +155,51 @@ eval(lift("armWeightBox"));
 eval(lift("armWeightBoxOnTap"));
 eval(lift("fillWeightBox"));
 eval(lift("wireWeightBoxTyping"));
+
+// markWeightInput hangs the warning off the row the box sits in and toggles a
+// class on the box, so the fake box grows both - lazily, so the Box
+// constructors above stay as they were. These harnesses can now watch the red
+// mark as well as the number, which is the pair T-90 tied together.
+function rowFor(box) {
+  if (box._row) return box._row;
+  var row = { kids: [] };
+  row.querySelector = function (sel) {
+    return row.kids.filter(function (k) { return "." + k.className === sel; })[0] || null;
+  };
+  row.appendChild = function (el) { el._row = row; row.kids.push(el); };
+  box._row = row;
+  return row;
+}
+Box.prototype.closest = function () { return rowFor(this); };
+Object.defineProperty(Box.prototype, "classList", {
+  get: function () {
+    var box = this;
+    if (!box._classes) box._classes = {};
+    return {
+      add: function (c) { box._classes[c] = true; },
+      remove: function (c) { delete box._classes[c]; },
+      contains: function (c) { return !!box._classes[c]; },
+    };
+  },
+});
+Box.prototype.isBad = function () { return !!(this._classes && this._classes["is-bad"]); };
+Box.prototype.warning = function () {
+  var w = rowFor(this).kids.filter(function (k) {
+    return k.className === "weight-log-warn" && !k.removed;
+  })[0];
+  return w ? w.textContent : null;
+};
+
+// setWeightBoxValue marks the row, so the parser and the marker come with
+// it, and the fake box below grows the two things markWeightInput touches
+// (T-90). That makes these harnesses watch the red mark as well as the
+// number, which is what the one writer now ties together.
+eval(APP.match(/const MAX_LOGGED_WEIGHT = [0-9.]+;/)[0].replace("const", "var"));
+eval(lift("normaliseDecimalComma"));
+eval(lift("parseLoggedWeight"));
+eval(lift("markWeightInput"));
+// The one place a weight box's value is written and marked (T-90).
+eval(lift("setWeightBoxValue"));
 eval(lift("undoWeightSplice"));
 // What undoWeightSplice now works the insertion out with: the caret, which
 // is exact where matching a prefix was a guess for more than one character

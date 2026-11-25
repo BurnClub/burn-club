@@ -5972,8 +5972,28 @@ function parseLoggedWeight(raw) {
 function readWeightBox(input) {
   // Digits, a decimal point and a comma survive; a second point does not.
   const cleaned = input.value.replace(/[^0-9.,]/g, "").replace(/(\..*)\./g, "$1");
-  if (cleaned !== input.value) input.value = cleaned;
-  const parsed = parseLoggedWeight(input.value);
+  return setWeightBoxValue(input, cleaned);
+}
+
+// The one place a weight box's value is written, by the member's own keystroke
+// or by the app, and the one place the red mark beside it is decided
+// (tester T-90).
+//
+// They were two things. The EMOM hands its single box to the next exercise
+// every minute and refills it through fillWeightBox(), which set the value and
+// left the mark alone — so a 2500 refused on minute 2 left the box red, with
+// "Over 2000 — not saved" beside it, on the empty box of minute 4. The member
+// is told an empty box was not saved, about a number they typed two minutes
+// ago, on a rotation they never touched.
+//
+// The mark describes what is in the box. So it is set where the value is set,
+// and there is nowhere else to set a value from.
+function setWeightBoxValue(input, value) {
+  const next = value == null ? "" : String(value);
+  // Only when it actually differs: assigning an input's value moves the caret
+  // to the end in some engines, and this runs on every keystroke.
+  if (input.value !== next) input.value = next;
+  const parsed = parseLoggedWeight(next);
   markWeightInput(input, parsed);
   return parsed;
 }
@@ -6034,9 +6054,10 @@ function armWeightBox(input) {
   input.dataset.weightBoxWas = input.value;
 }
 
-// The one way the app puts a number into a weight box.
+// The one way the app puts a number into a weight box: the value, the mark
+// that goes with it, and the arming, in that order.
 function fillWeightBox(input, value) {
-  input.value = value == null ? "" : String(value);
+  setWeightBoxValue(input, value);
   armWeightBox(input);
 }
 
@@ -6122,7 +6143,7 @@ function undoWeightSplice(input, event) {
   if (how.indexOf("delete") === 0) {
     delete input.dataset.weightBoxFresh;
     if (!was || now === "") return;
-    input.value = "";
+    setWeightBoxValue(input, "");
     try { input.setSelectionRange(0, 0); } catch (e) {}
     return;
   }
@@ -6144,7 +6165,7 @@ function undoWeightSplice(input, event) {
     ? (now.length - was.length === 1 ? splicedAddition(was, now) : null)
     : insertedIntoBox(was, now, caret, event && event.data);
   if (typed === null || typed === now) return;    // not a splice; leave it be
-  input.value = typed;
+  setWeightBoxValue(input, typed);
   try { input.setSelectionRange(typed.length, typed.length); } catch (e) {}
 }
 
@@ -7024,12 +7045,11 @@ const Player = {
       if (other === input) { seen = true; return; }
       if (!seen || other.dataset.exName !== input.dataset.exName) return;
       if (other.dataset.touched === "1") return;
-      other.value = val === "" ? "" : String(val);
+      // Through the one door, so the row below is marked by what now stands
+      // in it — a flagged pre-fill of its own included.
+      setWeightBoxValue(other, val);
       if (val === "") delete this.setWeights[other.dataset.key];
       else this.setWeights[other.dataset.key] = val;
-      // A row below may have been carrying a flagged pre-fill of its own;
-      // whatever lands on it now decides the flag, number or nothing.
-      markWeightInput(other, parseLoggedWeight(other.value));
     });
   },
 

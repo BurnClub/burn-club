@@ -123,8 +123,8 @@ var seeding = CODE.indexOf("if (this.setWeights[input.dataset.key] != null) retu
 check(seeding !== -1 && CODE.lastIndexOf("parseLoggedWeight", seeding) > seeding - 300,
   "and so does the pre-fill, which can hold a bad number typed before this fix");
 check(CODE.indexOf("markWeightInput(input, parsed)") !== -1, "a refused number is marked on the row");
-check(CODE.indexOf("markWeightInput(other, parseLoggedWeight(other.value))") !== -1,
-  "and every row the carry-down writes to is re-marked from what now stands in it");
+check(CODE.indexOf("setWeightBoxValue(other, val)") !== -1,
+  "and every row the carry-down writes to goes through the one writer, which marks it (T-90)");
 
 // Where the carry-down lives, and what it is allowed to write.
 //
@@ -148,7 +148,7 @@ function playerMethod(sig) {
   return "";
 }
 var carry = playerMethod("carryWeightDown(input, inputs, parsed)");
-check(carry.indexOf("other.value =") !== -1,
+check(carry.indexOf("setWeightBoxValue(other, val)") !== -1,
   "the carry-down lives in the player's carryWeightDown, where both directions share one walk");
 check(carry.indexOf("const val = parsed.state === \"ok\" ? parsed.value : \"\";") !== -1,
   "and what it carries is the number only when the app accepted it, and nothing when it did not");

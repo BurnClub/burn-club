@@ -56,6 +56,8 @@ eval(liftFn("normaliseDecimalComma"));
 eval(liftFn("parseLoggedWeight"));
 eval(liftFn("topWeightsFrom"));
 eval(liftFn("markWeightInput"));
+// The one place a weight box's value is written and marked (T-90).
+eval(liftFn("setWeightBoxValue"));
 eval(liftFn("readWeightBox"));
 
 // ---------------- a column of real weight boxes ----------------

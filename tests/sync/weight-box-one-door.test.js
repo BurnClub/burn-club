@@ -75,9 +75,19 @@ function bodyOf(name) {
   return "";
 }
 var readerBody = bodyOf("readWeightBox");
-check(readerBody.indexOf("parseLoggedWeight(input.value)") !== -1, "it parses");
-check(readerBody.indexOf("markWeightInput(input, parsed)") !== -1, "it marks the row when the answer is no");
-check(readerBody.indexOf("[^0-9.,]") !== -1, "and it keeps commas, which the parser needs to read them");
+check(readerBody.indexOf("[^0-9.,]") !== -1, "it keeps commas, which the parser needs to read them");
+// One hop further since T-90: the reader cleans, and the writing and the
+// marking happen together in setWeightBoxValue, so that a value the APP puts
+// in a box is marked too. A check for the parse or the mark anywhere in
+// app.js would pass with the reader gutted, so follow the call.
+check(readerBody.indexOf("setWeightBoxValue(input, cleaned)") !== -1,
+  "and hands the cleaned value to the one writer");
+var writerBody = bodyOf("setWeightBoxValue");
+check(writerBody.indexOf("parseLoggedWeight(next)") !== -1, "which parses it");
+check(writerBody.indexOf("markWeightInput(input, parsed)") !== -1,
+  "and marks the row when the answer is no");
+check(writerBody.indexOf("if (input.value !== next) input.value = next;") !== -1,
+  "and only touches the box when the value actually changes, so typing mid-number keeps the caret");
 
 // The three screens.
 var amrap = CODE.indexOf("#player-amrap-list .superset-weight-input");
