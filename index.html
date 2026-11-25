@@ -130,17 +130,25 @@
           <h2 class="program-complete-title" id="program-complete-title">You finished Fit &amp; Functional</h2>
           <p class="program-complete-sub" id="program-complete-sub"></p>
           <div class="stats-plain-grid program-complete-stats">
+            <!-- Each label says what that number counts (tester T-71). The
+                 fraction is programme workouts matched to their day; the other
+                 two count everything the member did in the window, cardio
+                 included, which is also how the Progress tab counts a streak.
+                 Under one "Program summary" heading the old labels read as
+                 three views of the same thing, and they are not: a member who
+                 walked daily was shown 54h of which 28 were walking, beside a
+                 fraction that counted none of it. -->
             <div class="stat-item">
               <p class="stat-num" id="pc-workouts">0</p>
-              <p class="stat-label">Workouts</p>
+              <p class="stat-label">Program workouts</p>
             </div>
             <div class="stat-item">
               <p class="stat-num" id="pc-time">0h</p>
-              <p class="stat-label">Total Time</p>
+              <p class="stat-label">All training time</p>
             </div>
             <div class="stat-item">
               <p class="stat-num" id="pc-streak">0</p>
-              <p class="stat-label">Longest Streak</p>
+              <p class="stat-label">Longest training streak</p>
             </div>
           </div>
           <button class="btn-primary program-complete-cta" id="program-complete-cta">Message your coach</button>

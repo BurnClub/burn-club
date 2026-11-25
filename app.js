@@ -1961,7 +1961,13 @@ function renderProgramComplete(pos) {
   const ended = pos.endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   const vars = { weeks: pos.totalWeeks, program: CURRENT_MEMBER.program, date: ended };
 
-  document.getElementById("program-complete-title").textContent = fillCopyTemplate(pc.title, vars);
+  // One week gets its own headline, because "Your 1 weeks are up" is what the
+  // eight-week wording produces for it (tester T-71). An empty one means the
+  // coach wants the ordinary headline, and a settings record saved before this
+  // existed has no titleOne at all — mergeAppSettings fills it from the
+  // default, and this falls back anyway.
+  const headline = pos.totalWeeks === 1 && (pc.titleOne || "").trim() ? pc.titleOne : pc.title;
+  document.getElementById("program-complete-title").textContent = fillCopyTemplate(headline, vars);
   document.getElementById("program-complete-sub").textContent = fillCopyTemplate(pc.sub, vars);
   document.getElementById("program-complete-eyebrow").textContent = pc.eyebrow;
   document.getElementById("program-complete-cta").textContent = pc.cta;

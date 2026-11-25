@@ -2925,6 +2925,62 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### The end-of-programme card (2026-11-25, tester T-71)
+
+Two things, and **Chris decided both** — the card is his wording, so I asked
+rather than guessed.
+
+**1. "Your 1 weeks are up."** The headline is `"Your {weeks} weeks are up"`,
+which he chose in August over "You finished" on purpose: the card fires on the
+calendar, not on effort. One-week programmes are real — Kelly's superset week
+and the tester's week are both one.
+
+Rejected: a plural syntax in the template (`{weeks|week|weeks}`), because the
+verb needs agreeing too ("are" → "is") and the result is a string Chris has to
+edit by hand in a text box. Rejected: changing the shared wording, because that
+changes it for every member to fix one case.
+
+**Chosen: a second editable line, `titleOne`, default "Your week is up"**, used
+only when the programme is one week. Empty means "use the ordinary headline",
+and `mergeAppSettings` is recursive, so a settings record saved before today
+inherits the default rather than going blank. Admin has the field, help text
+saying when it applies, and the live preview now shows **both** readings — the
+eight-week one and the one-week one — since the second line exists precisely
+for the case the first gets wrong.
+
+**2. Three numbers counted three ways.** "Workouts" counts programme workouts
+matched to their day; "Total Time" and "Longest Streak" count every completion
+in the window, cardio included. A member who did 35 of 48 and walked daily read
+**"35/48 Workouts · 54h 15m · 56 Longest Streak"** — 28 of those hours
+walking, and the streak is walks.
+
+The other option was to narrow the time and streak to the programme workouts.
+**Chris chose to keep counting everything and fix the labels**, and the
+deciding argument is one I had not expected: the Progress tab's Day Streak also
+counts cardio, so narrowing this one would have had **one screen saying 56 and
+another saying 3** about the same word. Hiding a third of the member's hours
+would have been its own complaint.
+
+So the labels now say what each number counts:
+
+```
+35/48               54h 15m             56
+Program workouts    All training time   Longest training streak
+```
+
+**Checked by `program-complete-card.test.js` (29 checks)**, which draws the real
+card with the real copy defaults read out of `data.js`. Ten mutants, all killed,
+including both narrowing changes — so if someone later "makes the numbers
+consistent", the checks say what was decided and why. The fake element coerces
+`textContent` to a string the way a real one does; without that, the streak
+arrives as a number and two checks pass for the wrong reason.
+
+**Note for whoever sees this card first:** it is still unreachable until
+**2027-01-11** for Jordan (day 56 is 2027-01-10), so no tester will meet it
+during the trial. To see it today, on Home run
+`renderProgramComplete({...memberProgramPosition(), totalWeeks: 1, finished: true})`
+— that only draws the card, it saves nothing.
+
 ### Overlays reopened where you left them (2026-11-25, tester T-89)
 
 **Move a workout to a day late next week, change your mind, and the row that

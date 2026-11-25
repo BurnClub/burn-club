@@ -7379,13 +7379,17 @@ const APP_SETTING_PANELS = {
         </div>
         <h3 class="settings-subhead">End-of-program card</h3>
         <div class="settings-note-card">
-          <p class="settings-field-help">The three stats are computed from the member's own history and aren't editable. In the headline and subline you can use <code>{weeks}</code>, <code>{program}</code> and <code>{date}</code> — each is filled in from the member's record.</p>
+          <p class="settings-field-help">The three stats are computed from the member's own history and aren't editable. The fraction counts program workouts; the other two count everything they did in that stretch, cardio included. In the headline and subline you can use <code>{weeks}</code>, <code>{program}</code> and <code>{date}</code> — each is filled in from the member's record.</p>
           <label class="modal-field">Eyebrow
             <input type="text" data-pc-field="eyebrow" value="${esc(pc.eyebrow)}" />
           </label>
           <label class="modal-field">Headline
             <input type="text" data-pc-field="title" value="${esc(pc.title)}" />
           </label>
+          <label class="modal-field">Headline on a one-week program
+            <input type="text" data-pc-field="titleOne" value="${esc(pc.titleOne || "")}" />
+          </label>
+          <p class="settings-field-help">Only for programs that are a single week, where the headline above would read "Your 1 weeks are up". Leave it empty to use the ordinary headline.</p>
           <label class="modal-field">Subline
             <input type="text" data-pc-field="sub" value="${esc(pc.sub)}" />
           </label>
@@ -7799,9 +7803,15 @@ function renderProgramCompletePreview() {
       return whole;
     });
   });
+  // Both readings, because the second headline exists precisely for the case
+  // the first one gets wrong, and a coach editing one should see the other.
+  const oneWeek = (get("titleOne") || "").trim();
+  const oneVars = Object.assign({}, PC_PREVIEW_VARS, { weeks: 1 });
   host.innerHTML = `A member on an 8-week Fit &amp; Functional would read:<br />
     <strong>${esc(fillCopyTemplate(get("title"), PC_PREVIEW_VARS))}</strong><br />
     ${esc(fillCopyTemplate(get("sub"), PC_PREVIEW_VARS))}
+    <br /><br />On a one-week program:<br />
+    <strong>${esc(fillCopyTemplate(oneWeek || get("title"), oneVars))}</strong>
     ${unknown.length ? `<br /><span style="color:var(--danger);font-weight:700;">${unknown.join(", ")} ${unknown.length === 1 ? "isn't a placeholder" : "aren't placeholders"} — it will print as written. Use {weeks}, {program} or {date}.</span>` : ""}`;
 }
 

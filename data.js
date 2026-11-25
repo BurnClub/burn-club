@@ -994,6 +994,13 @@ const APP_SETTINGS_DEFAULTS = {
     programComplete: {
       eyebrow: "Program summary",
       title: "Your {weeks} weeks are up",
+      // "Your 1 weeks are up" is what the line above produces for a one-week
+      // programme, and one-week programmes are real — Kelly's superset week
+      // and the tester's week are both one (tester T-71). Rather than bend the
+      // eight-week wording Chris chose, or invent a plural syntax for a text
+      // box he edits by hand, one week gets its own line. Left empty, the
+      // headline above is used as it always was.
+      titleOne: "Your week is up",
       sub: "{program}, finished {date}.",
       cta: "Message your coach",
       note: "Ask about repeating this program, or what to move on to next.",
