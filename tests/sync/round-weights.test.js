@@ -54,19 +54,31 @@ eval(liftFn("topWeightsFrom"));
 // A player with nothing in it but the state these methods touch. A twelve
 // minute EMOM on a one-minute interval, so the clock can be moved about.
 var EMOM_DURATION = 720, EMOM_INTERVAL = 60;
+// bumpRounds writes the count to the screen, so there is just enough document
+// here to let the REAL one run rather than a copy of it that cannot drift.
+var SCREEN = {};
+var document = {
+  getElementById: function (id) { return (SCREEN[id] = SCREEN[id] || { textContent: "" }); },
+};
+
 function makePlayer(phaseKind) {
   var P = {
     sessionWeights: {}, setWeights: {}, roundWeights: {},
     index: 3, emomBindSeq: 0, emomSeqByMinute: {}, persisted: 0,
     remaining: EMOM_DURATION,
+    amrapRoundsByBlock: {},
     _kind: phaseKind,
+    _block: 0,
     persist: function () { this.persisted++; },
     currentPhase: function () {
-      return { kind: this._kind, duration: EMOM_DURATION, interval: EMOM_INTERVAL };
+      return { kind: this._kind, duration: EMOM_DURATION, interval: EMOM_INTERVAL,
+               blockIndex: this._block };
     },
   };
   eval("P.currentEmomMinute = " + liftMethod("currentEmomMinute()"));
   eval("P.emomSlotForNow = " + liftMethod("emomSlotForNow()"));
+  eval("P.roundsForBlock = " + liftMethod("roundsForBlock(blockIndex)"));
+  eval("P.bumpRounds = " + liftMethod("bumpRounds(delta)"));
   eval("P.weightSlotFor = " + liftMethod("weightSlotFor(name)"));
   eval("P.noteWeight = " + liftMethod("noteWeight(name, raw)"));
   return P;
@@ -245,9 +257,9 @@ check(recorded(noInterval)["Devils Press"] === 40, "with the corrected number ke
 
 // ---------------- the other screens keep their own shape ----------------
 
-// An AMRAP has ONE box per exercise per block, not one per round — so two
-// blocks holding the same exercise take the heavier, and the second does not
-// quietly replace the first.
+// An AMRAP has one BOX per exercise per block, but one ENTRY per round — so
+// two blocks holding the same exercise take the heavier, and the second does
+// not quietly replace the first.
 var amrap = makePlayer("amrap");
 amrap.index = 2; amrap.noteWeight("Goblet Squat", "50");
 amrap.index = 6; amrap.noteWeight("Goblet Squat", "35");
@@ -256,15 +268,141 @@ check(recorded(amrap)["Goblet Squat"] === 50,
   + recorded(amrap)["Goblet Squat"] + ")");
 check(Object.keys(amrap.roundWeights).length === 2, "as two entries, one per block");
 
-// Outside an EMOM the rotation counter must not split one box into many.
+// The EMOM's rotation counter must not reach a screen that has no minutes.
 resetClock();
 var block = makePlayer("amrap");
 rotate(block); block.noteWeight("Goblet Squat", "50");
 rotate(block); block.noteWeight("Goblet Squat", "35");
+check(block.roundsForBlock(0) === 0, "set up: no round was logged");
 check(Object.keys(block.roundWeights).length === 1,
-  "a box that is not on an EMOM clock is one entry however the clock turns (got "
+  "an AMRAP box is one entry however the EMOM clock turns (got "
   + Object.keys(block.roundWeights).length + ")");
 check(recorded(block)["Goblet Squat"] === 35, "and simply holds what is in it");
+
+// ---------------- the AMRAP, round by round (tester T-82) ----------------
+//
+// T-76 was committed as covering "an EMOM or AMRAP" and NOTES.md said the
+// same. It covered the EMOM. On an AMRAP the box is handed to its exercise
+// once for the whole block and never re-bound, so every number typed
+// overwrote the last and a member who worked up and backed off had the back-
+// off recorded. There is no boundary in the box — but there is one on screen,
+// and the member taps it.
+
+print("\n-- the AMRAP records the round, not the last thing typed --");
+var work = makePlayer("amrap");
+work.noteWeight("Goblet Squat", "40");          // round 1, on the clock
+work.bumpRounds(1);
+work.noteWeight("Goblet Squat", "50");          // worked up for round 2
+work.bumpRounds(1);
+work.noteWeight("Goblet Squat", "30");          // backed off for round 3
+check(recorded(work)["Goblet Squat"] === 50,
+  "40, 50, then backing off to 30 records 50 (got " + recorded(work)["Goblet Squat"] + ")");
+check(recorded(work)["Goblet Squat"] !== 30, "the number T-82 was filed for is gone");
+check(Object.keys(work.roundWeights).length === 3, "as three entries, one per round (got "
+  + Object.keys(work.roundWeights).length + ")");
+check(work.sessionWeights["Goblet Squat"] === 30,
+  "while the box itself still holds what the member last typed");
+
+// A correction inside one round is a correction, not a second lift — the same
+// rule the EMOM follows within a minute (T-81).
+var typo = makePlayer("amrap");
+typo.noteWeight("Goblet Squat", "400");
+typo.noteWeight("Goblet Squat", "40");
+check(Object.keys(typo.roundWeights).length === 1,
+  "two numbers in one round are one entry (got " + Object.keys(typo.roundWeights).length + ")");
+check(recorded(typo)["Goblet Squat"] === 40,
+  "so a typo noticed before the round is logged is simply corrected (got "
+  + recorded(typo)["Goblet Squat"] + ")");
+
+// And one noticed after the round is logged is reachable by the minus button,
+// which is one tap away on the same screen.
+var late = makePlayer("amrap");
+late.noteWeight("Goblet Squat", "400");
+late.bumpRounds(1);
+check(recorded(late)["Goblet Squat"] === 400, "set up: the wrong number is the heaviest so far");
+late.bumpRounds(-1);
+late.noteWeight("Goblet Squat", "40");
+check(Object.keys(late.roundWeights).length === 1,
+  "stepping the counter back returns to that round's entry (got "
+  + Object.keys(late.roundWeights).length + ")");
+check(recorded(late)["Goblet Squat"] === 40,
+  "so the typo can still be taken back (got " + recorded(late)["Goblet Squat"] + ")");
+late.bumpRounds(1);
+late.noteWeight("Goblet Squat", "45");
+check(recorded(late)["Goblet Squat"] === 45, "and the round it was on carries on from there");
+
+// The limitation, said out loud: a member who never touches the counter has
+// one entry for the whole block, which is exactly what happened before this
+// change. Nothing is lost, but nothing is gained either.
+var noCounter = makePlayer("amrap");
+noCounter.noteWeight("Goblet Squat", "40");
+noCounter.noteWeight("Goblet Squat", "50");
+noCounter.noteWeight("Goblet Squat", "30");
+check(Object.keys(noCounter.roundWeights).length === 1,
+  "without the round counter the whole block is one entry");
+check(recorded(noCounter)["Goblet Squat"] === 30,
+  "and the last number typed is what is recorded, as before (got "
+  + recorded(noCounter)["Goblet Squat"] + ")");
+
+// Two exercises in the same round are two entries, not one shared by both.
+var pair = makePlayer("amrap");
+pair.noteWeight("Goblet Squat", "50");
+pair.noteWeight("Kettlebell Swing", "35");
+check(Object.keys(pair.roundWeights).length === 2, "two exercises in a round are two entries");
+check(recorded(pair)["Goblet Squat"] === 50 && recorded(pair)["Kettlebell Swing"] === 35,
+  "each keeping its own");
+
+// An emptied or refused box clears THIS round and leaves the earlier ones.
+var cleared = makePlayer("amrap");
+cleared.noteWeight("Goblet Squat", "50");
+cleared.bumpRounds(1);
+cleared.noteWeight("Goblet Squat", "9000");     // over the cap, refused
+check(recorded(cleared)["Goblet Squat"] === 50,
+  "a refused number clears its own round and leaves round 1 standing (got "
+  + recorded(cleared)["Goblet Squat"] + ")");
+check(Object.keys(cleared.roundWeights).length === 1, "with one entry left, not two");
+
+// Rounds counted on one block cannot reach another block's entries.
+var twoBlocks = makePlayer("amrap");
+twoBlocks.noteWeight("Goblet Squat", "50");
+twoBlocks.bumpRounds(1);
+twoBlocks._block = 1; twoBlocks.index = 9;
+check(twoBlocks.roundsForBlock(1) === 0, "a second AMRAP block starts its own count");
+twoBlocks.noteWeight("Goblet Squat", "35");
+check(Object.keys(twoBlocks.roundWeights).length === 2, "and its own entry");
+check(recorded(twoBlocks)["Goblet Squat"] === 50, "with the heavier of the two kept");
+// The rounds of the SECOND block have to separate its entries too. Reading the
+// count off the wrong block leaves it frozen while the member is on this one,
+// which silently turns the whole block back into one entry.
+twoBlocks.bumpRounds(1);
+twoBlocks.noteWeight("Goblet Squat", "60");
+twoBlocks.bumpRounds(1);
+twoBlocks.noteWeight("Goblet Squat", "20");
+check(recorded(twoBlocks)["Goblet Squat"] === 60,
+  "working up inside the second block keeps its heaviest too (got "
+  + recorded(twoBlocks)["Goblet Squat"] + ")");
+check(Object.keys(twoBlocks.roundWeights).length === 4,
+  "as its own three rounds plus the first block's one (got "
+  + Object.keys(twoBlocks.roundWeights).length + ")");
+
+// The key still has to be readable by topWeightsFrom, which splits on "|".
+var amrapSlot = makePlayer("amrap");
+amrapSlot.bumpRounds(1);
+check(amrapSlot.weightSlotFor("Goblet Squat").split("|")[1] === "Goblet Squat",
+  "the exercise is the middle part of an AMRAP key too (got "
+  + amrapSlot.weightSlotFor("Goblet Squat") + ")");
+check(/\|amrap-1$/.test(amrapSlot.weightSlotFor("Goblet Squat")),
+  "and the round is on the end (got " + amrapSlot.weightSlotFor("Goblet Squat") + ")");
+
+// A per-set screen is untouched by any of this.
+var sets = makePlayer("sets");
+sets.bumpRounds(1);
+check(sets.roundsForBlock(0) === 0, "the round counter refuses a phase that is not an AMRAP");
+sets.noteWeight("Back Squat", "60");
+sets.noteWeight("Back Squat", "65");
+check(Object.keys(sets.roundWeights).length === 1,
+  "and a per-set box is still one entry, because the box is already the set");
+check(recorded(sets)["Back Squat"] === 65, "holding what is in it");
 
 // The key has to be readable by topWeightsFrom, which splits on "|".
 resetClock();

@@ -2925,6 +2925,77 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### An AMRAP round is a rotation (2026-11-24, tester T-82)
+
+**T-76, unchanged, on the AMRAP screen.** A member who works up through the
+rounds — 40, then 50 — and backs off to 30 at the end had **30** recorded,
+offered as "last time" next week, and used to judge personal bests. The
+identical numbers on a per-set screen record 50.
+
+T-76 was committed as covering "an EMOM or AMRAP" and `NOTES.md` said so too.
+It covered the EMOM. The tester caught the documentation claiming a case it had
+not closed, which was corrected the same day; this is what makes the original
+claim true.
+
+**Why it did not already work.** `weightSlotFor()` gives each weight an entry,
+and the heaviest entry wins. On an EMOM the clock hands the box to the next
+exercise and the app refills it, so a rotation is a MINUTE. On an AMRAP the box
+is handed to its exercise once for the whole block and never re-bound, so the
+fall-through gave one fixed key per exercise per block and every number typed
+overwrote the last.
+
+**There is no boundary in the box — but there is one on screen, and the member
+taps it.** A rotation on an AMRAP is a ROUND:
+
+```js
+if (kind === "amrap") return `${this.index}|${name}|amrap-${this.roundsForBlock(phase.blockIndex)}`;
+```
+
+One line, and it is the same shape as T-81's fix for the EMOM: key the entry to
+the thing the member moved through, so returning to it returns to the same
+entry. Working up across rounds keeps the heaviest; correcting a typo inside a
+round overwrites it.
+
+**The way back is better here than on the EMOM.** T-81 left a known limitation
+that nobody had written down: a typo noticed after the minute has rolled is
+only reachable by pressing Back repeatedly, and once the block ends it is
+permanent. On an AMRAP the way back to a round's entry is the **−** beside the
+round counter — one tap, on the same screen. Mistype, log the round, notice,
+step back, correct, step forward. There is a check for exactly that sequence.
+
+**The limitation, said out loud:** a member who never touches the round counter
+has one entry for the whole block, which is precisely what happened before this
+change. Nothing is lost — the behaviour degrades to the old one rather than to
+something worse — but nothing is gained for them either. Whether members
+actually use the counter is a question about how people use the app, not about
+this code, and it is worth knowing before trusting AMRAP weights in the
+benchmark numbers. There is a check pinning that degraded case so it cannot
+change without being noticed.
+
+**Checked by:** `tests/sync/round-weights.test.js`, grown from 46 checks to 71.
+The new ones drive the real `weightSlotFor()`, `noteWeight()`, `roundsForBlock()`
+and `bumpRounds()` — the real round counter rather than a copy of it, which is
+why the test now carries just enough `document` for `bumpRounds` to write the
+count to. They cover the finding's own numbers, a correction inside a round, the
+minus-button recovery, the degraded no-counter case, two exercises in one round,
+a refused number clearing only its own round, a second AMRAP block keeping its
+own count, and the per-set screen being untouched.
+
+**Mutation-tested**, seven mutants, all seven killed by named checks: no AMRAP
+slot at all, a slot that ignores the round, one that reads the count off the
+wrong block, a key that puts the exercise where `topWeightsFrom` cannot find it,
+a round counter that will not go back, one that counts rounds on phases that
+have none, and the EMOM reading rounds instead of minutes.
+
+**One mutant survived the first pass and the check it needed was real, not
+cosmetic.** Reading the round count off block 0 instead of the current block
+looked equivalent — the phase index already separates two blocks' entries — but
+it freezes the count while the member is on the second block, which silently
+turns that whole block back into one entry. The check now works up across rounds
+inside a SECOND AMRAP block.
+
+**Not verified in a browser yet** — the tester had the pane for run 16.
+
 ### Starting a workout no longer bins the one you are part-way through (2026-11-24, tester T-86)
 
 **Four blocks and seven weights, gone without a word.** A member leaves a

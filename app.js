@@ -6891,10 +6891,34 @@ const Player = {
     return this.emomSeqByMinute[key];
   },
 
+  // Which entry a weight belongs to. One per rotation, so working up across
+  // rotations keeps the heaviest while correcting a typo inside one overwrites
+  // it (tester T-76, T-81).
+  //
+  // What counts as a rotation is different on each screen, because what the
+  // member sees is different:
+  //
+  //   EMOM   the clock hands the box to the next exercise and the app refills
+  //          it, so a rotation is a MINUTE.
+  //   AMRAP  the box is handed to its exercise once for the whole block and
+  //          never re-bound, so there is no boundary in the box itself — but
+  //          there is one on screen, and the member taps it: a rotation is a
+  //          ROUND. Without this, every number typed into an AMRAP box
+  //          overwrote the last, so working up 40 → 50 and backing off to 30
+  //          recorded 30 (tester T-82). The commit and NOTES.md for T-76 both
+  //          claimed to cover the AMRAP and did not; this is what makes that
+  //          true.
+  //   Other  one box per set already, so the box IS the entry.
+  //
+  // The way back to a round's entry is the − beside the round counter, one
+  // tap away on the same screen. A member who mistypes, logs the round and
+  // then notices can step the counter back, correct it, and step forward
+  // again. That is a better way back than the EMOM has.
   weightSlotFor(name) {
     const phase = this.currentPhase();
     const kind = phase && phase.kind;
     if (kind === "emom") return `${this.index}|${name}|emom-${this.emomBindSeq}`;
+    if (kind === "amrap") return `${this.index}|${name}|amrap-${this.roundsForBlock(phase.blockIndex)}`;
     return `${this.index}|${name}|${kind || "block"}`;
   },
 
