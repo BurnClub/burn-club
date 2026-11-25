@@ -2925,6 +2925,85 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### "Move this workout" only offers days you can get back to (2026-11-24, tester T-72)
+
+**The picker had its own idea of how far ahead you can go.** The Calendar
+draws the member's own programme week plus a one-week look ahead that stops at
+the end of the programme — `calendarMaxWeek()`, one function, deliberately
+shared with the Next button so the two cannot disagree. The move picker did
+not use it. It did its own arithmetic: today through the Sunday of next week,
+Monday-based. Two answers to the same question, free to drift, and they had.
+
+Three ways it was wrong:
+
+- **At the end of a programme.** On the last week the picker offered seven
+  days past the end of it. The Calendar will not show a week past the
+  programme's last, so the workout landed on a day no screen renders — and
+  nothing could bring it back, because the only move handle is on the day the
+  workout is currently sitting on. The day it came from just read "Moved to
+  Wed, Nov 25" and offered nothing. A member moving a missed session in their
+  final week lost it.
+- **For anyone who did not start on a Monday.** Monday-based weeks only line
+  up with the Calendar for a Monday starter. Everyone else was offered days
+  out of a week their Calendar cannot show. This is the same mistake the
+  Calendar itself made before 2026-10-14, when it ran today→today+6 and
+  straddled two programme weeks.
+- **Before a programme begins.** A member waiting to start was offered the
+  days before day 1.
+
+**The fix is to stop having a second copy.** `moveTargetDates()` now asks
+`memberProgramPosition()` and `calendarMaxWeek()` what the Calendar can draw,
+and offers that, from today onward. There is a check for this specifically: it
+moves `calendarMaxWeek` and confirms the picker moves with it, because a
+picker that happens to agree today by doing its own `week + 1` would pass
+every other check and part company the moment that function changed.
+
+Two smaller decisions inside it:
+
+- **The end is the programme's last day, not the end of its last week.** The
+  Calendar does draw a final part-week in full, so a day past the end would
+  render — but Home hides its Today card once the programme is over, so such a
+  day is only half a place to put a session. Every Burn Club programme today is
+  a whole number of weeks, which makes the two the same; the clamp is there for
+  the first one that is not, and a 52-day programme is built in the test to
+  pin it.
+- **A workout's own day is always on offer**, even when it is behind us.
+  Putting it back where the programme had it is how a move is undone, and an
+  undo you are not offered is a move you cannot take back.
+
+**Two things in the Calendar changed with it.** The ⇄ handle is not rendered
+when there is nowhere to move to — on a finished programme, or on the last day
+of one, the list would have held only the day the workout is already on. That
+is the dead-pencil bug again: a control that looks like it does something and
+does not. And the day a workout was moved AWAY from now keeps a handle beside
+its "Moved to Friday" label, so the session is always findable from its own
+place in the week. That second one also rescues anything already stranded by
+the old range, which is the only reason it is in this change rather than a
+later one.
+
+**Checked by:** `tests/sync/move-target-days.test.js`, 47 checks, nine groups.
+They drive the real `moveTargetDates()`, `hasMoveTarget()` and
+`renderCalendarDayRow()` against the real programmes. The closing group is the
+member's own question asked end to end: pick every day the picker offers in
+turn, store the move, and ask the shared `scheduledItemsOnDay()` what is on
+that date — anything that comes back empty, or on a date the Calendar cannot
+draw, is a workout gone missing. It also counts how many moves it actually
+made, so the sweep cannot pass by doing nothing.
+
+**Mutation-tested**, eight mutants, seven killed by named checks: the old
+Monday-based window (21 checks), dropping the today filter (5), dropping the
+own-day entry (1), rendering the handle unconditionally (1), dropping the
+origin-day handle (2), ending on the week boundary instead of the last day
+(2), and substituting a hand-rolled `week + 1` for `calendarMaxWeek()` (2).
+
+**One equivalent mutant, reported rather than papered over.** Replacing the
+window's lower bound with day 1 changes nothing, because the `date < today`
+filter already drops every day before the member's current week — today is
+inside that week by construction. The bound stays because it states the
+window honestly and because it would start mattering the moment the today
+filter moved, but no check can tell the two apart today, and writing one that
+pretended to would be worse than saying so.
+
 ### A refused request now says which one it was (2026-11-23, tester T-84)
 
 **The 400 did not reproduce, and that is reported rather than papered over.**

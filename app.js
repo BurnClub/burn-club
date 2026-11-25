@@ -8864,22 +8864,60 @@ function scheduledItemsOnDay(template, programDay, dayKey) {
   return { items, movedAway };
 }
 
-// Today through the end of NEXT week. Monday-based, matching startOfWeek()
-// everywhere else — "next week" has to mean the same thing here as it does in
-// the week strip above it.
-function moveTargetDates() {
-  const today = new Date();
-  const weekStart = startOfWeek(today);
-  const end = new Date(weekStart);
-  end.setDate(end.getDate() + 13); // Sunday of next week
+// The days the Calendar can actually draw: the member's own week, plus the
+// preview week when there is one, from today onward — and always the
+// workout's own day, so a move can be undone.
+//
+// This used to be its own arithmetic — today through the Sunday of next week,
+// Monday-based — which is the same mistake the Next button made before
+// calendarMaxWeek() existed: two copies of "how far ahead can you go", free
+// to disagree. They did. A member on the last week of a programme was offered
+// seven days past the end of it, and the Calendar will not show a week past
+// the programme's last, so the workout landed on a day no screen renders.
+// Nothing could then bring it back, because the only move handle is on the
+// day the workout is sitting on (tester T-72).
+//
+// It was wrong in the other direction too: Monday-based weeks only line up
+// with the Calendar for a member who started on a Monday. Everyone else was
+// offered days out of a week their Calendar cannot show. And a member whose
+// programme has not started yet was offered the days before it begins.
+//
+// The end is the programme's LAST DAY, not the end of its last week. The
+// Calendar does draw a final part-week in full, so a day past the end would
+// render — but Home hides its Today card once the programme is over, so that
+// day is only half a place to put a session. Every programme Burn Club has
+// today is a whole number of weeks, which makes the two the same; the clamp
+// is there for the first one that is not.
+function moveTargetDates(day, pos) {
+  pos = pos || memberProgramPosition();
   const out = [];
-  const d = new Date(today);
-  d.setHours(0, 0, 0, 0);
-  while (d <= end) {
-    out.push(dateKey(d));
-    d.setDate(d.getDate() + 1);
+  // Its own day is on offer even when it is behind us: putting a workout back
+  // where the programme had it is how a move is undone, and an undo you are
+  // not offered is a move you cannot take back.
+  if (day != null) out.push(dateKey(dateForProgramDay(Number(day))));
+  if (pos) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const firstDay = (pos.week - 1) * 7 + 1;
+    const lastDay = Math.min(calendarMaxWeek(pos) * 7, pos.totalDays);
+    for (let d = firstDay; d <= lastDay; d++) {
+      const date = dateForProgramDay(d);
+      if (date < today) continue;
+      const key = dateKey(date);
+      if (out.indexOf(key) === -1) out.push(key);
+    }
   }
-  return out;
+  // YYYY-MM-DD sorts chronologically, and the list is read as a week.
+  return out.sort();
+}
+
+// Whether there is anywhere to move this workout TO. A handle that opens a
+// list holding only the day the workout is already on is the dead-pencil bug
+// again: it looks like it does something, and it does not.
+function hasMoveTarget(day, pos) {
+  const current = moveForProgramDay(Number(day));
+  const on = current ? current.date : dateKey(dateForProgramDay(Number(day)));
+  return moveTargetDates(day, pos).some((d) => d !== on);
 }
 
 let movingWorkoutDay = null;
@@ -8897,7 +8935,7 @@ function openMoveWorkoutPopup(day) {
   document.getElementById("move-workout-sub").textContent =
     `${title} — currently on ${formatWeekdayDate(parseDateKey(on))}. Pick a new day.`;
 
-  document.getElementById("move-workout-days").innerHTML = moveTargetDates().map((d) => {
+  document.getElementById("move-workout-days").innerHTML = moveTargetDates(movingWorkoutDay).map((d) => {
     const isNow = d === on;
     const isHome = d === original;
     return `
@@ -9068,7 +9106,16 @@ function renderCalendarDayRow(date, member, template, isPast, lastDay, position)
                 : programDay < 1 ? "Not started yet"
                 : programDay > lastDay ? "Program complete"
                 : "Nothing scheduled";
-    bodyHtml = `<span class="calendar-item-label calendar-item-muted">${label}</span>`;
+    // The day it came FROM keeps a handle while the workout is away, so the
+    // session is always findable from its own place in the week — and so a
+    // move made before the range above was fixed can still be pulled back
+    // (tester T-72).
+    bodyHtml = movedAway && hasMoveTarget(programDay, position)
+      ? `<div class="calendar-item-wrap is-label">
+          <span class="calendar-item-label calendar-item-muted">${label}</span>
+          <button class="calendar-item-move" data-move-workout="${programDay}" aria-label="Move this workout to another day" title="Move to another day">\u21c4</button>
+        </div>`
+      : `<span class="calendar-item-label calendar-item-muted">${label}</span>`;
   } else {
     // Every item on the day, in the order the coach left them — a workout and
     // a reminder on one day are two things to show, not a choice between them.
@@ -9112,7 +9159,7 @@ function renderCalendarDayRow(date, member, template, isPast, lastDay, position)
             ${showVariantLabels && !isDone ? `<span class="calendar-variant-tag">${variantLabel(circuit.variant)}</span>` : ""}
             ${isDone ? `<span class="calendar-item-check">✓ Done</span>` : ""}
           </button>
-          ${isDone ? "" : `<button class="calendar-item-move" data-move-workout="${item.movedFromDay || programDay}" aria-label="Move ${esc(circuit.title)} to another day" title="Move to another day">\u21c4</button>`}
+          ${isDone || !hasMoveTarget(item.movedFromDay || programDay, position) ? "" : `<button class="calendar-item-move" data-move-workout="${item.movedFromDay || programDay}" aria-label="Move ${esc(circuit.title)} to another day" title="Move to another day">\u21c4</button>`}
         </div>
       `;
         })

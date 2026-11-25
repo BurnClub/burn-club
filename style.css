@@ -5472,6 +5472,14 @@ h1, h2, h3 {
 }
 .calendar-item-wrap { position: relative; }
 .calendar-item-wrap .calendar-item-btn { width: 100%; }
+/* A day whose only content is a label — "Moved to Friday" — still carries the
+   handle that brings the workout back. Give that row the handle's own height
+   rather than a 38px button hung off one line of text. */
+.calendar-item-wrap.is-label {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+}
 .calendar-item-move {
   position: absolute;
   right: -46px;
