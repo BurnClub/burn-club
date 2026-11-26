@@ -380,9 +380,11 @@ check(broken === null,
   "after every one of them, an untouched set shows the nearest weight standing above it"
   + (broken ? " - " + broken : ""));
 // And nothing the member can see is left unstored, or stored unseen.
-// Compared through parseLoggedWeight rather than Number(), because a box the
-// member typed "37,5" into still SHOWS the comma - that is T-95, open and
-// separate, and not what this test is holding.
+// Compared through parseLoggedWeight rather than Number(), because a box can
+// still legitimately show a comma the app reads as a thousands separator
+// ("1,500" storing 1500). The decimal case that used to leave "37,5" on
+// screen is fixed - see silent-weight-box.test.js - but this comparison is
+// about what the box MEANS, not how it is spelled.
 var stray = Object.keys(P.setWeights).filter(function (k) {
   return !boxes.some(function (b) {
     return b.dataset.key === k && parseLoggedWeight(b.value).value === P.setWeights[k];

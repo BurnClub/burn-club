@@ -5997,6 +5997,20 @@ function parseLoggedWeight(raw) {
   if (!text) return { state: "blank", value: null };
   if (!/^\d*\.?\d*$/.test(text)) return { state: "rejected", value: null, why: "Numbers only" };
   const val = Number(text);
+  // A number too long to BE one. Around 310 digits overflow to Infinity, and
+  // that used to be returned as `blank` — so markWeightInput cleared the
+  // warning and the box sat there holding 5,000 characters in ordinary black
+  // with nothing saved and nothing said (tester T-95). A key held down or a
+  // bad paste is enough.
+  //
+  // It is over the cap by any reading. The line below still answers `blank`
+  // for a lone "0", "0." or "." because another keystroke turns each of those
+  // into a real weight — marking them red would flash a warning at a member
+  // halfway through typing 0.5. Nothing rescues an overflow but deleting, so
+  // this one is a refusal.
+  if (val === Infinity) {
+    return { state: "rejected", value: null, why: "Over " + MAX_LOGGED_WEIGHT };
+  }
   if (!Number.isFinite(val) || val <= 0) return { state: "blank", value: null };
   if (val > MAX_LOGGED_WEIGHT) {
     return { state: "rejected", value: null, why: "Over " + MAX_LOGGED_WEIGHT };
@@ -6016,7 +6030,22 @@ function parseLoggedWeight(raw) {
 // fourth exception.
 function readWeightBox(input) {
   // Digits, a decimal point and a comma survive; a second point does not.
-  const cleaned = input.value.replace(/[^0-9.,]/g, "").replace(/(\..*)\./g, "$1");
+  const cleaned = input.value
+    .replace(/[^0-9.,]/g, "")
+    .replace(/(\..*)\./g, "$1")
+    // A comma between digits is this box's decimal point and has been read as
+    // one since T-68 — but only the reading was fixed, not the box. So `37,5`
+    // typed into set 1 sat there reading "37,5" while sets 2, 3 and 4, which
+    // the app filled from the parsed number, read "37.5". All four stored
+    // 37.5; the column just did not look like it agreed with itself
+    // (tester T-95).
+    //
+    // Only once the digits after the comma are there: rewriting "37," would
+    // delete the comma as the member typed it, and they could never enter a
+    // decimal this way at all. Same length either way, so the caret cannot be
+    // moved by this — which on this box is the whole of T-74, T-80, T-83,
+    // T-85, T-90 and T-91.
+    .replace(/^(\d+),(\d{1,2})$/, "$1.$2");
   return setWeightBoxValue(input, cleaned);
 }
 

@@ -2925,6 +2925,74 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Two things a weight box held and said nothing about (2026-11-25, tester T-95)
+
+**1. A number too long to BE one.** Around 310 digits overflow to
+`Number.POSITIVE_INFINITY`. `parseLoggedWeight` failed `Number.isFinite` and
+returned **`blank`** — and `markWeightInput` clears the warning for anything
+blank. So a box given 5,000 nines sat there holding all 5,000 characters, in
+ordinary black, with no mark and nothing stored. It is over the cap by any
+reading, so it is a refusal now, checked before the blank catch-all.
+
+**What stays blank, and why I did not widen it.** A lone `0`, `0.` or `.` is
+not a weight either, and my first instinct was to refuse those too. That is
+wrong: **another keystroke turns each of them into a weight**, so marking them
+red would flash "not saved" at a member halfway through typing `0.5`. Nothing
+but deleting rescues an overflow. That is the line — *refuse what no further
+typing can rescue* — and it is the same line the cap already draws, since
+`2500` cannot be rescued by typing either. Checked in the browser: `0`, `0.`,
+`0.5` typed one key at a time, no warning at any point.
+
+**Worth saying plainly: a member cannot reach this by typing.** All three
+weight boxes carry `maxlength="7"`, and I confirmed in the browser that a
+50-character insertion is truncated to 7 — `9999999`, which is finite and was
+already refused correctly. The overflow is only reachable by assigning
+`.value` in code, which is what the tester did. So this is a parser that was
+lying about its own answer rather than a hole a member can fall into; it is
+worth closing because `parseLoggedWeight` is the one door and nothing should
+have to know that `blank` sometimes means "too big".
+
+**2. A comma decimal half-normalised on screen.** `37,5` typed into set 1 left
+set 1 reading `37,5` while sets 2, 3 and 4 — which the app filled from the
+parsed number — read `37.5`. All four stored 37.5, so nothing was wrong
+underneath; the column just did not look like it agreed with itself. T-68
+fixed the *reading* of a comma and not the box.
+
+The cleaner now swaps the comma for the dot it is read as — **but only once
+the digits after it are there**. `^(\d+),(\d{1,2})$`, anchored and limited to
+one or two trailing digits:
+
+- Rewriting `37,` would delete the comma as the member typed it, and they
+  could never enter a decimal this way at all. Confirmed on the real screen:
+  `37,` keeps its comma, and the key that completes it turns the whole column
+  into `37.5`.
+- The swap **cannot change the length**, so it cannot move the caret. On this
+  box that matters more than anywhere else in the app — T-74, T-80, T-83,
+  T-85, T-90 and T-91 are all the same caret.
+- A comma the app reads as a *thousands* separator is left alone: `1,500`
+  stays on screen and stores 1500, which is the same number to anyone reading
+  it. Widening the pattern to `(\d+)` would turn `1,500` into `1.500` and
+  store **1.5**; there is a check for exactly that.
+
+**3. The minus sign, pinned rather than fixed.** `-20` is stripped to `20`.
+The tester said "probably what you want" and I agree: a minus is stripped like
+any other character this box does not take, and what is left is what the box
+**shows**, so the member is looking at the number that gets stored. That is
+the rule this screen is held to and it is not broken here. There is a check
+pinning it, so that if it ever starts storing something other than what is on
+screen, it fails.
+
+**Mutation-tested, 8 of 8 killed by named checks**, including putting the
+overflow back below the catch-all, refusing every non-number, refusing zero,
+swapping a trailing comma, and both ways of loosening the comma pattern.
+
+**And a caught stale-cache moment, the fourth time this has mattered.** The
+browser pane came back with a `burnclub-v108` service worker still serving its
+cached `app.js`, so the first thing I read off the page said the fix was not
+there. The check that catches it is the one I run before every browser
+verification — read the shipped function out of the live page and look for the
+new code in it — and it is worth more than any screenshot.
+
 ### A round you take back takes its weights with it (2026-11-25, tester T-93)
 
 On an AMRAP the member taps "+ Add Round", types the weight for that round,
