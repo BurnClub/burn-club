@@ -6633,6 +6633,7 @@ const Player = {
     if (leaving && leaving.kind === "cardio-choice" && this.cardioChoice) {
       this.cardioMinutes += leaving.duration - Math.max(0, this.remaining);
     }
+    if (leaving && leaving.kind === "log-weights") this.warnRefusedWeights();
     this.stop();
     this.index++;
     if (this.index >= this.phases.length) {
@@ -6640,6 +6641,28 @@ const Player = {
       return;
     }
     this.renderPhase();
+  },
+
+  // The button on the weights screen says "Save and continue", and it used to
+  // say nothing at all about a box the app had refused (tester T-94). The row
+  // itself does say so — red, with "Over 2000 — not saved" beside it — but
+  // the member taps a button with "Save" in its name and is taken to the next
+  // block with nothing logged for that set.
+  //
+  // Said on the way out rather than in the way of it: a member mid-workout
+  // must always be able to move on, so this does not block the tap. It names
+  // the sets, because the one that was refused may be the one scrolled off
+  // the top by then.
+  warnRefusedWeights() {
+    const logEl = document.getElementById("player-weight-log");
+    if (!logEl) return;
+    const bad = [...logEl.querySelectorAll(".weight-log-input.is-bad")];
+    if (!bad.length) return;
+    // "1|DB Chest Fly|Set 2" — the label is what the screen numbered the row.
+    const names = bad.map((input) => (input.dataset.key || "").split("|")[2] || "a set");
+    showToast(names.length === 1
+      ? "Nothing saved for " + names[0]
+      : "Nothing saved for " + names.slice(0, -1).join(", ") + " or " + names[names.length - 1]);
   },
 
   // ---- Straight Sets / Rep Ladder single-screen checklist (2026-08-06) ----
@@ -7070,31 +7093,53 @@ const Player = {
   recordSetWeight(input, inputs, parsed) {
     if (parsed.state === "ok") this.setWeights[input.dataset.key] = parsed.value;
     else delete this.setWeights[input.dataset.key];
-    this.carryWeightDown(input, inputs, parsed);
+    this.carryWeightDown(input, inputs);
     this.syncExerciseWeight(input.dataset.exName, inputs);
   },
 
-  // The later sets of this exercise MIRROR the box above them until the member
-  // touches one. Carrying a good number down is what spares a member with no
-  // history typing the same number four times -- the pre-fill only helped
-  // people who had lifted before, which is the wrong half. Carrying emptiness
-  // down is the other half of the same rule, and the half T-92 was missing: a
-  // box holding nothing the app will store leaves the rows it filled holding
-  // nothing either.
+  // The later sets of this exercise MIRROR the nearest weight standing above
+  // them until the member touches one. Carrying a good number down is what
+  // spares a member with no history typing the same number four times -- the
+  // pre-fill only helped people who had lifted before, which is the wrong
+  // half.
   //
-  // One walk, used both ways, so the two directions cannot drift apart again.
-  carryWeightDown(input, inputs, parsed) {
-    const val = parsed.state === "ok" ? parsed.value : "";
-    let seen = false;
+  // "The nearest weight standing ABOVE them", rather than "whatever the box
+  // being typed in says", is tester T-94, and it is the cost of how T-92 was
+  // fixed. Carrying emptiness down the same path a number goes down is right
+  // when there is nothing above at all: type 2500 into set 1 and sets 2, 3
+  // and 4 must not keep the 250 of the keystroke before. But a member who
+  // typed 50 into set 1, watched four boxes fill with 50, then tapped set 2
+  // and pressed backspace once lost sets 3 and 4 as well, with nothing said
+  // -- and those two were mirroring set 1, which still said 50. On a phone
+  // with the keyboard up they are behind it. The workout logged one set where
+  // the member had been looking at four.
+  //
+  // So the walk reads the column instead of the keystroke. `standing` is the
+  // lowest weight the app would store at or above the row it is looking at,
+  // and an untouched row below the edited box shows exactly that. A box can
+  // therefore never empty a row that has a good number above it, and with
+  // nothing above it the row still empties, which is T-92.
+  //
+  // Rows ABOVE the edited box are read, never written: set 1 holding a
+  // pre-filled 60 must survive the member typing into set 2.
+  carryWeightDown(input, inputs) {
+    let standing = "";
+    let below = false;
     inputs.forEach((other) => {
-      if (other === input) { seen = true; return; }
-      if (!seen || other.dataset.exName !== input.dataset.exName) return;
-      if (other.dataset.touched === "1") return;
-      // Through the one door, so the row below is marked by what now stands
-      // in it — a flagged pre-fill of its own included.
-      setWeightBoxValue(other, val);
-      if (val === "") delete this.setWeights[other.dataset.key];
-      else this.setWeights[other.dataset.key] = val;
+      if (other.dataset.exName !== input.dataset.exName) return;
+      if (below && other.dataset.touched !== "1") {
+        // Through the one door, so the row is marked by what now stands in it
+        // — a flagged pre-fill of its own included.
+        setWeightBoxValue(other, standing);
+        if (standing === "") delete this.setWeights[other.dataset.key];
+        else this.setWeights[other.dataset.key] = standing;
+      }
+      // What a row passes to the rows under it is what it SHOWS, and only if
+      // the app would store it (tester T-18). A refused box passes the number
+      // above it through rather than blanking what is underneath.
+      const parsed = parseLoggedWeight(other.value);
+      if (parsed.state === "ok") standing = parsed.value;
+      if (other === input) below = true;
     });
   },
 
@@ -7624,7 +7669,16 @@ const Player = {
         // 8850 typed before T-60 was fixed. Flag it, do not seed it.
         const parsed = parseLoggedWeight(input.value);
         markWeightInput(input, parsed);
-        if (this.setWeights[input.dataset.key] != null) return;
+        // A set this workout has already stored is a number the member has
+        // seen and the app has kept: on a resumed workout the boxes come back
+        // reading 40 / 50 / 60, and one edit to set 1 used to flatten the 50
+        // and the 60 into it. Marked as touched, so the carry-down below
+        // leaves them alone (tester T-94). On a block being logged for the
+        // first time there is nothing stored yet and nothing is marked.
+        if (this.setWeights[input.dataset.key] != null) {
+          input.dataset.touched = "1";
+          return;
+        }
         if (parsed.state !== "ok") return;
         this.setWeights[input.dataset.key] = parsed.value;
       });

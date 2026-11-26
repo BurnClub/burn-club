@@ -107,7 +107,7 @@ function makePlayer() {
   eval("P.weightSlotFor = " + liftMethod("weightSlotFor(name)"));
   eval("P.noteWeight = " + liftMethod("noteWeight(name, raw)"));
   eval("P.recordSetWeight = " + liftMethod("recordSetWeight(input, inputs, parsed)"));
-  eval("P.carryWeightDown = " + liftMethod("carryWeightDown(input, inputs, parsed)"));
+  eval("P.carryWeightDown = " + liftMethod("carryWeightDown(input, inputs)"));
   eval("P.syncExerciseWeight = " + liftMethod("syncExerciseWeight(exName, inputs)"));
   return P;
 }
@@ -202,9 +202,17 @@ typeInto(P, boxes[0], boxes, "100");
 typeInto(P, boxes[1], boxes, "2500");
 check(P.setWeights["1|Goblet Squats|Set 1"] === 100, "set 1 keeps the 100 the member did type");
 check(P.setWeights["1|Goblet Squats|Set 2"] === undefined, "set 2 stores nothing");
-check(P.setWeights["1|Goblet Squats|Set 3"] === undefined
-   && P.setWeights["1|Goblet Squats|Set 4"] === undefined,
-  "and nor do the sets below it (got " + JSON.stringify(P.setWeights) + ")");
+// Updated for tester T-94: the sets below do not empty, they fall back to the
+// nearest weight standing above them, which is set 1's 100. What T-92 was
+// about is that they must not keep 250 - the half-typed number from the
+// keystroke before - and they do not.
+check(P.setWeights["1|Goblet Squats|Set 3"] === 100
+   && P.setWeights["1|Goblet Squats|Set 4"] === 100,
+  "the sets below fall back to set 1's 100 (got " + JSON.stringify(P.setWeights) + ")");
+check(values(boxes)[2] === "100" && values(boxes)[3] === "100",
+  "which is what those two boxes show (got " + JSON.stringify(values(boxes)) + ")");
+check(values(boxes).indexOf("250") === -1 && P.setWeights["1|Goblet Squats|Set 3"] !== 250,
+  "and the 250 of the keystroke before is nowhere, which is the finding");
 check(P.sessionWeights["Goblet Squats"] === 100,
   "the exercise is at 100, the number on the screen (got " + P.sessionWeights["Goblet Squats"] + ")");
 check(recorded(P)["Goblet Squats"] === 100,

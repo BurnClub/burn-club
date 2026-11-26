@@ -2925,6 +2925,67 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Fixing one set emptied every set below it (2026-11-25, tester T-94)
+
+**A regression I shipped this afternoon, found by the tester a few hours
+later.** T-92's fix made the carry-down one walk used in both directions, so a
+box holding nothing storable carried emptiness down the untouched sets below
+it. That is right when there is nothing above — type `2500` into set 1 and sets
+2, 3 and 4 must not keep the `250` of the keystroke before. It is wrong when
+there is. A member typed `50` into set 1, watched four boxes fill with 50,
+tapped set 2 and pressed backspace once: **sets 2, 3 and 4 all went blank**,
+with nothing said. The tester finished that workout and read the server back —
+**one `lifts` row** for an exercise whose four boxes had read 100 a moment
+earlier.
+
+Two things make it worse than it sounds. The rows it empties are *below* the
+one being edited, so on a phone with the keyboard up they are behind the
+keyboard. And the button is called **"Save and continue"**.
+
+**The rule now, in one sentence: an untouched set shows the nearest weight the
+app would store at or above it.** `carryWeightDown` walks the exercise's
+column, carrying `standing` — the lowest storable value seen so far — and
+writes it into untouched rows *below* the edited box. Rows above are read,
+never written, so a pre-filled 60 in set 1 survives typing into set 2. A
+refused box passes the number above it through instead of blanking what is
+underneath. Nothing a box says about itself can empty a row with a good number
+above it; with nothing above it the row still empties, which is T-92.
+
+**Reading the column instead of the keystroke is the whole fix.** The old walk
+took its value from `parsed`, the thing that had just been typed. The new one
+takes it from `parseLoggedWeight(other.value)` row by row — what the boxes
+*show*, which is the T-18 rule this screen has had since November.
+
+**A second loss, found while fixing the first, and in the same family.** A
+resumed workout comes back with the boxes reading what was stored for each set
+— 40 / 50 / 60 — and all of them untouched, because `touched` lives on the DOM
+and the screen was rebuilt. One edit to set 1 flattened the 50 and the 60 into
+it. The seeding pass now marks an already-stored set as touched: **a number the
+member has seen and the app has kept is not a mirror.** On a block being logged
+for the first time there is nothing stored yet and nothing is marked, so the
+ordinary flow is untouched. Confirmed in the browser: 40 / 50 / 60 / 60,
+re-rendered, set 1 changed to 42, and the other three stood.
+
+**The other half of the finding: "Save and continue" said nothing.** The row
+does say so — red, with "Over 2000 — not saved" beside it — but the member taps
+a button with *Save* in its name and is taken to the next block with nothing
+logged for that set. `warnRefusedWeights()` now names the sets on the way out:
+"Nothing saved for Set 2". **It does not block the tap** — mid-workout, a
+member must always be able to move on — and it is a toast, so it is a
+reminder, not a gate. **The wording is a guess at Chris's; change it.**
+
+**Mutation-tested, 11 of 12 killed by named checks**, including putting the
+T-92 walk back verbatim (nine checks fail). The survivor is equivalent: moving
+`below = true` to before the write instead of after changes nothing, because
+the edited box is always already marked `touched` by the listener, so the two
+guards protect the same row. The statement is not dead — it is what keeps rows
+*above* from being written — so it stays.
+
+**What the unit tests cannot reach.** The seeding pass lives inside
+`renderPhase`, which is too large to lift, so the one line that marks a stored
+set as touched is held by a source-shape check plus the browser run above. The
+rule it feeds is tested properly.
+
 ### The end-of-programme card (2026-11-25, tester T-71)
 
 Two things, and **Chris decided both** — the card is his wording, so I asked

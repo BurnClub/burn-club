@@ -119,11 +119,11 @@ check(bodyOfFn("armWeightBox").indexOf("wireWeightBoxTyping(input)") !== -1,
 
 // Every place a number is taken from a box goes through the one function.
 check(CODE.indexOf("parseLoggedWeight(input.value)") !== -1, "typing goes through parseLoggedWeight");
-var seeding = CODE.indexOf("if (this.setWeights[input.dataset.key] != null) return;");
+var seeding = CODE.indexOf("if (this.setWeights[input.dataset.key] != null) {");
 check(seeding !== -1 && CODE.lastIndexOf("parseLoggedWeight", seeding) > seeding - 300,
   "and so does the pre-fill, which can hold a bad number typed before this fix");
 check(CODE.indexOf("markWeightInput(input, parsed)") !== -1, "a refused number is marked on the row");
-check(CODE.indexOf("setWeightBoxValue(other, val)") !== -1,
+check(CODE.indexOf("setWeightBoxValue(other, standing)") !== -1,
   "and every row the carry-down writes to goes through the one writer, which marks it (T-90)");
 
 // Where the carry-down lives, and what it is allowed to write.
@@ -147,18 +147,21 @@ function playerMethod(sig) {
   }
   return "";
 }
-var carry = playerMethod("carryWeightDown(input, inputs, parsed)");
-check(carry.indexOf("setWeightBoxValue(other, val)") !== -1,
+var carry = playerMethod("carryWeightDown(input, inputs)");
+check(carry.indexOf("setWeightBoxValue(other, standing)") !== -1,
   "the carry-down lives in the player's carryWeightDown, where both directions share one walk");
-check(carry.indexOf("const val = parsed.state === \"ok\" ? parsed.value : \"\";") !== -1,
-  "and what it carries is the number only when the app accepted it, and nothing when it did not");
+// What it carries is read off the COLUMN, not off the keystroke: the
+// nearest weight the app would store at or above the row (tester T-94).
+check(carry.indexOf("parseLoggedWeight(other.value)") !== -1
+   && carry.indexOf("if (parsed.state === \"ok\") standing = parsed.value;") !== -1,
+  "and what it carries is the number the row above it SHOWS, only when the app accepts it");
 // The one thing that must never happen: a refused number written into another
 // member's row. parsed.value is null for a refusal, so the danger is not the
 // value itself but a branch that writes before checking.
 check(carry.split("parsed.value").length - 1 === 1,
   "the parsed number is read once, on that line, and nowhere else in the walk");
 var record = playerMethod("recordSetWeight(input, inputs, parsed)");
-check(record.indexOf("this.carryWeightDown(input, inputs, parsed)") !== -1
+check(record.indexOf("this.carryWeightDown(input, inputs)") !== -1
    && record.indexOf("this.syncExerciseWeight(input.dataset.exName, inputs)") !== -1,
   "and every keystroke runs the walk and then re-reads the column, accepted or refused");
 

@@ -305,7 +305,7 @@ var users = [
   ["readWeightBox", bodyOf("readWeightBox")],
   ["fillWeightBox", bodyOf("fillWeightBox")],
   ["undoWeightSplice", bodyOf("undoWeightSplice")],
-  ["carryWeightDown", playerMethod("carryWeightDown(input, inputs, parsed)")],
+  ["carryWeightDown", playerMethod("carryWeightDown(input, inputs)")],
 ];
 users.forEach(function (u) {
   check(u[1].length > 0, u[0] + " is still there");
