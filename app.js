@@ -6877,9 +6877,59 @@ const Player = {
   bumpRounds(delta) {
     const phase = this.currentPhase();
     if (!phase || phase.kind !== "amrap") return;
-    const next = Math.max(0, this.roundsForBlock(phase.blockIndex) + delta);
+    const was = this.roundsForBlock(phase.blockIndex);
+    const next = Math.max(0, was + delta);
     this.amrapRoundsByBlock[phase.blockIndex] = next;
     document.getElementById("round-count").textContent = next;
+    // A round taken back takes its weights with it (tester T-93). Only
+    // downwards: going UP carries the last number into the new round as a
+    // pre-fill, the same way the end-of-block screen carries one down a
+    // column, and sweeping on the way up would wipe every box instead.
+    if (next < was) this.dropRoundsAbove(next);
+  },
+
+  // "−1" used to move the counter and nothing else, and the weight typed
+  // during the round being removed was filed under a key carrying that round's
+  // number — `amrap-1` while the counter said 1. Take the round back and the
+  // entry was simply left there. `topWeightsFrom()` files the HEAVIEST round,
+  // which is the right rule (tester T-82) and is what makes this bite: the
+  // number from the round they cancelled usually wins. Type 40, add a round,
+  // type 300, press −1, correct the box to 30, and the screen reads
+  // "0 rounds, 30 lb" while the session records 300 and offers it as a
+  // personal best. Nothing on the screen says it is there, it survives a
+  // reload and a resume, and it reaches the server as a lift row.
+  //
+  // The same shape as T-92: a number nobody can see being stored as if they
+  // had lifted it.
+  //
+  // So the counter going down drops every round at or above where it lands,
+  // and then each box is put back to what the round it has RETURNED to holds
+  // — through noteWeight, the one door, so `sessionWeights` cannot keep the
+  // cancelled number after `roundWeights` has let it go. (It would: the box
+  // the member is looking at writes both, and topWeightsFrom reads both.)
+  //
+  // What the member sees afterwards is the weight of the round they are now
+  // on, which is the honest answer to "I did one fewer round than I said".
+  // `count` is where the counter has LANDED, and the rounds above it go. The
+  // slot carries the count that was on screen while the round was being done,
+  // so `amrap-1` is the round the member was on when the counter read 1 —
+  // dropping from 1 to 0 drops `amrap-1` and leaves `amrap-0`, the round they
+  // did finish. Strictly above, never at: `amrap-0` is the round in progress
+  // at a count of zero, not a round anybody cancelled.
+  dropRoundsAbove(count) {
+    const mine = `${this.index}|`;
+    Object.keys(this.roundWeights).forEach((key) => {
+      if (key.indexOf(mine) !== 0) return;
+      const at = /\|amrap-(\d+)$/.exec(key);
+      if (at && Number(at[1]) > count) delete this.roundWeights[key];
+    });
+    document.querySelectorAll("#player-amrap-list .superset-weight-input").forEach((input) => {
+      const name = input.dataset.exName;
+      const held = this.roundWeights[this.weightSlotFor(name)];
+      const shown = held == null ? "" : String(held);
+      fillWeightBox(input, shown);
+      this.noteWeight(name, shown);
+    });
   },
 
   isNewBlockStart() {
@@ -7048,8 +7098,14 @@ const Player = {
   //
   // The way back to a round's entry is the − beside the round counter, one
   // tap away on the same screen. A member who mistypes, logs the round and
-  // then notices can step the counter back, correct it, and step forward
-  // again. That is a better way back than the EMOM has.
+  // then notices can step the counter back — which un-logs that round and
+  // rebinds the box to it — correct it, and step forward again. That is a
+  // better way back than the EMOM has.
+  //
+  // Since T-93 the − also means what it says about the round ABOVE: the one
+  // that had been started is discarded, weights and all. Both readings are
+  // the same act — "I have completed one fewer round than I said" — and the
+  // box the member is left looking at is the round they are now on.
   weightSlotFor(name) {
     const phase = this.currentPhase();
     const kind = phase && phase.kind;

@@ -2925,6 +2925,67 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### A round you take back takes its weights with it (2026-11-25, tester T-93)
+
+On an AMRAP the member taps "+ Add Round", types the weight for that round,
+then realises they tapped it by mistake and taps "−1". The counter went back
+down. **The weight did not.** It is filed under a key carrying the round's
+number — `amrap-1` while the counter said 1 — and taking the round back left
+the entry sitting in `roundWeights`. `topWeightsFrom()` files the **heaviest**
+round, which is the right rule (T-82) and is exactly what makes this bite: the
+number from the round they cancelled usually wins.
+
+Type `40`, add a round, type `300`, press −1, correct the box to `30`, and the
+screen reads **0 rounds, 30 lb** while the session records **300** and offers
+it as a 300 lb personal best. Nothing on the screen says it is there. It
+survives a reload and a resume, and it reaches the server as a lift row. The
+same shape as T-92: a number nobody can see being stored as if they lifted it.
+
+**The fix.** `bumpRounds` now calls `dropRoundsAbove(next)` when the count goes
+**down**, which drops every `amrap-<n>` of this phase with `n > next` and then
+puts each box back to what the round it has **returned to** holds.
+
+**Three things that each had to be right:**
+
+1. **Strictly above, never at.** `amrap-0` is the round in progress at a count
+   of zero, not a round anybody cancelled. I wrote `>=` first and the test
+   caught it: the 40 of the round they *did* do went with the 300.
+2. **Only downwards.** Sweeping on "+ Add Round" would re-point every box to a
+   round that holds nothing, wiping the number the member is about to work up
+   from. Going up is a pre-fill, the same way the end-of-block screen carries
+   one down a column.
+3. **Through `noteWeight`, the one door.** `topWeightsFrom` reads
+   `sessionWeights` too, and the box the member types in writes both. Dropping
+   the `roundWeights` entry alone leaves the cancelled 300 standing in
+   `sessionWeights` — so a member who takes the round back and simply walks on,
+   without correcting the box, would still have recorded 300. There is a check
+   for exactly that walk-away case.
+
+**A comment I got wrong and had to put back.** I first rewrote the note on
+`weightSlotFor` to say the − button was never a way back into a round's entry.
+It is: pressing +1 logs the round, and −1 un-logs it and rebinds the box to it,
+which is the correction path `round-weights.test.js` has tested since T-82.
+Both readings are the same act — "I have completed one fewer round than I said"
+— and what T-93 adds is that the round which had been *started* above is
+discarded with it.
+
+**Mutation-tested, 10 of 10 killed by named checks**, including both off-by-ones
+(`>= count` and `> count + 1`), sweeping upwards, dropping the block guard,
+treating an `emom-` rotation as a round, and each half of the box reset on its
+own.
+
+**Verified on the real screen**, demo AMRAP, real taps and one key at a time:
+40 → + Add Round → 300 → −1 left the counter at 0, the box at 40,
+`roundWeights` holding only `amrap-0: 40`, `newPersonalBests()` returning `[]`.
+Correcting to 30 recorded 30, and the persisted session has no `300` in it at
+all, so nothing comes back on a resume.
+
+**Not covered, and worth saying:** `emomSeqByMinute` has the same shape, but
+there is no way for a member to remove an EMOM minute — going back on an EMOM
+puts time on the clock and `emomSlotForNow()` returns to the same rotation
+rather than orphaning one. The sweep's regex is anchored on `amrap-` so it
+cannot touch those; there is a check for that.
+
 ### Fixing one set emptied every set below it (2026-11-25, tester T-94)
 
 **A regression I shipped this afternoon, found by the tester a few hours

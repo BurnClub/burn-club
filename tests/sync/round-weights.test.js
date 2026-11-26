@@ -59,6 +59,9 @@ var EMOM_DURATION = 720, EMOM_INTERVAL = 60;
 var SCREEN = {};
 var document = {
   getElementById: function (id) { return (SCREEN[id] = SCREEN[id] || { textContent: "" }); },
+  // No AMRAP boxes on this harness's screen: dropRoundsAbove puts the real
+  // ones back, and what it does to the STORED rounds is what is checked here.
+  querySelectorAll: function () { return []; },
 };
 
 function makePlayer(phaseKind) {
@@ -79,6 +82,7 @@ function makePlayer(phaseKind) {
   eval("P.emomSlotForNow = " + liftMethod("emomSlotForNow()"));
   eval("P.roundsForBlock = " + liftMethod("roundsForBlock(blockIndex)"));
   eval("P.bumpRounds = " + liftMethod("bumpRounds(delta)"));
+  eval("P.dropRoundsAbove = " + liftMethod("dropRoundsAbove(count)"));
   eval("P.weightSlotFor = " + liftMethod("weightSlotFor(name)"));
   eval("P.noteWeight = " + liftMethod("noteWeight(name, raw)"));
   return P;

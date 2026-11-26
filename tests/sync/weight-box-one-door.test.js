@@ -90,7 +90,16 @@ check(writerBody.indexOf("if (input.value !== next) input.value = next;") !== -1
   "and only touches the box when the value actually changes, so typing mid-number keeps the caret");
 
 // The three screens.
-var amrap = CODE.indexOf("#player-amrap-list .superset-weight-input");
+// The WIRING, not merely a mention: since T-93 the player also reaches those
+// boxes to put them back when a round is taken away, and that is not where
+// the listeners are hung.
+var amrap = -1;
+for (var _f = 0; ; ) {
+  var _hit = CODE.indexOf("#player-amrap-list .superset-weight-input", _f);
+  if (_hit < 0) break;
+  if (CODE.slice(_hit, _hit + 400).indexOf("addEventListener") !== -1) { amrap = _hit; break; }
+  _f = _hit + 1;
+}
 check(amrap !== -1, "the AMRAP list still wires its boxes");
 var amrapBlock = CODE.slice(amrap, amrap + 400);
 check(amrapBlock.indexOf("readWeightBox(input)") !== -1, "the AMRAP box goes through the reader");
