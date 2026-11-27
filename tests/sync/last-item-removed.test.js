@@ -4,7 +4,19 @@ async function settle() { for (var i = 0; i < 50; i++) { await null; if (!SYNC_S
 function check(ok, msg) { print((ok ? "  PASS  " : "  FAIL  ") + msg); }
 
 (async function () {
+// This phone has used the app before, so it has completed a pull: the
+// hydrated flag says so. It matters since 2026-11-26 (tester T-50) - a
+// REPLACING store does not push from a device that has never pulled, because
+// such a device would be replacing a list it has never seen. Setting it here
+// is the honest model of the phone this test is about, not a workaround.
+  function established(name) {
+    onDevice(name);
+    localStorage.setItem(memberKey("burnclub-hydrated"), "1");
+  }
+
   // Case 1: two pins, phone removes ONE.
+  established("phone");
+  established("pc");
   onDevice("phone");
   localStorage.setItem(memberKey(SHOWCASED_PRS_KEY), JSON.stringify(["A", "B"]));
   queueSync("showcasedPRs"); await settle();

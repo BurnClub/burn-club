@@ -17,6 +17,12 @@ async function failPushes(n) {
 
 (async function () {
   onDevice("phone");
+// This phone has used the app before, so it has completed a pull: the
+// hydrated flag says so. It matters since 2026-11-26 (tester T-50) - a
+// REPLACING store does not push from a device that has never pulled, because
+// such a device would be replacing a list it has never seen. Setting it here
+// is the honest model of the phone this test is about, not a workaround.
+  localStorage.setItem(memberKey("burnclub-hydrated"), "1");
   NOTEBOOK_NOTES = { coach: ["note"], other: [] };
   localStorage.setItem(memberKey(NOTEBOOK_NOTES_KEY), JSON.stringify(NOTEBOOK_NOTES));
 

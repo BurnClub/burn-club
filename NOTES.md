@@ -2925,6 +2925,64 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### A device that had never pulled could delete the member's lists (2026-11-26, tester T-50)
+
+Reported as **Suspected** — *"Nothing is dirty on a fresh device, so I could
+not make it fire."* **It fires.** Against the real `sync.js`:
+
+```
+server after the old phone pushed:   3 rows   (w1, w2, w3)
+new device hydrated?                 false
+member taps Save on one workout
+server after the new phone pushed:   1 row    -> ["w9"]
+```
+
+Two of the member's saved workouts, **deleted from the server** by a phone
+that had never downloaded the list. Same shape for pinned PRs, habits and
+notebook notes — every `replace` store.
+
+The existing dirty flag stops a **stale** device pushing a list it never
+edited. It does not stop a device pushing a list it built **in ignorance**.
+
+**Chris's call, asked because his standing instruction says two-device
+conflict work is parked: the server wins on the first pull.** The member loses
+the one thing they saved before that phone had ever synced; nothing already on
+the server is lost.
+
+**Two halves, and either alone is worse than useless.**
+
+1. A replacing store does not push while `deviceHasHydrated()` is false.
+2. On a device's **first** pull, a dirty replacing store takes the server's
+   copy instead of being protected.
+
+Without (2) the two guards **deadlock**: the dirty flag makes the pull skip
+the store, never-pulled makes the push refuse it, and the list is stuck on
+that phone for ever. I had written (1) alone and traced it before noticing.
+
+**The near-miss, and the test that caught it.** The empty-server branch treats
+"no rows" as a real answer for a replacing store — *"the member has no pins"* —
+and its comment says why that is safe: *"a replacing store with an unsynced
+local edit is dirty, and dirty stores were already skipped above."* My first
+version took the protection away before the fetch and walked a dirty store
+straight into that branch. `offline-notes.test.js` failed instantly: **notes
+written offline on a new phone, deleted by an empty server.** Far worse than
+the bug being fixed. The override now applies only when the server actually
+has rows.
+
+**Three existing tests failed and were right to.** They modelled the member's
+own established phone but never set the hydrated flag, so my guard treated
+them as never-pulled. Setting the flag in them is a more honest model, not a
+workaround — and it is now the line that says which kind of device each test
+is about.
+
+**9 of 9 mutants killed.** One survived twice before the check was right:
+the registry pull and the nested pull are two copies of the same decision and
+I had only covered the nested one — and then the registry check was running on
+a device that had been hydrated by the *previous* check, where the ordinary
+dirty rule protects it anyway. It needed a fourth fresh device to mean
+anything. **A check that passes for the wrong reason is the thing mutation
+testing is for.**
+
 ### The weak-signal toast stopped claiming history the phone hasn't got (2026-11-26, tester T-50)
 
 A member let in on a copy the server has not caught up with gets a toast. It

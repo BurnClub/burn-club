@@ -407,6 +407,31 @@ async function hydrateMemberData() {
   // the member's edit — leave it and let the queue retry.
   const stillDirty = loadDirty();
 
+  // ...with ONE exception, and it is a data-loss bug the first trial could
+  // have hit (tester T-50, suspected there, reproduced here).
+  //
+  // A REPLACING store pushes by deleting everything the member has in that
+  // table and inserting this device's list. The dirty flag is what makes that
+  // safe: a device may only replace a list it actually edited. But a device
+  // that has never completed a pull has not edited the member's list - it has
+  // built one in ignorance of it. Harness, against this file: a member with
+  // three saved workouts, a new phone that has never hydrated, the member
+  // taps Save on one, and the server goes from three rows to one.
+  //
+  // So on a device's FIRST pull, a dirty replacing store takes the server's
+  // copy rather than being protected. The member loses the one thing they
+  // saved before that phone had ever synced; nothing already on the server is
+  // lost. Chris's call, 2026-11-26, over merging the two - merging needs
+  // per-store identity rules and is the two-device conflict work he has
+  // parked.
+  //
+  // MERGING stores are not touched by this: they upsert, so a dirty one goes
+  // up and nothing of the member's is lost by waiting. Overwriting those
+  // would throw away a workout done offline, which is the opposite mistake.
+  const everPulled = deviceHasHydrated();
+  const keepsLocalEdit = (name) =>
+    stillDirty.has(name) && (everPulled || !REPLACE_STORES.has(name));
+
   // EVERY member pull filters on member_id, and does not lean on RLS to do it
   // (2026-10-26). RLS is correct — "own rows" restricts an ordinary member —
   // but these tables ALSO carry a "staff read all" policy, so an account with
@@ -419,7 +444,14 @@ async function hydrateMemberData() {
   // answers a different question — "is this row THIS MEMBER'S" — which is the
   // one the member app always meant to ask.
   const pulls = Object.keys(stores).map(async (name) => {
-    if (stillDirty.has(name)) { report[name] = "unsynced local edit — kept"; return; }
+    if (keepsLocalEdit(name)) { report[name] = "unsynced local edit — kept"; return; }
+    // A dirty store that got past that line is a REPLACING one on a device's
+    // first pull: a list built in ignorance of the member's. The server's
+    // copy wins — but only if there IS one. The empty-server branch below
+    // treats empty as a real answer ("the member has no pins") precisely
+    // because a dirty store could never reach it, so an empty table must not
+    // be allowed to clear a list this device has not managed to send yet.
+    const firstPull = stillDirty.has(name);
     const s = stores[name];
     const { data, error } = await SB.from(s.table).select("*")
       .eq("member_id", AUTH_MEMBER.id)
@@ -427,6 +459,10 @@ async function hydrateMemberData() {
     if (!live()) { report[name] = "abandoned"; return; }
     if (error) { report[name] = "error: " + error.message; return; }
     if (!data || !data.length) {
+      if (firstPull) {
+        report[name] = "empty on server — unsynced local list kept";
+        return;
+      }
       // For a merging store, an empty table means nothing has synced yet, so
       // the local copy is kept. For a replacing store it is a real answer —
       // the member has no pins — and keeping the local list would mean the
@@ -495,8 +531,9 @@ async function hydrateMemberData() {
         SYNC_STATE.queue.add("completions");
       }
     }
+    if (firstPull) clearDirty(name);
     localStorage.setItem(memberKey(s.key), JSON.stringify(mapped));
-    report[name] = `${data.length} rows`;
+    report[name] = firstPull ? `first pull — server's ${data.length} rows` : `${data.length} rows`;
   });
 
   const nested = [
@@ -504,12 +541,17 @@ async function hydrateMemberData() {
     ["notebookNotes", "notebook_notes", NOTEBOOK_NOTES_KEY, notebookNotesFromRows],
     ["sessionNotes", "session_notes", SESSION_NOTES_KEY, sessionNotesFromRows],
   ].map(async ([name, table, key, from]) => {
-    if (stillDirty.has(name)) { report[name] = "unsynced local edit — kept"; return; }
+    if (keepsLocalEdit(name)) { report[name] = "unsynced local edit — kept"; return; }
+    // Same rule as the registry pull above, and the same caveat: an empty
+    // server must not clear a list this device has not managed to send.
+    const firstPull = stillDirty.has(name);
     const { data, error } = await SB.from(table).select("*").eq("member_id", AUTH_MEMBER.id);
     if (!live()) { report[name] = "abandoned"; return; }
     if (error) { report[name] = "error: " + error.message; return; }
     if (!data || !data.length) {
-      if (REPLACE_STORES.has(name)) {
+      if (firstPull) {
+        report[name] = "empty on server — unsynced local list kept";
+      } else if (REPLACE_STORES.has(name)) {
         localStorage.setItem(memberKey(key), JSON.stringify(from([])));
         report[name] = "empty on server — cleared";
       } else {
@@ -517,6 +559,7 @@ async function hydrateMemberData() {
       }
       return;
     }
+    if (firstPull) clearDirty(name);
     localStorage.setItem(memberKey(key), JSON.stringify(from(data)));
     report[name] = `${data.length} rows`;
   });
@@ -853,6 +896,12 @@ async function drainSyncQueue() {
 
 async function pushStore(name) {
   if (!SB || !AUTH_MEMBER) return true;
+  // Not from a device that has never pulled (tester T-50). Pushing a
+  // replacing store DELETES everything the member has in that table first,
+  // and a device that has never seen their list is in no position to say what
+  // it should be. Held rather than dropped: it stays dirty and queued, and
+  // the first pull decides what this device's copy should be.
+  if (REPLACE_STORES.has(name) && !deviceHasHydrated()) return false;
   try {
     if (name === "habitChecks") return await pushRows("habit_checks", habitChecksToRows(HABIT_CHECKS), "member_id,habit_id,checked_on");
     if (name === "notebookNotes") return await pushReplace("notebook_notes", notebookNotesToRows(NOTEBOOK_NOTES), "member_id,kind,position");
