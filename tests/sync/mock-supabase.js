@@ -46,7 +46,15 @@ Q.prototype.then = function (res) {
     return Promise.resolve({ data: this.inserted.slice(), error: null }).then(res);
   }
   if (this.op === "delete") {
-    SERVER[this.t] = tbl(this.t).filter(function (r) { return !(self.f && r[self.f[0]] === self.f[1]); });
+    // Both filters, not just .eq(). Until 2026-11-26 this ignored .in(), so a
+    // delete scoped to a handful of ids removed every row the member had and
+    // looked identical to a blanket one - which is precisely the difference
+    // the session-note removal turns on (tester T-20).
+    SERVER[this.t] = tbl(this.t).filter(function (r) {
+      var hit = (!self.f || r[self.f[0]] === self.f[1])
+             && (!self.inf || self.inf[1].indexOf(r[self.inf[0]]) !== -1);
+      return !hit;
+    });
     return Promise.resolve({ error: null }).then(res);
   }
   var rows = tbl(this.t).slice();
@@ -91,6 +99,15 @@ var COMPLETIONS_STORAGE_KEY="c", CHECKIN_STORAGE_KEY="ck", DAILY_STATS_STORAGE_K
     // noticing (tester finding T-8, 2026-11-11).
     SAVED_WORKOUTS_KEY="sw", MY_EQUIPMENT_KEY="eq";
 var HABIT_CHECKS = {}, NOTEBOOK_NOTES = { coach: [], other: [] }, SESSION_NOTES = {};
+// Session notes the member removed, waiting to be removed on the server too
+// (tester T-20). Declared here because sync.js names them, same rule as every
+// key above: a name sync.js uses and this file does not have is the T-8 hole.
+// session-note-removal.test.js replaces these with the real ones from app.js.
+var SESSION_NOTE_DELETES_KEY = "snd";
+var SESSION_NOTE_DELETES = [];
+function saveSessionNoteDeletes() {
+  localStorage.setItem(memberKey(SESSION_NOTE_DELETES_KEY), JSON.stringify(SESSION_NOTE_DELETES));
+}
 function loadHealthProfiles() { return {}; }
 var TOASTS = [];
 function showToast(msg) { TOASTS.push(msg); }

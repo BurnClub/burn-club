@@ -584,10 +584,7 @@ function closePRPicker() {
 function saveSessionNoteFromForm() {
   const input = document.getElementById("session-note-input");
   if (!input || !currentCompletionEntry) return;
-  const text = input.value.trim();
-  if (text) SESSION_NOTES[currentCompletionEntry.id] = text;
-  else delete SESSION_NOTES[currentCompletionEntry.id];
-  saveSessionNotes();
+  setSessionNote(currentCompletionEntry.id, input.value);
 }
 
 function resetSessionNoteField() {
@@ -773,6 +770,48 @@ function saveSessionNotes() {
 }
 function sessionNoteFor(entryId) {
   return (SESSION_NOTES[entryId] || "").trim();
+}
+
+// Which notes the member has REMOVED and the server has not been told about
+// yet (tester T-20).
+//
+// Clearing the box is how a note is deleted — the app says so. It went from
+// the phone, and the push then uploaded the notes that remained, an upsert.
+// Nothing ever told the server to remove the row. So the note was still
+// there for a coach to read, and the next pull put it back on the phone.
+// The member deleted it twice and it came back twice.
+//
+// A list of what was removed, rather than the delete-everything-then-insert
+// the notebook uses: that clears every row the member has in the table first,
+// and a device that has never completed a pull would wipe notes it has never
+// seen. This can only ever remove ids this device was told to remove.
+const SESSION_NOTE_DELETES_KEY = "burnclub-session-note-deletes";
+let SESSION_NOTE_DELETES = [];
+function loadSessionNoteDeletes() {
+  try {
+    const v = JSON.parse(localStorage.getItem(memberKey(SESSION_NOTE_DELETES_KEY)) || "[]");
+    return Array.isArray(v) ? v : [];
+  } catch (e) { return []; }
+}
+function saveSessionNoteDeletes() {
+  localStorage.setItem(memberKey(SESSION_NOTE_DELETES_KEY), JSON.stringify(SESSION_NOTE_DELETES));
+}
+
+// The one way a session note is written or removed. Both callers used to do
+// their own `delete SESSION_NOTES[id]`, which is how the removal came to be
+// the only edit that never reached the server.
+function setSessionNote(entryId, text) {
+  const body = (text == null ? "" : String(text)).trim();
+  if (body) {
+    SESSION_NOTES[entryId] = body;
+    // Written again after being removed: not a deletion any more.
+    SESSION_NOTE_DELETES = SESSION_NOTE_DELETES.filter((id) => id !== entryId);
+  } else {
+    delete SESSION_NOTES[entryId];
+    if (SESSION_NOTE_DELETES.indexOf(entryId) === -1) SESSION_NOTE_DELETES.push(entryId);
+  }
+  saveSessionNoteDeletes();
+  saveSessionNotes();
 }
 
 function qualityLabel(value) {
@@ -989,8 +1028,7 @@ function wireNotebookBody() {
         askText({ title: "Session note", label: "How did today go?",
                   value: sessionNoteFor(id), multiline: true, allowEmpty: true }).then((next) => {
           if (next === null) return;
-          if (next.trim()) SESSION_NOTES[id] = next.trim(); else delete SESSION_NOTES[id];
-          saveSessionNotes();
+          setSessionNote(id, next);
           renderNotebook();
         });
         return;
@@ -8747,6 +8785,7 @@ function init() {
   SHOWCASED_PRS = loadShowcasedPRs();
   NOTEBOOK_NOTES = loadNotebookNotes();
   SESSION_NOTES = loadSessionNotes();
+  SESSION_NOTE_DELETES = loadSessionNoteDeletes();
   MY_HABITS = loadMyHabits();
   HABIT_CHECKS = loadHabitChecks();
   renderHabitsSection();

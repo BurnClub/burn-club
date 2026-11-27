@@ -193,6 +193,17 @@ function sessionNotesToRows(map) {
     member_id: AUTH_MEMBER.id, completion_client_id: id, body: map[id],
   }));
 }
+// What keeps a REMOVED note from coming back on a pull is the dirty flag, not
+// anything here (tester T-20). A removal marks `sessionNotes` dirty and the
+// flag is only cleared by a push that succeeded, so hydrate skips the store
+// entirely and never asks the server for it. There is a check that watches
+// for the query and sees it not happen.
+//
+// A filter on pending removals sat here for a while. No test could reach it:
+// every route I could build had the store dirty by the time the pull looked,
+// and dead code that looks like a safety net is worse than none, because the
+// next person trusts it. If the dirty flag ever stops covering this, the
+// check in session-note-removal.test.js is where it will show.
 function sessionNotesFromRows(rows) {
   const out = {};
   rows.forEach((r) => { out[r.completion_client_id] = r.body; });
@@ -845,7 +856,7 @@ async function pushStore(name) {
   try {
     if (name === "habitChecks") return await pushRows("habit_checks", habitChecksToRows(HABIT_CHECKS), "member_id,habit_id,checked_on");
     if (name === "notebookNotes") return await pushReplace("notebook_notes", notebookNotesToRows(NOTEBOOK_NOTES), "member_id,kind,position");
-    if (name === "sessionNotes") return await pushRows("session_notes", sessionNotesToRows(SESSION_NOTES), "member_id,completion_client_id");
+    if (name === "sessionNotes") return await pushSessionNotes();
     if (name === "preferences") return await pushPreferences();
     if (name === "healthProfile") return await pushHealthProfile();
     if (name === "scheduledItems") return await pushScheduledItems();
@@ -1283,6 +1294,35 @@ function storedJSON(key, fallback) {
     console.warn("[sync] unreadable localStorage:", key, e);
     return fallback;
   }
+}
+
+// Removals first, then what remains (tester T-20).
+//
+// This store is an upsert, which never removes anything: clearing the box
+// took the note off the phone, the push uploaded the notes that were left,
+// and the row stayed on the server for a coach to read and for the next pull
+// to put back. The member deleted it and it came back.
+//
+// Only the ids this device was told to remove are touched, and scoped to the
+// member. pushReplace() would be shorter and is the wrong tool: it clears
+// every row the member has in the table before inserting, so a device that
+// has never completed a pull would wipe notes it has never seen.
+//
+// The list is only cleared once the server has actually let them go. A failed
+// delete leaves the store dirty, so it is tried again rather than quietly
+// becoming a note that is gone here and present there.
+async function pushSessionNotes() {
+  const gone = (typeof SESSION_NOTE_DELETES !== "undefined" ? SESSION_NOTE_DELETES : []).slice();
+  if (gone.length) {
+    const { error } = await SB.from("session_notes").delete()
+      .eq("member_id", AUTH_MEMBER.id)
+      .in("completion_client_id", gone);
+    if (error) { recordSyncError("session_notes", "remove: " + error.message); return false; }
+    SESSION_NOTE_DELETES = SESSION_NOTE_DELETES.filter((id) => gone.indexOf(id) === -1);
+    if (typeof saveSessionNoteDeletes === "function") saveSessionNoteDeletes();
+  }
+  return await pushRows("session_notes", sessionNotesToRows(SESSION_NOTES),
+    "member_id,completion_client_id");
 }
 
 async function pushPreferences() {

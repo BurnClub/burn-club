@@ -2925,6 +2925,75 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### A note the member deletes is deleted (2026-11-26, tester T-20)
+
+In the Notebook the member opens a session note, clears the box and saves —
+which the app tells them is how a note is deleted. It disappears. On the next
+app open it is **back**. The note never left the server, so a coach could
+still read something the member chose to remove.
+
+`sessionNotes` is an **upsert** store. Clearing the box took the note off the
+phone, and the push uploaded the notes that remained. Nothing ever told the
+server to remove the row, and the next pull replaced the phone's copy with the
+server's. Editing a note to different words worked; only removal failed.
+
+**A list of what was removed, not a delete-everything-then-insert.** The
+notebook uses `pushReplace`, which clears every row the member has in the
+table before inserting — and T-50 already flagged why that is dangerous: a
+device that has never completed a pull can be inside the app with empty
+stores, and would wipe notes it has never seen. The mutation run makes that
+concrete: with the delete unscoped, a device with an empty local map removed
+**all three** of the member's notes. Scoped, it removes exactly the one it was
+told to.
+
+**One door for writing a note.** Both callers used to do their own
+`delete SESSION_NOTES[id]`, which is how removal came to be the only edit that
+never reached the server. `setSessionNote(id, text)` now does both, and
+records the removal; there is a check that exactly one place in app.js deletes
+from the map.
+
+**Writing it again takes it off the list**, or the delete would run after the
+upsert and take the new note with it.
+
+**The list is cleared only once the server has let the rows go.** A failed
+delete returns false, so the store stays dirty and is tried again rather than
+quietly becoming a note that is gone here and present there — and it is held
+in localStorage, so a member who deletes a note with no signal and closes the
+app still has the removal waiting when they come back.
+
+**What keeps a pending removal safe from a pull, and a filter I deleted.** I
+first added a filter in `sessionNotesFromRows` to drop ids pending removal. No
+test could reach it, and a probe showed why: **hydrate pushes before it
+pulls**, so a pending removal is sent first and the server no longer has the
+row by the time it is asked; and if that push fails, the store is still dirty
+and hydrate skips it **without even asking the server**. Both are now checked —
+one by watching for the query and seeing it not happen. The filter came out
+rather than being left looking like a safety net.
+
+**The mock had to learn to tell a scoped delete from a blanket one.** Its
+`delete` honoured `.eq()` and ignored `.in()`, so removing three ids and
+removing everything looked identical — which is exactly the distinction this
+fix turns on. Fixed in `mock-supabase.js`; same family as the T-8 hole.
+
+**Mutation-tested, 9 of 9 killed by named checks.**
+
+**Verified in the real app** for the recording half: write a note, clear it,
+and the removal is on the list and in localStorage; a simulated restart still
+has it; writing the note again takes it off. **The server round-trip is proved
+against the mock Supabase, not the live backend** — that wants a tester pass
+signed in as a real member, watching `session_notes` after each step the way
+the original report did.
+
+**A sharper version of the stale-cache rule, which cost me ten minutes here.**
+The page was running a stale `sync.js` while `app.js` was fresh. The service
+worker was already unregistered, so this was the browser's own HTTP cache —
+and `fetch("sync.js?bust=123", {cache:"reload"})` **does not help**, because
+that refreshes a different cache entry from the one `<script src="sync.js">`
+uses. Fetch the **bare URL** with `{cache:"reload"}`, then reload. And the
+check that caught it is the usual one: read the shipped function out of the
+live page and look for the new code in it — here, `String(pushStore)` still
+had the old line in it.
+
 ### The second tap belongs to the button you were aiming at (2026-11-26, tester T-66)
 
 At the end of a block the member taps "Save and continue". People tap it twice
