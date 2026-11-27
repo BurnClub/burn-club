@@ -10267,8 +10267,13 @@ async function routeOnLoad() {
       const err = document.getElementById("login-error");
       if (uid) {
         if (err) {
+          // "You're still signed in" belongs here too (tester T-49). This is
+          // the same member in the same state as the message in
+          // supabase-client.js, on the same login form, and what frightens
+          // them is not knowing whether their account is still there.
           err.textContent = "Couldn't reach the server to open your account. "
-            + "Check your connection, then close and reopen the app.";
+            + "You're still signed in and nothing on this phone is lost — "
+            + "check your connection, then close and reopen the app.";
           err.hidden = false;
         }
         logAuthEvent("return_unreachable_no_cache", sessionSlow ? "session check slow" : "no session returned");

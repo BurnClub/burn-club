@@ -2925,6 +2925,55 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Told "this device has nothing saved" by a phone that was holding everything (2026-11-26, tester T-49)
+
+When the saved copy is refused — the T-37 rule, or any open where the lookup
+fails and the cached copy has no programme — the member got the login form and
+**"Can't reach the server, and this device has nothing saved to open yet."**
+The phone *does* have their profile. What it lacks is the programme. And the
+only thing on the screen is a password box, which cannot help them: they have
+no signal, which is why they are reading it.
+
+**Two states were being told one thing, and one of them was a lie.** "Nothing
+saved" is true for a phone that has never held this member. It is false, and
+frightening, for one holding their whole profile and missing only the
+programme — which is exactly what `usableCachedProfile()` refuses, so it is
+the *common* way to land here. Read on a login form, it says "you have been
+signed out and your account is gone". They have not been: `kind: "offline"`
+keeps the session, which is the one thing this path must never get wrong.
+
+So the message now says which it is, through a named `offlineEntryMessage()`
+beside `usableCachedProfile()` — the function that makes the same distinction.
+A phone holding the profile gets: *"Can't reach the server, so your program
+can't be opened yet. You're still signed in and nothing on this phone is lost
+— close the app and open it again once you have signal."*
+
+**The reassurance is the part that matters.** The programme-unavailable screen
+this replaced led with "You're signed in and nothing is wrong with your
+account", and losing that is what made the newer wording worse than the older
+one — the tester's point exactly. The same sentence is now on the other dead
+end in `app.js`, the returning-member path, because it is the same member on
+the same login form with the same fear.
+
+**Neither message tells them to sign in again**, and there is a check for it:
+with no signal they cannot, and being told to is what makes a recoverable
+afternoon feel like a lost account.
+
+**Extracted rather than source-checked.** The wording lived inside a long
+async function, so the only test available would have been a grep. Pulling the
+choice into `offlineEntryMessage(saved)` means the real function is driven with
+both inputs — and a check ties the call site to it, because a mutant that put
+the hardcoded string back at the call site survived everything else.
+
+**7 of 7 mutants killed.** Not browser-verified in situ: reaching it wants a
+dead connection and a cached profile with no programme, which is the sandbox
+the tester built. What I did check in the live page is that the shipped
+function returns both messages for both inputs.
+
+**What I did not add: a "Try again" button.** The old screen had one, and the
+tester noted its absence. That is a control, not wording, and it is Chris's
+call whether the login form should carry one.
+
 ### The SETS heading moved back inside its card (2026-11-26, tester T-64)
 
 `.set-card-title { margin-left: -36px; }` was written for **one** screen. The

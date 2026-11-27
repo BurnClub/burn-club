@@ -294,6 +294,31 @@ function usableCachedProfile(cached) {
   return cached;
 }
 
+// What to tell a member whose account could not be opened because the server
+// could not be reached (tester T-49).
+//
+// Two different states, and one of them was being told a lie. "This device has
+// nothing saved" is true for a phone that has never held this member. It is
+// false, and frightening, for one that is holding their whole profile and is
+// missing only the programme — which is what usableCachedProfile() refuses,
+// and the common way to land here. The member is looking at a login form with
+// no signal, so being told their phone is empty reads as "you have been signed
+// out and your account is gone". They have not been: the session is kept,
+// which is the whole point of `kind: "offline"`.
+//
+// The reassurance is the part that matters. The programme-unavailable screen
+// this replaced led with "You're signed in and nothing is wrong with your
+// account", and losing that is what made the newer wording worse than the one
+// it replaced.
+function offlineEntryMessage(saved) {
+  if (saved && saved.member) {
+    return "Can't reach the server, so your program can't be opened yet. You're still "
+      + "signed in and nothing on this phone is lost — close the app and open it again "
+      + "once you have signal.";
+  }
+  return "Can't reach the server, and this device has nothing saved to open yet.";
+}
+
 function clearAuthCache() {
   try { localStorage.removeItem(AUTH_CACHE_KEY); } catch (e) {}
 }
@@ -592,7 +617,8 @@ async function loadAuthMember(user) {
       // usableCachedProfile, not loadCachedAuthMember: a copy with no program
       // cannot open the app, and entering on it only reaches a dead end
       // (tester T-37).
-      const cached = usableCachedProfile(loadCachedAuthMember(user.id));
+      const saved = loadCachedAuthMember(user.id);
+      const cached = usableCachedProfile(saved);
       if (cached) {
         AUTH_MEMBER = cached.member;
         AUTH_PROGRAM = cached.program || null;
@@ -601,7 +627,22 @@ async function loadAuthMember(user) {
       }
       // kind, so the caller logs something readable and, more importantly,
       // does not mistake this for an account problem and sign them out.
-      return { kind: "offline", error: "Can't reach the server, and this device has nothing saved to open yet." };
+      //
+      // Two different states, and one of them was being told a lie (tester
+      // T-49). "This device has nothing saved" is true for a phone that has
+      // never held this member. It is false, and frightening, for one that is
+      // holding their whole profile and is missing only the programme — which
+      // is what usableCachedProfile() refuses, and the common way to land
+      // here. The member is looking at a login form with no signal, so being
+      // told their phone is empty reads as "you have been signed out and your
+      // account is gone". They have not been: the session is kept, which is
+      // the whole point of `kind: "offline"`.
+      //
+      // So say which it is. The reassurance is the part that matters — the
+      // old programme-unavailable screen this replaced led with "You're
+      // signed in and nothing is wrong with your account", and losing that
+      // is what made the new wording worse than the old.
+      return { kind: "offline", error: offlineEntryMessage(saved) };
     }
     // An ACCOUNT problem and a SERVER problem need opposite answers, and the
     // caller cannot tell them apart from a string (2026-11-19, tester T-13).
