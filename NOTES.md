@@ -2925,6 +2925,71 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### Finishing a workout happens once (2026-11-26, tester T-77)
+
+`Player.finish()` returned early only on `if (!this.circuit)`, and it never
+cleared `this.circuit`. `advance()` calls `finish()` whenever the index runs
+past the last phase; `confirmSkip()` calls `advance()`. Neither had an
+"already finished" flag. Run twice, the workout is logged twice — and because
+`logCompletion` builds the id from the clock in milliseconds, **both copies
+carry the same id**, so afterwards they are not even distinguishable. The
+member's history shows the session twice and there is nothing they can do
+about it.
+
+The tester called `advance()` three times on a player parked on the last phase
+and got three completions all reading `local-1795460776740`.
+
+**Nobody could reach it with a finger, and that is not a good enough reason to
+leave it open.** The skip-confirm overlay is gone the instant the first tap
+lands; the screen has already changed under a second tap. What is left is two
+taps delivered in one event-loop turn, a timer tick arriving after a manual
+skip, or a second tab on the same workout. This is the one action in the app
+that writes a row the member can see and **cannot delete**, so it gets the
+guard regardless of how narrow the door is.
+
+**`finished` is session state, not player state.** It is raised at the top of
+`finish()`, before anything writes, and cleared by `beginFresh()` and
+`resume()` — not at the end of `finish()`, because everything below reads
+`this.circuit` and clearing *that* instead would move the crash rather than
+prevent it. Getting the clearing wrong would be far worse than the bug: the
+next workout could never be finished at all. Both clears have a check, and
+both were proved in the browser as well, because `beginFresh` and `resume` are
+too entangled to lift into the harness.
+
+**Proved in the real app**, driving the real `advance()` and `finish()`:
+completions 252 → **253** on finishing Straight Sets; three further
+`finish()` / `advance()` calls left it at **253**; starting the AMRAP put
+`finished` back to false; finishing that gave **254**, two rows with different
+ids. Resuming a session also clears it.
+
+**Mutation-tested, 7 of 7 killed by named checks**, including raising the flag
+only at the end of `finish()` (which looks equivalent and is not), dropping
+either clear, and starting the flag true.
+
+**The id is left as `local-${Date.now()}`.** With the guard, `finish()` can
+write only once per session, and a member cannot finish two workouts in the
+same millisecond. Making it unique anyway would change the shape of
+`completion_client_id`, which is the server's key for a completion, and that
+is not a change to make for a case that can no longer happen. Noted here
+because the duplicate id is what made the tester's three rows
+indistinguishable, and it is worth knowing the id carries no randomness.
+
+### A pass over the older findings (2026-11-26)
+
+**T-22, the weight boxes accepting any number — closed on evidence**, overtaken
+by T-60, T-65, T-68 and T-92. Against shipped `app.js`: `99999` is refused with
+"Over 2000 — not saved"; `1e5` cannot become 100,000 because the cleaner
+strips the `e`, leaving `15` in the box and storing 15; `12,5` is 12.5;
+letters clean to nothing. The second half — clearing a box leaving the old
+number standing as the exercise's top weight — is what `syncExerciseWeight`
+fixed for T-92.
+
+One deliberate difference from what T-22 recorded as correct: a negative is no
+longer "ignored". `-5` is stripped to `5` and stored as 5, because the minus
+is not a character this box takes and what is left is what the box SHOWS. That
+is the T-95 decision and it is pinned by a check. **Chris's call if he would
+rather a minus be refused outright** — one line.
+
 ### Two things a weight box held and said nothing about (2026-11-25, tester T-95)
 
 **1. A number too long to BE one.** Around 310 digits overflow to

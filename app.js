@@ -6336,6 +6336,10 @@ const Player = {
   intervalId: null,
   paused: false,
   amrapRoundsByBlock: {},
+  // Whether this session has already been written down. Finishing is the one
+  // action in the app that writes a row the member can see and cannot delete,
+  // and it had no guard at all (tester T-77).
+  finished: false,
   startedAt: null,
   // Time the member was away between leaving and resuming, so the elapsed
   // clock measures the workout rather than the gap (2026-11-23). Without it,
@@ -6370,6 +6374,8 @@ const Player = {
     this.phases = buildPhaseQueue(circuit);
     this.index = 0;
     this.amrapRoundsByBlock = {};
+    // A new session has not been written down yet (tester T-77).
+    this.finished = false;
     this.startedAt = Date.now();
     this.awayMs = 0;
     this.skippedPhases = new Set();
@@ -6550,6 +6556,9 @@ const Player = {
     this.circuit = applyExerciseSwaps(circuit, this.swaps);
     this.phases = buildPhaseQueue(this.circuit);
     this.index = Math.min(rec.index, this.phases.length - 1);
+    // A session being picked up has not been written down either, or it would
+    // not be in progress (tester T-77).
+    this.finished = false;
     // Was a single `amrapRounds` number until 2026-10-21. It was reset in
     // start() and nowhere else, so a workout with two AMRAP blocks carried the
     // first block's count into the second and kept adding. No workout has ever
@@ -6782,6 +6791,28 @@ const Player = {
     // enough: the completion screen below reads this.circuit's blocks and
     // title, so the crash would just move a few lines down (2026-09-16).
     if (!this.circuit) return;
+    // Once, and once only (tester T-77). advance() calls finish() whenever the
+    // index runs past the last phase, confirmSkip() calls advance(), and
+    // nothing said "already done". Run twice, the workout is logged twice —
+    // and because logCompletion builds the id from the clock in milliseconds,
+    // both copies carry the SAME id, so afterwards they are not even
+    // distinguishable. Called three times in the tester's harness it produced
+    // three rows all reading `local-1795460776740`.
+    //
+    // They could not reach it with a finger, and nor could I: the skip-confirm
+    // overlay is gone the instant the first tap lands, and the screen has
+    // already changed under the second one. What is left is the narrow stuff —
+    // two taps in one event-loop turn, a timer tick arriving after a manual
+    // skip, a second tab on the same workout. This is the one action where
+    // being nearly unreachable is not a good enough reason to leave the door
+    // open, because there is no way for a member to undo the result.
+    //
+    // The flag belongs to the SESSION, not to the player, so it is cleared by
+    // beginFresh() and resume() rather than here — everything below reads
+    // this.circuit, and clearing that instead would move the crash rather
+    // than prevent it.
+    if (this.finished) return;
+    this.finished = true;
     this.stopHeartbeat();
     clearInProgress();
     // Before logCompletion, deliberately: once this session is written its own
