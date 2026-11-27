@@ -4914,7 +4914,14 @@ h1, h2, h3 {
   box-shadow: none;
   padding: 0 0 0 36px;
 }
-.set-card-title { margin-left: -36px; }
+/* Scoped to the sets list, which is the only place that needs it (tester
+   T-64). The 36px of left padding on .player-sets-list is the gutter the set
+   numbers hang in, and this cancels it so the SETS header sits at the true
+   left edge above them. Unscoped, it also applied to the end-of-block weights
+   screen, which reuses .set-card-title inside .player-weight-log - no such
+   padding there, so the heading was pulled 36px out of the card and into the
+   page gutter on every weights screen in the app. */
+.player-sets-list > .set-card-title { margin-left: -36px; }
 .set-rows {
   background: var(--periwinkle);
   border-radius: var(--radius-md);

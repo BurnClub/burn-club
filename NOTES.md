@@ -2925,6 +2925,36 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### The SETS heading moved back inside its card (2026-11-26, tester T-64)
+
+`.set-card-title { margin-left: -36px; }` was written for **one** screen. The
+working sets screen gives `.player-sets-list` 36px of left padding — the
+gutter the set numbers hang in, outside the card, from Chris's 2026-10-16
+sketch — and the heading cancels it so SETS sits at the true left edge above
+those numbers.
+
+The **end-of-block weights screen reuses `.set-card-title`** inside
+`.player-weight-log`, which has no such padding. So the same −36px pulled the
+heading 36px out of its card and into the page gutter, on every weights screen
+in the app. It is in most of today's screenshots, half-clipped at the far left.
+
+**Measured at 375, live boxes, before and after:**
+
+| | heading left | card left |
+|---|---|---|
+| sets screen | 20 | 56 | *(unchanged by the fix)* |
+| weights, unscoped | **0** | 20 | *in the page gutter* |
+| weights, scoped | **36** | 20 | *the card's own content edge* |
+
+36 is exactly the card's 20px left plus its 16px padding — where everything
+else in the card starts.
+
+One character of CSS, `>`, and the finding is that a rule written for one
+screen reached a second one that shares the class. The test counts the rules
+that pull, checks the gutter it cancels is still there, checks the weights
+screen has no gutter to cancel, and counts the two screens that use the class
+so a third would fail and ask. 3 of 3 mutants killed.
+
 ### The calendar's badge stopped sitting on the workout's name (2026-11-26, tester T-63)
 
 The HOME / GYM pill and the "Done" tick are absolutely positioned in the
