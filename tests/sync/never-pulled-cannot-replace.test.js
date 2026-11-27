@@ -219,12 +219,14 @@ function setLocalSaved(ids) {
 
   // ---------------- said in the source ----------------
 
-  check(/if \(REPLACE_STORES\.has\(name\) && !deviceHasHydrated\(\)\) return false;/.test(SYNCCODE),
-    "pushStore refuses a replacing store on a device that has never pulled");
-  check(SYNCCODE.indexOf("const everPulled = deviceHasHydrated();") !== -1,
-    "and the pull asks the same question, once, before the flag is set");
-  check(/stillDirty\.has\(name\) && \(everPulled \|\| !REPLACE_STORES\.has\(name\)\)/.test(SYNCCODE),
-    "so only a REPLACING store loses its protection, and only on a first pull");
+  // Per store since T-97: a whole clean hydrate was the wrong question, and
+  // the refusal is HELD rather than failed.
+  check(/if \(REPLACE_STORES\.has\(name\) && !devicePulled\(name\)\) return PUSH_HELD;/.test(SYNCCODE),
+    "pushStore refuses a replacing store on a device that has never pulled it");
+  check(SYNCCODE.indexOf("const pulledBefore = pulledStores();") !== -1,
+    "and the pull asks the same question, once, before this pull marks anything");
+  check(/stillDirty\.has\(name\) && \(hadPulled\(name\) \|\| !REPLACE_STORES\.has\(name\)\)/.test(SYNCCODE),
+    "so only a REPLACING store loses its protection, and only on its first pull");
   check((SYNCCODE.match(/if \(keepsLocalEdit\(name\)\)/g) || []).length === 2,
     "both pulls go through it, the registry stores and the nested ones (found "
     + (SYNCCODE.match(/if \(keepsLocalEdit\(name\)\)/g) || []).length + ")");

@@ -361,6 +361,46 @@ function deviceHasHydrated() {
   catch (e) { return false; }
 }
 
+// Which stores this device has actually READ from the server at least once.
+//
+// `deviceHasHydrated()` answers "did a whole pull finish with no errors
+// anywhere", which is the right question for letting a member in on the local
+// copy and the wrong one for deciding whether this device may replace a list
+// (tester T-97). It is set only when NONE of about fourteen parallel queries
+// reported a problem, so one slow table on gym wifi left a phone marked as
+// never having pulled — and its replacing stores held — until some later pull
+// happened to be flawless. Meanwhile the member's notebook notes, pins,
+// habits and settings sat on the phone only.
+//
+// The question that actually matters is per store: has this device seen the
+// member's list for THIS one. A device that completed a whole clean pull has
+// seen them all, which is also what keeps this working for phones that
+// hydrated before the set existed.
+const PULLED_KEY = "burnclub-pulled";
+function pulledStores() {
+  try { return new Set(JSON.parse(localStorage.getItem(memberKey(PULLED_KEY)) || "[]")); }
+  catch (e) { return new Set(); }
+}
+function markPulled(name) {
+  const set = pulledStores();
+  if (set.has(name)) return;
+  set.add(name);
+  try { localStorage.setItem(memberKey(PULLED_KEY), JSON.stringify([...set])); } catch (e) {}
+}
+function devicePulled(name) { return deviceHasHydrated() || pulledStores().has(name); }
+
+// pushStore's third answer, and the whole of tester T-97.
+//
+// It is not "it worked" and not "it failed": the push was deliberately not
+// attempted. drainSyncQueue() could only tell those two apart, so a hold
+// counted as a failed request — it flipped SYNC_STATE.online to false, started
+// the "not backing up" clock, and after five of them showed the member "Your
+// workouts are saved on this phone but aren't backing up" on a perfect
+// connection, while their workouts were backing up fine.
+//
+// A held store stays dirty and queued and nothing else changes.
+const PUSH_HELD = "held";
+
 // For an entry that skipped hydrate altogether: anything a previous page load
 // left unsynced still needs its retry, and hydrate was the only thing giving
 // it one across a reload.
@@ -428,9 +468,14 @@ async function hydrateMemberData() {
   // MERGING stores are not touched by this: they upsert, so a dirty one goes
   // up and nothing of the member's is lost by waiting. Overwriting those
   // would throw away a workout done offline, which is the opposite mistake.
-  const everPulled = deviceHasHydrated();
+  // Read once, before this pull marks anything, so every store is judged
+  // against the same moment. Per store since T-97: a whole clean hydrate is
+  // not what this needs to know.
+  const pulledBefore = pulledStores();
+  const hydratedBefore = deviceHasHydrated();
+  const hadPulled = (name) => hydratedBefore || pulledBefore.has(name);
   const keepsLocalEdit = (name) =>
-    stillDirty.has(name) && (everPulled || !REPLACE_STORES.has(name));
+    stillDirty.has(name) && (hadPulled(name) || !REPLACE_STORES.has(name));
 
   // EVERY member pull filters on member_id, and does not lean on RLS to do it
   // (2026-10-26). RLS is correct — "own rows" restricts an ordinary member —
@@ -458,6 +503,12 @@ async function hydrateMemberData() {
       .order(s.order, { ascending: true });
     if (!live()) { report[name] = "abandoned"; return; }
     if (error) { report[name] = "error: " + error.message; return; }
+    // Read, whatever it said. "No rows" is an answer about the member's list
+    // as much as "three rows" is, so both count as this device having seen it
+    // (tester T-97). Marked HERE, once, rather than on each of the branches
+    // below: it was three places in this loop and two in the other, and two
+    // of the five went uncovered until a mutant walked through them.
+    markPulled(name);
     if (!data || !data.length) {
       if (firstPull) {
         report[name] = "empty on server — unsynced local list kept";
@@ -548,6 +599,9 @@ async function hydrateMemberData() {
     const { data, error } = await SB.from(table).select("*").eq("member_id", AUTH_MEMBER.id);
     if (!live()) { report[name] = "abandoned"; return; }
     if (error) { report[name] = "error: " + error.message; return; }
+    // Same rule as the registry pull above, and in one place for the same
+    // reason.
+    markPulled(name);
     if (!data || !data.length) {
       if (firstPull) {
         report[name] = "empty on server — unsynced local list kept";
@@ -677,8 +731,11 @@ async function reconcileLocalUp() {
     // preferences it has actually been told about.
     if (REPLACE_STORES.has(n) && !dirty.has(n)) { results[n] = true; continue; }
     results[n] = await pushStore(n);
+    // Held: still dirty, still queued, and NOT a failure (tester T-97).
+    if (results[n] === PUSH_HELD) { SYNC_STATE.queue.add(n); continue; }
     if (results[n]) clearDirty(n);
   }
+  const heldAny = Object.values(results).some((r) => r === PUSH_HELD);
   const failed = Object.keys(results).filter((n) => !results[n]);
   failed.forEach((n) => SYNC_STATE.queue.add(n));
   if (failed.length) drainSyncQueue();
@@ -692,8 +749,11 @@ async function reconcileLocalUp() {
   // fine ever since still warned the member every session, with the number
   // climbing forever. Chris saw "33 days" on a phone whose data was already
   // on the server.
-  else clearUnsynced();
-  return failed.length ? `failed: ${failed.join(", ")}` : "ok";
+  // Same reason as drainSyncQueue: a store waiting to be allowed up is still
+  // work that is only on this phone, so the clock is left alone.
+  else if (!heldAny) clearUnsynced();
+  return failed.length ? `failed: ${failed.join(", ")}`
+    : heldAny ? "ok, some held until this device has pulled them" : "ok";
 }
 
 // ---------------- Dirty stores ----------------
@@ -854,12 +914,26 @@ async function drainSyncQueue() {
   SYNC_STATE.queue.clear();
 
   let failed = [];
+  let held = [];
   for (const name of names) {
     const ok = await pushStore(name);
-    if (ok) clearDirty(name);
+    if (ok === PUSH_HELD) held.push(name);
+    else if (ok) clearDirty(name);
     else failed.push(name);
   }
   SYNC_STATE.running = false;
+
+  // A held store goes back in the queue and stays dirty, and that is ALL that
+  // happens (tester T-97). Nothing is wrong with the connection, nothing is
+  // at risk, and none of the machinery below may fire: no offline flag, no
+  // "not backing up" clock, no five-failure warning. The hold lifts the
+  // moment that store is pulled, so retrying costs a function call and no
+  // request at all.
+  if (held.length) {
+    held.forEach((n) => SYNC_STATE.queue.add(n));
+    clearTimeout(drainTimer);
+    drainTimer = setTimeout(drainSyncQueue, 30000);
+  }
 
   if (failed.length) {
     // Put them back and try again later. The member's work is on the device
@@ -889,8 +963,13 @@ async function drainSyncQueue() {
   } else {
     SYNC_STATE.online = true;
     SYNC_STATE.failures = 0;
-    clearUnsynced();
-    if (SYNC_STATE.queue.size) drainSyncQueue();
+    // Not while something is merely waiting to be allowed up: the work really
+    // is still only on this phone, so the clock it starts stays honest. It is
+    // cleared the moment the hold lifts and the push lands.
+    if (!held.length) clearUnsynced();
+    // Anything NEW in the queue is worth another pass; the held ones have
+    // their own timer above and must not spin.
+    if ([...SYNC_STATE.queue].some((n) => !held.includes(n))) drainSyncQueue();
   }
 }
 
@@ -901,7 +980,7 @@ async function pushStore(name) {
   // and a device that has never seen their list is in no position to say what
   // it should be. Held rather than dropped: it stays dirty and queued, and
   // the first pull decides what this device's copy should be.
-  if (REPLACE_STORES.has(name) && !deviceHasHydrated()) return false;
+  if (REPLACE_STORES.has(name) && !devicePulled(name)) return PUSH_HELD;
   try {
     if (name === "habitChecks") return await pushRows("habit_checks", habitChecksToRows(HABIT_CHECKS), "member_id,habit_id,checked_on");
     if (name === "notebookNotes") return await pushReplace("notebook_notes", notebookNotesToRows(NOTEBOOK_NOTES), "member_id,kind,position");

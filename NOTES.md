@@ -1,5 +1,72 @@
 # Burn Club — open notes
 
+## PARKED: the visual overhaul (raised 2026-11-26, Chris)
+
+**Not started. Chris wants this done as a dedicated piece with nothing else
+running alongside it — "when we tackle this I want the focus to be on it
+entirely." He has more to say and more examples to show first. Do not start
+it off the back of another task.**
+
+**Cosmetic only. None of it may change how the app behaves.**
+
+### What set it off
+
+The end-of-workout screen. His words: "so clunky and disorganised. Too much
+text, going from bold to normal weight, going from inside a pill to outside.
+It doesn't look good."
+
+He is right, and specifically: that screen has six competing text blocks and
+no hierarchy between them. "Anything worth noting?" is bold with "Optional"
+grey on the same line; "How hard did that feel?" is bold with a blue "5/10"
+on the same line; one of those sits in a pill and the other does not;
+everything is centred so there is no left edge for the eye to follow; and
+three separate saturated blue shapes — the check ellipse, the check-in pill,
+the View Progress button — compete for attention.
+
+### The five things taken from his reference images
+
+He showed two: a lavender fitness dashboard and a blue task app.
+
+1. **One number is the hero and everything else gets out of its way.** One
+   big display value per card, with a small quiet grey label. One display
+   size per screen, used once. The finish screen has this in `9:07` and then
+   undermines it with four more blocks at similar weight.
+2. **A type scale with fixed roles, one weight per role.** Roughly display /
+   title / body / label / caption, each locked to a single weight and colour.
+   **No sentence may change weight or colour inside itself** — that one rule
+   kills both of the mixed lines above.
+3. **Left-align inside cards; centre only the one hero moment.** The
+   references left-align almost everything, which is what gives them their
+   spine. Centre the tick and the time; left-align the note field and the
+   effort slider.
+4. **Two or three radii in total, and the radius scales with the element.**
+   Large on cards, fully round on pills and buttons, a smaller matching one
+   on tinted tiles inside rows. Nothing in between and no one-offs.
+5. **Colour as accent, not as structure.** The fitness reference is nearly all
+   neutral — grey background, white cards — with colour only in small tinted
+   icon squares and a single accent number. Ours uses big saturated blue fills
+   to build the screen.
+
+**Caveat worth keeping:** the dashboard reference is a different information
+density from a workout player mid-session, and some of its labels are
+nonsense ("Neutrinos Targets"). Take the patterns, not the layout.
+
+### Chris's own first ask, and the suggested order
+
+He asked specifically to **audit every card and button for a consistent corner
+radius**. Suggested order when it starts:
+
+1. **Radius audit** — pull every `border-radius` in `style.css`, group them,
+   show him how many distinct values ship today, then agree on the two or
+   three. Mechanical, visible immediately.
+2. **The type scale** — define the roles, then convert.
+3. **Re-cut the end-of-workout screen** as the first page rebuilt on both.
+
+All of it is CSS and class names. Nothing in this section changes behaviour,
+and anything that would have is out of scope.
+
+---
+
 ## Tester agent, and the first fixes from it (2026-11-17)
 
 Chris asked for a tester that uses the app badly and reads the code like a
@@ -2924,6 +2991,68 @@ the T-15 value nobody has found. Now 1-or-2 digits, padded.
 time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
+
+### A held push is not a failure (2026-11-26, tester T-97)
+
+**My own regression, shipped the same evening as the fix that caused it.**
+T-50 made `pushStore()` refuse a replacing store on a device that has never
+pulled. It refused by returning `false` — and `drainSyncQueue()` could only
+tell two things apart: it worked, or the request failed. So a deliberate hold
+counted as a failed request: `SYNC_STATE.online` flipped to false,
+`markUnsynced()` started the "not backing up" clock, and the fifth one showed
+
+> Your workouts are saved on this phone but aren't backing up. Tell your coach
+> if this keeps showing.
+
+on a perfect connection, to a member whose workouts **were** backing up fine.
+`preferences` is a replacing store and the "tour seen" flag queues it, so a
+brand-new member met this in their first few minutes — exactly the member the
+first trial lost. The tester reproduced it on the live site and captured the
+toast word for word.
+
+**Two halves.**
+
+**1. `PUSH_HELD`, a third answer.** Not success, not failure. The store stays
+dirty and queued and *nothing else happens*: no offline flag, no clock, no
+five-failure warning. Both callers had to learn it — `reconcileLocalUp` would
+otherwise have treated the truthy string as success and cleared the dirty
+flag, which would have been a worse bug than the one being fixed.
+
+**2. The hold is per STORE.** `deviceHasHydrated()` is only true when a whole
+pull finished with no errors in any of about fourteen parallel queries, so one
+slow table on gym wifi left a phone holding its lists **indefinitely** — the
+other half of the finding, and the half where the member's notes really were
+not backing up. What matters is whether this device has read *that* list.
+`devicePulled(name)` falls back to `deviceHasHydrated()`, so a phone that
+hydrated cleanly before the set existed still counts as having read
+everything.
+
+**The clock question, which I got wrong first.** My test asserted a hold
+starts the staleness clock. It does not, deliberately: that clock's message is
+"Your workouts haven't backed up for N days", and their workouts are fine —
+it is their pins that are waiting. Starting it would be the same category
+error as T-97 itself, a frightening sentence about the wrong thing. A clock
+already running is left alone, because something of theirs really is still
+only on the phone.
+
+**Five places became one.** The "this device has read that list" mark was
+written on every branch of both pull loops — three in one, two in the other —
+and **two of the five went uncovered until a mutant walked through them**.
+It is now one line per loop, the moment the fetch comes back without an
+error: "no rows" is an answer about the member's list as much as "three rows"
+is. There is a check that counts exactly two.
+
+**11 of 11 mutants killed**, and three of them survived a first attempt — each
+time because `devicePulled()` was answering from the whole-pull fallback
+rather than the per-store set. Removing the hydrated flag before asserting is
+what made those checks mean anything. **Same lesson as this morning: a check
+that passes for the wrong reason is worse than no check.**
+
+**Verified by the harness driving the real `sync.js`** against a mock server,
+including the whole loop a new account actually hits: pin held → pull finds
+the list empty → that counts as read → the next push lands it. Not reproduced
+on the live site, because doing so means mangling Jordan's stored sync state;
+the tester did that once and restored it, and can confirm next run.
 
 ### A device that had never pulled could delete the member's lists (2026-11-26, tester T-50)
 
