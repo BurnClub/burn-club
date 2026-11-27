@@ -9622,7 +9622,7 @@ function calendarCoachCardioHtml(item, date) {
   const isFuture = daysBetween(dateKey(new Date()), dateStr) > 0;
   const label = item.text && item.text.trim() ? item.text.trim() : "Cardio";
   return `
-    <button class="calendar-item-btn calendar-item-cardio ${logged.done ? "done" : ""}"
+    <button class="calendar-item-btn calendar-item-cardio has-corner-tag ${logged.done ? "done" : ""}"
             ${isFuture ? "disabled" : `data-coach-cardio="${esc(dateStr)}"`}>
       <span class="calendar-item-label">${esc(label)}</span>
       <span class="calendar-item-meta">${logged.done
@@ -9766,7 +9766,8 @@ function renderCalendarDayRow(date, member, template, isPast, lastDay, position)
           const isDone = !!completion;
           return `
         <div class="calendar-item-wrap">
-          <button class="calendar-item-btn ${isDone ? "done" : ""}" data-open-circuit="${circuit.id}">
+          <button class="calendar-item-btn ${isDone ? "done" : ""}${
+            isDone || showVariantLabels ? " has-corner-tag" : ""}" data-open-circuit="${circuit.id}">
             <span class="calendar-item-label">${circuit.title}</span>
             <span class="calendar-item-meta">${circuit.meta}</span>
             ${item.movedFromDay ? `<span class="calendar-moved-tag">Moved from ${esc(formatWeekdayDate(dateForProgramDay(item.movedFromDay)))}</span>` : ""}

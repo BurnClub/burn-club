@@ -1530,6 +1530,24 @@ h1, h2, h3 {
 .calendar-item-meta { font-size: 12px; color: rgba(255,255,255,0.75); font-weight: 300; }
 .calendar-item-muted { font-size: 13px; font-weight: 700; color: var(--text-muted); opacity: 0.7; padding: 10px 12px; display: block; }
 .calendar-item-check { position: absolute; top: 10px; right: 12px; font-size: 11px; font-weight: 800; color: white; }
+/* The corner badge is absolutely positioned, so the title ran straight under
+   it. At 320 wide - an SE or a mini - that was nearly every card on the
+   calendar: "Week 7 Shoulders a HOME Abs", and the completed ones worst of
+   all because the tick is wider: "Week 7 Quads and Gl ✓Done", unreadable
+   (tester T-63). At 375 only the longest titles clashed, which is how it
+   survived testing on a bigger phone.
+   The corner is reserved on the title instead, so a long one wraps before
+   the badge rather than under it. Only where a badge is actually drawn -
+   `has-corner-tag` - or every card without one would lose the width for
+   nothing.
+   68px, measured in the browser at 320 rather than guessed. The badge sits
+   at right:12px and the button's own padding is 12px, so what the title has
+   to clear is the badge's width plus its offset, minus that padding: Home 50,
+   Gym 43, "✓ Done" 41, and the widest, the CARDIO pill, 59. 68 leaves 9px
+   over the worst of them. 58 would look fine on today's titles and be one
+   pixel under what CARDIO needs, which is how this sort of thing comes
+   back. */
+.calendar-item-btn.has-corner-tag .calendar-item-label { padding-right: 68px; }
 /* Home / Gym marker, only drawn when a member has access to both variants of
    a session and therefore has a choice to make (2026-08-14). */
 .calendar-variant-tag {

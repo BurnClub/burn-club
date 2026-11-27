@@ -2925,6 +2925,51 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### The calendar's badge stopped sitting on the workout's name (2026-11-26, tester T-63)
+
+The HOME / GYM pill and the "Done" tick are absolutely positioned in the
+card's top-right corner; the title is in normal flow underneath, full width.
+So on a narrow phone the title ran straight under the badge: "Week 7
+Shoulders a**HOME**Abs", and the completed ones worst, because the tick is
+wider — "Week 7 Quads and Gl**✓Done**" is not readable at all.
+
+**Measured rather than eyeballed.** On the Fit & Functional week at 320 wide,
+comparing each title's own text rectangle against its badge's:
+
+| | overlapping |
+|---|---|
+| 320, rule off | **9 of 11** |
+| 320, rule on | 0 of 11 |
+| 375, rule off | 2 of 11 |
+| 375, rule on | 0 of 11 |
+
+Which also confirms the tester's reading exactly: at 375 only the longest
+titles clash, so it is easy to miss on a bigger phone and hits every tester on
+a small one.
+
+**The fix reserves the corner on the title** rather than moving the badge —
+the badge in the corner is the design. `padding-right: 68px` on
+`.calendar-item-label`, and only where a badge is actually drawn
+(`has-corner-tag`), or every card without one would give up the width for
+nothing.
+
+**68 is measured, not guessed, and the margin matters.** The badge sits at
+`right: 12px` and the button's own padding is 12px, so what the title has to
+clear is the badge's width plus its offset, less that padding: Home 50, Gym
+43, "✓ Done" 41, and the widest — the CARDIO pill — **59**. I tried 58 and it
+*looked* perfect on today's titles while being one pixel under what CARDIO
+needs; it only passed because the words happened to wrap early. That is how
+this sort of thing comes back, so 68 stays and the number is written down
+beside it.
+
+The cost is that a long title wraps to two or three lines at 320 instead of
+one. That is the right trade: the member can read the whole name.
+
+**A test that cannot lay out a page** still holds the three ways this could
+quietly come undone — the rule exists, it reserves at least the 59 the widest
+badge needs, and the class is on every card that draws a badge. It also counts
+the badge sites, so a third kind of calendar card fails the check and asks.
+
 ### A note the member deletes is deleted (2026-11-26, tester T-20)
 
 In the Notebook the member opens a session note, clears the box and saves —
