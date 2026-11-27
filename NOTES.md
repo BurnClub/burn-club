@@ -2925,6 +2925,42 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### A sign-out the server forced is no longer logged as the member's choice (2026-11-26, tester T-46/T-50)
+
+`signOut()` logged every case as `signed_out | member chose to sign out`,
+including the one that is not a choice at all: a 401 on entry, where the
+server has refused the session and the app signs them out on its behalf.
+
+**That hid exactly the members the Sign-In Trouble panel exists to show.**
+`signed_out` is not in admin's `AUTH_TROUBLE` set — correctly, a member
+tapping Sign out is not trouble — so a member thrown out by the server
+appeared nowhere at all. Unexplained failures nobody could see are what the
+first six-tester trial died of.
+
+**`session_lost`, not a new event name.** The listener at the bottom of
+`supabase-client.js` already logs that for a session that dies under the
+member, which is the same thing from where they are standing; admin already
+counts it as trouble and labels it "Signed out unexpectedly". So the fix needs
+no admin change — and there are checks that admin still lists and labels it,
+because that is the assumption the choice rests on.
+
+**And it is logged once.** The `onAuthStateChange` listener suppresses its own
+`session_lost` while `SIGNING_OUT` is set, which is why this can be logged
+from inside `signOut()` without producing two rows. There is a check counting
+exactly one.
+
+The detail carries the server's own words — *"the server refused this session
+— ..."* plus `res.error` — because the panel's whole value is the message
+beside the event. A mutant that logged a bare "forced" is killed by that.
+
+**5 of 5 mutants killed**, including making every sign-out trouble (which
+would bury the real ones) and dropping the reason from the caller.
+
+**Not browser-checked**, deliberately: reaching it means a real 401 from the
+server. The test drives the **real** `signOut()` from `supabase-client.js`
+with a stub collecting what it logs, both ways round, which is the closer
+thing to proof here.
+
 ### A partial workout no longer carries a rating nobody gave (2026-11-26, tester T-64)
 
 An interrupted workout is written **for** the member when they walk away. The

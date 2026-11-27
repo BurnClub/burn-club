@@ -206,8 +206,11 @@ function theirsLeft() { return THEIR_KEYS.filter(has); }
       "a device with only settings on it has nothing to report (got " + otherAccountDataOnDevice() + ")");
 
     print("\n-- wired where it has to be --");
-    check(/signOut\(\{ keepLocalData: true \}\)/.test(APP),
+    var forcedCall = APP.slice(APP.indexOf("await signOut({"), APP.indexOf("await signOut({") + 240);
+    check(/keepLocalData: true/.test(forcedCall),
       "the forced sign-out asks to keep the data");
+    check(/reason:/.test(forcedCall),
+      "and says why, so it is not logged as the member's choice (tester T-46)");
     check((APP.match(/await signOut\(\)/g) || []).length >= 1,
       "and the deliberate ones do not, so the sweep is what happens by default");
     check(/Some work hasn't backed up yet/.test(APP),
@@ -216,6 +219,39 @@ function theirsLeft() { return THEIR_KEYS.filter(has); }
       "and says when it was taken");
     check(/add\("Other accounts on this device"/.test(CLIENT),
       "the diagnostics panel reports what an older sign-out left behind");
+
+    print("\n-- who decided --");
+    // Every sign-out was logged as "member chose to sign out", including the
+    // one that is not a choice: a 401 on entry, where the server has refused
+    // the session and the app signs them out on its behalf. That hid exactly
+    // the members the Sign-In Trouble panel exists to show (tester T-46, and
+    // again in T-50) - and unexplained failures nobody could see are what the
+    // first trial died of.
+    EVENTS.length = 0;
+    await signOut();
+    check(EVENTS.some(function (e) { return e.indexOf("signed_out: member chose to sign out") === 0; }),
+      "a member who taps Sign out is logged as having chosen it");
+    check(!EVENTS.some(function (e) { return e.indexOf("session_lost") === 0; }),
+      "and is NOT reported as trouble, which would bury the real ones");
+
+    EVENTS.length = 0;
+    await signOut({ keepLocalData: true, reason: "the server refused this session \u2014 401" });
+    check(EVENTS.some(function (e) { return e.indexOf("session_lost") === 0; }),
+      "a sign-out the server forced is logged as a session lost (got " + JSON.stringify(EVENTS) + ")");
+    check(!EVENTS.some(function (e) { return e.indexOf("member chose") !== -1; }),
+      "and never as the member's choice");
+    check(EVENTS.join(" ").indexOf("401") !== -1,
+      "with the server's own reason attached, which is the whole point of the panel");
+    check(EVENTS.filter(function (e) { return e.indexOf("session_lost") === 0; }).length === 1,
+      "logged once, not twice - the listener is suppressed while SIGNING_OUT is set");
+
+    // admin has to be willing to show it. session_lost was chosen over a new
+    // event name precisely because it already is.
+    var ADMIN = readFile("../../admin/app.js");
+    check(/AUTH_TROUBLE[\s\S]{0,200}"session_lost"/.test(ADMIN),
+      "admin counts session_lost as trouble");
+    check(/session_lost: "Signed out unexpectedly"/.test(ADMIN),
+      "and has a label a human can read for it");
   } catch (err) {
     check(false, "the test itself threw: " + err);
   }

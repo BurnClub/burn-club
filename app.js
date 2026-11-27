@@ -10391,7 +10391,15 @@ async function routeOnLoad() {
     // the member choosing to leave the device. T-13's reasoning applies —
     // signing someone out on a bad day already strands them, and clearing
     // their phone as well would make a recoverable situation worse.
-    if (entryDecision(res, !!savedProfile) === "sign-out") await signOut({ keepLocalData: true });
+    // reason: this is the server throwing them out, not the member leaving,
+    // and the log has to say so or they vanish from the panel that would have
+    // shown them (tester T-46).
+    if (entryDecision(res, !!savedProfile) === "sign-out") {
+      await signOut({
+        keepLocalData: true,
+        reason: "the server refused this session — " + (res.error || res.kind || "no reason given"),
+      });
+    }
     return false;
   }
   return await enterFromSession("returning");

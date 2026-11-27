@@ -575,7 +575,21 @@ async function signOut(opts) {
   // First, before anything is cleared: any profile lookup still in flight must
   // not be allowed to write the member back afterwards (tester T-38).
   abandonAuthLoad();
-  logAuthEvent("signed_out", "member chose to sign out");
+  // WHO decided, not just that it happened (tester T-46, and again in T-50).
+  // Every sign-out was logged as "member chose to sign out", including the one
+  // case that is not a choice at all: a 401 on entry, where the server has
+  // refused the session and the app signs them out on its behalf. That hides
+  // exactly the members the Sign-In Trouble panel exists to show, and
+  // unexplained failures nobody could see are what the first trial died of.
+  //
+  // `session_lost` rather than a new event name. The listener at the bottom of
+  // this file already uses it for a session that died under the member, which
+  // is the same thing from where they are standing; admin already lists it as
+  // trouble and labels it "Signed out unexpectedly". That listener is
+  // suppressed while SIGNING_OUT is set, so this is the ONE record of it, not
+  // a second one.
+  if (opts && opts.reason) logAuthEvent("session_lost", opts.reason);
+  else logAuthEvent("signed_out", "member chose to sign out");
   // Before AUTH_MEMBER goes: the sweep is keyed by the member's own id, and
   // wrapped because losing the session must not depend on sync.js having
   // loaded or on anything inside it behaving.
