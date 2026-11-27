@@ -2925,6 +2925,68 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### The second tap belongs to the button you were aiming at (2026-11-26, tester T-66)
+
+At the end of a block the member taps "Save and continue". People tap it twice
+— on a phone that has just stuttered, with wet hands, or because nothing
+seemed to happen. The first tap saves and renders the next screen
+synchronously. The second tap is a **complete, genuine tap** on whatever is now
+in that spot — and what is in that spot is the next exercise's set rows, which
+are themselves buttons.
+
+The member has not done that set. The app then rests them for it, and when that
+exercise's weights screen comes round it asks for a weight for a set they never
+performed, which goes to the server as work done.
+
+**Measured, not guessed.** On the demo's Core Crusher at phone width (a weights
+screen followed by nine sets of Russian Twists), I sampled fifteen points
+inside the rectangle "Save and continue" occupied and asked
+`document.elementFromPoint` what was there after the tap went through:
+**twelve of the fifteen landed on a set-row button of the next exercise.** The
+old button's centre, (188, 521), sits inside set row 1, which spans y 472–529.
+Two taps in that spot left `setsChecked[0] === true`, the row struck through
+and a 15-second rest running.
+
+**A synthetic double-click did not reproduce it.** Both of its clicks go to the
+element captured first, so it moved one phase and ticked nothing — which is
+very likely why a later tester run recorded T-66 as "not reproduced again".
+**Two separate taps a moment apart, which is what a finger does, reproduced it
+first time.** Worth remembering before trusting a double-click to stand in for
+a double tap.
+
+**The fix is a dead time, because nothing else distinguishes the two taps.**
+This is not a stray click that can be caught by looking at where the finger
+went down: the second tap is real, complete, and aimed at a button that is no
+longer there. The only thing that tells it apart from a deliberate tap is that
+the control it landed on had been on screen for a few milliseconds. So that is
+what is checked — `NEW_CONTROL_DEAD_MS = 400`, long enough to swallow the
+second half of a double tap, short enough that seeing a new screen and deciding
+to tap it takes a person longer.
+
+**Armed wherever the app changes what is under the thumb**, which is three
+places: a phase rendering, the rest popup opening, and the rest popup
+**closing** — that last one is the same trap reversed, because the set rows
+become tappable again exactly where "Skip Rest" just was.
+
+**Guarded on the member's taps, not on the calls.** `advance()` and
+`dismissRestOverlay()` have no guard of their own and must not: a rest that
+runs out has to be able to end itself, and the code has to be able to move the
+workout on. The guard sits on the two click handlers and inside
+`toggleSetChecked`, which is the one way a set gets ticked. There are checks
+pinning both halves of that — a mutant that guards `advance()` itself is killed.
+
+**Mutation-tested, 11 of 11 killed by named checks**, including a zero window,
+a one-second window, the comparison inverted, the guard moved below the tick,
+and each of the three arming sites dropped. One of them found a real hole in
+my own test: the two button handlers sit next to each other, and a
+fixed-length slice of the source spilled from one into the other, so an
+unguarded button borrowed its neighbour's guard and the mutant survived. The
+checks now read each handler to the start of the next one.
+
+**Verified on the real screen**: the same spot tapped twice, 5ms apart, now
+leaves `setsChecked` all false with no rest running; the same tap after the
+window ticks the set and starts the rest, exactly as before.
+
 ### Finishing a workout happens once (2026-11-26, tester T-77)
 
 `Player.finish()` returned early only on `if (!this.circuit)`, and it never

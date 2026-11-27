@@ -136,8 +136,14 @@ check(COMPLETIONS.length === 1,
 // Why a second copy would be so bad: the id is built from the clock, so the
 // duplicates are not even distinguishable afterwards.
 reset();
+// The clock pinned, so this says what it means every time it runs: two calls
+// in the SAME millisecond. Left to the real clock it passes or fails on how
+// fast the machine is, which is not what is being checked.
+var realNow = Date.now;
+Date.now = function () { return 1795460776740; };
 var a = logCompletion({ id: "w1", title: "T", category: "Strength", meta: "20 min" }, {}, {}, { minutes: 5 });
 var b = logCompletion({ id: "w1", title: "T", category: "Strength", meta: "20 min" }, {}, {}, { minutes: 5 });
+Date.now = realNow;
 check(a.id === b.id,
   "set up: two completions written in the same millisecond carry the SAME id ("
   + a.id + "), which is what makes a duplicate unremovable");

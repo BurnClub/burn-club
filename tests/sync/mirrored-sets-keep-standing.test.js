@@ -331,8 +331,10 @@ toasts = [];
 P.advance();
 check(toasts.length === 0, "leaving a rest screen says nothing about weight boxes");
 
-check(CODE.indexOf('on("player-complete-set-btn", "click", () => Player.advance())') !== -1,
-  "and the button the member taps is wired to advance(), which is what runs it");
+var btnWiring = CODE.indexOf('on("player-complete-set-btn", "click",');
+check(btnWiring !== -1, "the button the member taps is still wired");
+check(CODE.slice(btnWiring, btnWiring + 300).indexOf("Player.advance()") !== -1,
+  "and it is wired to advance(), which is what runs the warning");
 
 // ---------------- the property, after every single keystroke ----------------
 // The rule in one line, computed here from the column rather than from the

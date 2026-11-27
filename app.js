@@ -6317,6 +6317,13 @@ function markWeightInput(input, parsed) {
   if (warn) warn.remove();
 }
 
+// How long a control ignores taps after the app has just put it under the
+// member's thumb (tester T-66). Long enough to swallow the second half of a
+// double tap; short enough that a tap aimed at what is now on screen is not,
+// since seeing a new screen and deciding to tap it takes a person longer
+// than this.
+const NEW_CONTROL_DEAD_MS = 400;
+
 const Player = {
   circuit: null,
   phases: [],
@@ -6340,6 +6347,8 @@ const Player = {
   // action in the app that writes a row the member can see and cannot delete,
   // and it had no guard at all (tester T-77).
   finished: false,
+  // When the app last changed what is under the member's thumb (tester T-66).
+  screenChangedAt: 0,
   startedAt: null,
   // Time the member was away between leaving and resuming, so the elapsed
   // clock measures the workout rather than the gap (2026-11-23). Without it,
@@ -6664,6 +6673,39 @@ const Player = {
     return this.phases[this.index];
   },
 
+  // The app changed what is under the member's thumb. Armed wherever that
+  // happens, which is a phase rendering, the rest popup opening, and the rest
+  // popup closing (tester T-66).
+  noteScreenChanged() {
+    this.screenChangedAt = Date.now();
+  },
+
+  // The second half of a double tap belongs to the button the member was
+  // AIMING at, not to whatever has just moved into that spot.
+  //
+  // At the end of a block the member taps "Save and continue". People tap it
+  // twice -- on a phone that has just stuttered, or with wet hands, or simply
+  // because nothing seemed to happen. The first tap saves and renders the
+  // next screen synchronously, and the second tap is a complete, genuine tap
+  // on whatever is now there. Measured on the real screen: of fifteen points
+  // inside the rectangle that button occupied, TWELVE land on a set-row
+  // button of the next exercise. Tapping twice in one spot ticked set 1 of
+  // Russian Twists and started a 15-second rest for a set nobody had done --
+  // and when that exercise's weights screen comes round it asks for a weight
+  // for it, which is then sent to the server as work done.
+  //
+  // This is not a stray click to be swallowed by looking at where the finger
+  // went down: it is a real second tap, aimed at a button that is no longer
+  // there. The only thing that distinguishes it is that the control it landed
+  // on had been on screen for a few milliseconds. So that is what is checked.
+  //
+  // It guards the member's taps, not the calls: advance() and
+  // dismissRestOverlay() are still reachable from a timer and from the code,
+  // and must be, or a rest that runs out would be swallowed too.
+  tapCameFromTheLastScreen() {
+    return Date.now() - this.screenChangedAt < NEW_CONTROL_DEAD_MS;
+  },
+
   advance() {
     // Bank the cardio time as its phase ends — counting it at finish() would
     // credit the full block to someone who skipped straight past it.
@@ -6716,6 +6758,10 @@ const Player = {
   // UI-only for now (not saved anywhere) — the plan is per-exercise/rep-range
   // weight history and suggestions, saved for a future session per Chris.
   toggleSetChecked(setIndex) {
+    // Not if this row has only just arrived under the thumb (tester T-66).
+    // Inside the method rather than on the row's listener because ticking a
+    // set is the harm, and this is the one way in.
+    if (this.tapCameFromTheLastScreen()) return;
     if (this.setsChecked[setIndex]) return;
     this.setsChecked[setIndex] = true;
     markSetRowDone(setIndex);
@@ -6768,6 +6814,8 @@ const Player = {
     }
 
     showOverlay("rest-timer-overlay");
+    // A popup has just appeared under wherever the thumb was (tester T-66).
+    this.noteScreenChanged();
   },
 
 
@@ -6781,6 +6829,9 @@ const Player = {
     document.getElementById("rest-timer-overlay").classList.remove("visible");
     this.restSetIndex = null;
     this.restIsLastSet = false;
+    // And the set rows are tappable again where Skip Rest just was, which is
+    // the same trap the other way round (tester T-66).
+    this.noteScreenChanged();
   },
 
   finish() {
@@ -7995,6 +8046,10 @@ const Player = {
     renderNextUp(this.phases, this.index);
 
     this.renderBackBtn();
+    // A whole screen has just appeared under wherever the thumb was. This is
+    // the one that matters most: "Save and continue" is replaced by the next
+    // exercise's set rows (tester T-66).
+    this.noteScreenChanged();
     this.persist();
   },
 };
@@ -10828,8 +10883,15 @@ function wireRemainingControls() {
     saveCompletions();
   });
   on("benchmark-score-save-btn", "click", saveBenchmarkScore);
-  on("player-complete-set-btn", "click", () => Player.advance());
+  // Guarded on the handlers, not inside advance() and dismissRestOverlay():
+  // a rest that runs out, and the code's own calls, must still get through
+  // (tester T-66).
+  on("player-complete-set-btn", "click", () => {
+    if (Player.tapCameFromTheLastScreen()) return;
+    Player.advance();
+  });
   on("rest-overlay-skip-btn", "click", () => {
+    if (Player.tapCameFromTheLastScreen()) return;
     const wasLastSet = Player.restIsLastSet;
     Player.dismissRestOverlay();
     if (wasLastSet) Player.advance();
