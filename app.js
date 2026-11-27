@@ -903,14 +903,38 @@ function todaysLiftsHtml(done) {
 
 function notebookLog() {
   // Every day the member put something down — a check-in, a session, or a note.
+  //
+  // Grouped, sorted and bucketed on a NORMALISED key rather than on whatever
+  // was stored (tester T-50). The old code compared `r.date` directly, which
+  // is a string comparison, and that goes wrong two ways:
+  //
+  //   * a date stored as a NUMBER is neither `>= cutoff` nor `< cutoff`, so
+  //     the day fell into neither list and was never drawn. The session did
+  //     not move or look odd — it vanished from the log entirely, with
+  //     nothing anywhere saying so. Reproduced: a completion dated 20260903
+  //     is not in the rendered page at all.
+  //   * "2026-9-3" is lexically GREATER than "2026-11-14", so an unpadded
+  //     September date listed among the last seven days. Also reproduced.
+  //
+  // dateKeyFrom() answers both and was already being used three lines further
+  // down for the month heading; it simply was not used for the comparisons.
+  // It is also what reportBadDate() hangs off, so a date this app cannot read
+  // now says so instead of taking a day off the screen with it — which is
+  // the T-15 hunt's whole problem.
   const days = new Map();
-  CHECKINS.forEach((c) => days.set(c.date, { date: c.date, checkin: c }));
-  COMPLETIONS.forEach((c) => {
-    const d = days.get(c.date) || { date: c.date };
-    d.session = c;
-    days.set(c.date, d);
-  });
-  const rows = [...days.values()].sort((a, b) => (a.date < b.date ? 1 : -1));
+  const dayFor = (raw) => {
+    const key = dateKeyFrom(raw);
+    if (!key) reportBadDate("notebookLog", raw);
+    // An unreadable date keeps its own identity rather than every one of them
+    // collapsing into a single row.
+    const id = key || "unreadable:" + String(raw);
+    const row = days.get(id) || { id, key, date: key || raw };
+    days.set(id, row);
+    return row;
+  };
+  CHECKINS.forEach((c) => { dayFor(c.date).checkin = c; });
+  COMPLETIONS.forEach((c) => { dayFor(c.date).session = c; });
+  const rows = [...days.values()].sort((a, b) => ((a.key || "") < (b.key || "") ? 1 : -1));
   if (!rows.length) return `<p class="nb-title">Your log</p><p class="nb-empty">Nothing written down yet.</p>`;
 
   // The last week is what gets referenced; everything older is history, and a
@@ -919,16 +943,25 @@ function notebookLog() {
   // second "show earlier" tap — one tap to a month, and the list of months
   // says at a glance how far back it goes.
   const cutoff = dateKey(new Date(Date.now() - 6 * 864e5));
-  const recent = rows.filter((r) => r.date >= cutoff);
-  const older = rows.filter((r) => r.date < cutoff);
+  // Complements of one another, deliberately: whatever a row's date turns out
+  // to be, it lands in exactly one of these. The pair this replaced could
+  // leave a row in neither.
+  const recent = rows.filter((r) => r.key && r.key >= cutoff);
+  const older = rows.filter((r) => !(r.key && r.key >= cutoff));
 
   const byMonth = [];
   older.forEach((r) => {
-    const key = (dateKeyFrom(r.date) || "").slice(0, 7);
+    const key = (r.key || "").slice(0, 7);
     let group = byMonth.find((g) => g.key === key);
     if (!group) {
       const [y, m] = key.split("-").map(Number);
-      group = { key, label: new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" }), rows: [] };
+      // A day whose date this app cannot read is still the member's day, and
+      // it is still SHOWN — under a heading that says what is wrong with it
+      // rather than "Invalid Date", and rather than disappearing.
+      const label = key
+        ? new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+        : "Undated";
+      group = { key, label, rows: [] };
       byMonth.push(group);
     }
     group.rows.push(r);

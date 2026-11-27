@@ -2925,6 +2925,48 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### No day falls off the notebook log (2026-11-26, tester T-50)
+
+`notebookLog()` split history with two string comparisons on the raw stored
+value: `r.date >= cutoff` picked "this week", `r.date < cutoff` picked
+everything older. **A date stored as a number satisfies neither**, so the day
+fell into neither list and was never drawn — the session did not move or look
+odd, it simply was not on the screen, with nothing anywhere saying so. And
+`"2026-9-3"` is lexically **greater** than `"2026-11-14"`, so an unpadded
+September date listed among the last seven days.
+
+**Reproduced against the shipped function first**, with five completions: the
+numeric one was absent from the rendered page entirely, and the unpadded
+September one was in the recent section.
+
+`dateKeyFrom()` answers both and was already being used three lines below for
+the month heading — it just was not used for the comparisons. Now the rows are
+built, sorted and bucketed on a normalised key, and **the two filters are
+complements of one another**, so whatever a row's date turns out to be it
+lands in exactly one of them. That is the property worth holding: not "numbers
+work now" but **nothing can fall between**. A mutant that makes `older` a
+near-miss rather than the complement is killed by it.
+
+**A date the app cannot read is shown, not hidden.** It gets its own
+**"Undated"** group — not "Invalid Date", which is what the old label code
+produced for it — and `reportBadDate("notebookLog", raw)` says so, which is
+exactly what the T-15 hunt for where these values come from needs. **Losing a
+day quietly was the bug; the heading is the fix.**
+
+**The same day written two ways is one day.** The map was keyed on the raw
+value, so a check-in dated `2026-9-3` and a session dated `2026-09-03` were
+two rows. Keyed on the normalised value, they merge.
+
+**One correction to the finding.** It says the unpadded date's label is blank
+rather than "Sep 3". It is not — `formatShortDate()` runs `dateKeyFrom()` and
+renders "Sep 3" correctly. What is real is the sorting, and that half is
+reproduced and fixed.
+
+**6 of 6 mutants killed. Verified in the real app**: a completion dated
+`20260903` planted on the demo profile produces an **"Undated · 1 day"**
+group, collapsed like every other month, and tapping it shows the row. Before,
+there was no group and no row anywhere.
+
 ### A sign-out the server forced is no longer logged as the member's choice (2026-11-26, tester T-46/T-50)
 
 `signOut()` logged every case as `signed_out | member chose to sign out`,
