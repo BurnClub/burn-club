@@ -9959,6 +9959,20 @@ function renderCalendarTab() {
 // One way in for a real member, so the profile is loaded and the tour and
 // check-in prompts fire in the same order however they arrived — a fresh
 // sign-in, an invite link, or a session restored from last time.
+// What to say to a member who is in, but looking at a copy the server has not
+// caught up with yet (tester T-50).
+//
+// The question it answers is "does this phone have your history on it", and
+// `deviceHasHydrated()` is exactly that question: has a full pull for this
+// member ever finished here. Pulled out so it can be driven both ways — the
+// wrong half of it was unreachable for weeks, which is the kind of thing a
+// grep over a 10,000-line file does not catch.
+function weakSignalMessage(deviceHasHistory) {
+  return deviceHasHistory
+    ? "Weak signal, so this is what's saved on your phone. It'll catch up when the connection does."
+    : "Weak signal, so your history hasn't loaded yet. Reopen the app when the connection is better.";
+}
+
 async function enterAsAuthedMember() {
   // A member can exist without a program: invites go out before anyone is
   // assigned, so this is an ordinary state, not an error. Saying so beats
@@ -10014,9 +10028,22 @@ async function enterAsAuthedMember() {
   // Said once, quietly: they are in and nothing is wrong with their account,
   // but what they see may be a little behind and they should know why.
   if (onLocalCopy && navigator.onLine !== false && typeof showToast === "function") {
-    showToast(hadData || OFFLINE_ENTRY
-      ? "Weak signal, so this is what's saved on your phone. It'll catch up when the connection does."
-      : "Weak signal, so your history hasn't loaded yet. Reopen the app when the connection is better.");
+    // `hadData` alone, not `hadData || OFFLINE_ENTRY` (tester T-50).
+    //
+    // The question this message answers is "does this phone have your history
+    // on it", and `deviceHasHydrated()` is exactly that question: has a full
+    // pull for this member ever finished here. OFFLINE_ENTRY answers a
+    // different one — "did we come in on the saved profile" — and a saved
+    // PROFILE is a name and a programme, not a history.
+    //
+    // Because entering on the cache is one of the two ways `onLocalCopy`
+    // becomes true, OR-ing it in meant the first wording always won on that
+    // path, and the second — written for exactly this case — could never be
+    // reached from it. A device whose first open loaded the profile but timed
+    // out before hydrating lands here with nothing to show and was told
+    // "this is what's saved on your phone", which is not true and sets them
+    // looking for history that is not there.
+    showToast(weakSignalMessage(hadData));
   }
   // Not awaited: the inbox badge is worth having as soon as it arrives, and
   // nothing on Home should wait on a message fetch to render.

@@ -2925,6 +2925,39 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### The weak-signal toast stopped claiming history the phone hasn't got (2026-11-26, tester T-50)
+
+A member let in on a copy the server has not caught up with gets a toast. It
+was chosen with `hadData || OFFLINE_ENTRY` — and entering on the cache is one
+of the two ways that path is reached, so `OFFLINE_ENTRY` was true whenever it
+mattered and the first wording always won. **The second, written for a device
+with nothing on it, could not be reached from that path at all.**
+
+The question the message answers is *does this phone have your history on
+it*, and `deviceHasHydrated()` is exactly that question: has a full pull for
+this member ever finished here. `OFFLINE_ENTRY` answers a different one — did
+we come in on the saved profile — and **a saved profile is a name and a
+programme, not a history**.
+
+The case it gets wrong is real and reachable: a phone whose first open loads
+the profile but times out before hydrating writes the auth cache without
+setting the hydrated flag. The next open, offline, enters on that cache with
+nothing to show and said *"this is what's saved on your phone"*, which sets
+the member looking for a history that is not there.
+
+**Pulled out into `weakSignalMessage(deviceHasHistory)`** rather than
+source-checked, same as T-49 earlier today. The wrong half of this had been
+unreachable for weeks, which is precisely the thing a grep over a
+10,000-line file does not catch — so the test drives both halves.
+
+**4 of 4 mutants killed**, including OR-ing `OFFLINE_ENTRY` back in and
+swapping the two branches.
+
+**One thing the test taught me about tests.** The check that the OR is gone
+first failed on my own *comment* explaining why it is gone — the phrase is in
+both. It reads a comment-stripped copy now. A check that cannot tell the
+explanation from the code is not a check.
+
 ### No day falls off the notebook log (2026-11-26, tester T-50)
 
 `notebookLog()` split history with two string comparisons on the raw stored

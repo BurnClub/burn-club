@@ -188,3 +188,55 @@ check(/still\s+signed in/.test(around),
   "and tells them they are still signed in");
 check(around.indexOf("nothing on this phone is lost") !== -1,
   "and that nothing on the phone is lost");
+
+// ---------------- and what they are told once they ARE in ----------------
+// A member let in on a copy the server has not caught up with gets a toast.
+// It was chosen with `hadData || OFFLINE_ENTRY` (tester T-50) - and entering
+// on the cache is one of the two ways that path is reached, so OFFLINE_ENTRY
+// was true whenever it mattered and the first wording always won. The second,
+// written for a device with nothing on it, could not be reached from there at
+// all.
+//
+// A phone whose first open loaded the profile but timed out before hydrating
+// lands here with no history, and was told "this is what's saved on your
+// phone" - which sets them looking for something that is not there.
+
+var APPSRC2 = readFile("../../app.js");
+function liftApp(name) {
+  var at = APPSRC2.indexOf("function " + name + "(");
+  if (at < 0) throw new Error(name + "() is gone from app.js");
+  var depth = 0;
+  for (var i = APPSRC2.indexOf("{", at); i < APPSRC2.length; i++) {
+    if (APPSRC2[i] === "{") depth++;
+    else if (APPSRC2[i] === "}") { depth--; if (depth === 0) return APPSRC2.slice(at, i + 1); }
+  }
+  throw new Error("could not find the end of " + name + "()");
+}
+eval(liftApp("weakSignalMessage"));
+
+var withHistory = weakSignalMessage(true);
+var withNone = weakSignalMessage(false);
+check(withHistory !== withNone, "the two devices are not told the same thing");
+check(/saved on your phone/.test(withHistory),
+  "a phone that has pulled this member before says so: " + JSON.stringify(withHistory));
+check(/hasn't loaded yet/.test(withNone),
+  "and one that never has says THAT, which used to be unreachable: " + JSON.stringify(withNone));
+check(!/saved on your phone/.test(withNone),
+  "it does not claim to be holding a history it has not got");
+check(/Reopen the app/.test(withNone),
+  "and tells them the one thing that will fix it");
+
+// The call site has to ask the right question, or the second wording goes
+// back to being unreachable.
+var toastCall = APPSRC2.indexOf("showToast(weakSignalMessage(");
+check(toastCall !== -1, "the entry path sends one of them");
+check(APPSRC2.slice(toastCall, toastCall + 60).indexOf("hadData)") !== -1,
+  "asking whether this device has ever pulled the member's history");
+// Comments stripped: the note explaining WHY it is not `hadData ||
+// OFFLINE_ENTRY` contains that phrase, and a check that cannot tell the
+// explanation from the code is not a check.
+var APPCODE2 = APPSRC2.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+check(APPCODE2.indexOf("hadData || OFFLINE_ENTRY") === -1,
+  "and not OR-ing in how they came in, which is a different question");
+check(/const hadData = [^\n]*deviceHasHydrated\(\)/.test(APPSRC2),
+  "hadData being deviceHasHydrated(), which is that question exactly");
