@@ -35,7 +35,10 @@ function logCompletion(circuit, sessionWeights, setWeights, opts) {
   var minutes = isFinite(given) && given >= 0 ? Math.max(1, Math.round(given))
     : (parseInt(circuit.meta, 10) || 20);
   LOGGED = { minutes: minutes, meta: minutes + " min", title: circuit.title,
-             sessionWeights: sessionWeights, setWeights: setWeights };
+             sessionWeights: sessionWeights, setWeights: setWeights,
+             // What the caller asked for, so a rating nobody gave cannot be
+             // smuggled past this (tester T-64).
+             rpeArg: opts && "rpe" in opts ? opts.rpe : "(not passed)" };
   return LOGGED;
 }
 eval(lift("partialMinutesOnTheClock"));
@@ -131,3 +134,31 @@ logPartialCompletion(noMeta, worked(45), 0, phases);
 check(LOGGED.minutes === 20, "a workout with no stated length falls back to the same 20 the old code used");
 
 print("\n  " + pass + " passed, " + fail + " failed");
+
+// ---------------- and no effort rating it never asked for ----------------
+// A partial is written FOR the member when they walk away; the finish screen,
+// and its "How hard did that feel?" slider, never appears. logCompletion's
+// default is 5, so every interrupted workout carried a five out of ten on the
+// member's record and into the RPE median their coach reads (tester T-64).
+//
+// The column has allowed null since the first schema - 01-schema.sql even
+// carries `create index on completions (workout_id) where rpe is not null`,
+// written for that median - so "not given" was always expressible and simply
+// never used.
+
+check(LOGGED.rpeArg === null,
+  "a partial is logged with no effort rating at all (got " + JSON.stringify(LOGGED.rpeArg) + ")");
+check(LOGGED.rpeArg !== 5, "and emphatically not a five nobody was asked for");
+
+// The admin feed has to be able to print that. It read "RPE ${a.rpe}/10"
+// straight out of the row, so the first partial to reach it would have said
+// "RPE null/10".
+var ADMIN = readFile("../../admin/app.js");
+check(ADMIN.indexOf("function rpeLabel(") !== -1, "admin has one way to render an effort rating");
+check(ADMIN.indexOf("RPE ${a.rpe}/10") === -1,
+  "and no longer prints the raw value, which would read RPE null/10");
+check((ADMIN.match(/rpeLabel\(a\.rpe\)/g) || []).length === 2,
+  "both activity feeds go through it (found "
+  + (ADMIN.match(/rpeLabel\(a\.rpe\)/g) || []).length + ")");
+var labelFn = ADMIN.slice(ADMIN.indexOf("function rpeLabel("), ADMIN.indexOf("function rpeLabel(") + 160);
+check(/rpe == null/.test(labelFn), "which checks for a missing rating rather than a falsy one");

@@ -149,6 +149,23 @@ check(a.id === b.id,
   + a.id + "), which is what makes a duplicate unremovable");
 check(/^local-\d+$/.test(a.id), "and the id is the clock, as the finding says (" + a.id + ")");
 
+// ---------------- the effort rating is the member's, or it is nothing -------------
+// logCompletion's 5 is the finish screen's default: the member is shown the
+// slider sitting on it and can move it. A caller that never shows that screen
+// - the partial path - says so, and the row carries no rating at all rather
+// than a five nobody gave (tester T-64).
+
+reset();
+var finished = logCompletion({ id: "w1", title: "T", category: "Strength", meta: "20 min" },
+  {}, {}, { minutes: 5 });
+check(finished.rpe === 5, "a finished workout defaults to the 5 the slider shows");
+var walked = logCompletion({ id: "w1", title: "T (partial)", category: "Strength", meta: "20 min" },
+  {}, {}, { minutes: 5, rpe: null });
+check(walked.rpe === null,
+  "a caller that asks for none gets none (got " + JSON.stringify(walked.rpe) + ")");
+check(logCompletion({ id: "w1", title: "T", category: "Strength", meta: "20 min" },
+  {}, {}, { minutes: 5, rpe: 8 }).rpe === 8, "and a real answer is carried through");
+
 // ---------------- a workout with nothing open is still refused ----------------
 
 reset();

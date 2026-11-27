@@ -1492,7 +1492,20 @@ function logCompletion(circuit, weights, setWeights, opts) {
     minutes,
     caloriesBurned: estimateCalories(minutes),
     avgHeartRate: estimateHeartRate(),
-    rpe: 5,
+    // Five out of ten, unless the caller says otherwise (tester T-64).
+    //
+    // The finish screen shows this slider at 5 and the member can move it, so
+    // on a finished workout 5 is a default they were shown and let stand. A
+    // PARTIAL never shows that screen — it is written for them when they walk
+    // away — so writing 5 puts a rating on their record, and into the RPE
+    // median their coach reads, that nobody ever asked them for.
+    //
+    // "Not given" was always expressible and simply never used: the column has
+    // been nullable since the first schema, and `01-schema.sql` carries
+    // `create index on completions (workout_id) where rpe is not null` written
+    // for that very median. A median over fabricated fives is worse than a
+    // median over fewer, honest numbers.
+    rpe: opts && opts.rpe !== undefined ? opts.rpe : 5,
     // What they lifted, per exercise. Empty for bodyweight-only sessions.
     weights: Object.keys(topWeights).length ? { ...topWeights } : null,
     // And per set, from the end-of-block screens (2026-10-02). `weights` keeps
@@ -4389,8 +4402,10 @@ function logPartialCompletion(circuit, rec, blocksDone, phases) {
   // path (2026-11-23). This used to fabricate a `meta` string purely so
   // logCompletion would parse the number back out of it.
   const partial = { ...circuit, title: `${circuit.title} (partial)` };
+  // No effort rating: the member never saw the slider, so there is no answer
+  // of theirs to record (tester T-64).
   return logCompletion(partial, rec.sessionWeights || {}, rec.setWeights || {},
-    { minutes: Math.max(1, minutes), roundWeights: rec.roundWeights || {} });
+    { minutes: Math.max(1, minutes), roundWeights: rec.roundWeights || {}, rpe: null });
 }
 
 function showResumeOverlay({ title, body, primary, secondary, third, onPrimary, onSecondary, onThird }) {
@@ -6947,8 +6962,11 @@ const Player = {
     }
     setupBenchmarkScoreSection(this.circuit, this.amrapRoundsByBlock);
     const rpeSlider = document.getElementById("rpe-slider");
-    rpeSlider.value = entry.rpe;
-    document.getElementById("rpe-value").textContent = entry.rpe;
+    // A finished workout always carries one; the fallback is for a record
+    // written without a rating ever reaching this screen (tester T-64).
+    const shownRpe = entry.rpe == null ? 5 : entry.rpe;
+    rpeSlider.value = shownRpe;
+    document.getElementById("rpe-value").textContent = shownRpe;
     showScreen("screen-workout");
   },
 

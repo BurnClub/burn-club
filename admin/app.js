@@ -55,6 +55,14 @@ const ICON_PATHS = {
 // Escape at the point of OUTPUT, not where a string is composed, so nothing
 // is escaped twice and there is one rule to check: if it goes into a template
 // literal that becomes innerHTML, it is wrapped.
+// A completion can legitimately carry no effort rating (tester T-64). A
+// partial workout is written for the member when they walk away, so they were
+// never shown the slider and there is no answer of theirs to print. This read
+// "RPE null/10" the moment one of those reached the feed.
+function rpeLabel(rpe) {
+  return rpe == null ? "No RPE" : `RPE ${rpe}/10`;
+}
+
 function esc(value) {
   return String(value == null ? "" : value)
     .replace(/&/g, "&amp;")
@@ -600,7 +608,7 @@ function renderGroupDetail() {
     <div class="activity-feed-row" data-action="edit-member" data-member-id="${a.memberId}">
       <div class="activity-feed-text"><strong>${a.memberName}</strong> completed ${a.workoutTitle}</div>
       <div class="activity-feed-meta">
-        <span class="activity-feed-rpe">RPE ${a.rpe}/10</span>
+        <span class="activity-feed-rpe">${rpeLabel(a.rpe)}</span>
         <span class="activity-feed-time">${a.time}</span>
       </div>
     </div>
@@ -1252,7 +1260,7 @@ function renderDashboard() {
         <div class="activity-feed-row" data-action="edit-member" data-member-id="${a.memberId}">
           <div class="activity-feed-text"><strong>${a.memberName}</strong> completed ${a.workoutTitle}</div>
           <div class="activity-feed-meta">
-            <span class="activity-feed-rpe">RPE ${a.rpe}/10</span>
+            <span class="activity-feed-rpe">${rpeLabel(a.rpe)}</span>
             <span class="activity-feed-time">${a.time}</span>
           </div>
         </div>

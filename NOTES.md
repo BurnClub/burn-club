@@ -2925,6 +2925,42 @@ time limit comes with a guard on the late answer, AND the guard has to be armed
 where the limit fires. Both halves. `hydrateForEntry()` has both. The profile
 lookup now has both. Anything else that gets a `within()` needs both.
 
+### A partial workout no longer carries a rating nobody gave (2026-11-26, tester T-64)
+
+An interrupted workout is written **for** the member when they walk away. The
+finish screen, and its "How hard did that feel?" slider, never appears. But
+`logCompletion` wrote `rpe: 5` regardless, so every partial put a five out of
+ten on the member's record — and into the RPE median their coach reads — that
+nobody ever asked them for.
+
+The 5 is the **slider's** default, and on a finished workout that is fair
+enough: the member is shown it sitting on 5 and can move it. On a screen they
+never see, it is invented.
+
+**"Not given" was always expressible and simply never used.** `01-schema.sql`
+has had `rpe int check (rpe between 1 and 10)` — nullable — since the first
+schema, and carries `create index on completions (workout_id) where rpe is not
+null`, written for that very median. The database was built expecting this.
+**A median over fabricated fives is worse than a median over fewer, honest
+numbers**, and it is the one that would have been shown beside a sample count.
+
+`logCompletion` now takes `opts.rpe`, defaulting to 5, and the partial path
+passes `null`. Checked with `!== undefined`, not a falsy test — a mutant using
+`||` turns the null straight back into a five.
+
+**The admin side had to be able to print it.** Both activity feeds read
+`RPE ${a.rpe}/10` straight out of the row, so the first partial to reach them
+would have said **"RPE null/10"**. They go through one `rpeLabel()` now, which
+says "No RPE". That wording is mine, not Chris's — easy to change.
+
+**5 of 5 mutants killed**, including the `||` coercion and the admin label
+using a falsy test instead of a null test.
+
+**Verified in both apps.** In the member app, driving the real
+`logPartialCompletion`: "Straight Sets (partial)", 6 min, `rpe: null` (and the
+test completion removed afterwards). In admin: `rpeLabel(null)` → "No RPE",
+`rpeLabel(8)` → "RPE 8/10".
+
 ### Told "this device has nothing saved" by a phone that was holding everything (2026-11-26, tester T-49)
 
 When the saved copy is refused — the T-37 rule, or any open where the lookup
